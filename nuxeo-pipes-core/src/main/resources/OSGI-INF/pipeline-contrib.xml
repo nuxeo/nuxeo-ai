@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.runtime.stream.pipes.Pipeline" version="1.0">
+
+  <require>org.nuxeo.ecm.core.event.EventServiceComponent</require>
+  <require>org.nuxeo.runtime.stream.service</require>
+  <implementation class="org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl" />
+
+  <service>
+    <provide interface="org.nuxeo.runtime.stream.pipes.services.PipelineService" />
+  </service>
+
+  <extension-point name="pipes">
+    <documentation>
+      Configure a pipeline to send an event to a nuxeo-stream.
+      <code>
+        <pipe id="pipe.myid" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
+          <supplier>
+            <event>myDocEvent</event>
+          </supplier>
+          <consumer>
+            <stream name="text" />
+          </consumer>
+        </pipe>
+      </code>
+    </documentation>
+    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor" />
+    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor$Consumer" />
+    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor$Supplier" />
+  </extension-point>
+
+</component>

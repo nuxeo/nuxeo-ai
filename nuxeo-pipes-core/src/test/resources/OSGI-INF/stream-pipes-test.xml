@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.pipes.mock.streams">
+
+  <require>org.nuxeo.runtime.stream.pipes.Pipeline</require>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
+    <logConfig name="pipes">
+      <option name="retention">3h</option>
+    </logConfig>
+  </extension>
+
+  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <pipe id="pipe.doc" enabled="true" function="org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction">
+      <supplier>
+        <event>myDocEvent</event>
+        <event>anotherEvent</event>
+      </supplier>
+      <consumer>
+        <stream name="text" />
+        <stream name="text.extra" />
+      </consumer>
+    </pipe>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="basicProcessor" logConfig="pipes" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.runtime.stream.pipes.PassThrough">
+      <stream name="i1:txt" partitions="1"/>
+      <stream name="o1:txt.pass"/>
+      <stream name="o2:txt.other"/>
+      <option name="logIn">text</option>
+      <option name="logOut">text.pass,text.other</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="testProcessor" logConfig="pipes" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.runtime.stream.pipes.SimpleFilterFunction">
+      <option name="logIn">text.pass</option>
+      <option name="logOut">text.out</option>
+    </streamProcessor>
+  </extension>
+
+</component>
