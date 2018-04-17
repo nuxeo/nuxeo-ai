@@ -48,7 +48,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public static final String ROUTE_AP = "pipes";
     public static final String LOG_CONFIG = "pipes";
     private static final Log log = LogFactory.getLog(PipelineServiceImpl.class);
+
     protected final Map<String, PipeDescriptor> configs = new HashMap();
+    protected final List<EventListenerDescriptor> listenerDescriptors = new ArrayList();
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -67,16 +69,22 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         });
     }
 
+    @Override
+    public void stop(ComponentContext context) throws InterruptedException {
+        super.stop(context);
+
+        //Remove event listeners
+        EventService eventService = Framework.getService(EventService.class);
+        listenerDescriptors.forEach(eventService::removeEventListener);
+    }
+
     protected List<Consumer> getConsumers(PipeDescriptor descriptor) {
         List<Consumer> consumers = new ArrayList<>();
         List<LogConfigDescriptor.StreamDescriptor> streams = descriptor.consumer.streams;
-        streams.forEach(s -> { consumers.add(addLogConsumer(s.name, s.size));});
+        streams.forEach(s -> {
+            consumers.add(addLogConsumer(s.name, s.size));
+        });
         return consumers;
-    }
-
-    @Override
-    public void unregisterContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
-        // Logic to do when unregistering any contribution
     }
 
     @Override
@@ -86,6 +94,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
                 NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "pipes", descriptor.id);
                 List<Consumer> consumers = getConsumers(descriptor);
                 consumers.forEach(consumer -> {
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("Listening for %s event and sending it to %s",e, consumer.toString()));
+                    }
                     addEventPipe(e, pipeMetrics, descriptor.getFunction(), consumer);
                 });
 
@@ -99,6 +110,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         EventConsumer eventConsumer = new EventConsumer(function, consumer);
         eventConsumer.withMetrics(metricSet);
         EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer);
+        listenerDescriptors.add(listenerDescriptor);
         eventService.addEventListener(listenerDescriptor);
     }
 
