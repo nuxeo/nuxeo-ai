@@ -19,7 +19,7 @@
 package org.nuxeo.runtime.stream.pipes.types;
 
 /**
- * Does this object have a unique key?
+ * Does this object have a unique key used for partitioning?
  */
 public interface HasKey {
 

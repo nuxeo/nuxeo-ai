@@ -44,7 +44,7 @@ public class TestPipeDescriptor {
         PipeDescriptor.Supplier supplier = new PipeDescriptor.Supplier();
         descriptor.supplier = supplier;
         validate(descriptor, false, true, true);
-        supplier.events = new HashSet<>(Arrays.asList("bob"));
+        supplier.events = Arrays.asList("bob");
         validate(descriptor, false, false, true);
         PipeDescriptor.Consumer logConsumer = new PipeDescriptor.Consumer();
         descriptor.consumer = logConsumer;

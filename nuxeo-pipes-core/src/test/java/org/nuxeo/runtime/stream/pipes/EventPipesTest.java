@@ -30,6 +30,7 @@ import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isPicture;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import org.jetbrains.annotations.NotNull;
@@ -42,8 +43,11 @@ import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
+import org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction;
+import org.nuxeo.runtime.stream.pipes.pipes.PicturePipeFunction;
 import org.nuxeo.runtime.stream.pipes.services.PipelineService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -119,6 +123,17 @@ public class EventPipesTest {
                                                 e -> e
         );
         assertNull("It's not a picture", func.apply(event));
+    }
+
+    @Test
+    public void testFunctions() {
+
+        Event event = getTestEvent();
+        FilterFunction<Event, Record> func = new PicturePipeFunction();
+        assertNull("Its not a picture event", func.apply(event));
+        assertNotNull("Must turn an event into a record", func.transformation.apply(event));
+        func = new DocumentPipeFunction();
+        assertNotNull("It is a document", func.apply(event));
     }
 
     @Test
@@ -202,6 +217,8 @@ public class EventPipesTest {
     @NotNull
     protected Event getTestEvent() {
         DocumentModel aDoc = session.createDocumentModel("/", "My Doc", "File");
+        aDoc.addFacet("Publishable");
+        aDoc.addFacet("Versionable");
         EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), aDoc);
         Event event = evctx.newEvent("myDocEvent");
         event.setInline(true);

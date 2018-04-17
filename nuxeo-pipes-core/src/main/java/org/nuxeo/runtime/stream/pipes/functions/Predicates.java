@@ -28,12 +28,15 @@ import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 
 public class Predicates {
 
+    private Predicates() {
+    }
+
     public static Predicate<Event> event() {
-        return e -> e != null;
+        return Objects::nonNull;
     }
 
     public static Predicate<DocumentModel> doc() {
-        return d -> d != null;
+        return Objects::nonNull;
     }
 
     public static Predicate<Event> docEvent(Predicate<DocumentModel> doc) {
@@ -52,7 +55,7 @@ public class Predicates {
     }
 
     public static Predicate<DocumentModel> hasFacets(String... facets) {
-        return doc().and(d -> Arrays.asList(facets).stream().allMatch(f -> d.hasFacet(f)));
+        return doc().and(d -> Arrays.asList(facets).stream().allMatch(d::hasFacet));
     }
 
     public static Predicate<DocumentModel> isPicture() {

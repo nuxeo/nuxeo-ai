@@ -38,6 +38,9 @@ public class RecordUtil {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
+    private RecordUtil() {
+    }
+
     /**
      * Gets the DocumentModel from an Event.  Returns null if that's not possible
      */

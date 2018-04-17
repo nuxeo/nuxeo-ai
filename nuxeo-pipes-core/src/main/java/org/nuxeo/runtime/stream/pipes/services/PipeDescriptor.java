@@ -20,10 +20,7 @@ package org.nuxeo.runtime.stream.pipes.services;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.lang.StringUtils;
@@ -52,18 +49,15 @@ public class PipeDescriptor implements Serializable {
     protected Consumer consumer;
 
     @XObject("supplier")
-    public static class Supplier {
+    public static class Supplier implements Serializable {
 
-        public Set<String> events;
+        @XNodeList(value = "event", type = ArrayList.class, componentType = String.class)
+        public List<String> events = new ArrayList<>(0);
 
-        @XNodeList(value = "event", componentType = String.class, type = HashSet.class, nullByDefault = true)
-        public void setEvents(Set<String> events) {
-            this.events = events.isEmpty() ? Collections.emptySet() : events;
-        }
     }
 
     @XObject("consumer")
-    public static class Consumer {
+    public static class Consumer implements Serializable {
 
         @XNodeList(value = "stream", type = ArrayList.class, componentType = LogConfigDescriptor.StreamDescriptor.class)
         public List<LogConfigDescriptor.StreamDescriptor> streams = new ArrayList<>(0);
@@ -71,7 +65,7 @@ public class PipeDescriptor implements Serializable {
     }
 
     public void validate() {
-        StringBuffer errors = new StringBuffer();
+        StringBuilder errors = new StringBuilder();
 
         if (StringUtils.isBlank(id)) {
             errors.append("You must specify an id\n");

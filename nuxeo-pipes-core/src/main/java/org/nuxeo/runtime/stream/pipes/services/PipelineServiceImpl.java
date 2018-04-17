@@ -64,9 +64,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        this.configs.entrySet().forEach(pipeConfig -> {
-            addPipe(pipeConfig.getValue());
-        });
+        this.configs.entrySet().forEach(pipeConfig -> addPipe(pipeConfig.getValue()));
     }
 
     @Override
@@ -81,9 +79,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     protected List<Consumer> getConsumers(PipeDescriptor descriptor) {
         List<Consumer> consumers = new ArrayList<>();
         List<LogConfigDescriptor.StreamDescriptor> streams = descriptor.consumer.streams;
-        streams.forEach(s -> {
-            consumers.add(addLogConsumer(s.name, s.size));
-        });
+        streams.forEach(s -> consumers.add(addLogConsumer(s.name, s.size)));
         return consumers;
     }
 
@@ -91,7 +87,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void addPipe(PipeDescriptor descriptor) {
         if (descriptor != null && descriptor.enabled) {
             descriptor.supplier.events.forEach(e -> {
-                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "pipes", descriptor.id);
+                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", LOG_CONFIG, descriptor.id);
                 List<Consumer> consumers = getConsumers(descriptor);
                 consumers.forEach(consumer -> {
                     if (log.isDebugEnabled()) {

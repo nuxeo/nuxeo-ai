@@ -18,8 +18,6 @@
  */
 package org.nuxeo.ecm.core.blob;
 
-import java.util.Set;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

@@ -78,6 +78,10 @@ public class TestLogConsumer {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(1));
             assertNotNull(record.message());
         }
+
+        //Now check closing, it doesn't throw an error
+        manager.close();
+        logAppenderConsumer.getAppender();
     }
 
     @NotNull
