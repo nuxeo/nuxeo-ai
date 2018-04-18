@@ -20,15 +20,16 @@ package org.nuxeo.runtime.stream.pipes.services;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.PipesTestConfigFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.doc;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
-import static org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl.LOG_CONFIG;
 
 import java.time.Duration;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.PipesTestConfigFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
@@ -51,13 +52,14 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({PipesTestConfigFeature.class, PlatformFeature.class})
 @Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.runtime.stream.pipes.nuxeo-pipes",
         "org.nuxeo.runtime.stream.pipes.nuxeo-pipes:OSGI-INF/stream-pipes-test.xml"})
 public class TestLogConsumer {
 
     @Inject
     protected PipelineService pipeService;
+
     @Inject
     CoreSession session;
 
@@ -68,7 +70,7 @@ public class TestLogConsumer {
         assertNotNull(logAppenderConsumer.toString());
         FilterFunction<Event, Record> function = new FilterFunction(docEvent(doc()), new DocumentPipeFunction());
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(LOG_CONFIG);
+        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         try (LogTailer<Record> tailer = manager.createTailer("group", "test.log.consumer")) {
             assertEquals(null, tailer.read(Duration.ofSeconds(1)));
             Record applied = function.apply(getTestEvent());

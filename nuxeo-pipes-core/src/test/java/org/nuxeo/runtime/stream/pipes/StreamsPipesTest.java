@@ -21,7 +21,7 @@ package org.nuxeo.runtime.stream.pipes;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl.LOG_CONFIG;
+import static org.nuxeo.PipesTestConfigFeature.PIPES_TEST_CONFIG;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -32,6 +32,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.PipesTestConfigFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
@@ -53,7 +54,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({PipesTestConfigFeature.class, PlatformFeature.class})
 @Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.runtime.stream.pipes.nuxeo-pipes",
         "org.nuxeo.runtime.stream.pipes.nuxeo-pipes:OSGI-INF/stream-pipes-test.xml"})
 public class StreamsPipesTest {
@@ -68,7 +69,7 @@ public class StreamsPipesTest {
     public void testPipes() throws Exception {
 
         Event event = getTestEvent();
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(LOG_CONFIG);
+        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         try (LogTailer<Record> tailer = manager.createTailer("group", "text.out")) {
             assertEquals(null, tailer.read(Duration.ofSeconds(1)));
             eventService.fireEvent(event);

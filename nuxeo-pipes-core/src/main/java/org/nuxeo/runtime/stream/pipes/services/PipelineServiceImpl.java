@@ -46,7 +46,8 @@ import org.nuxeo.runtime.stream.pipes.events.EventConsumer;
 public class PipelineServiceImpl extends DefaultComponent implements PipelineService {
 
     public static final String ROUTE_AP = "pipes";
-    public static final String LOG_CONFIG = "pipes";
+    public static final String PIPES_CONFIG = "nuxeo.pipes.config.name";
+    private String pipeConfigName;
     private static final Log log = LogFactory.getLog(PipelineServiceImpl.class);
 
     protected final Map<String, PipeDescriptor> configs = new HashMap();
@@ -69,6 +70,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        pipeConfigName = Framework.getProperty(PIPES_CONFIG, "pipes");
         this.configs.entrySet().forEach(pipeConfig -> addPipe(pipeConfig.getValue()));
     }
 
@@ -92,11 +94,11 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void addPipe(PipeDescriptor descriptor) {
         if (descriptor != null && descriptor.enabled) {
             descriptor.supplier.events.forEach(e -> {
-                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", LOG_CONFIG, descriptor.id);
+                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", pipeConfigName, descriptor.id);
                 List<Consumer> consumers = getConsumers(descriptor);
                 consumers.forEach(consumer -> {
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("Listening for %s event and sending it to %s",e, consumer.toString()));
+                        log.debug(String.format("Listening for %s event and sending it to %s", e, consumer.toString()));
                     }
                     addEventPipe(e, pipeMetrics, descriptor.getFunction(), consumer);
                 });
@@ -116,7 +118,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     }
 
     protected LogAppenderConsumer addLogConsumer(String logName, int size) {
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(LOG_CONFIG);
+        LogManager manager = Framework.getService(StreamService.class).getLogManager(pipeConfigName);
         manager.createIfNotExists(logName, size);
         LogAppender<Record> appender = manager.getAppender(logName);
         return new LogAppenderConsumer(appender);

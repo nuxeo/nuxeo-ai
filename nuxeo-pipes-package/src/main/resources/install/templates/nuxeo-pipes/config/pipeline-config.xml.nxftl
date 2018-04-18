@@ -3,11 +3,11 @@
   <require>org.nuxeo.runtime.stream.service</require>
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
 <#if "${kafka.enabled}" == "true">
-    <logConfig name="pipes" type="kafka">
+    <logConfig name="${nuxeo.pipes.config.name}" type="kafka">
       <option name="kafkaConfig">default</option>
     </logConfig>
 <#else>
-    <logConfig name="pipes" type="chronicle">
+    <logConfig name="${nuxeo.pipes.config.name}" type="chronicle">
       <option name="retention">${nuxeo.stream.chronicle.retention.duration}</option>
     </logConfig>
 </#if>

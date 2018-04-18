@@ -3,3 +3,5 @@
 
 # Set list of templates to include, comma separated values.
 nuxeo.template.includes=common
+
+nuxeo.pipes.config.name=pipes

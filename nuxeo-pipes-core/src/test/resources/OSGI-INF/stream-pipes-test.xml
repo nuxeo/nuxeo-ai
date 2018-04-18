@@ -4,7 +4,7 @@
   <require>org.nuxeo.runtime.stream.pipes.Pipeline</require>
 
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
-    <logConfig name="pipes">
+    <logConfig name="test_log_pipes">
       <option name="retention">3h</option>
     </logConfig>
   </extension>
@@ -39,18 +39,15 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="basicProcessor" logConfig="pipes" defaultConcurrency="1" defaultPartitions="4"
+    <streamProcessor name="basicProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="4"
                      class="org.nuxeo.runtime.stream.pipes.PassThrough">
-      <stream name="i1:txt" partitions="1"/>
-      <stream name="o1:txt.pass"/>
-      <stream name="o2:txt.other"/>
       <option name="logIn">text</option>
       <option name="logOut">text.pass,text.other</option>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="testProcessor" logConfig="pipes" defaultConcurrency="1" defaultPartitions="4"
+    <streamProcessor name="testProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="4"
                      class="org.nuxeo.runtime.stream.pipes.SimpleFilterFunction">
       <option name="logIn">text.pass</option>
       <option name="logOut">text.out</option>
