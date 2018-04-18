@@ -28,4 +28,14 @@
     <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor$Supplier" />
   </extension-point>
 
+  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <pipe id="pipe.images" enabled="false" function="org.nuxeo.runtime.stream.pipes.pipes.PicturePipeFunction">
+      <supplier>
+        <event>pictureViewsGenerationDone</event>
+      </supplier>
+      <consumer>
+        <stream name="images" />
+      </consumer>
+    </pipe>
+  </extension>
 </component>

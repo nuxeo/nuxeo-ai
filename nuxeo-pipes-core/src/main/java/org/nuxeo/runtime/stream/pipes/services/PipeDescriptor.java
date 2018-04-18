@@ -34,7 +34,7 @@ import org.nuxeo.runtime.stream.LogConfigDescriptor;
 public class PipeDescriptor implements Serializable {
 
     @XNode("@enabled")
-    public Boolean enabled;
+    protected boolean enabled = true;
 
     @XNode("@id")
     protected String id;
@@ -83,6 +83,29 @@ public class PipeDescriptor implements Serializable {
             throw new NuxeoException(errors.toString());
         }
 
+    }
+
+    public void merge(PipeDescriptor other) {
+
+        if (!id.equals(other.id)) {
+            //These are not the same
+            return;
+        }
+        if (other.enabled != enabled) {
+            enabled = other.enabled;
+        }
+
+        if (other.function != null) {
+            function = other.function;
+        }
+
+        if (other.supplier != null && other.supplier.events != null && !other.supplier.events.isEmpty()) {
+            supplier.events = other.supplier.events;
+        }
+
+        if (other.consumer != null && other.consumer.streams != null && !other.consumer.streams.isEmpty()) {
+            consumer.streams = other.consumer.streams;
+        }
     }
 
     public Function getFunction() {

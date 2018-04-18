@@ -9,6 +9,22 @@
     </logConfig>
   </extension>
 
+  <!-- Turn on the picture view pipe -->
+  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <pipe id="pipe.images" enabled="true" />
+  </extension>
+
+  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <pipe id="pipe.doc" enabled="false" function="org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction">
+      <supplier>
+        <event>willNotBeUsed</event>
+      </supplier>
+      <consumer>
+        <stream name="willbemergedandlost" />
+      </consumer>
+    </pipe>
+  </extension>
+
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
     <pipe id="pipe.doc" enabled="true" function="org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction">
       <supplier>

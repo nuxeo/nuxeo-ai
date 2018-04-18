@@ -56,6 +56,11 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
         if (ROUTE_AP.equals(extensionPoint)) {
             PipeDescriptor descriptor = (PipeDescriptor) contribution;
+            PipeDescriptor original = this.configs.get(descriptor.id);
+            if (original != null) {
+                original.merge(descriptor);
+                descriptor = original;
+            }
             descriptor.validate();
             this.configs.put(descriptor.id, descriptor);
         }
