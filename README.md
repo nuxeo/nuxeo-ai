@@ -3,7 +3,7 @@ Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo S
 
 Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
 
-##Features
+## Features
  * Enables sending custom events to a nuxeo stream.
  * Provides a `FunctionStreamProcessorTopology` to act on a stream using a Java `Function<T, R>`.
  * Provides 4 customizable document streams:
@@ -21,8 +21,8 @@ These streams are *disabled by default* but can be enabled by id. For example
   </extension>
   ```
     
-##Customization
-####Events
+## Customization
+#### Events
 Using an Nuxeo extension you can dynamically register a pipeline for any custom event.  
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
 ```
@@ -41,14 +41,14 @@ For example to send `MY_EVENT` to a stream called `mystream` you would use the f
  _You must implement a function to turn the event into a stream `Record` and specify it in the `function` parameter._
 
 
-####Functions
+#### Functions
 Actions on streams or events are based on the standard Java `Function<T, R>` interface.  To send an event to a stream you would need to implement the `Function<Event, Record>` interface. `Record` is the type used for items in a nuxeo-stream. 
 For examples, look at `DocumentPipeFunction` and its helper class `DocEventToStream`.
 
 These is also a `FilterFunction` that first tests a `Predicate` before applying the function.  Predicates can be built with the help of the `Predicates` class.
  To create a predicate for _only document events with documents which are not system documents or proxies and aren't "Folderish"_ you would use this predicate: `docEvent(notSystem().and(d -> !d.hasFacet("Folderish"))`.
 
-####Stream processing
+#### Stream processing
 Stream processing is achieved using a computation stream pattern that enables you to compose producers/consumers into a complex topology.
 
 To use a custom processor, create a class that implements `FunctionStreamProcessorTopology` and specify it in the `class` parameter as shown below.
