@@ -64,11 +64,11 @@ public class TestLogConsumer {
     CoreSession session;
 
     @Test
-    public void TestLogConsumer() throws Exception {
+    public void LogConsumerTest() throws Exception {
         PipelineServiceImpl pipeServiceImpl = (PipelineServiceImpl) pipeService;
         LogAppenderConsumer logAppenderConsumer = pipeServiceImpl.addLogConsumer("test.log.consumer", 1);
         assertNotNull(logAppenderConsumer.toString());
-        FilterFunction<Event, Record> function = new FilterFunction(docEvent(doc()), new DocumentPipeFunction());
+        FilterFunction<Event, Record> function = new FilterFunction<>(docEvent(doc()), new DocumentPipeFunction());
 
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         try (LogTailer<Record> tailer = manager.createTailer("group", "test.log.consumer")) {

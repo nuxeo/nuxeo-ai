@@ -33,12 +33,15 @@ import org.nuxeo.runtime.stream.LogConfigDescriptor;
 @XObject("pipe")
 public class PipeDescriptor implements Serializable {
 
+    private static final long serialVersionUID = 3130851930734019165L;
+
     @XNode("@enabled")
     protected boolean enabled = true;
 
     @XNode("@id")
     protected String id;
 
+    @SuppressWarnings("rawtypes")
     @XNode("@function")
     protected Class<? extends Function> function;
 
@@ -108,6 +111,7 @@ public class PipeDescriptor implements Serializable {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     public Function getFunction() {
         if (function != null) {
             try {

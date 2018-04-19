@@ -45,8 +45,7 @@ public class Predicates {
             DocumentEventContext docCtx = (DocumentEventContext) e.getContext();
             if (docCtx == null) return false;
             DocumentModel d = docCtx.getSourceDocument();
-            if (d == null) return false;
-            return doc.test(d);
+            return d != null && doc.test(d);
         });
     }
 
@@ -55,7 +54,7 @@ public class Predicates {
     }
 
     public static Predicate<DocumentModel> hasFacets(String... facets) {
-        return doc().and(d -> Arrays.asList(facets).stream().allMatch(d::hasFacet));
+        return doc().and(d -> Arrays.stream(facets).allMatch(d::hasFacet));
     }
 
     public static Predicate<DocumentModel> isPicture() {

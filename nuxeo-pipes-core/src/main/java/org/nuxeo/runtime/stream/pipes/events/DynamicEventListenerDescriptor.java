@@ -18,7 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -38,7 +38,7 @@ public class DynamicEventListenerDescriptor extends EventListenerDescriptor {
         this.name = name;
         this.isPostCommit = isPostCommit;
         this.isAsync = isAsync;
-        this.events = new HashSet<>(Arrays.asList(eventName));
+        this.events = new HashSet<>(Collections.singletonList(eventName));
         this.inLineListener = eventListener;
     }
 

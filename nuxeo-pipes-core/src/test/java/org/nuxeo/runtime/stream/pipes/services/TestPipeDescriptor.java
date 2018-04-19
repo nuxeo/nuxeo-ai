@@ -22,8 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.function.UnaryOperator;
 
 import org.junit.Test;
@@ -44,12 +43,12 @@ public class TestPipeDescriptor {
         PipeDescriptor.Supplier supplier = new PipeDescriptor.Supplier();
         descriptor.supplier = supplier;
         validate(descriptor, false, true, true);
-        supplier.events = Arrays.asList("bob");
+        supplier.events = Collections.singletonList("bob");
         validate(descriptor, false, false, true);
         PipeDescriptor.Consumer logConsumer = new PipeDescriptor.Consumer();
         descriptor.consumer = logConsumer;
         validate(descriptor, false, false, true);
-        logConsumer.streams = Arrays.asList(new LogConfigDescriptor.StreamDescriptor());
+        logConsumer.streams = Collections.singletonList(new LogConfigDescriptor.StreamDescriptor());
         descriptor.consumer = logConsumer;
         descriptor.validate(); //now valid
     }

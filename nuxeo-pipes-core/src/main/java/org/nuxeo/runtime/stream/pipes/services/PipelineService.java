@@ -21,6 +21,7 @@ package org.nuxeo.runtime.stream.pipes.services;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 
 public interface PipelineService {
@@ -38,6 +39,6 @@ public interface PipelineService {
      * @param function  A function to apply
      * @param consumer  A consumer to consume the result
      */
-    void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function function, Consumer consumer);
+    <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, R> function, Consumer<R> consumer);
 
 }

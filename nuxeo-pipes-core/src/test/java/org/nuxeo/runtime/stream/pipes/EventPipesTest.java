@@ -28,10 +28,9 @@ import static org.nuxeo.runtime.stream.pipes.functions.Predicates.hasFacets;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isNotProxy;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isPicture;
 
-import java.util.Arrays;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -77,51 +76,36 @@ public class EventPipesTest {
         Event event = getTestEvent();
         NuxeoMetricSet funcMetric = new NuxeoMetricSet("nuxeo", "func", "test");
 
-        FilterFunction func = new FilterFunction<Event, Event>(event(), e -> e);
+        FilterFunction<Event, Event> func = new FilterFunction<>(event(), e -> e);
         func.withMetrics(funcMetric);
         assertMetric(0, "nuxeo.func.test.supplied", funcMetric);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
         assertMetric(1, "nuxeo.func.test.supplied", funcMetric);
         assertMetric(1, "nuxeo.func.test.transformed", funcMetric);
 
-        func = new FilterFunction<Event, Event>(event().and(e -> e.isPublic()), e -> e);
+        func = new FilterFunction<>(event().and(Event::isPublic), e -> e);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
 
-        func = new FilterFunction<Event, Event>(event().and(e -> !e.isImmediate()), e -> e);
+        func = new FilterFunction<>(event().and(e -> !e.isImmediate()), e -> e);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
 
-        func = new FilterFunction<Event, Event>(docEvent(doc()), e -> e);
+        func = new FilterFunction<>(docEvent(doc()), e -> e);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
 
-        func = new FilterFunction<Event, Event>(docEvent(isNotProxy()
-                                                                 .and(d -> d.getName().equals("My Doc"))),
-                                                e -> e
-        );
+        func = new FilterFunction<>(docEvent(isNotProxy().and(d -> d.getName().equals("My Doc"))), e -> e);
         assertEquals("Filter passed so must be My Doc", event, func.apply(event));
-        func = new FilterFunction<Event, Event>(docEvent(isNotProxy()
-                                                                 .and(hasFacets("Versionable", "Commentable"))),
-                                                e -> e
-        );
+        func = new FilterFunction<>(docEvent(isNotProxy().and(hasFacets("Versionable", "Commentable"))), e -> e);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
 
-        func = new FilterFunction<Event, Event>(docEvent(isNotProxy()
-                                                                 .and(hasFacets("Folderish"))),
-                                                e -> e
-        );
+        func = new FilterFunction<>(docEvent(isNotProxy().and(hasFacets("Folderish"))), e -> e);
         func.withMetrics(funcMetric);
         assertMetric(0, "nuxeo.func.test.filterFailed", funcMetric);
         assertNull("Must not have folderish", func.apply(event));
         assertMetric(1, "nuxeo.func.test.filterFailed", funcMetric);
-        func = new FilterFunction<Event, Event>(docEvent(isNotProxy()
-                                                                 .and(hasFacets("Folderish").negate())),
-                                                e -> e
-        );
+        func = new FilterFunction<>(docEvent(isNotProxy().and(hasFacets("Folderish").negate())), e -> e);
         assertEquals("Filter passed so must not have folderish", event, func.apply(event));
 
-        func = new FilterFunction<Event, Event>(docEvent(isNotProxy()
-                                                                 .and(isPicture())),
-                                                e -> e
-        );
+        func = new FilterFunction<>(docEvent(isNotProxy().and(isPicture())), e -> e);
         assertNull("It's not a picture", func.apply(event));
     }
 
@@ -138,9 +122,9 @@ public class EventPipesTest {
 
     @Test
     public void testEventPipes() throws InterruptedException {
-        StringBuffer buffy = new StringBuffer();
+        StringBuilder buffy = new StringBuilder();
         NuxeoMetricSet nuxeoMetricSet = new NuxeoMetricSet("nuxeo", "pipes", "test");
-        FilterFunction func = new FilterFunction<Event, String>(event(), Event::getName);
+        FilterFunction<Event, String> func = new FilterFunction<>(event(), Event::getName);
         pipeService.addEventPipe("myDocEvent", nuxeoMetricSet, func, buffy::append);
         assertMetric(0, "nuxeo.pipes.test.events", nuxeoMetricSet);
         eventService.fireEvent(getTestEvent());
@@ -152,38 +136,19 @@ public class EventPipesTest {
 
     @Test
     public void TestBasicFunction() {
-        FilterFunction func = new FilterFunction<String, String>(in -> {
-            return true;
-        }, t -> t);
+        FilterFunction<String, String> func = new FilterFunction<>(in -> true, t -> t);
         assertEquals("Hello World", func.apply("Hello World"));
 
-        func = new FilterFunction<String, String>(in -> {
-            return true;
-        }, t -> t.toLowerCase());
+        func = new FilterFunction<>(in -> true, String::toLowerCase);
         assertEquals("hello", func.apply("Hello"));
 
-        final StringBuffer buffer = new StringBuffer();
-        func = new FilterFunction<String, String>(in -> {
-            return in.toLowerCase().startsWith("h");
-        },
-                                                  t -> {
-                                                      return t;
-                                                  }
-        );
+        func = new FilterFunction<>(in -> in.toLowerCase().startsWith("h"), t -> t);
 
-        long matched = Arrays.asList("hello  ", "I", "am", "Happy  ", "hopefully  ").stream().filter(func.filter)
-                             .count();
+        long matched = Stream.of("hello  ", "I", "am", "Happy  ", "hopefully  ").filter(func.filter).count();
         assertEquals(3, matched);
 
         StringBuffer ints = new StringBuffer();
-        final FilterFunction<Integer, Integer> function = new FilterFunction<Integer, Integer>
-                (in -> {
-                    return in % 2 == 0;
-                },
-                 in -> {
-                     return in * in;
-                 }
-                );
+        final FilterFunction<Integer, Integer> function = new FilterFunction<>(in -> in % 2 == 0, in -> in * in);
 
         IntStream.of(2, 3, 6, 1, 4).forEach(i -> {
             Integer applied = function.apply(i);
@@ -196,11 +161,7 @@ public class EventPipesTest {
 
     @Test
     public void TestClassCast() {
-        FilterFunction ff = new FilterFunction<String, Integer>(in -> {
-            return true;
-        },
-                                                                null
-        );
+        FilterFunction<String, Integer> ff = new FilterFunction<>(in -> true, null);
         assertNull(ff.apply("Hello"));
     }
 
@@ -208,7 +169,8 @@ public class EventPipesTest {
         assertEquals(expected, getMetricValue(metricSet, metric));
     }
 
-    protected long getMetricValue(NuxeoMetricSet metricSet, String metric) {
+    @SuppressWarnings("rawtypes")
+	protected long getMetricValue(NuxeoMetricSet metricSet, String metric) {
         Map<String, Metric> metricMap = metricSet.getMetrics();
         Gauge g = (Gauge) metricMap.get(metric);
         return (Long) g.getValue();

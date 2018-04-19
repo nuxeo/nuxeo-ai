@@ -21,8 +21,6 @@ package org.nuxeo.runtime.stream.pipes.pipes;
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isPicture;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.notSystem;
-
 import java.util.function.Function;
 
 import org.nuxeo.ecm.core.event.Event;

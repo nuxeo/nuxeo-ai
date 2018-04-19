@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
 import org.nuxeo.lib.stream.computation.Record;
@@ -47,11 +48,11 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
 
     public static final String ROUTE_AP = "pipes";
     public static final String PIPES_CONFIG = "nuxeo.pipes.config.name";
-    private String pipeConfigName;
     private static final Log log = LogFactory.getLog(PipelineServiceImpl.class);
 
-    protected final Map<String, PipeDescriptor> configs = new HashMap();
-    protected final List<EventListenerDescriptor> listenerDescriptors = new ArrayList();
+    private String pipeConfigName;
+    protected final Map<String, PipeDescriptor> configs = new HashMap<>();
+    protected final List<EventListenerDescriptor> listenerDescriptors = new ArrayList<>();
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -71,7 +72,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void start(ComponentContext context) {
         super.start(context);
         pipeConfigName = Framework.getProperty(PIPES_CONFIG, "pipes");
-        this.configs.entrySet().forEach(pipeConfig -> addPipe(pipeConfig.getValue()));
+        this.configs.forEach((key, value) -> addPipe(value));
     }
 
     @Override
@@ -83,19 +84,20 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         listenerDescriptors.forEach(eventService::removeEventListener);
     }
 
-    protected List<Consumer> getConsumers(PipeDescriptor descriptor) {
-        List<Consumer> consumers = new ArrayList<>();
+    protected List<Consumer<Record>> getConsumers(PipeDescriptor descriptor) {
+        List<Consumer<Record>> consumers = new ArrayList<>();
         List<LogConfigDescriptor.StreamDescriptor> streams = descriptor.consumer.streams;
         streams.forEach(s -> consumers.add(addLogConsumer(s.name, s.size)));
         return consumers;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void addPipe(PipeDescriptor descriptor) {
         if (descriptor != null && descriptor.enabled) {
             descriptor.supplier.events.forEach(e -> {
                 NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", pipeConfigName, descriptor.id);
-                List<Consumer> consumers = getConsumers(descriptor);
+                List<Consumer<Record>> consumers = getConsumers(descriptor);
                 consumers.forEach(consumer -> {
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Listening for %s event and sending it to %s", e, consumer.toString()));
@@ -108,9 +110,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     }
 
     @Override
-    public void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function function, Consumer consumer) {
+    public <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, R> function, Consumer<R> consumer) {
         EventService eventService = Framework.getService(EventService.class);
-        EventConsumer eventConsumer = new EventConsumer(function, consumer);
+        EventConsumer<R> eventConsumer = new EventConsumer<>(function, consumer);
         eventConsumer.withMetrics(metricSet);
         EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer);
         listenerDescriptors.add(listenerDescriptor);

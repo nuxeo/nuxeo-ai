@@ -22,6 +22,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.PipesTestConfigFeature.PIPES_TEST_CONFIG;
+import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.getStreamsList;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -92,28 +93,28 @@ public class StreamsPipesTest {
     }
 
     @Test
-    public void testStreamsList() throws Exception {
+    public void testStreamsList() {
         FunctionStreamProcessor processor = new FunctionStreamProcessor();
         try {
-            processor.getStreamsList(Collections.emptyMap());
+            getStreamsList(Collections.emptyMap());
             assertTrue("The call should have failed", false);
         } catch (IllegalArgumentException ignored) {
         }
 
         Map<String, String> options = new HashMap<>();
-        options.put(processor.LOG_IN, "bob");
-        List<String> streams = processor.getStreamsList(options);
+        options.put(FunctionStreamProcessor.LOG_IN, "bob");
+        List<String> streams = getStreamsList(options);
         assertEquals(1, streams.size());
         assertEquals("i1:bob", streams.get(0));
 
-        options.put(processor.LOG_OUT, "hope");
-        streams = processor.getStreamsList(options);
+        options.put(FunctionStreamProcessor.LOG_OUT, "hope");
+        streams = getStreamsList(options);
         assertNotNull(streams);
         assertEquals("i1:bob", streams.get(0));
         assertEquals("o1:hope", streams.get(1));
 
-        options.put(processor.LOG_OUT, "hope,nope,rope");
-        streams = processor.getStreamsList(options);
+        options.put(FunctionStreamProcessor.LOG_OUT, "hope,nope,rope");
+        streams = getStreamsList(options);
         assertNotNull(streams);
         assertEquals("o1:hope", streams.get(1));
         assertEquals("o2:nope", streams.get(2));

@@ -65,7 +65,7 @@ public class FunctionStreamProcessor {
     }
 
     public Topology getTopology(Function<Record, Record> function, Map<String, String> options) {
-        List streams = getStreamsList(options);
+        List<String> streams = getStreamsList(options);
         String computationName = "func_" + String.join(".", streams);
         NuxeoMetricSet metrics = new NuxeoMetricSet("nuxeo", "pipes", "stream", computationName);
         if (function instanceof MetricsProducer) {
@@ -84,7 +84,7 @@ public class FunctionStreamProcessor {
      */
     public static class FunctionComputation extends AbstractComputation {
 
-        private Function<Record, Record> function;
+        private final Function<Record, Record> function;
 
         public FunctionComputation(int outputStreams, String name, Function<Record, Record> function) {
 
