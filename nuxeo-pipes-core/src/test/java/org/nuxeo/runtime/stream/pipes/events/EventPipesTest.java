@@ -16,8 +16,10 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.runtime.stream.pipes;
+package org.nuxeo.runtime.stream.pipes.events;
 
+import static java.util.Collections.singletonList;
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -28,15 +30,24 @@ import static org.nuxeo.runtime.stream.pipes.functions.Predicates.hasFacets;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isNotProxy;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isPicture;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelFactory;
+import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
@@ -48,6 +59,7 @@ import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
 import org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction;
 import org.nuxeo.runtime.stream.pipes.pipes.PicturePipeFunction;
 import org.nuxeo.runtime.stream.pipes.services.PipelineService;
+import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -61,6 +73,8 @@ import com.google.inject.Inject;
 @Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.runtime.stream.pipes.nuxeo-pipes"})
 public class EventPipesTest {
 
+    public static final String TEST_MIME_TYPE = "text/plain";
+
     @Inject
     CoreSession session;
 
@@ -71,9 +85,9 @@ public class EventPipesTest {
     EventService eventService;
 
     @Test
-    public void testFilterFunctions() {
+    public void testFilterFunctions() throws Exception {
 
-        Event event = getTestEvent();
+        Event event = getTestEvent(session);
         NuxeoMetricSet funcMetric = new NuxeoMetricSet("nuxeo", "func", "test");
 
         FilterFunction<Event, Event> func = new FilterFunction<>(event(), e -> e);
@@ -110,24 +124,26 @@ public class EventPipesTest {
     }
 
     @Test
-    public void testFunctions() {
+    public void testFunctions() throws Exception {
 
-        Event event = getTestEvent();
-        FilterFunction<Event, Record> func = new PicturePipeFunction();
+        Event event = getTestEvent(session);
+        FilterFunction<Event, Collection<Record>> func = new PicturePipeFunction();
         assertNull("Its not a picture event", func.apply(event));
-        assertNotNull("Must turn an event into a record", func.transformation.apply(event));
+        Collection<Record> applied = func.transformation.apply(event);
+        assertTrue("Must turn an event into a record", applied.size() == 1);
         func = new DocumentPipeFunction();
-        assertNotNull("It is a document", func.apply(event));
+        applied = func.apply(event);
+        assertTrue("It is a document", applied.size() == 1);
     }
 
     @Test
-    public void testEventPipes() throws InterruptedException {
+    public void testEventPipes() throws Exception {
         StringBuilder buffy = new StringBuilder();
         NuxeoMetricSet nuxeoMetricSet = new NuxeoMetricSet("nuxeo", "pipes", "test");
-        FilterFunction<Event, String> func = new FilterFunction<>(event(), Event::getName);
+        FilterFunction<Event, Collection<String>> func = new FilterFunction<>(event(), f -> singletonList(f.getName()));
         pipeService.addEventPipe("myDocEvent", nuxeoMetricSet, func, buffy::append);
         assertMetric(0, "nuxeo.pipes.test.events", nuxeoMetricSet);
-        eventService.fireEvent(getTestEvent());
+        eventService.fireEvent(getTestEvent(session));
         eventService.waitForAsyncCompletion();
         assertEquals("myDocEvent", buffy.toString());
         assertMetric(1, "nuxeo.pipes.test.consumed", nuxeoMetricSet);
@@ -160,6 +176,56 @@ public class EventPipesTest {
     }
 
     @Test
+    public void TestDocEventToStream() throws Exception {
+        DocEventToStream doc2stream = new DocEventToStream();
+        Collection<BlobTextStream> result =
+                doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File")));
+        assertNotNull(result);
+        assertEquals("Nothing in the test event to serialize", 0, result.size());
+
+        Event testEvent = getTestEvent(session);
+        result = doc2stream.apply(testEvent);
+        assertEquals("There is 1 blob", 1, result.size());
+
+        List<String> unknownProp = Collections.singletonList("dublinapple:core");
+
+        try {
+            new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
+            assertTrue("The call should have failed", false);
+        } catch (PropertyNotFoundException ignored) {
+        }
+
+        try {
+            new DocEventToStream(unknownProp, null, null).apply(testEvent);
+            assertTrue("The call should have failed", false);
+        } catch (PropertyNotFoundException ignored) {
+        }
+
+        try {
+            new DocEventToStream(null, null, unknownProp).apply(testEvent);
+            assertTrue("The call should have failed", false);
+        } catch (PropertyNotFoundException ignored) {
+        }
+
+        List<String> creator = Collections.singletonList("dc:creator");
+        doc2stream = new DocEventToStream(null, null, creator);
+        List<BlobTextStream> validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        assertEquals("There is 1 blob", 1, validResult.size());
+        assertEquals("Administrator", validResult.get(0).getProperties().get("dublincore").get("creator"));
+
+        doc2stream = new DocEventToStream(null, creator, null);
+        validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        assertEquals("There is 1 blob", 1, validResult.size());
+        assertEquals("dublincore:creator", validResult.get(0).getTextId());
+        assertEquals("Administrator", validResult.get(0).getText());
+
+        doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator, null);
+        validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        assertEquals("1 blob and 1 text", 2, validResult.size());
+
+    }
+
+    @Test
     public void TestClassCast() {
         FilterFunction<String, Integer> ff = new FilterFunction<>(in -> true, null);
         assertNull(ff.apply("Hello"));
@@ -170,18 +236,26 @@ public class EventPipesTest {
     }
 
     @SuppressWarnings("rawtypes")
-	protected long getMetricValue(NuxeoMetricSet metricSet, String metric) {
+    protected long getMetricValue(NuxeoMetricSet metricSet, String metric) {
         Map<String, Metric> metricMap = metricSet.getMetrics();
         Gauge g = (Gauge) metricMap.get(metric);
         return (Long) g.getValue();
     }
 
-    @NotNull
-    protected Event getTestEvent() {
-        DocumentModel aDoc = session.createDocumentModel("/", "My Doc", "File");
-        aDoc.addFacet("Publishable");
-        aDoc.addFacet("Versionable");
-        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), aDoc);
+    public static Event getTestEvent(CoreSession session) throws Exception {
+        DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
+        ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
+        doc.addFacet("Publishable");
+        doc.addFacet("Versionable");
+        Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
+        doc.setPropertyValue("file:content", (Serializable) blob);
+        return getTestEvent(session, doc);
+    }
+
+    public static Event getTestEvent(CoreSession session, DocumentModel doc) throws Exception {
+        doc = session.createDocument(doc);
+        session.save();
+        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), doc);
         Event event = evctx.newEvent("myDocEvent");
         event.setInline(true);
         assertNotNull(event);

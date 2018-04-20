@@ -1,0 +1,85 @@
+{
+  "type": "record",
+  "name": "BlobTextStream",
+  "namespace": "org.nuxeo.stream",
+  "doc": "Nuxeo stream schema",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "parentId",
+      "type": "string"
+    },
+    {
+      "name": "primaryType",
+      "type": "string"
+    },
+    {
+      "name": "facets",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "name": "textId",
+      "type": "string"
+    },
+    {
+      "name": "text",
+      "type": "string",
+      "logicalType": "clob"
+    },
+    {
+      "name": "blobId",
+      "type": "string"
+    },
+    {
+      "name": "blob",
+      "type": {
+        "type": "record",
+        "name": "blobmeta",
+        "fields":[
+          {
+            "name": "length",
+            "type": "long"
+          },
+          {
+            "name": "mimeType",
+            "type": "string"
+          },
+          {
+            "name": "providerId",
+            "type": "string"
+          },
+          {
+            "name": "key",
+            "type": "string"
+          },
+          {
+            "name": "digest",
+            "type": "string"
+          },
+          {
+            "name": "encoding",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "properties",
+      "type": {
+        "type": "map",
+        "values": {
+          "type": "map",
+          "values": "string"
+        }
+      }
+    }
+  ]
+}

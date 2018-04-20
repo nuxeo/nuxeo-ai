@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -31,13 +32,13 @@ import org.nuxeo.runtime.stream.pipes.functions.MetricsProducer;
  */
 public class EventConsumer<R> implements EventListener, MetricsProducer {
 
-    private final Function<Event, R> function;
+    private final Function<Event, Collection<R>> function;
     private final Consumer<R> consumer;
 
     private long handled = 0;
     private long consumed = 0;
 
-    public EventConsumer(Function<Event, R> function, Consumer<R> consumer) {
+    public EventConsumer(Function<Event, Collection<R>> function, Consumer<R> consumer) {
         this.function = function;
         this.consumer = consumer;
     }
@@ -45,10 +46,12 @@ public class EventConsumer<R> implements EventListener, MetricsProducer {
     @Override
     public void handleEvent(Event event) {
         handled++;
-        R applied = function.apply(event);
-        if (applied != null) {
-            consumer.accept(applied);
-            consumed++;
+        Collection<R> applied = function.apply(event);
+        if (applied != null && !applied.isEmpty()) {
+            applied.forEach(i -> {
+                consumer.accept(i);
+                consumed++;
+            });
         }
     }
 

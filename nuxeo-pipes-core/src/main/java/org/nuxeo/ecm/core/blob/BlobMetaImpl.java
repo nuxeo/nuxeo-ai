@@ -33,14 +33,17 @@ public class BlobMetaImpl extends BlobInfo implements BlobMeta {
     public BlobMetaImpl(@JsonProperty("providerId") String providerId,
                         @JsonProperty("mimeType") String mimeType,
                         @JsonProperty("key") String key,
+                        @JsonProperty("digest") String digest,
                         @JsonProperty("encoding") String encoding,
                         @JsonProperty("length") long length) {
         this.providerId = providerId;
         this.mimeType = mimeType;
         this.key = key;
+        this.digest = digest;
         this.encoding = encoding;
         this.length = length;
     }
+
 
     @Override
     public String getProviderId() {
@@ -60,6 +63,11 @@ public class BlobMetaImpl extends BlobInfo implements BlobMeta {
     @Override
     public String getEncoding() {
         return encoding;
+    }
+
+    @Override
+    public String getDigest() {
+        return digest;
     }
 
     @Override

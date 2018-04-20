@@ -16,7 +16,7 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo;
+package org.nuxeo.runtime.stream.pipes;
 
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl;

@@ -21,25 +21,19 @@ package org.nuxeo.runtime.stream.pipes;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.PipesTestConfigFeature.PIPES_TEST_CONFIG;
+import static org.nuxeo.runtime.stream.pipes.PipesTestConfigFeature.PIPES_TEST_CONFIG;
+import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.getTestEvent;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.getStreamsList;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.UUID;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nuxeo.PipesTestConfigFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
-import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -68,7 +62,7 @@ public class StreamsPipesTest {
     @Test
     public void testPipes() throws Exception {
 
-        Event event = getTestEvent();
+        Event event = getTestEvent(session);
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         try (LogTailer<Record> tailer = manager.createTailer("group", "text.out")) {
             assertEquals(null, tailer.read(Duration.ofSeconds(1)));
@@ -77,19 +71,6 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(1));
             assertNotNull(record.message());
         }
-    }
-
-    @NotNull
-    protected Event getTestEvent() {
-        DocumentModel aDoc = session.createDocumentModel("/", "My Doc", "File");
-        ((DocumentModelImpl) aDoc).setId(UUID.randomUUID().toString());
-        session.createDocument(aDoc);
-        session.save();
-        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), aDoc);
-        Event event = evctx.newEvent("myDocEvent");
-        event.setInline(true);
-        assertNotNull(event);
-        return event;
     }
 
     @Test

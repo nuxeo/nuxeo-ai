@@ -80,7 +80,7 @@ public class FunctionStreamProcessor {
     }
 
     public static String buildName(String simpleName, String streamIn, String streamOut) {
-        return streamIn+"_"+simpleName+"_"+streamOut;
+        return streamIn + "_" + simpleName + "_" + streamOut;
     }
 
     /**

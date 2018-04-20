@@ -22,26 +22,28 @@ import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.notSystem;
 
+import java.util.Collection;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.stream.pipes.events.DocEventToStream;
 import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
-import org.nuxeo.runtime.stream.pipes.types.DocStream;
+import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
  * A function that is only applied to documents
  */
-public class DocumentPipeFunction extends FilterFunction<Event, Record> {
+public class DocumentPipeFunction extends FilterFunction<Event, Collection<Record>> {
 
-    static final Function<Event, DocStream> func = new DocEventToStream();
+    static final Function<Event, Collection<BlobTextStream>> func = new DocEventToStream();
 
     public DocumentPipeFunction() {
         super(docEvent(notSystem().and(d -> !d.hasFacet("Folderish"))),
               e -> {
-                  DocStream info = func.apply(e);
-                  return toRecord(info.getKey(), info);
+                  Collection<BlobTextStream> items = func.apply(e);
+                  return items.stream().map(i -> toRecord(i.getKey(), i)).collect(Collectors.toList());
               }
         );
     }

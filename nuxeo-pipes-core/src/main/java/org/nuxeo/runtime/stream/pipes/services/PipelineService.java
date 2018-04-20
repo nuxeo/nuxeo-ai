@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.services;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,6 +40,6 @@ public interface PipelineService {
      * @param function  A function to apply
      * @param consumer  A consumer to consume the result
      */
-    <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, R> function, Consumer<R> consumer);
+    <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, Collection<R>> function, Consumer<R> consumer);
 
 }

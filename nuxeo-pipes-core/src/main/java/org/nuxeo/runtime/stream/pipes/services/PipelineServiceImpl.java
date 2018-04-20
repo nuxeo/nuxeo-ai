@@ -19,6 +19,7 @@
 package org.nuxeo.runtime.stream.pipes.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
@@ -44,6 +46,9 @@ import org.nuxeo.runtime.stream.pipes.consumers.LogAppenderConsumer;
 import org.nuxeo.runtime.stream.pipes.events.DynamicEventListenerDescriptor;
 import org.nuxeo.runtime.stream.pipes.events.EventConsumer;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
+
 public class PipelineServiceImpl extends DefaultComponent implements PipelineService {
 
     public static final String ROUTE_AP = "pipes";
@@ -53,6 +58,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     private String pipeConfigName;
     protected final Map<String, PipeDescriptor> configs = new HashMap<>();
     protected final List<EventListenerDescriptor> listenerDescriptors = new ArrayList<>();
+    protected final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -104,13 +110,14 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
                     }
                     addEventPipe(e, pipeMetrics, descriptor.getFunction(), consumer);
                 });
+                registry.registerAll(pipeMetrics);
 
             });
         }
     }
 
     @Override
-    public <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, R> function, Consumer<R> consumer) {
+    public <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, Collection<R>> function, Consumer<R> consumer) {
         EventService eventService = Framework.getService(EventService.class);
         EventConsumer<R> eventConsumer = new EventConsumer<>(function, consumer);
         eventConsumer.withMetrics(metricSet);

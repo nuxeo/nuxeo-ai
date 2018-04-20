@@ -20,62 +20,124 @@ package org.nuxeo.runtime.stream.pipes.events;
 
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toDoc;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.blob.BlobMeta;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.runtime.stream.pipes.types.DocStream;
+import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
- * Take a document event and turn it into a stream DocStream.
+ * Take a document event and turn it into a stream BlobTextStream.
  */
-public class DocEventToStream implements Function<Event, DocStream> {
+public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
+
+    private static final Log log = LogFactory.getLog(DocEventToStream.class);
+    protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
+    protected final List<String> blobProperties;
+    protected final List<String> textProperties;
+    protected final List<String> customProperties;
+
+    public DocEventToStream() {
+        this.blobProperties = DEFAULT_BLOB_PROPERTIES;
+        this.textProperties = Collections.emptyList();
+        this.customProperties = Collections.emptyList();
+    }
+
+    public DocEventToStream(List<String> blobProperties,
+                            List<String> textProperties,
+                            List<String> customProperties) {
+        this.blobProperties = blobProperties != null ? blobProperties : Collections.emptyList();
+        this.textProperties = textProperties != null ? textProperties : Collections.emptyList();
+        this.customProperties = customProperties != null ? customProperties : Collections.emptyList();
+    }
 
     @Override
-    public DocStream apply(Event event) {
+    public Collection<BlobTextStream> apply(Event event) {
         DocumentModel doc = toDoc(event);
         if (doc != null) {
-            return docSerialize(doc);
+            try {
+                return docSerialize(doc);
+            } catch (PropertyNotFoundException e) {
+                log.error("Unable serialize event document", e);
+                throw e;
+            }
         }
-        return null;
+        return Collections.emptyList();
     }
 
-    public DocStream docSerialize(DocumentModel doc) {
-        Map<String, BlobMeta> blobs = withBlobs(doc);
-        return withDoc(doc, blobs);
-    }
+    public Collection<BlobTextStream> docSerialize(DocumentModel doc) {
+        List<BlobTextStream> items = new ArrayList<>();
+        blobProperties.forEach(propName -> {
+            Property property = doc.getProperty(propName);
+            Blob blob = (Blob) property.getValue();
+            if (blob != null && blob instanceof ManagedBlob) {
+                BlobTextStream blobTextStream = getBlobTextStream(doc);
+                blobTextStream.setBlobId(propFullName(property));
+                blobTextStream.setBlob(getBlobInfo((ManagedBlob) blob));
+                items.add(blobTextStream);
+            }
+        });
 
-    /**
-     * Creates default properties with the DocumentModel
-     */
-    public DocStream withDoc(DocumentModel doc, Map<String, BlobMeta> blobs) {
-        DocStream docStream = new DocStream(doc.getId(), doc.getParentRef().toString(), doc.getType(), doc.getFacets());
-        docStream.getBlobs().putAll(blobs);
-        return docStream;
-    }
+        textProperties.forEach(propName -> {
+            Property property = doc.getProperty(propName);
+            String text = (String) property.getValue();
+            BlobTextStream blobTextStream = getBlobTextStream(doc);
+            blobTextStream.setTextId(propFullName(property));
+            blobTextStream.setText(text);
+            items.add(blobTextStream);
+        });
 
-    /**
-     * Adds blob information
-     */
-    protected Map<String, BlobMeta> withBlobs(DocumentModel doc) {
-        Map<String, BlobMeta> blobs = new HashMap<>();
-        Blob blob = (Blob) doc.getPropertyValue("file:content");
-        if (blob != null && blob instanceof ManagedBlob) {
-            blobs.put("default", getBlobInfo((ManagedBlob) blob));
+        if (items.isEmpty() && !customProperties.isEmpty()) {
+            items.add(getBlobTextStream(doc));
         }
-        return blobs;
+
+        return items;
+    }
+
+    public static String propFullName(Property property) {
+        return property.getSchema().getName()+":"+property.getField().getName().getLocalName();
+    }
+
+    public BlobTextStream getBlobTextStream(DocumentModel doc) {
+        BlobTextStream blobTextStream =
+                new BlobTextStream(doc.getId(), doc.getParentRef().toString(), doc.getType(), doc.getFacets());
+        Map<String, Map<String, String>> properties = blobTextStream.getProperties();
+
+        customProperties.forEach(propName -> {
+            Property property = doc.getProperty(propName);
+            String schema = property.getSchema().getName();
+            String prop = property.getField().getName().getLocalName();
+            Serializable val = property.getValue();
+            if (val != null) {
+                Map<String, String> schemaProps = properties.getOrDefault(schema, new HashMap<>());
+                schemaProps.put(prop, String.valueOf(val));
+                properties.put(schema, schemaProps);
+            }
+
+        });
+
+        return blobTextStream;
     }
 
     protected BlobMeta getBlobInfo(ManagedBlob blob) {
         //Hopefully, in the future ManagedBlob will implement BlobMeta
         return new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(), blob.getKey(),
-                                blob.getEncoding(), blob.getLength()
+                                blob.getDigest(), blob.getEncoding(), blob.getLength()
         );
     }
 

@@ -18,7 +18,6 @@
  */
 package org.nuxeo.runtime.stream.pipes.services;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -31,9 +30,7 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
 
 @XObject("pipe")
-public class PipeDescriptor implements Serializable {
-
-    private static final long serialVersionUID = 3130851930734019165L;
+public class PipeDescriptor {
 
     @XNode("@enabled")
     protected boolean enabled = true;
@@ -52,9 +49,7 @@ public class PipeDescriptor implements Serializable {
     protected Consumer consumer;
 
     @XObject("supplier")
-    public static class Supplier implements Serializable {
-
-        private static final long serialVersionUID = 5753710744951452189L;
+    public static class Supplier {
 
         @XNodeList(value = "event", type = ArrayList.class, componentType = String.class)
         public List<String> events = new ArrayList<>(0);
@@ -62,9 +57,7 @@ public class PipeDescriptor implements Serializable {
     }
 
     @XObject("consumer")
-    public static class Consumer implements Serializable {
-
-        private static final long serialVersionUID = -8606377338430071249L;
+    public static class Consumer {
 
         @XNodeList(value = "stream", type = ArrayList.class, componentType = LogConfigDescriptor.StreamDescriptor.class)
         public List<LogConfigDescriptor.StreamDescriptor> streams = new ArrayList<>(0);

@@ -37,6 +37,8 @@ public interface BlobMeta {
 
     String getEncoding();
 
+    String getDigest();
+
     /**
      * Gets the id of the {@link BlobProvider} managing this blob.
      *

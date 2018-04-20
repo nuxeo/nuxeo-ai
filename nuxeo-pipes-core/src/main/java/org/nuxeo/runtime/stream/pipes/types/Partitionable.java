@@ -21,7 +21,7 @@ package org.nuxeo.runtime.stream.pipes.types;
 /**
  * Does this object have a unique key used for partitioning?
  */
-public interface HasKey {
+public interface Partitionable {
 
     String getKey();
 }
