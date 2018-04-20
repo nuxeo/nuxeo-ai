@@ -69,6 +69,6 @@ public class DocStream implements HasKey {
     @Override
     @JsonIgnore
     public String getKey() {
-        return "P-" + parentId;
+        return id;
     }
 }

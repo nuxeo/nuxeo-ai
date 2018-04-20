@@ -38,7 +38,7 @@ For example to send `MY_EVENT` to a stream called `mystream` you would use the f
   </extension>
 ``` 
  
- _You must implement a function to turn the event into a stream `Record` and specify it in the `function` parameter._
+ Transforming an input Event into an output stream is done using a function specified by the `function` parameter. Functions are explained below.
 
 
 #### Functions
@@ -57,8 +57,8 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
 <streamProcessor name="basicProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="4"
                class="org.nuxeo.my.custom.StreamProcessor">
- <option name="logIn">mystream</option>
- <option name="logOut">mystream.out</option>
+ <option name="source">mystream</option>
+ <option name="sink">mystream.out</option>
 </streamProcessor>
 </extension>
 ```

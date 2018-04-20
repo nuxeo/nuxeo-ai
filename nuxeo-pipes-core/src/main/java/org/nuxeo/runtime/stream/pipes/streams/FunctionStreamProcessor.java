@@ -39,23 +39,21 @@ import org.nuxeo.runtime.stream.pipes.functions.MetricsProducer;
  */
 public class FunctionStreamProcessor {
 
-    public static final String LOG_IN = "logIn";
-    public static final String LOG_OUT = "logOut";
+    public static final String STREAM_IN = "source";
+    public static final String STREAM_OUT = "sink";
     private static final Log log = LogFactory.getLog(FunctionStreamProcessor.class);
 
     /**
      * A list of streams for this stream processor
      */
-    public static List<String> getStreamsList(Map<String, String> options) {
+    public static List<String> getStreamsList(String streamIn, String streamOut) {
         List<String> streams = new ArrayList<>(1);
-        String logIn = options.get(LOG_IN);
-        String logOut = options.get(LOG_OUT);
-        if (StringUtils.isBlank(logIn)) {
-            throw new IllegalArgumentException("You must define a logIn stream");
+        if (StringUtils.isBlank(streamIn)) {
+            throw new IllegalArgumentException("You must define a streamIn stream");
         }
-        streams.add("i1:" + logIn);
-        if (StringUtils.isNotBlank(logOut)) {
-            String[] outStreams = logOut.split(",");
+        streams.add("i1:" + streamIn);
+        if (StringUtils.isNotBlank(streamOut)) {
+            String[] outStreams = streamOut.split(",");
             int i = 1;
             for (String outStream : outStreams) {
                 streams.add("o" + i++ + ":" + outStream);
@@ -65,8 +63,10 @@ public class FunctionStreamProcessor {
     }
 
     public Topology getTopology(Function<Record, Record> function, Map<String, String> options) {
-        List<String> streams = getStreamsList(options);
-        String computationName = "func_" + String.join(".", streams);
+        String streamIn = options.get(STREAM_IN);
+        String streamOut = options.get(STREAM_OUT);
+        List<String> streams = getStreamsList(streamIn, streamOut);
+        String computationName = buildName(function.getClass().getSimpleName(), streamIn, streamOut);
         NuxeoMetricSet metrics = new NuxeoMetricSet("nuxeo", "pipes", "stream", computationName);
         if (function instanceof MetricsProducer) {
             ((MetricsProducer) function).withMetrics(metrics);
@@ -77,6 +77,10 @@ public class FunctionStreamProcessor {
                                                              computationName, function
                                ), streams)
                        .build();
+    }
+
+    public static String buildName(String simpleName, String streamIn, String streamOut) {
+        return streamIn+"_"+simpleName+"_"+streamOut;
     }
 
     /**

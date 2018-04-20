@@ -22,13 +22,12 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.PipesTestConfigFeature.PIPES_TEST_CONFIG;
+import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.getStreamsList;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -36,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.PipesTestConfigFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
@@ -47,7 +47,6 @@ import org.nuxeo.lib.stream.log.LogRecord;
 import org.nuxeo.lib.stream.log.LogTailer;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
-import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -83,6 +82,7 @@ public class StreamsPipesTest {
     @NotNull
     protected Event getTestEvent() {
         DocumentModel aDoc = session.createDocumentModel("/", "My Doc", "File");
+        ((DocumentModelImpl) aDoc).setId(UUID.randomUUID().toString());
         session.createDocument(aDoc);
         session.save();
         EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), aDoc);
@@ -94,30 +94,34 @@ public class StreamsPipesTest {
 
     @Test
     public void testStreamsList() {
-        FunctionStreamProcessor processor = new FunctionStreamProcessor();
         try {
-            getStreamsList(Collections.emptyMap());
+            getStreamsList(null, null);
             assertTrue("The call should have failed", false);
         } catch (IllegalArgumentException ignored) {
         }
 
-        Map<String, String> options = new HashMap<>();
-        options.put(FunctionStreamProcessor.LOG_IN, "bob");
-        List<String> streams = getStreamsList(options);
+        List<String> streams = getStreamsList("bob", null);
         assertEquals(1, streams.size());
         assertEquals("i1:bob", streams.get(0));
 
-        options.put(FunctionStreamProcessor.LOG_OUT, "hope");
-        streams = getStreamsList(options);
+        streams = getStreamsList("bob", "hope");
         assertNotNull(streams);
         assertEquals("i1:bob", streams.get(0));
         assertEquals("o1:hope", streams.get(1));
 
-        options.put(FunctionStreamProcessor.LOG_OUT, "hope,nope,rope");
-        streams = getStreamsList(options);
+        streams = getStreamsList("bob", "hope,nope,rope");
         assertNotNull(streams);
         assertEquals("o1:hope", streams.get(1));
         assertEquals("o2:nope", streams.get(2));
         assertEquals("o3:rope", streams.get(3));
+    }
+
+    @Test
+    public void testBuildName() {
+        assertEquals("Should not error even though nulls passed in",
+                     "null_aname_null", buildName("aname", null, null)
+        );
+        assertEquals("bob_king_hope", buildName("king", "bob", "hope"));
+        assertEquals("bob_king_hope,rope", buildName("king", "bob", "hope,rope"));
     }
 }

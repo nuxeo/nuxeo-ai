@@ -54,6 +54,8 @@ public class PipeDescriptor implements Serializable {
     @XObject("supplier")
     public static class Supplier implements Serializable {
 
+        private static final long serialVersionUID = 5753710744951452189L;
+
         @XNodeList(value = "event", type = ArrayList.class, componentType = String.class)
         public List<String> events = new ArrayList<>(0);
 
@@ -61,6 +63,8 @@ public class PipeDescriptor implements Serializable {
 
     @XObject("consumer")
     public static class Consumer implements Serializable {
+
+        private static final long serialVersionUID = -8606377338430071249L;
 
         @XNodeList(value = "stream", type = ArrayList.class, componentType = LogConfigDescriptor.StreamDescriptor.class)
         public List<LogConfigDescriptor.StreamDescriptor> streams = new ArrayList<>(0);

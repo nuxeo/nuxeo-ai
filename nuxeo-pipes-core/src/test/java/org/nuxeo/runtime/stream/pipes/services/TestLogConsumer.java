@@ -25,6 +25,7 @@ import static org.nuxeo.runtime.stream.pipes.functions.Predicates.doc;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
 
 import java.time.Duration;
+import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.PipesTestConfigFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
@@ -89,6 +91,9 @@ public class TestLogConsumer {
     @NotNull
     protected Event getTestEvent() {
         DocumentModel aDoc = session.createDocumentModel("/", "My Doc", "File");
+        ((DocumentModelImpl) aDoc).setId(UUID.randomUUID().toString());
+        session.createDocument(aDoc);
+        session.save();
         EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), aDoc);
         Event event = evctx.newEvent("myDocEvent");
         event.setInline(true);
