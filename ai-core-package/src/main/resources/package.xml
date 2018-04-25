@@ -1,8 +1,8 @@
 <!-- See documentation at http://doc.nuxeo.com/x/HgIz -->
-<package type="addon" name="nuxeo-pipes" version="@VERSION@">
-  <title>Nuxeo pipes</title>
+<package type="addon" name="ai-core" version="@VERSION@">
+  <title>Ai core</title>
   <description>
-    <p>Nuxeo pipelines using Nuxeo Streams</p>
+    <p>Put here an HTML description of your Nuxeo Package.</p>
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>

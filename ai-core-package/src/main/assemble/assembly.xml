@@ -1,4 +1,4 @@
-<project name="nuxeo-pipes" default="build" xmlns:nx="urn:nuxeo-build" xmlns:artifact="urn:nuxeo-artifact">
+<project name="ai-core" default="build" xmlns:nx="urn:nuxeo-build" xmlns:artifact="urn:nuxeo-artifact">
   <taskdef resource="org/nuxeo/build/antlib.xml" uri="urn:nuxeo-build"/>
   <taskdef resource="org/nuxeo/build/artifact/antlib.xml" uri="urn:nuxeo-artifact"/>
   <taskdef resource="net/sf/antcontrib/antlib.xml"/>
@@ -6,9 +6,9 @@
   <target name="build" description="Build Nuxeo Package">
     <property name="outdir" value="${maven.project.build.directory}"/>
     <!-- Include your artifacts in the graph adding your groupId to groupPrefixes -->
-    <artifact:nuxeo-expand includeTestScope="true" groupPrefixes="org.nuxeo,org.nuxeo.lib.pipes"/>
-    <artifact:print output="${outdir}/nuxeo-pipes-artifacts.properties" mode="sdk"/>
-    <artifact:print output="${outdir}/nuxeo-pipes-test-artifacts.properties" mode="sdk" scopes="test"/>
+    <artifact:nuxeo-expand includeTestScope="true" groupPrefixes="org.nuxeo,org.nuxeo.ai"/>
+    <artifact:print output="${outdir}/ai-core-artifacts.properties" mode="sdk"/>
+    <artifact:print output="${outdir}/ai-core-test-artifacts.properties" mode="sdk" scopes="test"/>
     <!-- Prints the graph for debugging purpose -->
     <artifact:print output="${outdir}/dependency-tree.log"/>
     <tstamp/>
@@ -24,8 +24,8 @@
         <filter token="DISTRIB_VERSION" value="${nuxeo.distribution.version}"/>
       </filterset>
     </copy>
-    <copy file="${outdir}/nuxeo-pipes-artifacts.properties" todir="${outdir}/marketplace/install"/>
-    <copy file="${outdir}/nuxeo-pipes-test-artifacts.properties" todir="${outdir}/marketplace/install"/>
+    <copy file="${outdir}/ai-core-artifacts.properties" todir="${outdir}/marketplace/install"/>
+    <copy file="${outdir}/ai-core-test-artifacts.properties" todir="${outdir}/marketplace/install"/>
 
     <!-- Base distribution NXR -->
     <copy todir="${outdir}">
@@ -40,6 +40,7 @@
           <artifact groupId="nuxeo-studio" />
           <!-- Include your artifacts using their groupId for instance -->
           <artifact groupId="org.nuxeo.lib.pipes*" />
+          <artifact groupId="org.nuxeo.ai*" />	  
         </includes>
         <excludes>
           <artifact groupId="${maven.project.groupId}" artifactId="${maven.project.artifactId}" version="${maven.project.version}" type="${maven.project.packaging}"/>
@@ -64,6 +65,7 @@
           <artifact groupId="nuxeo-studio" />
           <!-- Filter out your artifacts using their groupId for instance -->
           <artifact groupId="org.nuxeo.lib.pipes*"/>
+          <artifact groupId="org.nuxeo.ai*" />
         </excludes>
       </artifact:set>
     </copy>
@@ -110,9 +112,9 @@
     <var
       name="install.properties"
       value="${line.separator}
-  &lt;copy file=&quot;${package.root}/install/nuxeo-pipes-artifacts.properties&quot;${line.separator}
+  &lt;copy file=&quot;${package.root}/install/ai-core-artifacts.properties&quot;${line.separator}
     todir=&quot;${env.server.home}/sdk&quot; overwrite=&quot;true&quot; /&gt;${line.separator}
-  &lt;copy file=&quot;${package.root}/install/nuxeo-pipes-test-artifacts.properties&quot;${line.separator}
+  &lt;copy file=&quot;${package.root}/install/ai-core-test-artifacts.properties&quot;${line.separator}
     todir=&quot;${env.server.home}/sdk&quot; overwrite=&quot;true&quot; /&gt;"/>
 
     <var name="install.templates" value=""/>
@@ -123,7 +125,7 @@
           name="install.templates"
           value="${line.separator}
   &lt;copy dir=&quot;${package.root}/install/templates&quot; todir=&quot;${env.templates}&quot; overwrite=&quot;true&quot; /&gt;${line.separator}
-  &lt;config addtemplate=&quot;nuxeo-pipes&quot; /&gt;${line.separator}"/>
+  &lt;config addtemplate=&quot;ai-core&quot; /&gt;${line.separator}"/>
       </then>
     </if>
 
@@ -136,8 +138,8 @@
       </filterset>
     </copy>
 
-    <zip destfile="${outdir}/nuxeo-pipes-${maven.project.version}.zip" basedir="${outdir}/marketplace"/>
-    <artifact:attach file="${outdir}/nuxeo-pipes-${maven.project.version}.zip" type="zip"/>
+    <zip destfile="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" basedir="${outdir}/marketplace"/>
+    <artifact:attach file="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" type="zip"/>
   </target>
 
 </project>
