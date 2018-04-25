@@ -16,7 +16,7 @@
 
   <modules>
     <module>nuxeo-pipes-core</module>
-    <module>ai-core</module>
+    <module>nuxeo-ai-core</module>
     <module>ai-core-package</module>
   </modules>
 
@@ -77,7 +77,7 @@
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
-        <artifactId>ai-core</artifactId>
+        <artifactId>nuxeo-ai-core</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

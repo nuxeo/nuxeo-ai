@@ -1,6 +1,6 @@
 <!-- See documentation at http://doc.nuxeo.com/x/HgIz -->
-<package type="addon" name="ai-core" version="@VERSION@">
-  <title>Ai core</title>
+<package type="addon" name="nuxeo-ai-core" version="@VERSION@">
+  <title>Nuxeo Ai core</title>
   <description>
     <p>Put here an HTML description of your Nuxeo Package.</p>
   </description>

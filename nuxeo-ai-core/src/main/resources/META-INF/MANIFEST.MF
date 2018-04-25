@@ -6,4 +6,4 @@ Bundle-Version: 1.0.0
 Bundle-Name: ai-core
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.nuxeo.ai.ai-core;singleton=true
-Nuxeo-Component: OSGI-INF/ai-core-contrib.xml
+Nuxeo-Component: OSGI-INF/ai-core-contrib.xml,OSGI-INF/enrichment-contrib.xml

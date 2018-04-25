@@ -6,7 +6,7 @@
     <artifactId>ai-core-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>ai-core</artifactId>
+  <artifactId>nuxeo-ai-core</artifactId>
   <name>Ai core</name>
   <description>Core AI functionality</description>
 
@@ -19,6 +19,11 @@
       <groupId>org.nuxeo.ecm.automation</groupId>
       <artifactId>nuxeo-automation-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.runtime.stream.pipes</groupId>
+      <artifactId>nuxeo-pipes-core</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>
