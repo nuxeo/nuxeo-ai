@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.enrichment.test.bad" version="1.0">
+
+  <extension point="enrichment" target="org.nuxeo.ai.AIComponent">
+    <enrichment name="b1" class="org.nuxeo.ai.enrichment.BadEnrichmentService" />
+    <enrichment name="ok1" class="org.nuxeo.ai.enrichment.NoEnrichmentService" />
+    <enrichment name="errorService" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg"/>
+      </mimeTypes>
+      <option name="failures">3</option>
+      <option name="retries">5</option>
+    </enrichment>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
+    <logConfig name="test_log_pipes">
+      <option name="retention">3h</option>
+    </logConfig>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="basicProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">iny</option>
+      <option name="sink">outy</option>
+      <option name="enrichmentServiceName">IDONTEXIST</option>
+    </streamProcessor>
+  </extension>
+</component>

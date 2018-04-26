@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.enrichment.stream.test" version="1.0">
+
+  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
+    <logConfig name="test_log_pipes">
+      <option name="retention">3h</option>
+    </logConfig>
+  </extension>
+
+  <extension point="enrichment" target="org.nuxeo.ai.AIComponent">
+    <enrichment name="simpleTest" class="org.nuxeo.ai.enrichment.NoEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg"/>
+      </mimeTypes>
+      <encoding>UTF-8</encoding>
+      <option name="maxResults">50</option>
+      <option name="features">all</option>
+    </enrichment>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="basicProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">images.out</option>
+      <option name="enrichmentServiceName">simpleTest</option>
+    </streamProcessor>
+  </extension>
+</component>

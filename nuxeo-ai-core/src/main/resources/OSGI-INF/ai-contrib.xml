@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.AIComponent" version="1.0">
+
+  <implementation class="org.nuxeo.ai.AIComponent" />
+
+  <service>
+    <provide interface="org.nuxeo.ai.AIComponent" />
+  </service>
+
+  <extension-point name="enrichment">
+    <documentation>
+      Adds an enrichment service
+    </documentation>
+    <object class="org.nuxeo.ai.enrichment.EnrichmentDescriptor" />
+    <object class="org.nuxeo.ai.enrichment.EnrichmentDescriptor$MimeType" />
+  </extension-point>
+
+</component>
