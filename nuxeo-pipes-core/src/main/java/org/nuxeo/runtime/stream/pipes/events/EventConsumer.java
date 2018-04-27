@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
@@ -32,6 +34,7 @@ import org.nuxeo.runtime.stream.pipes.functions.MetricsProducer;
  */
 public class EventConsumer<R> implements EventListener, MetricsProducer {
 
+    private static final Log log = LogFactory.getLog(EventConsumer.class);
     private final Function<Event, Collection<R>> function;
     private final Consumer<R> consumer;
 
@@ -51,6 +54,9 @@ public class EventConsumer<R> implements EventListener, MetricsProducer {
             applied.forEach(i -> {
                 consumer.accept(i);
                 consumed++;
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Consumed event %s", event.getName()));
+                }
             });
         }
     }

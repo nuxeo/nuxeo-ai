@@ -102,7 +102,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void addPipe(PipeDescriptor descriptor) {
         if (descriptor != null && descriptor.enabled) {
             descriptor.supplier.events.forEach(e -> {
-                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", pipeConfigName, descriptor.id);
+                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", descriptor.id);
                 List<Consumer<Record>> consumers = getConsumers(descriptor);
                 consumers.forEach(consumer -> {
                     if (log.isDebugEnabled()) {

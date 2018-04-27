@@ -118,11 +118,17 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         @Override
         public void processRecord(ComputationContext context, String inputStreamName, Record record) {
+            if (log.isDebugEnabled()) {
+                log.debug("Processing record " + record);
+            }
             BlobTextStream blobTextStream = RecordUtil.fromRecord(record, BlobTextStream.class);
             Callable<EnrichmentResult> callable = getCallable(blobTextStream);
 
             if (callable != null) {
                 called++;
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextStream.getId()));
+                }
                 try {
                     EnrichmentResult result =
                             Failsafe.with(retryPolicy)
@@ -151,10 +157,13 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 } catch (Exception e) {
                     throw new NuxeoException(e);
                 }
-                context.askForCheckpoint();
             } else  {
                 unsupported++;
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextStream.getId()));
+                }
             }
+            context.askForCheckpoint();
 
 
         }
