@@ -24,6 +24,7 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 
 import java.time.Duration;
@@ -62,10 +63,8 @@ import com.google.inject.Inject;
  * Tests the overall AIComponent
  */
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.runtime.stream.pipes.nuxeo-pipes",
-        "org.nuxeo.ai.ai-core",
-        "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
+@Features({EnrichmentTestFeature.class, PlatformFeature.class})
+@Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
 public class TestAIComponent {
 
     @Inject
@@ -162,7 +161,7 @@ public class TestAIComponent {
                                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Gauge called = gauges.get(metricPrefix + "called");
         assertEquals(0L, called.getValue());
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("test_log_pipes");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         LogAppender<Record> appender = manager.getAppender("images");
         appender.append("mykey", record);
         Thread.sleep(750); //Wait for EnrichingStreamProcessor

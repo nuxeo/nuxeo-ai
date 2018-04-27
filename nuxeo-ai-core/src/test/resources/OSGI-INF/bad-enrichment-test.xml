@@ -13,14 +13,8 @@
     </enrichment>
   </extension>
 
-  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
-    <logConfig name="test_log_pipes">
-      <option name="retention">3h</option>
-    </logConfig>
-  </extension>
-
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="basicProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="basicProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">iny</option>
       <option name="sink">outy</option>
