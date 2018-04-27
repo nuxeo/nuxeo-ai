@@ -126,4 +126,20 @@ public class BlobTextStream implements Partitionable {
     public String getKey() {
         return getId();
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("BlobTextStream{");
+        sb.append("id='").append(id).append('\'');
+        sb.append(", parentId='").append(parentId).append('\'');
+        sb.append(", primaryType='").append(primaryType).append('\'');
+        sb.append(", facets=").append(facets);
+        sb.append(", textId='").append(textId).append('\'');
+        sb.append(", text='").append(text).append('\'');
+        sb.append(", blobId='").append(blobId).append('\'');
+        sb.append(", blob=").append(blob);
+        sb.append(", properties=").append(properties);
+        sb.append('}');
+        return sb.toString();
+    }
 }

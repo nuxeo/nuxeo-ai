@@ -73,7 +73,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             try {
                 return docSerialize(doc);
             } catch (PropertyNotFoundException e) {
-                log.error("Unable serialize event document", e);
+                log.error("Unable to serialize event document", e);
                 throw e;
             }
         }
@@ -96,10 +96,12 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         textProperties.forEach(propName -> {
             Property property = doc.getProperty(propName);
             String text = (String) property.getValue();
-            BlobTextStream blobTextStream = getBlobTextStream(doc);
-            blobTextStream.setTextId(propFullName(property));
-            blobTextStream.setText(text);
-            items.add(blobTextStream);
+            if (text != null) {
+                BlobTextStream blobTextStream = getBlobTextStream(doc);
+                blobTextStream.setTextId(propFullName(property));
+                blobTextStream.setText(text);
+                items.add(blobTextStream);
+            }
         });
 
         if (items.isEmpty() && !customProperties.isEmpty()) {

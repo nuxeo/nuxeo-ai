@@ -17,5 +17,6 @@
       <option name="maxResults">100</option>
     </enrichment>
     <enrichment name="e3" class="org.nuxeo.ai.enrichment.NoEnrichmentService" />
+    <enrichment name="logging" class="org.nuxeo.ai.enrichment.LoggingEnrichmentService" />
   </extension>
 </component>

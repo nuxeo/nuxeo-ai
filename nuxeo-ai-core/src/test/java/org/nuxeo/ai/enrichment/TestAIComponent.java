@@ -27,12 +27,10 @@ import static org.junit.Assert.fail;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AIComponent;
@@ -44,8 +42,6 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
 import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogManager;
-import org.nuxeo.lib.stream.log.LogRecord;
-import org.nuxeo.lib.stream.log.LogTailer;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.stream.StreamService;
@@ -73,7 +69,7 @@ public class TestAIComponent {
     @Test
     public void TestBasicComponent() throws Exception {
         assertNotNull(aiComponent);
-        assertEquals(3, aiComponent.getEnrichmentServices().size());
+        assertEquals(4, aiComponent.getEnrichmentServices().size());
         EnrichmentService service = aiComponent.getEnrichmentService("e1");
         assertEquals("e1", service.getName());
 
@@ -90,6 +86,9 @@ public class TestAIComponent {
         assertEquals(0, computation.called);
         assertEquals(0, computation.success);
         assertEquals("PDF isn't a supported mimetype", 1, computation.unsupported);
+
+        service = aiComponent.getEnrichmentService("logging");
+        service.enrich(blobTextStream);
     }
 
     @Test

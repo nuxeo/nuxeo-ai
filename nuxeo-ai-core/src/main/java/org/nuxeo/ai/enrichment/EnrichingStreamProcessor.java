@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AIComponent;
@@ -169,20 +170,18 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         protected Callable<EnrichmentResult> getCallable(BlobTextStream blobTextStream) {
-            Callable<EnrichmentResult> callable = null;
             BlobMeta blob = blobTextStream.getBlob();
             if (blob != null &&
                     service.supportsMimeType(blob.getMimeType()) &&
                     service.supportsSize(blob.getLength())) {
-                callable = () -> service.enrich(blobTextStream);
-            } else {
-                if (blob != null) {
+                return () -> service.enrich(blobTextStream);
+            } else if (blob != null) {
                     log.info(String.format("%s does not support a blob with these characteristics %s %s",
                                            metadata.name(), blob.getMimeType(), blob.getLength()
                     ));
-                }
+                    return null;
             }
-            return callable;
+            return () -> service.enrich(blobTextStream);
         }
 
         @Override
