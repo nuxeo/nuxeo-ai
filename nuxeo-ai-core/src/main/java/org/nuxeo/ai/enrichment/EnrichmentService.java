@@ -60,7 +60,7 @@ public interface EnrichmentService {
     /**
      * The main method for the service to implement.  Enriching the blob or text and returning a result.
      */
-    EnrichmentResult enrich(BlobTextStream blobTextStream);
+    EnrichmentMetadata enrich(BlobTextStream blobTextStream);
 
     /**
      * The retry policy for the service

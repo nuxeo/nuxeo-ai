@@ -23,7 +23,7 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 public class NoEnrichmentService extends AbstractEnrichmentService {
 
     @Override
-    public EnrichmentResult enrich(BlobTextStream blobTextStream) {
-        return new EnrichmentResult.Builder("NoEnrichment", modelVersion, "myDocId").build();
+    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
+        return new EnrichmentMetadata.Builder("NoEnrichment", modelVersion, "myDocId").build();
     }
 }

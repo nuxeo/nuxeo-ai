@@ -27,7 +27,7 @@ public class BadEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public EnrichmentResult enrich(BlobTextStream blobTextStream) {
+    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
         return null;
     }
 }

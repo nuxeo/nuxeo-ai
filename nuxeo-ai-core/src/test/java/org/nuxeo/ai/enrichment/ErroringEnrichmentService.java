@@ -47,10 +47,10 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public EnrichmentResult enrich(BlobTextStream blobTextStream) {
+    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
         if (++attempts <= numFailures) {
             throw exception;
         }
-        return new EnrichmentResult.Builder("ErroringEnricher", modelVersion, "myDocId").build();
+        return new EnrichmentMetadata.Builder("ErroringEnricher", modelVersion, "myDocId").build();
     }
 }

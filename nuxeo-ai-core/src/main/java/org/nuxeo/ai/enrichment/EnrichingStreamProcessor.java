@@ -122,7 +122,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 log.debug("Processing record " + record);
             }
             BlobTextStream blobTextStream = RecordUtil.fromRecord(record, BlobTextStream.class);
-            Callable<EnrichmentResult> callable = getCallable(blobTextStream);
+            Callable<EnrichmentMetadata> callable = getCallable(blobTextStream);
 
             if (callable != null) {
                 called++;
@@ -130,7 +130,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextStream.getId()));
                 }
                 try {
-                    EnrichmentResult result =
+                    EnrichmentMetadata result =
                             Failsafe.with(retryPolicy)
                                     .onSuccess(r -> {
                                         success++;
@@ -169,7 +169,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         }
 
-        protected Callable<EnrichmentResult> getCallable(BlobTextStream blobTextStream) {
+        protected Callable<EnrichmentMetadata> getCallable(BlobTextStream blobTextStream) {
             BlobMeta blob = blobTextStream.getBlob();
             if (blob != null &&
                     service.supportsMimeType(blob.getMimeType()) &&

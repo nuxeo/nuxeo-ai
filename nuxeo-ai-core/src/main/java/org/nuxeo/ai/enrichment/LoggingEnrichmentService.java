@@ -30,7 +30,7 @@ public class LoggingEnrichmentService extends AbstractEnrichmentService {
     private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
 
     @Override
-    public EnrichmentResult enrich(BlobTextStream blobTextStream) {
+    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
         log.info("Logging: " + blobTextStream);
         return null;
     }
