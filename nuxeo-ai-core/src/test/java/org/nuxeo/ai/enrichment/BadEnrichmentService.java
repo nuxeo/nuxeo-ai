@@ -22,8 +22,8 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 public class BadEnrichmentService extends AbstractEnrichmentService {
 
-    public BadEnrichmentService() {
-        super("I am bad", 55L, null);
+    public BadEnrichmentService(String name) {
+        super();
     }
 
     @Override

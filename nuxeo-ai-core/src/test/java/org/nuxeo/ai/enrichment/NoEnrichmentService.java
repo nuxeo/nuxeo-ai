@@ -18,18 +18,12 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.util.Map;
-
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 public class NoEnrichmentService extends AbstractEnrichmentService {
 
-    public NoEnrichmentService(String name, Long maxSize, Map<String, String> options) {
-        super(name, maxSize, options);
-    }
-
     @Override
     public EnrichmentResult enrich(BlobTextStream blobTextStream) {
-        return new EnrichmentResult(null);
+        return new EnrichmentResult.Builder("NoEnrichment", modelVersion, "myDocId").build();
     }
 }

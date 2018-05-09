@@ -187,7 +187,7 @@ public class TestAIComponent {
         aiComponent.registerContribution(descriptor, AIComponent.ENRICHMENT, null);
 
         try {
-            service = aiComponent.getEnrichmentService(badService);
+            aiComponent.getEnrichmentService(badService);
             fail();
         } catch (NuxeoException e) {
             assertTrue(e.getMessage().contains("must define a valid EnrichmentService"));

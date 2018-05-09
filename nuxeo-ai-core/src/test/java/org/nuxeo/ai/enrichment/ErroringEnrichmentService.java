@@ -18,31 +18,27 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.util.Map;
-
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import net.jodah.failsafe.RetryPolicy;
 
+/**
+ * An enricher that throws errors
+ */
 public class ErroringEnrichmentService extends AbstractEnrichmentService {
 
-    private final RuntimeException exception;
-    private final int numFailures;
-    private final int numRetries;
+    private RuntimeException exception;
+    private int numFailures = 1;
+    private int numRetries = 0;
     private int attempts = 0;
 
-    public ErroringEnrichmentService(String name, Long maxSize, Map<String, String> options) {
-        super(name, maxSize, options);
-        this.exception = new ArithmeticException();
-        this.numFailures = Integer.parseInt(options.getOrDefault("failures", "1"));
-        this.numRetries = Integer.parseInt(options.getOrDefault("retries", "0"));
-    }
-
     public ErroringEnrichmentService(RuntimeException exception, int numFailures, int numRetries) {
-        super("ErroringEnricher", 100L, null);
+        super();
         this.exception = exception;
         this.numFailures = numFailures;
         this.numRetries = numRetries;
+        this.maxSize = EnrichmentDescriptor.DEFAULT_MAX_SIZE;
+        this.modelVersion = "EnRich1";
     }
 
     @Override
@@ -55,6 +51,6 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
         if (++attempts <= numFailures) {
             throw exception;
         }
-        return new EnrichmentResult(null);
+        return new EnrichmentResult.Builder("ErroringEnricher", modelVersion, "myDocId").build();
     }
 }

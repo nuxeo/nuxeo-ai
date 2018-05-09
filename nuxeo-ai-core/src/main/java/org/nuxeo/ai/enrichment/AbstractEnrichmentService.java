@@ -20,7 +20,6 @@ package org.nuxeo.ai.enrichment;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,21 +28,17 @@ import java.util.Set;
 public abstract class AbstractEnrichmentService implements EnrichmentService {
 
     public static final String MAX_RESULTS = "maxResults";
-    protected final String name;
-    protected final long maxSize;
-    protected final Set<String> supportedMimeTypes = new HashSet<>();
+    public static final String PREDICTION_MODEL_VERSION = "modelVersion";
+    protected String name;
+    protected String modelVersion;
+    protected long maxSize;
+    protected Set<String> supportedMimeTypes = new HashSet<>();
 
-    /**
-     * Generic constructor the makes options available to sub-classes.  Your sub-class must have a
-     * constructor matching this signature.
-     *
-     * @param name    the service name
-     * @param maxSize maximum file size
-     * @param options any options passed in
-     */
-    public AbstractEnrichmentService(String name, Long maxSize, Map<String, String> options) {
-        this.name = name;
-        this.maxSize = maxSize;
+    @Override
+    public void init(EnrichmentDescriptor descriptor) {
+        this.name = descriptor.name;
+        this.maxSize = descriptor.maxSize;
+        modelVersion = descriptor.options.getOrDefault(PREDICTION_MODEL_VERSION, name + ".1");
     }
 
     @Override

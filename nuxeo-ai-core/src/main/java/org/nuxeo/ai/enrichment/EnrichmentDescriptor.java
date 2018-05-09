@@ -33,7 +33,7 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 @XObject("enrichment")
 public class EnrichmentDescriptor {
 
-    private static final Long DEFAULT_MAX_SIZE = 25_000L;
+    public static final Long DEFAULT_MAX_SIZE = 25_000L;
 
     @XNode("@name")
     public String name;
@@ -62,9 +62,10 @@ public class EnrichmentDescriptor {
 
     public EnrichmentService getService() {
         try {
-            return service.getConstructor(String.class, Long.class, Map.class).newInstance(name, maxSize, options);
-        } catch (NoSuchMethodException | IllegalAccessException | NullPointerException |
-                InstantiationException | InvocationTargetException e) {
+            EnrichmentService serviceInstance = service.newInstance();
+            serviceInstance.init(this);
+            return serviceInstance;
+        } catch (IllegalAccessException | NullPointerException | InstantiationException e) {
             throw new NuxeoException(String.format("EnrichmentDescriptor for %s must define a valid EnrichmentService", name), e);
         }
     }

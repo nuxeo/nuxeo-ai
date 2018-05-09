@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AIComponent;
@@ -140,7 +139,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                         }
                                     })
                                     .onFailure(failure ->
-                                        log.error("Enrichment failed for record: " + record, failure))
+                                                       log.error("Enrichment failed for record: " + record, failure))
                                     .onFailedAttempt(failure -> {
                                         errors++;
                                         log.warn("Enrichment attempt error for record: " + record, failure);
@@ -158,10 +157,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 } catch (Exception e) {
                     throw new NuxeoException(e);
                 }
-            } else  {
+            } else {
                 unsupported++;
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextStream.getId()));
+                    log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextStream
+                            .getId()));
                 }
             }
             context.askForCheckpoint();
@@ -176,10 +176,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     service.supportsSize(blob.getLength())) {
                 return () -> service.enrich(blobTextStream);
             } else if (blob != null) {
-                    log.info(String.format("%s does not support a blob with these characteristics %s %s",
-                                           metadata.name(), blob.getMimeType(), blob.getLength()
-                    ));
-                    return null;
+                log.info(String.format("%s does not support a blob with these characteristics %s %s",
+                                       metadata.name(), blob.getMimeType(), blob.getLength()
+                ));
+                return null;
             }
             return () -> service.enrich(blobTextStream);
         }

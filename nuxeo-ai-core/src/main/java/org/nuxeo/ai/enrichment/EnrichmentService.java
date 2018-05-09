@@ -31,6 +31,12 @@ import net.jodah.failsafe.RetryPolicy;
 public interface EnrichmentService {
 
     /**
+     * Initialize the service based on the descriptor
+     * @param descriptor
+     */
+    void init(EnrichmentDescriptor descriptor);
+
+    /**
      * Adds supported mimetypes
      */
     void addMimeTypes(Collection<String> mimeTypes);
