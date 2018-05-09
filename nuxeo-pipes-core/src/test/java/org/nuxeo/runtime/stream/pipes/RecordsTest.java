@@ -26,6 +26,8 @@ import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.getTestEvent;
 
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -45,6 +47,8 @@ import com.google.inject.Inject;
 @Features({PlatformFeature.class})
 public class RecordsTest {
 
+    private static final Log log = LogFactory.getLog(RecordsTest.class);
+
     @Inject
     CoreSession session;
 
@@ -57,8 +61,9 @@ public class RecordsTest {
 
         BlobTextStream andBack = RecordUtil.fromRecord(recs.get(0), BlobTextStream.class);
         assertNotNull(andBack);
+        log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
-        assertEquals("file:content", andBack.getBlobId());
+        assertEquals("file:content", andBack.getBlobXPath());
         assertEquals(7, andBack.getBlob().getLength());
         assertEquals(TEST_MIME_TYPE, andBack.getBlob().getMimeType());
     }

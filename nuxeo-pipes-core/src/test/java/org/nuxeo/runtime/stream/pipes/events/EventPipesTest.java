@@ -20,6 +20,7 @@ package org.nuxeo.runtime.stream.pipes.events;
 
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -191,19 +192,19 @@ public class EventPipesTest {
 
         try {
             new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
-            assertTrue("The call should have failed", false);
+            fail();
         } catch (PropertyNotFoundException ignored) {
         }
 
         try {
             new DocEventToStream(unknownProp, null, null).apply(testEvent);
-            assertTrue("The call should have failed", false);
+            fail();
         } catch (PropertyNotFoundException ignored) {
         }
 
         try {
             new DocEventToStream(null, null, unknownProp).apply(testEvent);
-            assertTrue("The call should have failed", false);
+            fail();
         } catch (PropertyNotFoundException ignored) {
         }
 
@@ -216,7 +217,7 @@ public class EventPipesTest {
         doc2stream = new DocEventToStream(null, creator, null);
         validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
-        assertEquals("dublincore:creator", validResult.get(0).getTextId());
+        assertEquals("dc:creator", validResult.get(0).getTextXPath());
         assertEquals("Administrator", validResult.get(0).getText());
 
         doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator, null);

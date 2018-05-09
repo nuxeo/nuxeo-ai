@@ -28,6 +28,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * A POJO representation of BlobTextStream.avsc used as a record data in a stream.
+ *
+ * The main subject of this class is usually either a blob or a piece of text (not a Nuxeo Document).
+ * If a blob is used then "blobXPath" is the XPath of the property that held the blob, e.g. "file:content"
+ * If text then "textXPath" is the XPath of the property that held the text, e.g. "dc:title"
+ *
+ * Additional properties can be held in the "properties" map.
  */
 public class BlobTextStream implements Partitionable {
 
@@ -36,9 +42,9 @@ public class BlobTextStream implements Partitionable {
     private String primaryType;
     private Set<String> facets;
 
-    private String textId;
+    private String textXPath;
     private String text;
-    private String blobId;
+    private String blobXPath;
     private BlobMeta blob;
 
     private final Map<String, Map<String, String>> properties = new HashMap<>();
@@ -85,12 +91,16 @@ public class BlobTextStream implements Partitionable {
         this.facets = facets;
     }
 
-    public String getTextId() {
-        return textId;
+    /**
+     * The XPath of the property used for this text data
+     * @return a valid Nuxeo property XPath
+     */
+    public String getTextXPath() {
+        return textXPath;
     }
 
-    public void setTextId(String textId) {
-        this.textId = textId;
+    public void setTextXPath(String textXPath) {
+        this.textXPath = textXPath;
     }
 
     public String getText() {
@@ -101,12 +111,16 @@ public class BlobTextStream implements Partitionable {
         this.text = text;
     }
 
-    public String getBlobId() {
-        return blobId;
+    /**
+     * The XPath of the property used for this blob data
+     * @return a valid Nuxeo property XPath
+     */
+    public String getBlobXPath() {
+        return blobXPath;
     }
 
-    public void setBlobId(String blobId) {
-        this.blobId = blobId;
+    public void setBlobXPath(String blobXPath) {
+        this.blobXPath = blobXPath;
     }
 
     public BlobMeta getBlob() {
@@ -134,9 +148,9 @@ public class BlobTextStream implements Partitionable {
         sb.append(", parentId='").append(parentId).append('\'');
         sb.append(", primaryType='").append(primaryType).append('\'');
         sb.append(", facets=").append(facets);
-        sb.append(", textId='").append(textId).append('\'');
+        sb.append(", textXPath='").append(textXPath).append('\'');
         sb.append(", text='").append(text).append('\'');
-        sb.append(", blobId='").append(blobId).append('\'');
+        sb.append(", blobXPath='").append(blobXPath).append('\'');
         sb.append(", blob=").append(blob);
         sb.append(", properties=").append(properties);
         sb.append('}');

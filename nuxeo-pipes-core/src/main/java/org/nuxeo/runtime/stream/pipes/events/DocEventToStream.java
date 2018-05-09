@@ -43,6 +43,8 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
  * Take a document event and turn it into a stream BlobTextStream.
+ *
+ * By default it looks for a blob "file:content" property
  */
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
@@ -87,7 +89,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             Blob blob = (Blob) property.getValue();
             if (blob != null && blob instanceof ManagedBlob) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.setBlobId(propFullName(property));
+                blobTextStream.setBlobXPath(propName);
                 blobTextStream.setBlob(getBlobInfo((ManagedBlob) blob));
                 items.add(blobTextStream);
             }
@@ -98,7 +100,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             String text = (String) property.getValue();
             if (text != null) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.setTextId(propFullName(property));
+                blobTextStream.setTextXPath(propName);
                 blobTextStream.setText(text);
                 items.add(blobTextStream);
             }
@@ -109,10 +111,6 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         }
 
         return items;
-    }
-
-    public static String propFullName(Property property) {
-        return property.getSchema().getName()+":"+property.getField().getName().getLocalName();
     }
 
     public BlobTextStream getBlobTextStream(DocumentModel doc) {
