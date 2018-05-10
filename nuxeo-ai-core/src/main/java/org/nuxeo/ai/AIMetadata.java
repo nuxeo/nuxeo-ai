@@ -19,6 +19,7 @@
 package org.nuxeo.ai;
 
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * Additional metadata created using Artificial Intelligence
@@ -63,5 +64,24 @@ public class AIMetadata {
 
     public String getTargetDocumentRef() {
         return targetDocumentRef;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AIMetadata that = (AIMetadata) o;
+        return human == that.human &&
+                Objects.equals(created, that.created) &&
+                Objects.equals(creator, that.creator) &&
+                Objects.equals(raw, that.raw) &&
+                Objects.equals(predictionModelVersion, that.predictionModelVersion) &&
+                Objects.equals(targetDocumentRef, that.targetDocumentRef);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(created, creator, raw, predictionModelVersion, human, targetDocumentRef);
     }
 }

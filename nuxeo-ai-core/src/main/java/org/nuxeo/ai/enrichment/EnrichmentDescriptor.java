@@ -53,7 +53,7 @@ public class EnrichmentDescriptor {
     protected List<MimeType> mimeTypes = new ArrayList<>(0);
 
     @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
-    protected Map<String, String> options = new HashMap<>();
+    public Map<String, String> options = new HashMap<>();
 
     public List<MimeType> getMimeTypes() {
         return mimeTypes;

@@ -19,6 +19,7 @@
 package org.nuxeo.runtime.stream.pipes.events;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -27,8 +28,15 @@ import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.lib.stream.computation.Record;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class RecordUtil {
 
@@ -36,6 +44,10 @@ public class RecordUtil {
 
     static {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(Instant.class, new InstantDeserializer());
+        module.addSerializer(Instant.class, new InstantSerializer());
+        mapper.registerModule(module);
     }
 
     private RecordUtil() {
@@ -75,4 +87,21 @@ public class RecordUtil {
         }
     }
 
+    protected static class InstantSerializer extends JsonSerializer<Instant> {
+
+        @Override
+        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException, JsonProcessingException {
+            jg.writeObject(instant.toString());
+        }
+    }
+
+    protected static class InstantDeserializer extends JsonDeserializer<Instant> {
+
+        @Override
+        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            String val = ctxt.readValue(jp, String.class);
+            return Instant.parse(val);
+
+        }
+    }
 }
