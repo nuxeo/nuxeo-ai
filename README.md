@@ -9,6 +9,9 @@ This modules provides 2 packages:
 ### Features
  * Provides an `AIComponent` to register services.  eg. An enrichment service.
  * Interfaces and helper classes for building services.
+ * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentService`.
+ * An Operation called `EnrichmentOp` to call an `EnrichmentService` and return the result.
+
 
 ## Nuxeo Pipes
 ### Features

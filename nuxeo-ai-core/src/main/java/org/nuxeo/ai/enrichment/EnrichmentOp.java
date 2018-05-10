@@ -18,10 +18,14 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AIComponent;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.core.Constants;
@@ -45,6 +49,7 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 public class EnrichmentOp {
 
     public static final String ID = "Document.EnrichmentOp";
+    private static final Log log = LogFactory.getLog(EnrichmentOp.class);
 
     @Context
     protected OperationContext ctx;
@@ -94,7 +99,12 @@ public class EnrichmentOp {
             docs.forEach(documentModel -> {
                 Collection<BlobTextStream> blobTextStreams = docEventToStream.docSerialize(documentModel);
                 blobTextStreams.forEach(b -> {
-                    EnrichmentMetadata result = service.enrich(b);
+                    EnrichmentMetadata result = null;
+                    try {
+                        result = service.enrich(b);
+                    } catch (NuxeoException e) {
+                        log.warn(String.format("Call to enrichment service %s failed.", enrichmentName), e);
+                    }
                     if (result != null) {
                         results.add(result);
                     }
