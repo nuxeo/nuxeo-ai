@@ -15,4 +15,7 @@
     <object class="org.nuxeo.ai.enrichment.EnrichmentDescriptor$MimeType" />
   </extension-point>
 
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="org.nuxeo.ai.enrichment.EnrichmentOp"/>
+  </extension>
 </component>

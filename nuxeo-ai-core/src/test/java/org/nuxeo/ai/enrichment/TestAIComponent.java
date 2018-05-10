@@ -69,7 +69,7 @@ public class TestAIComponent {
     @Test
     public void TestBasicComponent() throws Exception {
         assertNotNull(aiComponent);
-        assertEquals(4, aiComponent.getEnrichmentServices().size());
+        assertEquals(5, aiComponent.getEnrichmentServices().size());
         EnrichmentService service = aiComponent.getEnrichmentService("e1");
         assertEquals("e1", service.getName());
 

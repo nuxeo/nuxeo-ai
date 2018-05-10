@@ -18,5 +18,6 @@
     </enrichment>
     <enrichment name="e3" class="org.nuxeo.ai.enrichment.NoEnrichmentService" />
     <enrichment name="logging" class="org.nuxeo.ai.enrichment.LoggingEnrichmentService" />
+    <enrichment name="reverse" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentService" />
   </extension>
 </component>
