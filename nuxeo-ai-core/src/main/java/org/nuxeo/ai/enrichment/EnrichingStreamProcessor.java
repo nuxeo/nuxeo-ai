@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_IN;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_OUT;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
@@ -152,7 +153,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                     })
                                     .get(callable);
                     if (result != null) {
-                        //writeToStreams(context, null);
+                        Record recordResult = toRecord(result.targetDocumentRef, result);
+                        writeToStreams(context, recordResult);
                     }
                 } catch (Exception e) {
                     throw new NuxeoException(e);

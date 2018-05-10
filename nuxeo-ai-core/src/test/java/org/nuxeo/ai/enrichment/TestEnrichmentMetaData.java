@@ -23,24 +23,10 @@ import static org.junit.Assert.assertEquals;
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 
-import java.io.IOException;
-import java.time.Instant;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 
 @RunWith(FeaturesRunner.class)
 public class TestEnrichmentMetaData {
@@ -52,7 +38,7 @@ public class TestEnrichmentMetaData {
     }
 
     @Test
-    public void testJson() throws IOException {
+    public void testJson() {
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("me", "m1", "doc1")
                         .withBlobDigest("blobxx")
@@ -62,23 +48,5 @@ public class TestEnrichmentMetaData {
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);
         assertEquals(metadata, metadataBackAgain);
 
-    }
-
-    public static class InstantSerializer extends JsonSerializer<Instant> {
-
-        @Override
-        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException, JsonProcessingException {
-            jg.writeObject(instant.toString());
-        }
-    }
-
-    public static class InstantDeserializer extends JsonDeserializer<Instant> {
-
-        @Override
-        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-            String val = ctxt.readValue(jp, String.class);
-            return Instant.parse(val);
-
-        }
     }
 }

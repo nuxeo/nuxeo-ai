@@ -90,7 +90,7 @@ public class RecordUtil {
     protected static class InstantSerializer extends JsonSerializer<Instant> {
 
         @Override
-        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException, JsonProcessingException {
+        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException {
             jg.writeObject(instant.toString());
         }
     }
@@ -98,7 +98,7 @@ public class RecordUtil {
     protected static class InstantDeserializer extends JsonDeserializer<Instant> {
 
         @Override
-        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
             String val = ctxt.readValue(jp, String.class);
             return Instant.parse(val);
 

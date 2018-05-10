@@ -67,7 +67,7 @@ public class FunctionStreamProcessor {
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
         String computationName = buildName(function.getClass().getSimpleName(), streamIn, streamOut);
-        NuxeoMetricSet metrics = new NuxeoMetricSet("nuxeo", "pipes", "stream", computationName);
+        NuxeoMetricSet metrics = new NuxeoMetricSet("nuxeo", "streams", "func", computationName);
         if (function instanceof MetricsProducer) {
             ((MetricsProducer) function).withMetrics(metrics);
         }
@@ -103,6 +103,9 @@ public class FunctionStreamProcessor {
 
         @Override
         public void processRecord(ComputationContext context, String inputStreamName, Record record) {
+            if (log.isDebugEnabled()) {
+                log.debug("Processing record " + record);
+            }
             try {
                 writeToStreams(context, function.apply(record));
                 context.askForCheckpoint();
