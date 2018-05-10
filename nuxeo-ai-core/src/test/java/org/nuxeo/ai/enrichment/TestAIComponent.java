@@ -27,9 +27,11 @@ import static org.junit.Assert.fail;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +40,8 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.ComputationContext;
+import org.nuxeo.lib.stream.computation.ComputationMetadata;
+import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
 import org.nuxeo.lib.stream.log.LogAppender;
@@ -94,7 +98,20 @@ public class TestAIComponent {
     @Test
     public void TestEnrichingStreamProcessor() throws Exception {
 
-        ComputationContext testContext = new ComputationContextImpl(null);
+        ComputationMetadataMapping meta = new ComputationMetadataMapping(
+                new ComputationMetadata("myName",
+                                        IntStream
+                                                .range(1, 1 + 1)
+                                                .boxed()
+                                                .map(i -> "i" + i)
+                                                .collect(Collectors.toSet()),
+                                        IntStream
+                                                .range(1, 1 + 1)
+                                                .boxed()
+                                                .map(i -> "o" + i)
+                                                .collect(Collectors.toSet())
+                ), Collections.emptyMap());
+        ComputationContext testContext = new ComputationContextImpl(meta);
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
