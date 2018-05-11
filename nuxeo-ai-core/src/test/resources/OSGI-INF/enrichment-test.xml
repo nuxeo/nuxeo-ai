@@ -2,7 +2,7 @@
 <component name="org.nuxeo.enrichment.test" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.AIComponent">
-    <enrichment name="e1" class="org.nuxeo.ai.enrichment.NoEnrichmentService">
+    <enrichment name="e1" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
@@ -10,13 +10,13 @@
       <option name="maxResults">50</option>
       <option name="features">all</option>
     </enrichment>
-    <enrichment name="e2" class="org.nuxeo.ai.enrichment.NoEnrichmentService" maxSize="45">
+    <enrichment name="e2" class="org.nuxeo.ai.enrichment.BasicEnrichmentService" maxSize="45">
       <mimeTypes>
         <mimeType name="image/png" normalized="true" />
       </mimeTypes>
       <option name="maxResults">100</option>
     </enrichment>
-    <enrichment name="e3" class="org.nuxeo.ai.enrichment.NoEnrichmentService" />
+    <enrichment name="e3" class="org.nuxeo.ai.enrichment.BasicEnrichmentService" />
     <enrichment name="logging" class="org.nuxeo.ai.enrichment.LoggingEnrichmentService" />
     <enrichment name="reverse" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentService" />
   </extension>

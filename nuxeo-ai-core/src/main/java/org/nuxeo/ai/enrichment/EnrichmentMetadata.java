@@ -110,7 +110,8 @@ public class EnrichmentMetadata extends AIMetadata {
         private final String name;
         private final float confidence;
 
-        public Label(String name, float confidence) {
+        @JsonCreator
+        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
             this.name = name;
             this.confidence = confidence;
         }

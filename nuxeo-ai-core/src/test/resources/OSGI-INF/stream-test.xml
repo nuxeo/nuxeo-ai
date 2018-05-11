@@ -2,22 +2,30 @@
 <component name="org.nuxeo.enrichment.stream.test" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.AIComponent">
-    <enrichment name="simpleTest" class="org.nuxeo.ai.enrichment.NoEnrichmentService">
+    <enrichment name="simpleTest" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
       <encoding>UTF-8</encoding>
       <option name="maxResults">50</option>
       <option name="features">all</option>
+      <option name="labels">George,Paul</option>
     </enrichment>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="simpleProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="4"
+    <streamProcessor name="simpleProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">images.out</option>
       <option name="enrichmentServiceName">simpleTest</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="tagsProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.functions.TagsRecordFunction">
+      <option name="source">images.out</option>
     </streamProcessor>
   </extension>
 </component>

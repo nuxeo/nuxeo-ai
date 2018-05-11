@@ -97,6 +97,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected long retries = 0;
         protected long errors = 0;
         protected long unsupported = 0;
+        protected long produced = 0;
 
         public EnrichmentComputation(int outputStreams, String name, EnrichmentService service) {
             super(name, 1, outputStreams);
@@ -106,6 +107,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             metrics.putGauge(() -> success, "success");
             metrics.putGauge(() -> retries, "retries");
             metrics.putGauge(() -> errors, "errors");
+            metrics.putGauge(() -> produced, "produced");
             metrics.putGauge(() -> unsupported, "unsupported");
         }
 
@@ -196,7 +198,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          */
         protected void writeToStreams(ComputationContext context, Record record) {
             if (record != null && !metadata.outputStreams().isEmpty()) {
-                metadata.outputStreams().forEach(o -> context.produceRecord(o, record));
+                metadata.outputStreams().forEach(o -> {
+                    context.produceRecord(o, record);
+                    produced++;
+                });
             }
         }
     }

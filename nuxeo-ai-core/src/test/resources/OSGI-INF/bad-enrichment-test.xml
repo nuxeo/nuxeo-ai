@@ -3,7 +3,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.AIComponent">
     <enrichment name="b1" class="org.nuxeo.ai.enrichment.BadEnrichmentService" />
-    <enrichment name="ok1" class="org.nuxeo.ai.enrichment.NoEnrichmentService" />
+    <enrichment name="ok1" class="org.nuxeo.ai.enrichment.BasicEnrichmentService" />
     <enrichment name="errorService" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
       <mimeTypes>
         <mimeType name="image/jpeg"/>

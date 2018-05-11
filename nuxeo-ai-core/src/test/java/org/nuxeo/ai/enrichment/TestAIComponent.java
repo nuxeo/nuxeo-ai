@@ -30,14 +30,18 @@ import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
 import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AIComponent;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.ComputationMetadata;
@@ -64,11 +68,17 @@ import com.google.inject.Inject;
  */
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
+@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
 public class TestAIComponent {
 
     @Inject
     protected AIComponent aiComponent;
+
+    @Inject
+    CoreSession session;
+
+    @Inject
+    TagService tagService;
 
     @Test
     public void TestBasicComponent() throws Exception {
@@ -167,21 +177,33 @@ public class TestAIComponent {
     @Test
     @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml"})
     public void TestConfiguredStreamProcessor() throws Exception {
+
+        DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
+        testDoc = session.createDocument(testDoc);
+        session.save();
+
         BlobTextStream blobTextStream = new BlobTextStream();
+        blobTextStream.setId(testDoc.getId());
         blobTextStream.setBlob(new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
-        String metricPrefix = "nuxeo.streams.enrichment.images_simpleTest_images.out.";
+        String metricPrefix = "nuxeo.streams.enrichment.images>simpleTest>images.out.";
         MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
         Map<String, Gauge> gauges = registry.getGauges().entrySet().stream()
                                             .filter(e -> e.getKey().startsWith(metricPrefix))
                                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Gauge called = gauges.get(metricPrefix + "called");
+        Gauge produced = gauges.get(metricPrefix + "produced");
         assertEquals(0L, called.getValue());
+        assertEquals(0L, produced.getValue());
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         LogAppender<Record> appender = manager.getAppender("images");
         appender.append("mykey", record);
-        Thread.sleep(750); //Wait for EnrichingStreamProcessor
+        Thread.sleep(1750); //Wait for EnrichingStreamProcessor
         assertEquals(1L, called.getValue());
+        assertEquals(1L, produced.getValue());
+
+        Set<String> tags = tagService.getTags(session, testDoc.getId());
+//        assertEquals(3, tags.size());
     }
 
     @Test
@@ -210,7 +232,7 @@ public class TestAIComponent {
             assertTrue(e.getMessage().contains("must define a valid EnrichmentService"));
         }
 
-        descriptor.service = NoEnrichmentService.class;
+        descriptor.service = BasicEnrichmentService.class;
         service = aiComponent.getEnrichmentService(badService);
         assertNotNull(service);
 
