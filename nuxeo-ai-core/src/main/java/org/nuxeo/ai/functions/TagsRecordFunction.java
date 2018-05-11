@@ -4,14 +4,8 @@ import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.fromRecord;
 
 import java.util.function.Consumer;
 
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
-
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.core.api.CoreInstance;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.security.SecurityConstants;
 import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
@@ -50,11 +44,13 @@ public class TagsRecordFunction implements FunctionStreamProcessorTopology {
         @Override
         public void accept(EnrichmentMetadata enrichmentMetadata) {
             TransactionHelper.runInTransaction(() -> {
-                try (CoreSession session = CoreInstance.openCoreSessionSystem(null)) {
+                //TODO: get Repo, perhaps from EnrichmentMetadata.repoName
+                CoreInstance.doPrivileged((String) null, session -> {
                     enrichmentMetadata.getLabels().forEach(l -> {
                         tagService.tag(session, enrichmentMetadata.getTargetDocumentRef(), l.getName());
                     });
-                }
+                });
+
             });
         }
     }
