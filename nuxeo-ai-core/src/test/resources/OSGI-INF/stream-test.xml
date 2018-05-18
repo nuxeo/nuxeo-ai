@@ -24,7 +24,7 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="tagsProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="1"
-                     class="org.nuxeo.ai.functions.TagsRecordFunction">
+                     class="org.nuxeo.ai.functions.StoreLabelsAsTags">
       <option name="source">images.out</option>
     </streamProcessor>
   </extension>
