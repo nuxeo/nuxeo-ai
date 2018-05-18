@@ -31,7 +31,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @RunWith(FeaturesRunner.class)
 public class TestEnrichmentMetaData {
 
-    String repositoryName = "default";
+    final String repositoryName = "default";
 
     @Test
     public void testBuilder() {

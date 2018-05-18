@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.inject.Inject;
 
@@ -38,19 +37,10 @@ import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
-import org.nuxeo.ecm.automation.core.operations.FetchContextDocument;
-import org.nuxeo.ecm.automation.core.util.BlobList;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
-import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
-import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
-import org.nuxeo.ecm.core.test.annotations.Granularity;
-import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -67,7 +57,7 @@ public class TestEnrichmentOp {
     protected AutomationService automationService;
 
     @Test
-    public void shouldCallWithParameters() throws OperationException, IOException {
+    public void shouldCallWithParameters() throws OperationException {
 
         String title = "My Enriched document";
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
@@ -85,7 +75,8 @@ public class TestEnrichmentOp {
         chain.add(EnrichmentOp.ID).from(params);
         DocumentModel returned = (DocumentModel) automationService.run(ctx, chain);
         assertNotNull(returned);
-        List<EnrichmentMetadata> results = (List<EnrichmentMetadata>) ctx.get("theresult");
+        @SuppressWarnings("unchecked") List<EnrichmentMetadata> results = (List<EnrichmentMetadata>) ctx
+                .get("theresult");
         assertEquals(1, results.size());
         assertEquals(StringUtils.reverse(title), results.get(0).getRaw());
         assertNotNull(results.get(0).getTargetDocumentRef());

@@ -32,6 +32,9 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
     private int numRetries = 0;
     private int attempts = 0;
 
+    public ErroringEnrichmentService() {
+    }
+
     public ErroringEnrichmentService(RuntimeException exception, int numFailures, int numRetries) {
         super();
         this.exception = exception;

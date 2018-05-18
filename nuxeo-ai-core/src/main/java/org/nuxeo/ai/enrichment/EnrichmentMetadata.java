@@ -31,7 +31,6 @@ import org.nuxeo.runtime.stream.pipes.services.JacksonUtil;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
@@ -142,11 +141,10 @@ public class EnrichmentMetadata extends AIMetadata {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("Label{");
-            sb.append("name='").append(name).append('\'');
-            sb.append(", confidence=").append(confidence);
-            sb.append('}');
-            return sb.toString();
+            return new ToStringBuilder(this)
+                    .append("name", name)
+                    .append("confidence", confidence)
+                    .toString();
         }
     }
 

@@ -81,7 +81,7 @@ public class TestAIComponent {
     TagService tagService;
 
     @Test
-    public void TestBasicComponent() throws Exception {
+    public void TestBasicComponent() {
         assertNotNull(aiComponent);
         assertEquals(5, aiComponent.getEnrichmentServices().size());
         EnrichmentService service = aiComponent.getEnrichmentService("e1");
@@ -106,7 +106,7 @@ public class TestAIComponent {
     }
 
     @Test
-    public void TestEnrichingStreamProcessor() throws Exception {
+    public void TestEnrichingStreamProcessor() {
 
         ComputationMetadataMapping meta = new ComputationMetadataMapping(
                 new ComputationMetadata("myName",
@@ -208,7 +208,7 @@ public class TestAIComponent {
 
     @Test
     @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/bad-enrichment-test.xml"})
-    public void TestBadConfig() throws Exception {
+    public void TestBadConfig() {
         assertNotNull(aiComponent);
         try {
             aiComponent.getEnrichmentService("b1");
