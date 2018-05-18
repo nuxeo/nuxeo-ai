@@ -28,7 +28,7 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
 
     @Override
     public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
-        return new EnrichmentMetadata.Builder("NoEnrichment", modelVersion, blobTextStream.getId())
+        return new EnrichmentMetadata.Builder("NoEnrichment", modelVersion, "default", blobTextStream.getId())
                 .withTargetDocumentProperty(blobTextStream.getTextXPath())
                 .withRaw(StringUtils.reverse(blobTextStream.getText())).build();
     }

@@ -31,17 +31,20 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @RunWith(FeaturesRunner.class)
 public class TestEnrichmentMetaData {
 
+    String repositoryName = "default";
+
     @Test
     public void testBuilder() {
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("me", "m1", "doc1").build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("me", "m1", repositoryName, "doc1").build();
         assertNotNull(metadata);
     }
 
     @Test
     public void testJson() {
         EnrichmentMetadata metadata =
-                new EnrichmentMetadata.Builder("me", "m1", "doc1")
+                new EnrichmentMetadata.Builder("me", "m1", repositoryName, "doc1")
                         .withBlobDigest("blobxx")
+                        .withRaw("{\"labels\":[{\"name\":\"Aurora\",\"confidence\":98.25269}]}")
                         .withTargetDocumentProperty("tbloby").build();
         assertNotNull(metadata);
         Record record = toRecord("k", metadata);

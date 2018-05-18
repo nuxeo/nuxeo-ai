@@ -51,6 +51,6 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
         if (++attempts <= numFailures) {
             throw exception;
         }
-        return new EnrichmentMetadata.Builder("ErroringEnricher", modelVersion, "myDocId").build();
+        return new EnrichmentMetadata.Builder("ErroringEnricher", modelVersion, "default", "myDocId").build();
     }
 }

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ecm.core.blob.BlobMeta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class BlobTextStream implements Partitionable {
 
     private String id;
+    private String repositoryName;
     private String parentId;
     private String primaryType;
     private Set<String> facets;
@@ -52,8 +54,9 @@ public class BlobTextStream implements Partitionable {
     public BlobTextStream() {
     }
 
-    public BlobTextStream(String id, String parentId, String primaryType, Set<String> facets) {
+    public BlobTextStream(String id, String repositoryName, String parentId, String primaryType, Set<String> facets) {
         this.id = id;
+        this.repositoryName = repositoryName;
         this.parentId = parentId;
         this.primaryType = primaryType;
         this.facets = facets;
@@ -65,6 +68,14 @@ public class BlobTextStream implements Partitionable {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getRepositoryName() {
+        return repositoryName;
+    }
+
+    public void setRepositoryName(String repositoryName) {
+        this.repositoryName = repositoryName;
     }
 
     public String getParentId() {
@@ -143,17 +154,17 @@ public class BlobTextStream implements Partitionable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("BlobTextStream{");
-        sb.append("id='").append(id).append('\'');
-        sb.append(", parentId='").append(parentId).append('\'');
-        sb.append(", primaryType='").append(primaryType).append('\'');
-        sb.append(", facets=").append(facets);
-        sb.append(", textXPath='").append(textXPath).append('\'');
-        sb.append(", text='").append(text).append('\'');
-        sb.append(", blobXPath='").append(blobXPath).append('\'');
-        sb.append(", blob=").append(blob);
-        sb.append(", properties=").append(properties);
-        sb.append('}');
-        return sb.toString();
+        return new ToStringBuilder(this)
+                .append("id", id)
+                .append("repositoryName", repositoryName)
+                .append("parentId", parentId)
+                .append("primaryType", primaryType)
+                .append("facets", facets)
+                .append("textXPath", textXPath)
+                .append("text", text)
+                .append("blobXPath", blobXPath)
+                .append("blob", blob)
+                .append("properties", properties)
+                .toString();
     }
 }

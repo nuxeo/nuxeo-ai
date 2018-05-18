@@ -27,9 +27,11 @@ import java.util.Objects;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.runtime.stream.pipes.events.JacksonUtil;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
@@ -45,7 +47,7 @@ public class EnrichmentMetadata extends AIMetadata {
     //Is this a single-label result of categorizing instances into precisely one label
 
     private EnrichmentMetadata(Builder builder) {
-        super(builder.predictionModelVersion, builder.targetDocumentRef, builder.human, builder.creator, builder.created, builder.raw);
+        super(builder.predictionModelVersion, builder.repositoryName, builder.targetDocumentRef, builder.human, builder.creator, builder.created, builder.raw);
         if (builder.labels == null || builder.labels.isEmpty()) {
             labels = Collections.emptyList();
         } else {
@@ -154,6 +156,7 @@ public class EnrichmentMetadata extends AIMetadata {
         private final Instant created;
         private final String creator;
         private final String predictionModelVersion;
+        private final String repositoryName;
         private final String targetDocumentRef;
 
         //optional
@@ -164,18 +167,22 @@ public class EnrichmentMetadata extends AIMetadata {
         private boolean singleLabel;
         private String targetDocumentProperty;
 
+
         @JsonCreator
         public Builder(@JsonProperty("created") Instant created,
                        @JsonProperty("creator") String creator,
                        @JsonProperty("predictionModelVersion") String predictionModelVersion,
+                       @JsonProperty("repositoryName") String repositoryName,
                        @JsonProperty("targetDocumentRef") String targetDocumentRef) {
             this.created = created;
             this.creator = creator;
             this.predictionModelVersion = predictionModelVersion;
+            this.repositoryName = repositoryName;
             this.targetDocumentRef = targetDocumentRef;
         }
 
-        public Builder(String creator, String predictionModelVersion, String targetDocumentRef) {
+        public Builder(String creator, String predictionModelVersion, String repositoryName, String targetDocumentRef) {
+            this.repositoryName = repositoryName;
             this.targetDocumentRef = targetDocumentRef;
             this.created = Instant.now();
             this.creator = creator;
@@ -187,6 +194,7 @@ public class EnrichmentMetadata extends AIMetadata {
             return this;
         }
 
+        @JsonDeserialize(using = JacksonUtil.JsonRawValueDeserializer.class)
         public Builder withRaw(String raw) {
             this.raw = raw;
             return this;
@@ -215,6 +223,7 @@ public class EnrichmentMetadata extends AIMetadata {
         public EnrichmentMetadata build() {
             if (StringUtils.isBlank(predictionModelVersion)
                     || StringUtils.isBlank(targetDocumentRef)
+                    || StringUtils.isBlank(repositoryName)
                     || StringUtils.isBlank(creator)
                     || created == null) {
                 throw new IllegalArgumentException("Invalid Enrichment metadata has been given. " + this.toString());

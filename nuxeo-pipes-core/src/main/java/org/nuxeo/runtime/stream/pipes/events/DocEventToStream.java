@@ -115,7 +115,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
 
     public BlobTextStream getBlobTextStream(DocumentModel doc) {
         BlobTextStream blobTextStream =
-                new BlobTextStream(doc.getId(), doc.getParentRef().toString(), doc.getType(), doc.getFacets());
+                new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc.getType(), doc.getFacets());
         Map<String, Map<String, String>> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {

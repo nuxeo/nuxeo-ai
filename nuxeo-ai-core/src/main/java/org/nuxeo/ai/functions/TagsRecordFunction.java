@@ -35,17 +35,11 @@ public class TagsRecordFunction implements FunctionStreamProcessorTopology {
      */
     public static class EnrichmentTagsConsumer implements Consumer<EnrichmentMetadata> {
 
-        protected final TagService tagService;
-
-        public EnrichmentTagsConsumer() {
-            tagService = Framework.getService(TagService.class);
-        }
-
         @Override
         public void accept(EnrichmentMetadata enrichmentMetadata) {
             TransactionHelper.runInTransaction(() -> {
-                //TODO: get Repo, perhaps from EnrichmentMetadata.repoName
-                CoreInstance.doPrivileged((String) null, session -> {
+                CoreInstance.doPrivileged(enrichmentMetadata.repositoryName, session -> {
+                    TagService tagService = Framework.getService(TagService.class);
                     enrichmentMetadata.getLabels().forEach(l -> {
                         tagService.tag(session, enrichmentMetadata.getTargetDocumentRef(), l.getName());
                     });
