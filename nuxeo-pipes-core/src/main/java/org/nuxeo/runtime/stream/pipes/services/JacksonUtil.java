@@ -49,10 +49,9 @@ public class JacksonUtil {
     static {
         MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         SimpleModule module = new SimpleModule();
+        module.addDeserializer(Instant.class, new InstantDeserializer());
+        module.addSerializer(Instant.class, new InstantSerializer());
         MAPPER.registerModule(module);
-    }
-
-    private JacksonUtil() {
     }
 
     public static String toJsonString(JsonGeneratorConsumer withConsumer) {
@@ -104,6 +103,14 @@ public class JacksonUtil {
     }
 
     /**
+     * A Consumer of JsonGenerator that throws an IOException
+     */
+    @FunctionalInterface
+    public static interface JsonGeneratorConsumer {
+        void accept(JsonGenerator jg) throws IOException;
+    }
+
+    /**
      * Allows Jackson to treat a String of JSON as a raw string.
      */
     public static class JsonRawValueDeserializer extends JsonDeserializer<String> {
@@ -116,11 +123,27 @@ public class JacksonUtil {
     }
 
     /**
-     * A Consumer of JsonGenerator that throws an IOException
+     * Serializes an instant
      */
-    @FunctionalInterface
-    public static interface JsonGeneratorConsumer {
-        void accept(JsonGenerator jg) throws IOException;
+    public static class InstantSerializer extends JsonSerializer<Instant> {
+
+        @Override
+        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException {
+            jg.writeObject(instant.toString());
+        }
+    }
+
+    /**
+     * Deserializes an instant
+     */
+    public static class InstantDeserializer extends JsonDeserializer<Instant> {
+
+        @Override
+        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+            String val = ctxt.readValue(jp, String.class);
+            return Instant.parse(val);
+
+        }
     }
 
 }
