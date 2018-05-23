@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.functions;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -25,11 +26,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
+import org.nuxeo.runtime.stream.pipes.streams.Initializable;
 
 /**
  * A function that first applies a predicate filter.
  */
-public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer {
+public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer, Initializable {
 
     private static final Log log = LogFactory.getLog(FilterFunction.class);
 
@@ -45,6 +47,14 @@ public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer {
     public FilterFunction(Predicate<? super T> filter, Function<? super T, ? extends R> transformation) {
         this.filter = filter;
         this.transformation = transformation;
+    }
+
+
+    @Override
+    public void init(Map<String, String> options) {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing function " + this.getClass().getSimpleName());
+        }
     }
 
     @Override
@@ -75,4 +85,5 @@ public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer {
         nuxeoMetrics.putGauge(() -> errors, "errors");
         nuxeoMetrics.putGauge(() -> filterFailed, "filterFailed");
     }
+
 }
