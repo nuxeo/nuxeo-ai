@@ -20,8 +20,8 @@ package org.nuxeo.ai.enrichment;
 
 import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static org.junit.Assert.assertEquals;
-import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.fromRecord;
-import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
+import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.fromRecord;
+import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

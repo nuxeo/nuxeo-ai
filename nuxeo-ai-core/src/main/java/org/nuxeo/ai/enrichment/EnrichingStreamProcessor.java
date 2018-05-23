@@ -18,7 +18,8 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.runtime.stream.pipes.events.RecordUtil.toRecord;
+import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.fromRecord;
+import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_IN;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_OUT;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
@@ -43,7 +44,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
-import org.nuxeo.runtime.stream.pipes.events.RecordUtil;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import com.codahale.metrics.MetricRegistry;
@@ -124,7 +124,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             if (log.isDebugEnabled()) {
                 log.debug("Processing record " + record);
             }
-            BlobTextStream blobTextStream = RecordUtil.fromRecord(record, BlobTextStream.class);
+            BlobTextStream blobTextStream = fromRecord(record, BlobTextStream.class);
             Callable<EnrichmentMetadata> callable = getCallable(blobTextStream);
 
             if (callable != null) {

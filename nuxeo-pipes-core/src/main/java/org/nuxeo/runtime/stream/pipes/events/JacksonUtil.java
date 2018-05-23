@@ -38,19 +38,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-public class RecordUtil {
+public class JacksonUtil {
 
-    protected static final ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper MAPPER = new ObjectMapper();
 
     static {
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Instant.class, new InstantDeserializer());
         module.addSerializer(Instant.class, new InstantSerializer());
-        mapper.registerModule(module);
+        MAPPER.registerModule(module);
     }
 
-    private RecordUtil() {
+    private JacksonUtil() {
     }
 
     /**
@@ -69,7 +69,7 @@ public class RecordUtil {
      */
     public static Record toRecord(String key, Object info) {
         try {
-            return Record.of(key, mapper.writeValueAsBytes(info));
+            return Record.of(key, MAPPER.writeValueAsBytes(info));
         } catch (JsonProcessingException e) {
             throw new NuxeoException("Unable to serialize properties for: " + key, e);
         }
@@ -81,7 +81,7 @@ public class RecordUtil {
     public static <T> T fromRecord(Record record, Class<T> valueType) {
 
         try {
-            return mapper.readValue(record.data, valueType);
+            return MAPPER.readValue(record.data, valueType);
         } catch (IOException e) {
             throw new NuxeoException("Unable to read record data for : " + record.key, e);
         }
@@ -102,6 +102,15 @@ public class RecordUtil {
             String val = ctxt.readValue(jp, String.class);
             return Instant.parse(val);
 
+        }
+    }
+
+    public static class JsonRawValueDeserializer extends JsonDeserializer<String> {
+
+        @Override
+        public String deserialize(JsonParser jp, DeserializationContext context)
+                throws IOException {
+            return jp.readValueAsTree().toString();
         }
     }
 }

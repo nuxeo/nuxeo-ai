@@ -23,6 +23,8 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.TEST_MIME_TYPE;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.getTestEvent;
+import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.fromRecord;
+import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
 
 import java.util.List;
 
@@ -35,7 +37,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.events.RecordUtil;
+import org.nuxeo.runtime.stream.pipes.events.JacksonUtil;
 import org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Features;
@@ -59,7 +61,7 @@ public class RecordsTest {
         List<Record> recs = (List<Record>) func.transformation.apply(getTestEvent(session));
         assertNotNull(recs);
 
-        BlobTextStream andBack = RecordUtil.fromRecord(recs.get(0), BlobTextStream.class);
+        BlobTextStream andBack = fromRecord(recs.get(0), BlobTextStream.class);
         assertNotNull(andBack);
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
@@ -70,13 +72,13 @@ public class RecordsTest {
 
     @Test(expected = NuxeoException.class)
     public void TestToRecord() throws Exception {
-        RecordUtil.toRecord("akey", getTestEvent(session));
+        toRecord("akey", getTestEvent(session));
     }
 
     @Test(expected = NuxeoException.class)
     public void TestFromRecord() throws Exception {
         String value = "Some test";
-        RecordUtil.fromRecord(Record.of("33", value.getBytes("UTF-8")), DocumentModel.class);
+        fromRecord(Record.of("33", value.getBytes("UTF-8")), DocumentModel.class);
     }
 
 }
