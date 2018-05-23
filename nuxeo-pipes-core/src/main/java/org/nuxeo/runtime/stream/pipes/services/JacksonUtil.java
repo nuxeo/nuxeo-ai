@@ -16,9 +16,10 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.runtime.stream.pipes.events;
+package org.nuxeo.runtime.stream.pipes.services;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.time.Instant;
 
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -38,6 +39,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+/**
+ * Utilities for use with Jackson
+ */
 public class JacksonUtil {
 
     public static final ObjectMapper MAPPER = new ObjectMapper();
@@ -45,12 +49,24 @@ public class JacksonUtil {
     static {
         MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(Instant.class, new InstantDeserializer());
-        module.addSerializer(Instant.class, new InstantSerializer());
         MAPPER.registerModule(module);
     }
 
     private JacksonUtil() {
+    }
+
+    public static String toJsonString(JsonGeneratorConsumer withConsumer) {
+        StringWriter writer = new StringWriter();
+        try (JsonGenerator jg = MAPPER.getFactory().createGenerator(writer)) {
+            jg.writeStartObject();
+            if (withConsumer != null) {
+                withConsumer.accept(jg);
+            }
+            jg.writeEndObject();
+        } catch (IOException e) {
+            throw new NuxeoException("Unabled to turn data into a json String", e);
+        }
+        return writer.toString();
     }
 
     /**
@@ -87,24 +103,9 @@ public class JacksonUtil {
         }
     }
 
-    protected static class InstantSerializer extends JsonSerializer<Instant> {
-
-        @Override
-        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException {
-            jg.writeObject(instant.toString());
-        }
-    }
-
-    protected static class InstantDeserializer extends JsonDeserializer<Instant> {
-
-        @Override
-        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-            String val = ctxt.readValue(jp, String.class);
-            return Instant.parse(val);
-
-        }
-    }
-
+    /**
+     * Allows Jackson to treat a String of JSON as a raw string.
+     */
     public static class JsonRawValueDeserializer extends JsonDeserializer<String> {
 
         @Override
@@ -113,4 +114,13 @@ public class JacksonUtil {
             return jp.readValueAsTree().toString();
         }
     }
+
+    /**
+     * A Consumer of JsonGenerator that throws an IOException
+     */
+    @FunctionalInterface
+    public static interface JsonGeneratorConsumer {
+        void accept(JsonGenerator jg) throws IOException;
+    }
+
 }

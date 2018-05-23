@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.util.Collections;
 import java.util.Map;

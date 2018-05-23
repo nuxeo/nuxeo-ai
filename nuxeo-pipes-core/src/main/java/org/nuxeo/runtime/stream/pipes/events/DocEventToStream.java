@@ -18,7 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toDoc;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toDoc;
 
 import java.io.Serializable;
 import java.util.ArrayList;

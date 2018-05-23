@@ -18,7 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.pipes;
 
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isPicture;
 

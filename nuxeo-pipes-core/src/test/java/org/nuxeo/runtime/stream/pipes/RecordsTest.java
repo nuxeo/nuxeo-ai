@@ -20,12 +20,16 @@ package org.nuxeo.runtime.stream.pipes;
 
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.TEST_MIME_TYPE;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.getTestEvent;
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.fromRecord;
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -37,7 +41,6 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.events.JacksonUtil;
 import org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Features;
@@ -81,4 +84,24 @@ public class RecordsTest {
         fromRecord(Record.of("33", value.getBytes("UTF-8")), DocumentModel.class);
     }
 
+    @Test
+    public void TestJacksonUtil() {
+        String raw = toJsonString(jg -> {
+            jg.writeStringField("myField", "cake");
+        });
+
+        assertEquals("{\"myField\":\"cake\"}", raw);
+
+        raw = toJsonString(null);
+        assertEquals("{}", raw);
+
+        try {
+            raw = toJsonString(jg -> {
+                throw new IOException("Need to handle this");
+            });
+            fail();
+        } catch (NuxeoException handled) {
+            assertTrue(handled.getCause().getClass().getSimpleName().equals("IOException"));
+        }
+    }
 }

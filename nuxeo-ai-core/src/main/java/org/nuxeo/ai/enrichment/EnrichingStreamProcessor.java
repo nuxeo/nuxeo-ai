@@ -18,8 +18,8 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.fromRecord;
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.toRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_IN;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_OUT;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
