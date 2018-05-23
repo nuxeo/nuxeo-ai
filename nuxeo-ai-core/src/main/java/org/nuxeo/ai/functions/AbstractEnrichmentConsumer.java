@@ -18,25 +18,23 @@
  */
 package org.nuxeo.ai.functions;
 
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
+
+import java.util.function.Consumer;
+
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ecm.core.api.CoreInstance;
-import org.nuxeo.ecm.platform.tag.TagService;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.transaction.TransactionHelper;
+import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
 
 /**
- * A stream processor that saves enrichment labels as tags.
+ * Consumes enrichment metadata and doesn't return any result
  */
-public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
+public abstract class AbstractEnrichmentConsumer implements FunctionStreamProcessorTopology, Consumer<EnrichmentMetadata> {
 
     @Override
-    public void accept(EnrichmentMetadata metadata) {
-        TransactionHelper.runInTransaction(
-            () -> CoreInstance.doPrivileged(metadata.repositoryName, session -> {
-                TagService tagService = Framework.getService(TagService.class);
-                metadata.getLabels()
-                        .forEach(l -> tagService.tag(session, metadata.getTargetDocumentRef(), l.getName()));
-            })
-        );
+    public Record apply(Record record) {
+        EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
+        this.accept(metadata);
+        return null;
     }
 }
