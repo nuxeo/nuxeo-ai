@@ -16,10 +16,12 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai;
+package org.nuxeo.ai.metadata;
 
 import java.time.Instant;
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonRawValue;
 
 /**
  * Additional metadata created using Artificial Intelligence
@@ -28,12 +30,16 @@ public class AIMetadata {
 
     public final Instant created;
     public final String creator;
+    @JsonRawValue
     public final String raw;
     public final String predictionModelVersion;
     public final boolean human;
+    public final String repositoryName;
     public final String targetDocumentRef; //Document reference
 
-    public AIMetadata(String predictionModelVersion, String targetDocumentRef, boolean human, String creator, Instant created, String raw) {
+    public AIMetadata(String predictionModelVersion, String repositoryName, String targetDocumentRef,
+                      boolean human, String creator, Instant created, String raw) {
+        this.repositoryName = repositoryName;
         this.targetDocumentRef = targetDocumentRef;
         this.created = created;
         this.creator = creator;
@@ -62,6 +68,10 @@ public class AIMetadata {
         return human;
     }
 
+    public String getRepositoryName() {
+        return repositoryName;
+    }
+
     public String getTargetDocumentRef() {
         return targetDocumentRef;
     }
@@ -76,12 +86,13 @@ public class AIMetadata {
                 Objects.equals(creator, that.creator) &&
                 Objects.equals(raw, that.raw) &&
                 Objects.equals(predictionModelVersion, that.predictionModelVersion) &&
+                Objects.equals(repositoryName, that.repositoryName) &&
                 Objects.equals(targetDocumentRef, that.targetDocumentRef);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(created, creator, raw, predictionModelVersion, human, targetDocumentRef);
+        return Objects.hash(created, creator, raw, predictionModelVersion, human, repositoryName, targetDocumentRef);
     }
 }

@@ -26,7 +26,7 @@ import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nuxeo.ai.AIMetadata;
+import org.nuxeo.ai.metadata.AIMetadata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
