@@ -100,9 +100,12 @@ public class StreamsPipesTest {
     @Test
     public void testBuildName() {
         assertEquals("Should not error even though nulls passed in",
-                     "null>aname>null", buildName("aname", null, null)
+                     "aname", buildName("aname", null, null)
         );
         assertEquals("bob>king>hope", buildName("king", "bob", "hope"));
         assertEquals("bob>king>hope,rope", buildName("king", "bob", "hope,rope"));
+
+        assertEquals("bob>king", buildName("king", "bob", null));
+        assertEquals("king>kong", buildName("king", null, "kong"));
     }
 }
