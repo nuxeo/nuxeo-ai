@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.functions;
 
-import static org.nuxeo.runtime.stream.pipes.events.JacksonUtil.fromRecord;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 
 import java.util.function.Consumer;
 
