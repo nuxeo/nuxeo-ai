@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ecm.core.blob;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -44,6 +46,24 @@ public class BlobMetaImpl extends BlobInfo implements BlobMeta {
         this.length = length;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BlobMetaImpl blobInfo = (BlobMetaImpl) o;
+        return Objects.equals(key, blobInfo.key) &&
+                Objects.equals(mimeType, blobInfo.mimeType) &&
+                Objects.equals(encoding, blobInfo.encoding) &&
+                Objects.equals(filename, blobInfo.filename) &&
+                Objects.equals(length, blobInfo.length) &&
+                Objects.equals(providerId, blobInfo.providerId) &&
+                Objects.equals(digest, blobInfo.digest);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, mimeType, encoding, filename, length, digest, providerId);
+    }
 
     @Override
     public String getProviderId() {

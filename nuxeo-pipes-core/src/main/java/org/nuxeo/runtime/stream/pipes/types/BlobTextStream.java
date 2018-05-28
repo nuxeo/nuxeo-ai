@@ -18,8 +18,11 @@
  */
 package org.nuxeo.runtime.stream.pipes.types;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -29,11 +32,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * A POJO representation of BlobTextStream.avsc used as a record data in a stream.
- *
+ * <p>
  * The main subject of this class is usually either a blob or a piece of text (not a Nuxeo Document).
- * If a blob is used then "blobXPath" is the XPath of the property that held the blob, e.g. "file:content"
- * If text then "textXPath" is the XPath of the property that held the text, e.g. "dc:title"
- *
+ * The List<String> contains the names of the original document properties used.
+ * <p>
  * Additional properties can be held in the "properties" map.
  */
 public class BlobTextStream implements Partitionable {
@@ -43,12 +45,9 @@ public class BlobTextStream implements Partitionable {
     private String parentId;
     private String primaryType;
     private Set<String> facets;
-
-    private String textXPath;
     private String text;
-    private String blobXPath;
     private BlobMeta blob;
-
+    private final List<String> xPaths = new ArrayList<>();
     private final Map<String, Map<String, String>> properties = new HashMap<>();
 
     public BlobTextStream() {
@@ -102,16 +101,12 @@ public class BlobTextStream implements Partitionable {
         this.facets = facets;
     }
 
-    /**
-     * The XPath of the property used for this text data
-     * @return a valid Nuxeo property XPath
-     */
-    public String getTextXPath() {
-        return textXPath;
+    public void addXPath(String propName) {
+        xPaths.add(propName);
     }
 
-    public void setTextXPath(String textXPath) {
-        this.textXPath = textXPath;
+    public List<String> getXPaths() {
+        return xPaths;
     }
 
     public String getText() {
@@ -120,18 +115,6 @@ public class BlobTextStream implements Partitionable {
 
     public void setText(String text) {
         this.text = text;
-    }
-
-    /**
-     * The XPath of the property used for this blob data
-     * @return a valid Nuxeo property XPath
-     */
-    public String getBlobXPath() {
-        return blobXPath;
-    }
-
-    public void setBlobXPath(String blobXPath) {
-        this.blobXPath = blobXPath;
     }
 
     public BlobMeta getBlob() {
@@ -147,9 +130,24 @@ public class BlobTextStream implements Partitionable {
     }
 
     @Override
-    @JsonIgnore
-    public String getKey() {
-        return getId();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BlobTextStream that = (BlobTextStream) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(repositoryName, that.repositoryName) &&
+                Objects.equals(parentId, that.parentId) &&
+                Objects.equals(primaryType, that.primaryType) &&
+                Objects.equals(facets, that.facets) &&
+                Objects.equals(text, that.text) &&
+                Objects.equals(blob, that.blob) &&
+                Objects.equals(xPaths, that.xPaths) &&
+                Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, repositoryName, parentId, primaryType, facets, text, blob, xPaths, properties);
     }
 
     @Override
@@ -160,11 +158,18 @@ public class BlobTextStream implements Partitionable {
                 .append("parentId", parentId)
                 .append("primaryType", primaryType)
                 .append("facets", facets)
-                .append("textXPath", textXPath)
                 .append("text", text)
-                .append("blobXPath", blobXPath)
                 .append("blob", blob)
+                .append("xPaths", xPaths)
                 .append("properties", properties)
                 .toString();
     }
+
+    @Override
+    @JsonIgnore
+    public String getKey() {
+        return getId();
+    }
+
+
 }

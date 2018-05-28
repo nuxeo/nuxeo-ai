@@ -43,13 +43,13 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
  * Take a document event and turn it into a stream BlobTextStream.
- *
+ * <p>
  * By default it looks for a blob "file:content" property
  */
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
-    private static final Log log = LogFactory.getLog(DocEventToStream.class);
     protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
+    private static final Log log = LogFactory.getLog(DocEventToStream.class);
     protected final List<String> blobProperties;
     protected final List<String> textProperties;
     protected final List<String> customProperties;
@@ -89,7 +89,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             Blob blob = (Blob) property.getValue();
             if (blob != null && blob instanceof ManagedBlob) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.setBlobXPath(propName);
+                blobTextStream.addXPath(propName);
                 blobTextStream.setBlob(getBlobInfo((ManagedBlob) blob));
                 items.add(blobTextStream);
             }
@@ -100,7 +100,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             String text = (String) property.getValue();
             if (text != null) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.setTextXPath(propName);
+                blobTextStream.addXPath(propName);
                 blobTextStream.setText(text);
                 items.add(blobTextStream);
             }
@@ -115,7 +115,8 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
 
     public BlobTextStream getBlobTextStream(DocumentModel doc) {
         BlobTextStream blobTextStream =
-                new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc.getType(), doc.getFacets());
+                new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
+                        .getType(), doc.getFacets());
         Map<String, Map<String, String>> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {
@@ -127,6 +128,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
                 Map<String, String> schemaProps = properties.getOrDefault(schema, new HashMap<>());
                 schemaProps.put(prop, String.valueOf(val));
                 properties.put(schema, schemaProps);
+                blobTextStream.addXPath(propName);
             }
 
         });

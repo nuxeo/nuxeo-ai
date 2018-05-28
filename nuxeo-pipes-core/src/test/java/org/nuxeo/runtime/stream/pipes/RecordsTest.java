@@ -74,7 +74,7 @@ public class RecordsTest {
         assertNotNull(andBack);
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
-        assertEquals("file:content", andBack.getBlobXPath());
+        assertEquals("file:content", andBack.getXPaths().iterator().next());
         assertEquals(7, andBack.getBlob().getLength());
         assertEquals(TEST_MIME_TYPE, andBack.getBlob().getMimeType());
     }
