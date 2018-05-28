@@ -21,31 +21,36 @@ package org.nuxeo.ai.metadata;
 import java.time.Instant;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
+import org.apache.commons.lang.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Additional metadata created using Artificial Intelligence
+ * A normalized view of metadata returned by an intelligent service
  */
-public class AIMetadata {
+public abstract class AIMetadata {
 
     public final Instant created;
     public final String creator;
-    @JsonRawValue
-    public final String raw;
-    public final String predictionModelVersion;
-    public final boolean human;
+    public final String serviceName;
+    public final String kind;
     public final String repositoryName;
     public final String targetDocumentRef; //Document reference
+    public final String rawKey;
 
-    public AIMetadata(String predictionModelVersion, String repositoryName, String targetDocumentRef,
-                      boolean human, String creator, Instant created, String raw) {
+    public AIMetadata(String serviceName, String kind, String repositoryName, String targetDocumentRef,
+                      String creator, Instant created, String rawKey) {
+        this.kind = kind;
         this.repositoryName = repositoryName;
         this.targetDocumentRef = targetDocumentRef;
         this.created = created;
         this.creator = creator;
-        this.raw = raw;
-        this.predictionModelVersion = predictionModelVersion;
-        this.human = human;
+        this.rawKey = rawKey;
+        this.serviceName = serviceName;
+    }
+
+    public String getKind() {
+        return kind;
     }
 
     public Instant getCreated() {
@@ -56,16 +61,17 @@ public class AIMetadata {
         return creator;
     }
 
-    public String getRaw() {
-        return raw;
+    public String getRawKey() {
+        return rawKey;
     }
 
-    public String getPredictionModelVersion() {
-        return predictionModelVersion;
+    public String getServiceName() {
+        return serviceName;
     }
 
+    @JsonIgnore
     public boolean isHuman() {
-        return human;
+        return StringUtils.isNotEmpty(creator);
     }
 
     public String getRepositoryName() {
@@ -81,18 +87,17 @@ public class AIMetadata {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AIMetadata that = (AIMetadata) o;
-        return human == that.human &&
-                Objects.equals(created, that.created) &&
+        return Objects.equals(created, that.created) &&
                 Objects.equals(creator, that.creator) &&
-                Objects.equals(raw, that.raw) &&
-                Objects.equals(predictionModelVersion, that.predictionModelVersion) &&
+                Objects.equals(serviceName, that.serviceName) &&
+                Objects.equals(kind, that.kind) &&
                 Objects.equals(repositoryName, that.repositoryName) &&
-                Objects.equals(targetDocumentRef, that.targetDocumentRef);
+                Objects.equals(targetDocumentRef, that.targetDocumentRef) &&
+                Objects.equals(rawKey, that.rawKey);
     }
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(created, creator, raw, predictionModelVersion, human, repositoryName, targetDocumentRef);
+        return Objects.hash(created, creator, serviceName, kind, repositoryName, targetDocumentRef, rawKey);
     }
 }

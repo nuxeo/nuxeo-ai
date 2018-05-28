@@ -18,43 +18,49 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.runtime.stream.pipes.services.JacksonUtil;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * The result of enrichment
+ * A normalized view of the result of an Enrichment Service.
+ * This class is designed to be serialized as JSON.
  */
 @JsonDeserialize(builder = EnrichmentMetadata.Builder.class)
 public class EnrichmentMetadata extends AIMetadata {
 
-    protected final String targetDocumentProperty; //Document reference
+    protected final List<String> targetDocumentProperties; //Document reference
     protected final List<Label> labels;
     protected final String blobDigest;
-    protected final boolean singleLabel;
-    //Is this a single-label result of categorizing instances into precisely one label
 
     private EnrichmentMetadata(Builder builder) {
-        super(builder.predictionModelVersion, builder.repositoryName, builder.targetDocumentRef, builder.human, builder.creator, builder.created, builder.raw);
+        super(builder.serviceName, builder.kind, builder.repositoryName, builder.targetDocumentRef,
+              builder.creator, builder.created, builder.rawKey
+        );
         if (builder.labels == null || builder.labels.isEmpty()) {
-            labels = Collections.emptyList();
+            labels = emptyList();
         } else {
-            labels = Collections.unmodifiableList(builder.labels);
+            labels = unmodifiableList(builder.labels);
         }
         blobDigest = builder.blobDigest;
-        singleLabel = builder.singleLabel;
-        targetDocumentProperty = builder.targetDocumentProperty;
+        if (builder.targetDocumentProperties != null && !builder.targetDocumentProperties.isEmpty()) {
+            targetDocumentProperties = builder.targetDocumentProperties;
+        } else {
+            targetDocumentProperties = emptyList();
+        }
     }
 
     public List<Label> getLabels() {
@@ -65,44 +71,44 @@ public class EnrichmentMetadata extends AIMetadata {
         return blobDigest;
     }
 
+    @JsonIgnore
     public boolean isSingleLabel() {
-        return singleLabel;
+        return labels.size() == 1;
     }
 
-    public String getTargetDocumentProperty() {
-        return targetDocumentProperty;
+    public List<String> getTargetDocumentProperties() {
+        return targetDocumentProperties;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         EnrichmentMetadata metadata = (EnrichmentMetadata) o;
-        return singleLabel == metadata.singleLabel &&
-                Objects.equals(targetDocumentProperty, metadata.targetDocumentProperty) &&
+        return Objects.equals(targetDocumentProperties, metadata.targetDocumentProperties) &&
                 Objects.equals(labels, metadata.labels) &&
                 Objects.equals(blobDigest, metadata.blobDigest);
     }
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(targetDocumentProperty, labels, blobDigest, singleLabel);
+        return Objects.hash(super.hashCode(), targetDocumentProperties, labels, blobDigest);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("targetDocumentProperty", targetDocumentProperty)
+                .append("targetDocumentProperties", targetDocumentProperties)
                 .append("labels", labels)
                 .append("blobDigest", blobDigest)
-                .append("singleLabel", singleLabel)
                 .append("created", created)
                 .append("creator", creator)
-                .append("raw", raw)
-                .append("predictionModelVersion", predictionModelVersion)
-                .append("human", human)
+                .append("serviceName", serviceName)
+                .append("kind", kind)
+                .append("repositoryName", repositoryName)
                 .append("targetDocumentRef", targetDocumentRef)
+                .append("rawKey", rawKey)
                 .toString();
     }
 
@@ -152,64 +158,56 @@ public class EnrichmentMetadata extends AIMetadata {
 
         //mandatory
         private final Instant created;
-        private final String creator;
-        private final String predictionModelVersion;
+        private final String serviceName;
+        private final String kind;
         private final String repositoryName;
         private final String targetDocumentRef;
 
         //optional
-        private String raw;
-        private boolean human;
+        private String rawKey;
         private List<Label> labels;
+        private String creator;
         private String blobDigest;
-        private boolean singleLabel;
-        private String targetDocumentProperty;
-
+        private List<String> targetDocumentProperties;
 
         @JsonCreator
         public Builder(@JsonProperty("created") Instant created,
-                       @JsonProperty("creator") String creator,
-                       @JsonProperty("predictionModelVersion") String predictionModelVersion,
+                       @JsonProperty("kind") String kind,
+                       @JsonProperty("serviceName") String serviceName,
                        @JsonProperty("repositoryName") String repositoryName,
                        @JsonProperty("targetDocumentRef") String targetDocumentRef) {
             this.created = created;
-            this.creator = creator;
-            this.predictionModelVersion = predictionModelVersion;
+            this.kind = kind;
+            this.serviceName = serviceName;
             this.repositoryName = repositoryName;
             this.targetDocumentRef = targetDocumentRef;
         }
 
-        public Builder(String creator, String predictionModelVersion, String repositoryName, String targetDocumentRef) {
+        public Builder(String kind, String serviceName, String repositoryName, String targetDocumentRef) {
             this.repositoryName = repositoryName;
             this.targetDocumentRef = targetDocumentRef;
             this.created = Instant.now();
-            this.creator = creator;
-            this.predictionModelVersion = predictionModelVersion;
+            this.kind = kind;
+            this.serviceName = serviceName;
         }
 
-        public Builder withTargetDocumentProperty(String targetDocumentProperty) {
-            this.targetDocumentProperty = targetDocumentProperty;
-            return this;
-        }
-
-        @JsonDeserialize(using = JacksonUtil.JsonRawValueDeserializer.class)
-        public Builder withRaw(String raw) {
-            this.raw = raw;
-            return this;
-        }
-
-        public Builder withHuman(boolean human) {
-            this.human = human;
-            return this;
-        }
-
-        public Builder withSingleLabel(boolean singleLabel) {
-            this.singleLabel = singleLabel;
+        public Builder withTargetDocumentProperties(List<String> targetDocumentProperty) {
+            this.targetDocumentProperties = targetDocumentProperty;
             return this;
         }
 
         public Builder withLabels(List<Label> labels) {
             this.labels = labels;
+            return this;
+        }
+
+        public Builder withCreator(String creator) {
+            this.creator = creator;
+            return this;
+        }
+
+        public Builder withRawKey(String rawBlobKey) {
+            this.rawKey = rawBlobKey;
             return this;
         }
 
@@ -219,10 +217,10 @@ public class EnrichmentMetadata extends AIMetadata {
         }
 
         public EnrichmentMetadata build() {
-            if (StringUtils.isBlank(predictionModelVersion)
+            if (StringUtils.isBlank(serviceName)
+                    || StringUtils.isBlank(kind)
                     || StringUtils.isBlank(targetDocumentRef)
                     || StringUtils.isBlank(repositoryName)
-                    || StringUtils.isBlank(creator)
                     || created == null) {
                 throw new IllegalArgumentException("Invalid Enrichment metadata has been given. " + this.toString());
             }

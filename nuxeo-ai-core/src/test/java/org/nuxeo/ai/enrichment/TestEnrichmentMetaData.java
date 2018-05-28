@@ -23,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
+import java.util.Arrays;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.lib.stream.computation.Record;
@@ -35,17 +37,18 @@ public class TestEnrichmentMetaData {
 
     @Test
     public void testBuilder() {
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("me", "m1", repositoryName, "doc1").build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test", repositoryName, "doc1").build();
         assertNotNull(metadata);
     }
 
     @Test
     public void testJson() {
         EnrichmentMetadata metadata =
-                new EnrichmentMetadata.Builder("me", "m1", repositoryName, "doc1")
+                new EnrichmentMetadata.Builder("m1", "test",repositoryName, "doc1")
                         .withBlobDigest("blobxx")
-                        .withRaw("{\"labels\":[{\"name\":\"Aurora\",\"confidence\":98.25269}]}")
-                        .withTargetDocumentProperty("tbloby").build();
+                        .withCreator("bob")
+                        .withRawKey("xyz")
+                        .withTargetDocumentProperties(Arrays.asList("tbloby")).build();
         assertNotNull(metadata);
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);

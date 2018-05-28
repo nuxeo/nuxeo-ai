@@ -41,7 +41,7 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
         this.numFailures = numFailures;
         this.numRetries = numRetries;
         this.maxSize = EnrichmentDescriptor.DEFAULT_MAX_SIZE;
-        this.modelVersion = "EnRich1";
+        this.name = "EnRich1";
     }
 
     @Override
@@ -54,6 +54,6 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
         if (++attempts <= numFailures) {
             throw exception;
         }
-        return new EnrichmentMetadata.Builder("ErroringEnricher", modelVersion, "default", "myDocId").build();
+        return new EnrichmentMetadata.Builder("test", "name", "default", "myDocId").build();
     }
 }

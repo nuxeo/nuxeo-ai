@@ -28,9 +28,8 @@ import java.util.Set;
 public abstract class AbstractEnrichmentService implements EnrichmentService {
 
     public static final String MAX_RESULTS = "maxResults";
-    public static final String PREDICTION_MODEL_VERSION = "modelVersion";
+
     protected String name;
-    protected String modelVersion;
     protected long maxSize;
     protected Set<String> supportedMimeTypes = new HashSet<>();
 
@@ -38,7 +37,6 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
     public void init(EnrichmentDescriptor descriptor) {
         this.name = descriptor.name;
         this.maxSize = descriptor.maxSize;
-        modelVersion = descriptor.options.getOrDefault(PREDICTION_MODEL_VERSION, name + ".1");
     }
 
     @Override

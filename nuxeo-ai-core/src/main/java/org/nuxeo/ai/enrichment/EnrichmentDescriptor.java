@@ -32,13 +32,16 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 @XObject("enrichment")
 public class EnrichmentDescriptor {
 
-    public static final Long DEFAULT_MAX_SIZE = 25_000L;
+    public static final Long DEFAULT_MAX_SIZE = 5_000_000L;
 
     @XNode("@name")
     public String name;
 
     @XNode("@enabled")
     protected boolean enabled = true;
+
+    @XNode("@kind")
+    protected String kind;
 
     @XNode("@class")
     protected Class<? extends EnrichmentService> service;
@@ -59,6 +62,9 @@ public class EnrichmentDescriptor {
         return mimeTypes;
     }
 
+    public String getKind() {
+        return kind;
+    }
     public EnrichmentService getService() {
         try {
             EnrichmentService serviceInstance = service.newInstance();
