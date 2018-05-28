@@ -7,6 +7,6 @@ import java.util.Map;
  */
 public interface Initializable {
 
-    public void init(Map<String, String> options);
+    void init(Map<String, String> options);
 
 }

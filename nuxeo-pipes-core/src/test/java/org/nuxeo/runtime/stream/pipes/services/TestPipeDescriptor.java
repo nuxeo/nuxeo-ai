@@ -33,7 +33,7 @@ import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
 public class TestPipeDescriptor {
 
     @Test
-    public void TestDescriptor() throws Exception {
+    public void TestDescriptor() {
         PipeDescriptor descriptor = new PipeDescriptor();
         validate(descriptor, true, true, true);
         descriptor.id = "myId";

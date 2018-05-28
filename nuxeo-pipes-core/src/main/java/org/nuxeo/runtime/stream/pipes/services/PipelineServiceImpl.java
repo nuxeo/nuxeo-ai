@@ -54,11 +54,10 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public static final String ROUTE_AP = "pipes";
     public static final String PIPES_CONFIG = "nuxeo.pipes.config.name";
     private static final Log log = LogFactory.getLog(PipelineServiceImpl.class);
-
-    private String pipeConfigName;
     protected final Map<String, PipeDescriptor> configs = new HashMap<>();
     protected final List<EventListenerDescriptor> listenerDescriptors = new ArrayList<>();
     protected final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
+    private String pipeConfigName;
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {

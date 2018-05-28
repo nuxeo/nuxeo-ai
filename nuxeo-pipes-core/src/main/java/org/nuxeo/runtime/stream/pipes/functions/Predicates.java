@@ -26,6 +26,9 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 
+/**
+ * Helper class containing document-related predicates for use with Filter Functions.
+ */
 public class Predicates {
 
     private Predicates() {

@@ -39,7 +39,7 @@ public class PipeDescriptor {
     @XNode("@id")
     public String id;
     @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
-    public Map<String, String> options = new HashMap<>();
+    public final Map<String, String> options = new HashMap<>();
     @XNode("@enabled")
     protected boolean enabled = true;
     @SuppressWarnings("rawtypes")

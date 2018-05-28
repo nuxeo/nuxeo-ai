@@ -63,7 +63,7 @@ public class JacksonUtil {
             }
             jg.writeEndObject();
         } catch (IOException e) {
-            throw new NuxeoException("Unabled to turn data into a json String", e);
+            throw new NuxeoException("Unable to turn data into a json String", e);
         }
         return writer.toString();
     }
@@ -103,47 +103,11 @@ public class JacksonUtil {
     }
 
     /**
-     * A Consumer of JsonGenerator that throws an IOException
-     */
-    @FunctionalInterface
-    public static interface JsonGeneratorConsumer {
-        void accept(JsonGenerator jg) throws IOException;
-    }
-
-    /**
-     * Allows Jackson to treat a String of JSON as a raw string.
-     */
-    public static class JsonRawValueDeserializer extends JsonDeserializer<String> {
-
-        @Override
-        public String deserialize(JsonParser jp, DeserializationContext context)
-                throws IOException {
-            return jp.readValueAsTree().toString();
-        }
-    }
-
-    /**
      * Serializes an instant
      */
-    public static class InstantSerializer extends JsonSerializer<Instant> {
-
-        @Override
-        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException {
-            jg.writeObject(instant.toString());
-        }
-    }
-
-    /**
-     * Deserializes an instant
-     */
-    public static class InstantDeserializer extends JsonDeserializer<Instant> {
-
-        @Override
-        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-            String val = ctxt.readValue(jp, String.class);
-            return Instant.parse(val);
-
-        }
+    @FunctionalInterface
+    public interface JsonGeneratorConsumer {
+        void accept(JsonGenerator jg) throws IOException;
     }
 
 

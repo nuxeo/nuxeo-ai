@@ -50,6 +50,7 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelFactory;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.Event;
@@ -78,15 +79,32 @@ import com.google.inject.Inject;
 public class EventPipesTest {
 
     public static final String TEST_MIME_TYPE = "text/plain";
-
-    @Inject
-    CoreSession session;
-
     @Inject
     protected PipelineService pipeService;
-
+    @Inject
+    CoreSession session;
     @Inject
     EventService eventService;
+
+    public static Event getTestEvent(CoreSession session) throws Exception {
+        DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
+        ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
+        doc.addFacet("Publishable");
+        doc.addFacet("Versionable");
+        Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
+        doc.setPropertyValue("file:content", (Serializable) blob);
+        return getTestEvent(session, doc);
+    }
+
+    public static Event getTestEvent(CoreSession session, DocumentModel doc) {
+        doc = session.createDocument(doc);
+        session.save();
+        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), doc);
+        Event event = evctx.newEvent("myDocEvent");
+        event.setInline(true);
+        assertNotNull(event);
+        return event;
+    }
 
     @Test
     public void testFilterFunctions() throws Exception {
@@ -125,6 +143,14 @@ public class EventPipesTest {
 
         func = new FilterFunction<>(docEvent(isNotProxy().and(isPicture())), e -> e);
         assertNull("It's not a picture", func.apply(event));
+
+        func = new FilterFunction<>(in -> true, s -> {
+            throw new NuxeoException("Invalid");
+        } );
+        func.withMetrics(funcMetric);
+        assertMetric(0, "nuxeo.func.test.errors", funcMetric);
+        func.apply(event);
+        assertMetric(1, "nuxeo.func.test.errors", funcMetric);
     }
 
     @Test
@@ -251,25 +277,5 @@ public class EventPipesTest {
         Map<String, Metric> metricMap = metricSet.getMetrics();
         Gauge g = (Gauge) metricMap.get(metric);
         return (Long) g.getValue();
-    }
-
-    public static Event getTestEvent(CoreSession session) throws Exception {
-        DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
-        ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
-        doc.addFacet("Publishable");
-        doc.addFacet("Versionable");
-        Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
-        doc.setPropertyValue("file:content", (Serializable) blob);
-        return getTestEvent(session, doc);
-    }
-
-    public static Event getTestEvent(CoreSession session, DocumentModel doc) throws Exception {
-        doc = session.createDocument(doc);
-        session.save();
-        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), doc);
-        Event event = evctx.newEvent("myDocEvent");
-        event.setInline(true);
-        assertNotNull(event);
-        return event;
     }
 }
