@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema targetNamespace="http://www.nuxeo.org/ecm/schemas/enrichment/"
+           xmlns:nxrich="http://www.nuxeo.org/ecm/schemas/enrichment/"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
+           xmlns:ref="http://www.nuxeo.org/ecm/schemas/core/external-references/">
+
+  <xs:complexType name="content">
+    <xs:sequence>
+      <xs:element name="encoding" type="xs:string"/>
+      <xs:element name="mime-type" type="xs:string"/>
+      <xs:element name="data" type="xs:base64Binary"/>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="length" type="xs:long"/>
+      <xs:element name="digest" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="stringList">
+    <xs:list itemType="xs:string" />
+  </xs:simpleType>
+
+  <xs:complexType name="classificationsType">
+    <xs:sequence>
+      <xs:element name="creator">
+        <xs:simpleType>
+          <xs:restriction base="xs:string" ref:resolver="userManagerResolver" ref:type="user"/>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="service" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="kind" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="raw" type="nxrich:content"/>
+      <xs:element name="normalized" type="nxrich:content"/>
+      <xs:element name="targetDocumentProperties" type="nxrich:stringList"/>
+      <xs:element name="labels" type="nxrich:stringList"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="classificationsListType">
+    <xs:sequence>
+      <xs:element name="item" type="nxrich:classificationsType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="classifications" type="nxrich:classificationsListType" />
+
+</xs:schema>
