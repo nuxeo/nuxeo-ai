@@ -146,4 +146,28 @@ public class JacksonUtil {
         }
     }
 
+
+    /**
+     * Serializes an instant
+     */
+    public static class InstantSerializer extends JsonSerializer<Instant> {
+
+        @Override
+        public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException {
+            jg.writeObject(instant.toString());
+        }
+    }
+
+    /**
+     * Deserializes an instant
+     */
+    public static class InstantDeserializer extends JsonDeserializer<Instant> {
+
+        @Override
+        public Instant deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+            String val = ctxt.readValue(jp, String.class);
+            return Instant.parse(val);
+
+        }
+    }
 }

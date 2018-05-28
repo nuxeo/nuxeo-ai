@@ -25,12 +25,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.TEST_MIME_TYPE;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.getTestEvent;
+import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,6 +51,7 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
@@ -85,10 +91,8 @@ public class RecordsTest {
     }
 
     @Test
-    public void TestJacksonUtil() {
-        String raw = toJsonString(jg -> {
-            jg.writeStringField("myField", "cake");
-        });
+    public void TestJacksonUtil() throws IOException {
+        String raw = toJsonString(jg -> jg.writeStringField("myField", "cake"));
 
         assertEquals("{\"myField\":\"cake\"}", raw);
 
@@ -96,12 +100,21 @@ public class RecordsTest {
         assertEquals("{}", raw);
 
         try {
-            raw = toJsonString(jg -> {
+            toJsonString(jg -> {
                 throw new IOException("Need to handle this");
             });
             fail();
         } catch (NuxeoException handled) {
             assertTrue(handled.getCause().getClass().getSimpleName().equals("IOException"));
         }
+        Instant rightNow = Instant.now();
+        String instant = toJsonString(jg -> jg.writeObjectField("now", rightNow));
+        JsonNode nowNode = MAPPER.readTree(instant).get("now");
+        assertEquals("ISO_INSTANT format must be used.", rightNow, Instant.parse(nowNode.asText()));
+
+        Writer writer = new StringWriter();
+        MAPPER.writeValue(writer, rightNow);
+        Instant nowAgain = MAPPER.readValue(writer.toString(), Instant.class);
+        assertEquals(rightNow, nowAgain);
     }
 }
