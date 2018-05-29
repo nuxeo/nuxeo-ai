@@ -46,6 +46,9 @@ public class EnrichmentDescriptor {
     @XNode("@class")
     protected Class<? extends EnrichmentService> service;
 
+    @XNode("@blobProviderId")
+    protected String blobProviderId;
+
     @XNode("@maxSize")
     protected long maxSize = DEFAULT_MAX_SIZE;
 
@@ -65,6 +68,11 @@ public class EnrichmentDescriptor {
     public String getKind() {
         return kind;
     }
+
+    public String getBlobProviderId() {
+        return blobProviderId;
+    }
+
     public EnrichmentService getService() {
         try {
             EnrichmentService serviceInstance = service.newInstance();

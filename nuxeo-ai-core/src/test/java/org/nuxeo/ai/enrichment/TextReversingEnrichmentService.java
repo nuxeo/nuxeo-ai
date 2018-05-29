@@ -18,7 +18,12 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang.StringUtils;
+import org.nuxeo.ecm.core.api.security.SecurityConstants;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
@@ -28,8 +33,14 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
 
     @Override
     public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
-        return new EnrichmentMetadata.Builder("NoEnrichment", modelVersion, "default", blobTextStream.getId())
-                .withTargetDocumentProperty(blobTextStream.getTextXPath())
-                .withRaw(StringUtils.reverse(blobTextStream.getText())).build();
+        String reversedText = StringUtils.reverse(blobTextStream.getText());
+        List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
+                                                      .map(l -> new EnrichmentMetadata.Label(l, 1))
+                                                      .collect(Collectors.toList());
+        return new EnrichmentMetadata.Builder( "test", name, "test", blobTextStream.getId())
+                .withRawKey(saveJsonAsRawBlob(reversedText, "test"))
+                .withLabels(labels)
+                .withCreator(SecurityConstants.SYSTEM_USERNAME)
+                .withTargetDocumentProperties(blobTextStream.getXPaths()).build();
     }
 }

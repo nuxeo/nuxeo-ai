@@ -27,6 +27,8 @@ import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Enriches something using a service (usually an external service)
+ * AbstractEnrichmentService provides a general implementation.
+ * @see AbstractEnrichmentService
  */
 public interface EnrichmentService {
 
@@ -45,6 +47,12 @@ public interface EnrichmentService {
      * The name of the service
      */
     String getName();
+
+
+    /**
+     * The blob provider used with this Enrichment Service
+     */
+    String getBlobProviderId();
 
     /**
      * Does the service support the mimeType.

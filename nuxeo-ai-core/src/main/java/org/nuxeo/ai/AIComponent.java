@@ -24,8 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeEntry;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeRegistry;
 import org.nuxeo.runtime.api.Framework;
@@ -38,10 +42,22 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class AIComponent extends DefaultComponent {
 
+    public static final String DEFAULT_BLOB_PROVIDER_PARAM = "nuxeo.enrichment.default.blobProvider";
     public static final String ENRICHMENT = "enrichment";
 
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
     protected final Map<String, EnrichmentService> enrichmentServices = new HashMap<>();
+
+    /**
+     * Get a blob provider id for the specified EnrichmentDescriptor
+     */
+    public static String getBlobProviderId(EnrichmentDescriptor descriptor) {
+        String blobProviderId = descriptor.getBlobProviderId();
+        if (StringUtils.isEmpty(blobProviderId)) {
+            blobProviderId = Framework.getProperty(DEFAULT_BLOB_PROVIDER_PARAM);
+        }
+        return blobProviderId;
+    }
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -106,6 +122,18 @@ public class AIComponent extends DefaultComponent {
         }
 
         return null;
+    }
+
+    /**
+     * Gets a blob provider for the specified enrichment service.
+     */
+    public BlobProvider getBlobProviderForEnrichmentService(String serviceName) {
+        EnrichmentDescriptor descriptor = enrichmentConfigs.get(serviceName);
+        if (descriptor != null) {
+            return Framework.getService(BlobManager.class).getBlobProvider(getBlobProviderId(descriptor));
+        }
+
+        throw new NuxeoException("Unknown enrichment service "+serviceName);
     }
 
 }

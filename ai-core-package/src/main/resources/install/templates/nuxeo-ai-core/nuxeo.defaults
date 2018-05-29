@@ -6,3 +6,5 @@ nuxeo.template.includes=common
 
 # org.nuxeo.ecm.instance.description=Nuxeo ECM customized with ai-core
 nuxeo.pipes.config.name=pipes
+
+nuxeo.enrichment.default.blobProvider=default
