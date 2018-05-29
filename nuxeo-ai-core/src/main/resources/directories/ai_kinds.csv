@@ -1,0 +1,7 @@
+"id","label","parent","obsolete"
+"classification","Classification","","0"
+"sentiment","Sentiment Analysis","classification","0"
+"custom","Custom Model Classification","classification","0"
+"detect","Detection","classification","0"
+"object","Object Detection","detect","0"
+"text","Text Detection","detect","0"

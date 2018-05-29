@@ -37,7 +37,7 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
         List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());
-        return new EnrichmentMetadata.Builder( "test", name, "test", blobTextStream.getId())
+        return new EnrichmentMetadata.Builder( "/classification/custom", name, "test", blobTextStream.getId())
                 .withRawKey(saveJsonAsRawBlob(reversedText, "test"))
                 .withLabels(labels)
                 .withCreator(SecurityConstants.SYSTEM_USERNAME)

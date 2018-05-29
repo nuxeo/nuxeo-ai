@@ -46,6 +46,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
 
     protected String name;
     protected long maxSize;
+    protected String kind;
     protected String blobProviderId;
     protected Set<String> supportedMimeTypes = new HashSet<>();
 
@@ -53,6 +54,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
     public void init(EnrichmentDescriptor descriptor) {
         this.name = descriptor.name;
         this.maxSize = descriptor.maxSize;
+        this.kind = descriptor.kind;
         blobProviderId = AIComponent.getBlobProviderId(descriptor);
     }
 
@@ -66,6 +68,10 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
         return name;
     }
 
+    @Override
+    public String getKind() {
+        return kind;
+    }
 
     @Override
     public String getBlobProviderId() {

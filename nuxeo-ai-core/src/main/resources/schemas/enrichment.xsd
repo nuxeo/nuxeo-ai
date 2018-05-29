@@ -17,7 +17,10 @@
     </xs:sequence>
   </xs:complexType>
   <xs:simpleType name="stringList">
-    <xs:list itemType="xs:string" />
+    <xs:list itemType="xs:string"/>
+  </xs:simpleType>
+  <xs:simpleType name="kindType">
+    <xs:restriction base="xs:string" ref:resolver="directoryResolver" ref:directory="aikind"/>
   </xs:simpleType>
 
   <xs:complexType name="classificationsType">
@@ -28,7 +31,7 @@
         </xs:simpleType>
       </xs:element>
       <xs:element name="service" type="xs:string" nillable="false" nxsv:nillable="false"/>
-      <xs:element name="kind" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="kind" type="nxrich:kindType" nillable="false" nxsv:nillable="false"/>
       <xs:element name="raw" type="nxrich:content"/>
       <xs:element name="normalized" type="nxrich:content"/>
       <xs:element name="targetDocumentProperties" type="nxrich:stringList"/>
@@ -41,6 +44,6 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:element name="classifications" type="nxrich:classificationsListType" />
+  <xs:element name="classifications" type="nxrich:classificationsListType"/>
 
 </xs:schema>

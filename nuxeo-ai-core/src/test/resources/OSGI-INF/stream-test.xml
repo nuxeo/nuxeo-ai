@@ -2,7 +2,7 @@
 <component name="org.nuxeo.enrichment.stream.test" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.AIComponent">
-    <enrichment name="simpleTest" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
+    <enrichment name="simpleTest" kind="/classification/detect/object" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
@@ -14,7 +14,7 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="simpleProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="simpleProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">images.out</option>
@@ -23,8 +23,16 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="tagsProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="tagsProcessor" logConfig="test_enrichment" daultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
+      <option name="source">images.out</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="test_enrichment"
+                     class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <option name="source">images.out</option>
     </streamProcessor>
   </extension>

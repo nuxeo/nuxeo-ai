@@ -24,6 +24,9 @@ import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,11 +44,20 @@ public class TestEnrichmentMetaData {
         assertNotNull(metadata);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalid() {
+        new EnrichmentMetadata.Builder("m1", "test", null, null).build();
+    }
+
     @Test
     public void testJson() {
+        List<EnrichmentMetadata.Label> labels = Stream.of("label1", "l2", "lab3")
+                                                      .map(l -> new EnrichmentMetadata.Label(l, 1))
+                                                      .collect(Collectors.toList());
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test",repositoryName, "doc1")
                         .withBlobDigest("blobxx")
+                        .withLabels(labels)
                         .withCreator("bob")
                         .withRawKey("xyz")
                         .withTargetDocumentProperties(Arrays.asList("tbloby")).build();
@@ -53,6 +65,7 @@ public class TestEnrichmentMetaData {
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);
         assertEquals(metadata, metadataBackAgain);
+        assertNotNull(metadataBackAgain.toString());
 
     }
 }

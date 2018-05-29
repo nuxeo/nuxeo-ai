@@ -37,11 +37,11 @@ public class EnrichmentDescriptor {
     @XNode("@name")
     public String name;
 
+    @XNode("@kind")
+    public String kind;
+
     @XNode("@enabled")
     protected boolean enabled = true;
-
-    @XNode("@kind")
-    protected String kind;
 
     @XNode("@class")
     protected Class<? extends EnrichmentService> service;

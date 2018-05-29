@@ -43,7 +43,7 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
 
     @Override
     public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
-        return new EnrichmentMetadata.Builder("test", name,  blobTextStream.getRepositoryName(), blobTextStream.getId())
+        return new EnrichmentMetadata.Builder("/classification/custom", name,  blobTextStream.getRepositoryName(), blobTextStream.getId())
                 .withLabels(labels).build();
 
     }

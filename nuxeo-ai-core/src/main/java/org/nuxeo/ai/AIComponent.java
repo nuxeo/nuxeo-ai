@@ -30,6 +30,8 @@ import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
+import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeEntry;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeRegistry;
 import org.nuxeo.runtime.api.Framework;
@@ -43,10 +45,13 @@ import org.nuxeo.runtime.model.DefaultComponent;
 public class AIComponent extends DefaultComponent {
 
     public static final String DEFAULT_BLOB_PROVIDER_PARAM = "nuxeo.enrichment.default.blobProvider";
+    public static final String AI_KIND_DIRECTORY = "aikind";
     public static final String ENRICHMENT = "enrichment";
 
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
     protected final Map<String, EnrichmentService> enrichmentServices = new HashMap<>();
+
+    protected DirectoryEntryResolver kindResolver;
 
     /**
      * Get a blob provider id for the specified EnrichmentDescriptor
@@ -70,6 +75,7 @@ public class AIComponent extends DefaultComponent {
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        getKindResolver();
         enrichmentConfigs.values().forEach(descriptor -> {
             if (!enrichmentServices.containsKey(descriptor.name)) {
                 initialize(descriptor);
@@ -84,6 +90,18 @@ public class AIComponent extends DefaultComponent {
         if (!enrichmentServices.containsKey(descriptor.name)) {
             MimetypeRegistry mimeRegistry = Framework.getService(MimetypeRegistry.class);
             EnrichmentService enrichmentService = descriptor.getService();
+            if (StringUtils.isEmpty(enrichmentService.getName()) || StringUtils.isEmpty(enrichmentService.getKind())) {
+                throw new IllegalArgumentException(String.format("An enrichment service must be configured with a name %s and kind %s",
+                                                                 descriptor.name, descriptor.getKind()
+                ));
+            }
+
+            if (!getKindResolver().validate(descriptor.getKind())) {
+                throw new IllegalArgumentException(String.format("The %s kind must be defined in the %s vocabulary",
+                                                                 descriptor.getKind(), AI_KIND_DIRECTORY
+                ));
+            }
+
             List<String> mimeTypes = new ArrayList<>();
             descriptor.getMimeTypes().forEach(mimeType -> {
                 if (mimeType.normalized) {
@@ -107,6 +125,7 @@ public class AIComponent extends DefaultComponent {
 
     /**
      * Returns an enrichment service
+     *
      * @param serviceName the name of the service
      * @return EnrichmentService, an implementation of EnrichmentService or null if not found
      */
@@ -133,7 +152,17 @@ public class AIComponent extends DefaultComponent {
             return Framework.getService(BlobManager.class).getBlobProvider(getBlobProviderId(descriptor));
         }
 
-        throw new NuxeoException("Unknown enrichment service "+serviceName);
+        throw new NuxeoException("Unknown enrichment service " + serviceName);
     }
 
+    public DirectoryEntryResolver getKindResolver() {
+        if (kindResolver == null) {
+            ObjectResolverService objectResolverService = Framework.getService(ObjectResolverService.class);
+            Map<String, String> params = new HashMap<>();
+            params.put(DirectoryEntryResolver.PARAM_DIRECTORY, AI_KIND_DIRECTORY);
+            kindResolver =
+                    (DirectoryEntryResolver) objectResolverService.getResolver(DirectoryEntryResolver.NAME, params);
+        }
+        return kindResolver;
+    }
 }

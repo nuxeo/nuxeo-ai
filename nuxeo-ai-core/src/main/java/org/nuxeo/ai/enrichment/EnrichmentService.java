@@ -48,6 +48,10 @@ public interface EnrichmentService {
      */
     String getName();
 
+    /**
+     * The kind of service.  The kind must match an id of an entry in the "aikind" vocabulary.
+     */
+    String getKind();
 
     /**
      * The blob provider used with this Enrichment Service
