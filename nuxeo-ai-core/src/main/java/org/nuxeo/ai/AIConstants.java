@@ -16,12 +16,20 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.metadata;
+package org.nuxeo.ai;
 
 /**
  * Provides constants for AI metadata
  */
-public class MetadataConstants {
+public class AIConstants {
+
+    public static final String AI_KIND_DIRECTORY = "aikind";
+    public static final String ENRICHMENT_XP = "enrichment";
+
+    //Settings in nuxeo.conf
+    public static final String DEFAULT_BLOB_PROVIDER_PARAM = "nuxeo.enrichment.default.blobProvider";
+    public static final String ENRICHMENT_AS_TAGS = "nuxeo.enrichment.save.tags";
+    public static final String ENRICHMENT_AS_FACETS = "nuxeo.enrichment.save.facets";
 
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";
@@ -36,7 +44,7 @@ public class MetadataConstants {
     public static final String ENRICHMENT_LABELS_PROPERTY = "labels";
     public static final String ENRICHMENT_KIND = "kind";
 
-    private MetadataConstants() {
+    private AIConstants() {
         // just Constants
     }
 }

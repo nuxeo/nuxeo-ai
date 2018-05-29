@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.ai.AIComponent.DEFAULT_BLOB_PROVIDER_PARAM;
+import static org.nuxeo.ai.AIConstants.DEFAULT_BLOB_PROVIDER_PARAM;
 
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl;

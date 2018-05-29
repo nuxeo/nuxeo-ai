@@ -24,11 +24,12 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
-import static org.nuxeo.ai.metadata.MetadataConstants.AI_SERVICE_PROPERTY;
-import static org.nuxeo.ai.metadata.MetadataConstants.ENRICHMENT_CLASSIFICATIONS;
-import static org.nuxeo.ai.metadata.MetadataConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.metadata.MetadataConstants.ENRICHMENT_NAME;
+import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.time.Duration;
@@ -36,7 +37,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -245,7 +245,7 @@ public class TestAIComponent {
         EnrichmentDescriptor descriptor = new EnrichmentDescriptor();
         String badService = "bad service";
         descriptor.name = badService;
-        aiComponent.registerContribution(descriptor, AIComponent.ENRICHMENT, null);
+        aiComponent.registerContribution(descriptor, ENRICHMENT_XP, null);
 
         try {
             aiComponent.getEnrichmentService(badService);

@@ -18,6 +18,10 @@
  */
 package org.nuxeo.ai;
 
+import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
+import static org.nuxeo.ai.AIConstants.DEFAULT_BLOB_PROVIDER_PARAM;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,10 +48,6 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class AIComponent extends DefaultComponent {
 
-    public static final String DEFAULT_BLOB_PROVIDER_PARAM = "nuxeo.enrichment.default.blobProvider";
-    public static final String AI_KIND_DIRECTORY = "aikind";
-    public static final String ENRICHMENT = "enrichment";
-
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
     protected final Map<String, EnrichmentService> enrichmentServices = new HashMap<>();
 
@@ -66,7 +66,7 @@ public class AIComponent extends DefaultComponent {
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
-        if (ENRICHMENT.equals(extensionPoint)) {
+        if (ENRICHMENT_XP.equals(extensionPoint)) {
             EnrichmentDescriptor descriptor = (EnrichmentDescriptor) contribution;
             enrichmentConfigs.put(descriptor.name, descriptor);
         }
