@@ -18,6 +18,8 @@
  */
 package org.nuxeo.runtime.stream.pipes;
 
+import java.util.Optional;
+
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
 import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
@@ -25,9 +27,15 @@ import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
 /**
  * Just a simple pass through
  */
-public class SimpleFilterFunction extends FilterFunction<Record, Record> implements FunctionStreamProcessorTopology {
+public class SimpleFilterFunction extends FilterFunction<Record, Optional<Record>>
+        implements FunctionStreamProcessorTopology {
 
     public SimpleFilterFunction() {
-        super(r -> r.data.length > 0, rec -> rec);
+        super(r -> r.data.length > 0, rec -> Optional.of(rec));
+    }
+
+    @Override
+    public Optional<Record> apply(Record record) {
+        return Optional.empty();
     }
 }

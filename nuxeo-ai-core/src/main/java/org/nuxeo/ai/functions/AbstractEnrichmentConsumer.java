@@ -20,6 +20,7 @@ package org.nuxeo.ai.functions;
 
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -27,14 +28,14 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
 
 /**
- * Consumes enrichment metadata and doesn't return any result
+ * Consumes enrichment metadata and doesn't return any result.
  */
 public abstract class AbstractEnrichmentConsumer implements FunctionStreamProcessorTopology, Consumer<EnrichmentMetadata> {
 
     @Override
-    public Record apply(Record record) {
+    public Optional<Record> apply(Record record) {
         EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
         this.accept(metadata);
-        return null;
+        return Optional.empty();
     }
 }

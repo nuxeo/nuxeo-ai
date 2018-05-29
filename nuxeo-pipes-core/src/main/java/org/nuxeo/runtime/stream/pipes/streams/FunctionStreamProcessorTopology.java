@@ -19,6 +19,7 @@
 package org.nuxeo.runtime.stream.pipes.streams;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.nuxeo.lib.stream.computation.Record;
@@ -28,7 +29,7 @@ import org.nuxeo.runtime.stream.StreamProcessorTopology;
 /**
  * An implementation of a StreamProcessorTopology that makes use of a generic Function<Record, Record>
  */
-public interface FunctionStreamProcessorTopology extends StreamProcessorTopology, Function<Record, Record> {
+public interface FunctionStreamProcessorTopology extends StreamProcessorTopology, Function<Record, Optional<Record>> {
 
     @Override
     default Topology getTopology(Map<String, String> options) {

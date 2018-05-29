@@ -23,12 +23,12 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
- * Works with metadata
+ * Works with metadata.
  */
 public interface DocMetadataService {
 
     /**
-     * Save the enrichment metadata on a document and return the DocumentModel
+     * Saves the enrichment metadata on a document and returns the DocumentModel.
      */
     DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata);
 }

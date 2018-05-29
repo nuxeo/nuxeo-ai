@@ -26,11 +26,7 @@ public class AIConstants {
     public static final String AI_KIND_DIRECTORY = "aikind";
     public static final String ENRICHMENT_XP = "enrichment";
 
-    //Settings in nuxeo.conf
     public static final String DEFAULT_BLOB_PROVIDER_PARAM = "nuxeo.enrichment.default.blobProvider";
-    public static final String ENRICHMENT_AS_TAGS = "nuxeo.enrichment.save.tags";
-    public static final String ENRICHMENT_AS_FACETS = "nuxeo.enrichment.save.facets";
-
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";
     public static final String ENRICHMENT_NAME = "enrichment";
@@ -42,7 +38,7 @@ public class AIConstants {
     public static final String ENRICHMENT_RAW_KEY_PROPERTY = "raw";
     public static final String AI_CREATOR_PROPERTY = "creator";
     public static final String ENRICHMENT_LABELS_PROPERTY = "labels";
-    public static final String ENRICHMENT_KIND = "kind";
+    public static final String ENRICHMENT_KIND_PROPERTY = "kind";
 
     private AIConstants() {
         // just Constants

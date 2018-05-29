@@ -22,7 +22,7 @@ import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
@@ -41,14 +41,13 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.entity.ContentType;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.impl.blob.StringBlob;
 import org.nuxeo.ecm.core.blob.BlobInfo;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.runtime.api.Framework;
@@ -63,7 +62,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
-        //TODO: Handle versions here?
+        //TODO: Handle versions here? and doc not found
         DocumentModel doc = session.getDocument(new IdRef(metadata.getTargetDocumentRef()));
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
@@ -72,7 +71,8 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         Map<String, Object> anItem = createClassification(metadata);
 
         if (anItem != null) {
-            @SuppressWarnings("unchecked") List<Map<String, Object>> classifications =
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> classifications =
                     (List) doc.getProperty(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
             if (classifications == null) {
                 classifications = new ArrayList<>(1);
@@ -112,15 +112,13 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                     blobInfo.key = metadata.getRawKey();
                     rawBlob = rawProvider.readBlob(blobInfo);
                 }
-                metaDataBlob = new StringBlob(MAPPER.writeValueAsString(metadata),
-                                              ContentType.APPLICATION_JSON.getMimeType()
-                );
+                metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(metadata));
             } catch (IOException e) {
                 throw new NuxeoException("Unable to process metadata blob", e);
             }
 
             anEntry.put(AI_SERVICE_PROPERTY, metadata.getServiceName());
-            anEntry.put(ENRICHMENT_KIND, metadata.getKind());
+            anEntry.put(ENRICHMENT_KIND_PROPERTY, metadata.getKind());
             anEntry.put(ENRICHMENT_TARGET_DOCPROP_PROPERTY, metadata.getTargetDocumentProperties());
             anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlob);
             anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);

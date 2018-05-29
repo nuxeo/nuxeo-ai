@@ -18,7 +18,6 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
-import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
@@ -34,7 +33,6 @@ import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -79,12 +77,15 @@ import com.google.inject.Inject;
 public class EventPipesTest {
 
     public static final String TEST_MIME_TYPE = "text/plain";
+
     @Inject
     protected PipelineService pipeService;
+
     @Inject
-    CoreSession session;
+    protected CoreSession session;
+
     @Inject
-    EventService eventService;
+    protected EventService eventService;
 
     public static Event getTestEvent(CoreSession session) throws Exception {
         DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
@@ -146,7 +147,7 @@ public class EventPipesTest {
 
         func = new FilterFunction<>(in -> true, s -> {
             throw new NuxeoException("Invalid");
-        } );
+        });
         func.withMetrics(funcMetric);
         assertMetric(0, "nuxeo.func.test.errors", funcMetric);
         func.apply(event);
@@ -170,7 +171,8 @@ public class EventPipesTest {
     public void testEventPipes() throws Exception {
         StringBuilder buffy = new StringBuilder();
         NuxeoMetricSet nuxeoMetricSet = new NuxeoMetricSet("nuxeo", "pipes", "test");
-        FilterFunction<Event, Collection<String>> func = new FilterFunction<>(event(), f -> singletonList(f.getName()));
+        FilterFunction<Event, Collection<String>> func =
+                new FilterFunction<>(event(), f -> Collections.singletonList(f.getName()));
         pipeService.addEventPipe("myDocEvent", nuxeoMetricSet, func, buffy::append);
         assertMetric(0, "nuxeo.pipes.test.events", nuxeoMetricSet);
         eventService.fireEvent(getTestEvent(session));
@@ -251,7 +253,9 @@ public class EventPipesTest {
         assertEquals("dc:creator", validResult.get(0).getXPaths().get(0));
         assertEquals("Administrator", validResult.get(0).getText());
 
-        doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator, Arrays.asList("dc:modified"));
+        doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator,
+                                          Collections.singletonList("dc:modified")
+        );
         validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         BlobTextStream firstResult = validResult.get(0);
         assertEquals("file:content", firstResult.getXPaths().get(1));

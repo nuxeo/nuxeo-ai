@@ -24,12 +24,12 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.time.Duration;
@@ -50,6 +50,7 @@ import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.test.TransactionalFeature;
 import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -67,7 +68,6 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
@@ -86,10 +86,13 @@ public class TestAIComponent {
     protected AIComponent aiComponent;
 
     @Inject
-    CoreSession session;
+    protected CoreSession session;
 
     @Inject
-    TagService tagService;
+    protected TagService tagService;
+
+    @Inject
+    protected TransactionalFeature txFeature;
 
     @Test
     public void TestBasicComponent() {
@@ -191,9 +194,9 @@ public class TestAIComponent {
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc = session.createDocument(testDoc);
-        final String docId = testDoc.getId();
+        String docId = testDoc.getId();
         session.save();
-        nextTransaction();
+        txFeature.nextTransaction();
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setId(docId);
         blobTextStream.setRepositoryName(testDoc.getRepositoryName());
@@ -211,16 +214,16 @@ public class TestAIComponent {
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         LogAppender<Record> appender = manager.getAppender("images");
         LogOffset offset = appender.append("mykey", record);
-        appender.waitFor(offset, "images.out>StoreLabelsAsTags", Duration.ofSeconds(5));
-        TransactionHelper.runInTransaction(() -> {
-            DocumentModel enrichedDoc = session.getDocument(new IdRef(docId));
-            assertTrue(enrichedDoc.hasFacet(ENRICHMENT_FACET));
-            Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
-            Assert.assertNotNull(classProp);
-            assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
-            Set<String> tags = tagService.getTags(session, docId);
-            assertEquals(2, tags.size());
-        });
+        appender.waitFor(offset, "images.out>StoreLabelsAsTags", Duration.ofSeconds(10));
+
+        txFeature.nextTransaction();
+        DocumentModel enrichedDoc = session.getDocument(new IdRef(docId));
+        assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
+        Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        Assert.assertNotNull(classProp);
+        assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
+        Set<String> tags = tagService.getTags(session, docId);
+        assertEquals(2, tags.size());
 
         assertEquals(1L, called.getValue());
         assertEquals(1L, produced.getValue());
@@ -267,7 +270,8 @@ public class TestAIComponent {
             aiComponent.getEnrichmentService(badService);
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("The /NOT_ME kind for service bad service must be defined in the aikind vocabulary"));
+            assertTrue(e.getMessage()
+                        .contains("The /NOT_ME kind for service bad service must be defined in the aikind vocabulary"));
         }
 
         descriptor.kind = "/classification/sentiment";
@@ -277,8 +281,4 @@ public class TestAIComponent {
         assertNull(aiComponent.getEnrichmentService("IDONTEXIST"));
     }
 
-    protected void nextTransaction() {
-        TransactionHelper.commitOrRollbackTransaction();
-        TransactionHelper.startTransaction();
-    }
 }

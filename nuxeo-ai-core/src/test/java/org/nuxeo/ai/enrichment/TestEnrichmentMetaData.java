@@ -24,6 +24,7 @@ import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,7 +61,7 @@ public class TestEnrichmentMetaData {
                         .withLabels(labels)
                         .withCreator("bob")
                         .withRawKey("xyz")
-                        .withTargetDocumentProperties(Arrays.asList("tbloby")).build();
+                        .withTargetDocumentProperties(Collections.singletonList("tbloby")).build();
         assertNotNull(metadata);
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);

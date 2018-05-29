@@ -42,7 +42,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(builder = EnrichmentMetadata.Builder.class)
 public class EnrichmentMetadata extends AIMetadata {
 
-    protected final List<String> targetDocumentProperties; //Document reference
+    protected final List<String> targetDocumentProperties;
     protected final List<Label> labels;
     protected final String blobDigest;
 
@@ -50,17 +50,9 @@ public class EnrichmentMetadata extends AIMetadata {
         super(builder.serviceName, builder.kind, builder.repositoryName, builder.targetDocumentRef,
               builder.creator, builder.created, builder.rawKey
         );
-        if (builder.labels == null || builder.labels.isEmpty()) {
-            labels = emptyList();
-        } else {
-            labels = unmodifiableList(builder.labels);
-        }
+        labels = unmodifiableList(builder.labels);
         blobDigest = builder.blobDigest;
-        if (builder.targetDocumentProperties != null && !builder.targetDocumentProperties.isEmpty()) {
-            targetDocumentProperties = builder.targetDocumentProperties;
-        } else {
-            targetDocumentProperties = emptyList();
-        }
+        targetDocumentProperties = unmodifiableList(builder.targetDocumentProperties);
     }
 
     public List<Label> getLabels() {
@@ -82,9 +74,15 @@ public class EnrichmentMetadata extends AIMetadata {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         EnrichmentMetadata metadata = (EnrichmentMetadata) o;
         return Objects.equals(targetDocumentProperties, metadata.targetDocumentProperties) &&
                 Objects.equals(labels, metadata.labels) &&
@@ -133,8 +131,12 @@ public class EnrichmentMetadata extends AIMetadata {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Label label = (Label) o;
             return Float.compare(label.confidence, confidence) == 0 &&
                     Objects.equals(name, label.name);
@@ -223,6 +225,13 @@ public class EnrichmentMetadata extends AIMetadata {
                     || StringUtils.isBlank(repositoryName)
                     || created == null) {
                 throw new IllegalArgumentException("Invalid Enrichment metadata has been given. " + this.toString());
+            }
+
+            if (labels == null) {
+                labels = emptyList();
+            }
+            if (targetDocumentProperties == null) {
+                targetDocumentProperties = emptyList();
             }
             return new EnrichmentMetadata(this);
         }

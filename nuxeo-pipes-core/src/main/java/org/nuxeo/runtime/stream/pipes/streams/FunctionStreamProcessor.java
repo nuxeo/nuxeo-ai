@@ -21,6 +21,7 @@ package org.nuxeo.runtime.stream.pipes.streams;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
@@ -62,7 +63,13 @@ public class FunctionStreamProcessor {
         return streams;
     }
 
-    public Topology getTopology(Function<Record, Record> function, Map<String, String> options) {
+    public static String buildName(String simpleName, String streamIn, String streamOut) {
+        String in = streamIn != null ? streamIn + ">" : "";
+        String out = streamOut != null ? ">" + streamOut : "";
+        return in + simpleName + out;
+    }
+
+    public Topology getTopology(Function<Record, Optional<Record>> function, Map<String, String> options) {
         String streamIn = options.get(STREAM_IN);
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
@@ -79,20 +86,14 @@ public class FunctionStreamProcessor {
                        .build();
     }
 
-    public static String buildName(String simpleName, String streamIn, String streamOut) {
-        String in = streamIn != null ? streamIn + ">" : "";
-        String out = streamOut != null ? ">" + streamOut : "";
-        return in + simpleName + out;
-    }
-
     /**
      * A Computation that uses a Java Function to transform the Record.
      */
     public static class FunctionComputation extends AbstractComputation {
 
-        private final Function<Record, Record> function;
+        private final Function<Record, Optional<Record>> function;
 
-        public FunctionComputation(int outputStreams, String name, Function<Record, Record> function) {
+        public FunctionComputation(int outputStreams, String name, Function<Record, Optional<Record>> function) {
 
             super(name, 1, outputStreams);
             this.function = function;
@@ -109,7 +110,10 @@ public class FunctionStreamProcessor {
                 log.debug("Processing record " + record);
             }
             try {
-                writeToStreams(context, function.apply(record));
+                Optional<Record> applied = function.apply(record);
+                if (applied.isPresent()) {
+                    writeToStreams(context, applied.get());
+                }
                 context.askForCheckpoint();
             } catch (NuxeoException e) {
                 log.error("Discard invalid record: " + record, e);

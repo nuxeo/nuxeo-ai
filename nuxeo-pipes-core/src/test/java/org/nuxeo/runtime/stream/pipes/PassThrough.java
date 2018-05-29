@@ -18,6 +18,8 @@
  */
 package org.nuxeo.runtime.stream.pipes;
 
+import java.util.Optional;
+
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
 
@@ -27,8 +29,8 @@ import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
 public class PassThrough implements FunctionStreamProcessorTopology {
 
     @Override
-    public Record apply(Record record) {
-        return record;
+    public Optional<Record> apply(Record record) {
+        return Optional.of(record);
     }
 
 }

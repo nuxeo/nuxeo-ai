@@ -103,7 +103,7 @@ public class JacksonUtil {
     }
 
     /**
-     * Serializes an instant
+     * A Consumer of JsonGenerator that throws an IOException
      */
     @FunctionalInterface
     public interface JsonGeneratorConsumer {

@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.services;
 
+import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
 import static org.nuxeo.ai.AIConstants.DEFAULT_BLOB_PROVIDER_PARAM;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
@@ -92,14 +93,12 @@ public class AIComponent extends DefaultComponent {
             EnrichmentService enrichmentService = descriptor.getService();
             if (StringUtils.isEmpty(enrichmentService.getName()) || StringUtils.isEmpty(enrichmentService.getKind())) {
                 throw new IllegalArgumentException(String.format("An enrichment service must be configured with a name %s and kind %s",
-                                                                 descriptor.name, descriptor.getKind()
-                ));
+                                                                 descriptor.name, descriptor.getKind()));
             }
 
             if (!getKindResolver().validate(descriptor.getKind())) {
                 throw new IllegalArgumentException(String.format("The %s kind for service %s must be defined in the %s vocabulary",
-                                                                 descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY
-                ));
+                                                                 descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY));
             }
 
             List<String> mimeTypes = new ArrayList<>();
@@ -161,10 +160,10 @@ public class AIComponent extends DefaultComponent {
     protected DirectoryEntryResolver getKindResolver() {
         if (kindResolver == null) {
             ObjectResolverService objectResolverService = Framework.getService(ObjectResolverService.class);
-            Map<String, String> params = new HashMap<>();
-            params.put(DirectoryEntryResolver.PARAM_DIRECTORY, AI_KIND_DIRECTORY);
             kindResolver =
-                    (DirectoryEntryResolver) objectResolverService.getResolver(DirectoryEntryResolver.NAME, params);
+                    (DirectoryEntryResolver) objectResolverService
+                            .getResolver(DirectoryEntryResolver.NAME,
+                                         singletonMap(DirectoryEntryResolver.PARAM_DIRECTORY, AI_KIND_DIRECTORY));
         }
         return kindResolver;
     }

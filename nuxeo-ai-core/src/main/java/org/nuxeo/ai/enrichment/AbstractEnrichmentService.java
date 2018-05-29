@@ -23,15 +23,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.http.entity.ContentType;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.impl.blob.StringBlob;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * Basic implementation of an enrichment service with mimetype and max file size support.
@@ -91,24 +88,21 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
     /**
      * Saves the blob using the configured blob provider for this service and returns the blob key
      */
-    public String saveRawBlob(Blob rawBlob, String repositoryName) {
-        return TransactionHelper.runInTransaction(
-                () -> CoreInstance.doPrivileged(repositoryName, session -> {
-                    BlobManager blobManager = Framework.getService(BlobManager.class);
-                    try {
-                        return blobManager.getBlobProvider(blobProviderId).writeBlob(rawBlob);
-                    } catch (IOException e) {
-                        throw new NuxeoException("Unable to save the raw blob ", e);
-                    }
-                })
-        );
+    public String saveRawBlob(Blob rawBlob) {
+        return Framework.doPrivileged(() -> {
+            BlobManager blobManager = Framework.getService(BlobManager.class);
+            try {
+                return blobManager.getBlobProvider(blobProviderId).writeBlob(rawBlob);
+            } catch (IOException e) {
+                throw new NuxeoException("Unable to save the raw blob ", e);
+            }
+        });
     }
 
     /**
      * Save the rawJson String provided as a blob and returns the blob key
      */
-    public String saveJsonAsRawBlob(String rawJson, String repositoryName) {
-        Blob raw = new StringBlob(rawJson, ContentType.APPLICATION_JSON.getMimeType());
-        return saveRawBlob(raw, repositoryName);
+    public String saveJsonAsRawBlob(String rawJson) {
+        return saveRawBlob(Blobs.createJSONBlob(rawJson));
     }
 }

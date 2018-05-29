@@ -1,3 +1,21 @@
+/*
+ * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Contributors:
+ *     Gethin James
+ */
 package org.nuxeo.ai.enrichment;
 
 import static org.junit.Assert.assertEquals;
@@ -5,7 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
@@ -34,7 +52,6 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -77,12 +94,13 @@ public class TestDocMetadataService {
         String textReversed = StringUtils.reverse(text);
         Property classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
         assertNotNull(classProp);
-        @SuppressWarnings("unchecked") List<Map<String, Object>> classifications = classProp.getValue(List.class);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> classifications = classProp.getValue(List.class);
         assertEquals(1, classifications.size());
         Map<String, Object> classification = classifications.get(0);
         assertEquals(serviceName, classification.get(AI_SERVICE_PROPERTY));
         assertEquals(SecurityConstants.SYSTEM_USERNAME, classification.get(AI_CREATOR_PROPERTY));
-        assertEquals("/classification/custom", classification.get(ENRICHMENT_KIND));
+        assertEquals("/classification/custom", classification.get(ENRICHMENT_KIND_PROPERTY));
         String[] labels = (String[]) classification.get(ENRICHMENT_LABELS_PROPERTY);
         assertEquals(textReversed, labels[0]);
         String[] targetProps = (String[]) classification.get(ENRICHMENT_TARGET_DOCPROP_PROPERTY);

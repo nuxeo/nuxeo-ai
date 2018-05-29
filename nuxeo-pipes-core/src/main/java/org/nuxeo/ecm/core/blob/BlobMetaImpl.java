@@ -48,16 +48,20 @@ public class BlobMetaImpl extends BlobInfo implements BlobMeta {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         BlobMetaImpl blobInfo = (BlobMetaImpl) o;
-        return Objects.equals(key, blobInfo.key) &&
-                Objects.equals(mimeType, blobInfo.mimeType) &&
-                Objects.equals(encoding, blobInfo.encoding) &&
-                Objects.equals(filename, blobInfo.filename) &&
-                Objects.equals(length, blobInfo.length) &&
-                Objects.equals(providerId, blobInfo.providerId) &&
-                Objects.equals(digest, blobInfo.digest);
+        return Objects.equals(key, blobInfo.key)
+                && Objects.equals(mimeType, blobInfo.mimeType)
+                && Objects.equals(encoding, blobInfo.encoding)
+                && Objects.equals(filename, blobInfo.filename)
+                && Objects.equals(length, blobInfo.length)
+                && Objects.equals(providerId, blobInfo.providerId)
+                && Objects.equals(digest, blobInfo.digest);
     }
 
     @Override

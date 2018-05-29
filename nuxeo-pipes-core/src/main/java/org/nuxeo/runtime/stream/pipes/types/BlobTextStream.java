@@ -131,8 +131,12 @@ public class BlobTextStream implements Partitionable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         BlobTextStream that = (BlobTextStream) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(repositoryName, that.repositoryName) &&
@@ -170,6 +174,5 @@ public class BlobTextStream implements Partitionable {
     public String getKey() {
         return getId();
     }
-
 
 }

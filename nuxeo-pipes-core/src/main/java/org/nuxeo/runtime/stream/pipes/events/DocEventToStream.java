@@ -48,8 +48,8 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
  */
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
-    protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
     private static final Log log = LogFactory.getLog(DocEventToStream.class);
+    protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
     protected final List<String> blobProperties;
     protected final List<String> textProperties;
     protected final List<String> customProperties;

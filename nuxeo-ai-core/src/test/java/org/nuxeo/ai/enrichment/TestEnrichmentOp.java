@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,14 +34,18 @@ import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobInfo;
+import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -56,8 +61,11 @@ public class TestEnrichmentOp {
     @Inject
     protected AutomationService automationService;
 
+    @Inject
+    protected AIComponent aiComponent;
+
     @Test
-    public void shouldCallWithParameters() throws OperationException {
+    public void shouldCallWithParameters() throws OperationException, IOException {
 
         String title = "My Enriched document";
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
@@ -75,12 +83,22 @@ public class TestEnrichmentOp {
         chain.add(EnrichmentOp.ID).from(params);
         DocumentModel returned = (DocumentModel) automationService.run(ctx, chain);
         assertNotNull(returned);
-        @SuppressWarnings("unchecked") List<EnrichmentMetadata> results = (List<EnrichmentMetadata>) ctx
-                .get("theresult");
+        @SuppressWarnings("unchecked")
+        List<EnrichmentMetadata> results = (List<EnrichmentMetadata>) ctx.get("theresult");
         assertEquals(1, results.size());
-        assertEquals(StringUtils.reverse(title), results.get(0).getRaw());
-        assertNotNull(results.get(0).getTargetDocumentRef());
-        assertEquals("dc:title", results.get(0).getTargetDocumentProperty());
+        EnrichmentMetadata resultMetadata = results.get(0);
+        String reversed = StringUtils.reverse(title);
+        assertTrue(resultMetadata.isSingleLabel());
+        assertEquals(reversed, resultMetadata.getLabels().get(0).getName());
+        BlobProvider rawProvider = aiComponent.getBlobProviderForEnrichmentService(resultMetadata.getServiceName());
+        BlobInfo blobInfo = new BlobInfo();
+        blobInfo.key = resultMetadata.getRawKey();
+        Blob blob = rawProvider.readBlob(blobInfo);
+        assertEquals(reversed, blob.getString());
+        assertNotNull(resultMetadata.getTargetDocumentRef());
+        assertEquals(Arrays.asList("dc:title"), resultMetadata.getTargetDocumentProperties());
+        assertTrue("reverse service sets the username so must be true", resultMetadata.isHuman());
+        assertTrue("reverse service must return a single label", resultMetadata.isSingleLabel());
 
         try {
             params.put("enrichmentName", "I_DONT_EXIST");

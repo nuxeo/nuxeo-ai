@@ -32,7 +32,7 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 @XObject("enrichment")
 public class EnrichmentDescriptor {
 
-    public static final Long DEFAULT_MAX_SIZE = 5_000_000L;
+    public static final long DEFAULT_MAX_SIZE = 5_000_000L;
 
     @XNode("@name")
     public String name;
