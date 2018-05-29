@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.services.DocMetadataService" version="1.0">
+  <implementation class="org.nuxeo.ai.services.DocMetadataServiceImpl" />
+
+  <service>
+    <provide interface="org.nuxeo.ai.services.DocMetadataService" />
+  </service>
+
+</component>

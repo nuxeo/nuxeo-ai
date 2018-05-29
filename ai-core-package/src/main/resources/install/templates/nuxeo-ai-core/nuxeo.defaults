@@ -1,6 +1,3 @@
-## Edit this file to customize your configuration ##
-#ai-core.target=
-
 # Set list of templates to include, comma separated values.
 nuxeo.template.includes=common
 
@@ -8,3 +5,6 @@ nuxeo.template.includes=common
 nuxeo.pipes.config.name=pipes
 
 nuxeo.enrichment.default.blobProvider=default
+nuxeo.enrichment.source.stream=enrichment.in
+nuxeo.enrichment.save.tags=false
+nuxeo.enrichment.save.facets=true

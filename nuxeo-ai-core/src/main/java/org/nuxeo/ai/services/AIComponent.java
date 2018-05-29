@@ -16,7 +16,7 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai;
+package org.nuxeo.ai.services;
 
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
 import static org.nuxeo.ai.AIConstants.DEFAULT_BLOB_PROVIDER_PARAM;
@@ -97,8 +97,8 @@ public class AIComponent extends DefaultComponent {
             }
 
             if (!getKindResolver().validate(descriptor.getKind())) {
-                throw new IllegalArgumentException(String.format("The %s kind must be defined in the %s vocabulary",
-                                                                 descriptor.getKind(), AI_KIND_DIRECTORY
+                throw new IllegalArgumentException(String.format("The %s kind for service %s must be defined in the %s vocabulary",
+                                                                 descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY
                 ));
             }
 
@@ -155,7 +155,10 @@ public class AIComponent extends DefaultComponent {
         throw new NuxeoException("Unknown enrichment service " + serviceName);
     }
 
-    public DirectoryEntryResolver getKindResolver() {
+    /**
+     * Returns the DirectoryEntryResolver for the "aikind" directory.
+     */
+    protected DirectoryEntryResolver getKindResolver() {
         if (kindResolver == null) {
             ObjectResolverService objectResolverService = Framework.getService(ObjectResolverService.class);
             Map<String, String> params = new HashMap<>();

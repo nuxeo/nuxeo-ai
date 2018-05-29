@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.ai.AIComponent" version="1.0">
+<component name="org.nuxeo.ai.services.AIComponent" version="1.0">
 
-  <implementation class="org.nuxeo.ai.AIComponent"/>
+  <implementation class="org.nuxeo.ai.services.AIComponent"/>
 
   <service>
-    <provide interface="org.nuxeo.ai.AIComponent"/>
+    <provide interface="org.nuxeo.ai.services.AIComponent"/>
   </service>
 
   <extension-point name="enrichment">

@@ -43,7 +43,7 @@ import java.util.stream.IntStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nuxeo.ai.AIComponent;
+import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -267,7 +267,7 @@ public class TestAIComponent {
             aiComponent.getEnrichmentService(badService);
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("The /NOT_ME kind must be defined in the aikind vocabulary"));
+            assertTrue(e.getMessage().contains("The /NOT_ME kind for service bad service must be defined in the aikind vocabulary"));
         }
 
         descriptor.kind = "/classification/sentiment";

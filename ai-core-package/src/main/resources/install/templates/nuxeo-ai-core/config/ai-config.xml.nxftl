@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.config" version="1.0">
+    <require>org.nuxeo.ai.services.AIComponent</require>
+<#if "${nuxeo.enrichment.save.tags}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="tagsProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.functions.StoreLabelsAsTags">
+      <option name="source">${nuxeo.enrichment.source.stream}</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
+<#if "${nuxeo.enrichment.save.facets}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
+      <option name="source">${nuxeo.enrichment.source.stream}</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
+</component>
