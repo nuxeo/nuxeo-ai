@@ -26,7 +26,6 @@ public class AIConstants {
     public static final String AI_KIND_DIRECTORY = "aikind";
     public static final String ENRICHMENT_XP = "enrichment";
 
-    public static final String DEFAULT_BLOB_PROVIDER_PARAM = "nuxeo.enrichment.default.blobProvider";
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";
     public static final String ENRICHMENT_NAME = "enrichment";

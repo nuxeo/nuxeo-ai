@@ -4,7 +4,6 @@ nuxeo.template.includes=common
 # org.nuxeo.ecm.instance.description=Nuxeo ECM customized with ai-core
 nuxeo.pipes.config.name=pipes
 
-nuxeo.enrichment.default.blobProvider=default
 nuxeo.enrichment.source.stream=enrichment.in
 nuxeo.enrichment.save.tags=false
 nuxeo.enrichment.save.facets=true

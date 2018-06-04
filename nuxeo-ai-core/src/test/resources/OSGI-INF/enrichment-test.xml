@@ -1,6 +1,15 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.enrichment.test" version="1.0">
 
+  <extension target="org.nuxeo.ecm.core.transientstore.TransientStorageComponent" point="store">
+
+    <store name="myTransient">
+      <targetMaxSizeMB>0</targetMaxSizeMB>
+      <absoluteMaxSizeMB>5</absoluteMaxSizeMB>
+    </store>
+
+  </extension>
+
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="e1" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
       <mimeTypes>
@@ -18,6 +27,6 @@
     </enrichment>
     <enrichment name="e3" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentService" />
     <enrichment name="logging" kind="/classification/sentiment" class="org.nuxeo.ai.enrichment.LoggingEnrichmentService" />
-    <enrichment name="reverse" kind="/classification/sentiment" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentService" />
+    <enrichment name="reverse" kind="/classification/sentiment" transientStore="myTransient" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentService" />
   </extension>
 </component>

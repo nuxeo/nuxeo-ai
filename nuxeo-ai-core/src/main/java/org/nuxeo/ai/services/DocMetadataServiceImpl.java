@@ -48,8 +48,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobInfo;
-import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -106,11 +105,15 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             Blob rawBlob = null;
             try {
                 if (StringUtils.isNotEmpty(metadata.getRawKey())) {
-                    BlobProvider rawProvider = aiComponent
-                            .getBlobProviderForEnrichmentService(metadata.getServiceName());
-                    BlobInfo blobInfo = new BlobInfo();
-                    blobInfo.key = metadata.getRawKey();
-                    rawBlob = rawProvider.readBlob(blobInfo);
+                    TransientStore transientStore = aiComponent
+                            .getTransientStoreForEnrichmentService(metadata.getServiceName());
+                    List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
+                    if (rawBlobs != null && rawBlobs.size() == 1) {
+                        rawBlob = rawBlobs.get(0);
+                    } else {
+                        log.warn(String.format("Unexpected transient store raw blob information for %s. " +
+                                                       "A single raw blob is expected.", metadata.getServiceName()));
+                    }
                 }
                 metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(metadata));
             } catch (IOException e) {

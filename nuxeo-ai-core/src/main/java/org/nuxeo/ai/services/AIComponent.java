@@ -20,7 +20,6 @@ package org.nuxeo.ai.services;
 
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
-import static org.nuxeo.ai.AIConstants.DEFAULT_BLOB_PROVIDER_PARAM;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
 
 import java.util.ArrayList;
@@ -30,12 +29,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeEntry;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeRegistry;
@@ -49,21 +50,12 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class AIComponent extends DefaultComponent {
 
+    private static final Log log = LogFactory.getLog(AIComponent.class);
+
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
     protected final Map<String, EnrichmentService> enrichmentServices = new HashMap<>();
 
     protected DirectoryEntryResolver kindResolver;
-
-    /**
-     * Get a blob provider id for the specified EnrichmentDescriptor
-     */
-    public static String getBlobProviderId(EnrichmentDescriptor descriptor) {
-        String blobProviderId = descriptor.getBlobProviderId();
-        if (StringUtils.isEmpty(blobProviderId)) {
-            blobProviderId = Framework.getProperty(DEFAULT_BLOB_PROVIDER_PARAM);
-        }
-        return blobProviderId;
-    }
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -143,12 +135,12 @@ public class AIComponent extends DefaultComponent {
     }
 
     /**
-     * Gets a blob provider for the specified enrichment service.
+     * Gets a TransientStore for the specified enrichment service.
      */
-    public BlobProvider getBlobProviderForEnrichmentService(String serviceName) {
+    public TransientStore getTransientStoreForEnrichmentService(String serviceName) {
         EnrichmentDescriptor descriptor = enrichmentConfigs.get(serviceName);
         if (descriptor != null) {
-            return Framework.getService(BlobManager.class).getBlobProvider(getBlobProviderId(descriptor));
+            return Framework.getService(TransientStoreService.class).getStore(descriptor.getTransientStoreName());
         }
 
         throw new NuxeoException("Unknown enrichment service " + serviceName);

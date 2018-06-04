@@ -46,8 +46,8 @@ public class EnrichmentDescriptor {
     @XNode("@class")
     protected Class<? extends EnrichmentService> service;
 
-    @XNode("@blobProviderId")
-    protected String blobProviderId;
+    @XNode("@transientStore")
+    protected String transientStoreName;
 
     @XNode("@maxSize")
     protected long maxSize = DEFAULT_MAX_SIZE;
@@ -69,8 +69,8 @@ public class EnrichmentDescriptor {
         return kind;
     }
 
-    public String getBlobProviderId() {
-        return blobProviderId;
+    public String getTransientStoreName() {
+        return transientStoreName;
     }
 
     public EnrichmentService getService() {

@@ -18,24 +18,24 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
-import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.runtime.api.Framework;
 
 /**
  * Basic implementation of an enrichment service with mimetype and max file size support.
  * <p>
  * It is the responsibility of the implementing class to save any raw data, however,
- * helper methods are provided by this class.  You can specify your own blob provider on the
- * descriptor using blobProviderId.
+ * helper methods are provided by this class.  You can specify your own <code>TransientStore</code> name on the
+ * descriptor using <code>transientStore</code>.
  */
 public abstract class AbstractEnrichmentService implements EnrichmentService {
 
@@ -44,7 +44,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
     protected String name;
     protected long maxSize;
     protected String kind;
-    protected String blobProviderId;
+    protected String transientStoreName;
     protected Set<String> supportedMimeTypes = new HashSet<>();
 
     @Override
@@ -52,7 +52,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
         this.name = descriptor.name;
         this.maxSize = descriptor.maxSize;
         this.kind = descriptor.kind;
-        blobProviderId = AIComponent.getBlobProviderId(descriptor);
+        this.transientStoreName = descriptor.transientStoreName;
     }
 
     @Override
@@ -71,11 +71,6 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
     }
 
     @Override
-    public String getBlobProviderId() {
-        return blobProviderId;
-    }
-
-    @Override
     public boolean supportsMimeType(String mimeType) {
         return supportedMimeTypes.isEmpty() || supportedMimeTypes.contains(mimeType);
     }
@@ -86,17 +81,13 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
     }
 
     /**
-     * Saves the blob using the configured blob provider for this service and returns the blob key
+     * Saves the blob using the configured TransientStore for this service and returns the blob key
      */
     public String saveRawBlob(Blob rawBlob) {
-        return Framework.doPrivileged(() -> {
-            BlobManager blobManager = Framework.getService(BlobManager.class);
-            try {
-                return blobManager.getBlobProvider(blobProviderId).writeBlob(rawBlob);
-            } catch (IOException e) {
-                throw new NuxeoException("Unable to save the raw blob ", e);
-            }
-        });
+        TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
+        String blobKey = UUID.randomUUID().toString();
+        transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
+        return blobKey;
     }
 
     /**
