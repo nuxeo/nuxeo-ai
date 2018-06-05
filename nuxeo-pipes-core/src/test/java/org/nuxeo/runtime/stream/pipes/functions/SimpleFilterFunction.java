@@ -16,26 +16,21 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.runtime.stream.pipes;
+package org.nuxeo.runtime.stream.pipes.functions;
 
 import java.util.Optional;
 
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
 import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
 
 /**
  * Just a simple pass through
  */
-public class SimpleFilterFunction extends FilterFunction<Record, Optional<Record>>
+public class SimpleFilterFunction extends PreFilterFunction<Record, Optional<Record>>
         implements FunctionStreamProcessorTopology {
 
     public SimpleFilterFunction() {
-        super(r -> r.data.length > 0, rec -> Optional.of(rec));
-    }
-
-    @Override
-    public Optional<Record> apply(Record record) {
-        return Optional.empty();
+        this.filter = r -> r.data.length > 0;
+        this.transformation = rec -> Optional.of(rec);
     }
 }

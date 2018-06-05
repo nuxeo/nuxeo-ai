@@ -31,12 +31,12 @@ import org.nuxeo.runtime.stream.pipes.streams.Initializable;
 /**
  * A function that first applies a predicate filter.
  */
-public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer, Initializable {
+public class PreFilterFunction<T, R> implements Function<T, R>, MetricsProducer, Initializable {
 
-    private static final Log log = LogFactory.getLog(FilterFunction.class);
+    private static final Log log = LogFactory.getLog(PreFilterFunction.class);
 
-    public final Predicate<? super T> filter;
-    public final Function<? super T, ? extends R> transformation;
+    protected Predicate<? super T> filter;
+    protected Function<? super T, ? extends R> transformation;
 
     //metrics
     private long supplied = 0;
@@ -44,11 +44,14 @@ public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer, In
     private long transformed = 0;
     private long filterFailed = 0;
 
-    public FilterFunction(Predicate<? super T> filter, Function<? super T, ? extends R> transformation) {
+    public PreFilterFunction() {
+
+    }
+
+    protected PreFilterFunction(Predicate<? super T> filter, Function<? super T, ? extends R> transformation) {
         this.filter = filter;
         this.transformation = transformation;
     }
-
 
     @Override
     public void init(Map<String, String> options) {
@@ -57,11 +60,15 @@ public class FilterFunction<T, R> implements Function<T, R>, MetricsProducer, In
         }
     }
 
+    public void setFilter(Predicate<? super T> filter) {
+        this.filter = filter;
+    }
+
     @Override
     public R apply(T in) {
         supplied++;
         try {
-            if (filter.test(in)) {
+            if (filter == null || filter.test(in)) {
                 R transform = transformation.apply(in);
                 transformed++;
                 return transform;
