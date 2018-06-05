@@ -19,6 +19,7 @@
 package org.nuxeo.runtime.stream.pipes.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,25 +31,36 @@ import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
+import org.nuxeo.runtime.stream.pipes.filters.DirtyPropertyFilter;
+import org.nuxeo.runtime.stream.pipes.filters.DocumentEventFilter;
+import org.nuxeo.runtime.stream.pipes.filters.Filter;
+import org.nuxeo.runtime.stream.pipes.filters.Filter.DocumentFilter;
+import org.nuxeo.runtime.stream.pipes.filters.Filter.EventFilter;
+import org.nuxeo.runtime.stream.pipes.functions.PreFilterFunction;
+import org.nuxeo.runtime.stream.pipes.functions.PropertiesToStream;
 import org.nuxeo.runtime.stream.pipes.streams.Initializable;
 
 @XObject("pipe")
 public class PipeDescriptor {
 
+    public static final Class<? extends Function> DEFAULT_TRANSFORMER = PropertiesToStream.class;
+
     @XNode("@id")
     public String id;
-    @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
-    public final Map<String, String> options = new HashMap<>();
     @XNode("@enabled")
     protected boolean enabled = true;
-    @SuppressWarnings("rawtypes")
-    @XNode("@function")
-    protected Class<? extends Function> function;
+    @XNode("@async")
+    protected Boolean isAsync = true;
+
     @XNode("supplier")
     protected Supplier supplier;
     @XNode("consumer")
     protected Consumer consumer;
+    @XNode("transformer")
+    protected TransformingFunction transformer;
 
     public void validate() {
         StringBuilder errors = new StringBuilder();
@@ -56,8 +68,8 @@ public class PipeDescriptor {
         if (StringUtils.isBlank(id)) {
             errors.append("You must specify an id\n");
         }
-        if (function == null) {
-            errors.append("You must specify a function\n");
+        if (transformer == null) {
+            errors.append("You must specify a transformer\n");
         }
         if (supplier == null || supplier.events == null || supplier.events.isEmpty()) {
             errors.append("Invalid supplier configuration, you must specify an event\n");
@@ -81,8 +93,11 @@ public class PipeDescriptor {
             enabled = other.enabled;
         }
 
-        if (other.function != null) {
-            function = other.function;
+        if (other.transformer != null) {
+            transformer.options.putAll(other.transformer.options);
+            if (other.transformer.function != null) {
+                transformer.function = other.transformer.function;
+            }
         }
 
         if (other.supplier != null && other.supplier.events != null && !other.supplier.events.isEmpty()) {
@@ -92,22 +107,50 @@ public class PipeDescriptor {
         if (other.consumer != null && other.consumer.streams != null && !other.consumer.streams.isEmpty()) {
             consumer.streams = other.consumer.streams;
         }
-
-        //Can't be null
-        options.putAll(other.options);
     }
 
-    @SuppressWarnings("rawtypes")
-    public Function getFunction() {
-        if (function != null) {
+    public Function<Event, Collection<Record>> getFunction(PipeEvent event) {
+        try {
+            if (transformer.function == null) {
+                transformer.function = DEFAULT_TRANSFORMER;
+            }
+            Function func = transformer.function.newInstance();
+            if (func instanceof Initializable) {
+                ((Initializable) func).init(transformer.options);
+            }
+            if (func instanceof PreFilterFunction) {
+                ((PreFilterFunction) func).setFilter(getEventFilter(event));
+            }
+            return func;
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+            throw new NuxeoException(String.format("PipeDescriptor %s must define a valid transformer function", this.id), e);
+        }
+    }
+
+    public boolean hasDirtyCheckFilter(PipeEvent event) {
+        return event.filters.stream()
+                            .anyMatch(pipeFilter -> DirtyPropertyFilter.class.isAssignableFrom(pipeFilter.clazz));
+    }
+
+    public Filter<Event> getEventFilter(PipeEvent event) {
+        if (event != null) {
             try {
-                Function func = function.newInstance();
-                if (func instanceof Initializable) {
-                    ((Initializable) func).init(options);
+                DocumentEventFilter.Builder builder = new DocumentEventFilter.Builder();
+                for (PipeFilter filter : event.filters) {
+                    Filter theFilter = filter.clazz.newInstance();
+                    if (theFilter instanceof Initializable) {
+                        filter.options.putAll(event.options);
+                        ((Initializable) theFilter).init(filter.options);
+                    }
+                    if (theFilter instanceof DocumentFilter) {
+                        builder.withDocumentFilter((DocumentFilter) theFilter);
+                    } else if (theFilter instanceof EventFilter) {
+                        builder.withEventFilter((EventFilter) theFilter);
+                    }
                 }
-                return func;
-            } catch (IllegalAccessException | InstantiationException e) {
-                throw new NuxeoException("PipeDescriptor must define a valid Function class", e);
+                return builder.build();
+            } catch (IllegalAccessException | InstantiationException | ClassCastException e) {
+                throw new NuxeoException("PipeDescriptor must define valid event filters", e);
             }
         }
         return null;
@@ -116,9 +159,31 @@ public class PipeDescriptor {
     @XObject("supplier")
     public static class Supplier {
 
-        @XNodeList(value = "event", type = ArrayList.class, componentType = String.class)
-        public List<String> events = new ArrayList<>(0);
+        @XNodeList(value = "event", type = ArrayList.class, componentType = PipeEvent.class)
+        public List<PipeEvent> events = new ArrayList<>(0);
 
+    }
+
+    @XObject("event")
+    public static class PipeEvent {
+
+        @XNode("@name")
+        public String name;
+
+        @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
+        public Map<String, String> options = new HashMap<>();
+
+        @XNodeList(value = "filter", type = ArrayList.class, componentType = PipeFilter.class)
+        public List<PipeFilter> filters = new ArrayList<>(0);
+    }
+
+    @XObject("filter")
+    public static class PipeFilter {
+
+        @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
+        public Map<String, String> options = new HashMap<>();
+        @XNode("@class")
+        protected Class<? extends DocumentFilter> clazz;
     }
 
     @XObject("consumer")
@@ -129,4 +194,15 @@ public class PipeDescriptor {
 
     }
 
+    @XObject("transformer")
+    public static class TransformingFunction {
+
+        @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
+        public Map<String, String> options = new HashMap<>();
+
+        @SuppressWarnings("rawtypes")
+        @XNode("@class")
+        protected Class<? extends Function> function;
+
+    }
 }

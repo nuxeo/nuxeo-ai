@@ -11,30 +11,72 @@
 
   <!-- Turn on the picture view pipe -->
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
-    <pipe id="pipe.images" enabled="true" />
+    <pipe id="pipe.images" enabled="true"/>
   </extension>
 
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
-    <pipe id="pipe.doc" enabled="false" function="org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction">
+    <pipe id="pipe.doc" enabled="false">
       <supplier>
-        <event>willNotBeUsed</event>
+        <event name="willnotbeused"/>
       </supplier>
       <consumer>
-        <stream name="willbemergedandlost" />
+        <stream name="willbemergedandlost"/>
       </consumer>
+      <transformer>
+      </transformer>
     </pipe>
   </extension>
 
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
-    <pipe id="pipe.doc" enabled="true" function="org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction">
+    <pipe id="pipe.doc" enabled="true">
       <supplier>
-        <event>myDocEvent</event>
-        <event>anotherEvent</event>
+        <event name="myDocEvent"/>
+        <event name="anotherEvent"/>
       </supplier>
       <consumer>
-        <stream name="text" />
-        <stream name="text.extra" />
+        <stream name="text"/>
+        <stream name="text.extra"/>
       </consumer>
+      <transformer>
+        <option name="textProperties">dc:creator</option>
+      </transformer>
+    </pipe>
+  </extension>
+
+  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <pipe id="pipe.text" enabled="true">
+      <supplier>
+        <event name="myDocEvent">
+          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
+            <option name="mimePattern">text.*</option>
+            <option name="properties">file:content</option>
+          </filter>
+        </event>
+      </supplier>
+      <consumer>
+        <stream name="pipe.text.out"/>
+      </consumer>
+      <transformer>
+        <option name="blobProperties">file:content</option>
+      </transformer>
+    </pipe>
+  </extension>
+
+  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <pipe id="pipe.isDirty" enabled="true">
+      <supplier>
+        <event name="documentModified">
+          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.runtime.stream.pipes.filters.DirtyPropertyFilter"/>
+          <option name="properties">dc:title</option>
+        </event>
+      </supplier>
+      <consumer>
+        <stream name="pipe.dirty.out"/>
+      </consumer>
+      <transformer>
+        <option name="textProperties">dc:title</option>
+      </transformer>
     </pipe>
   </extension>
 
@@ -48,7 +90,7 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="testProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="4"
-                     class="org.nuxeo.runtime.stream.pipes.SimpleFilterFunction">
+                     class="org.nuxeo.runtime.stream.pipes.functions.SimpleFilterFunction">
       <option name="source">text.pass</option>
       <option name="sink">text.out</option>
     </streamProcessor>

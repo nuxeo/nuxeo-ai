@@ -21,6 +21,7 @@ package org.nuxeo.runtime.stream.pipes.services;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.function.UnaryOperator;
@@ -28,22 +29,23 @@ import java.util.function.UnaryOperator;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
-import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
 
 public class TestPipeDescriptor {
 
     @Test
-    public void TestDescriptor() {
+    public void testDescriptor() {
         PipeDescriptor descriptor = new PipeDescriptor();
         validate(descriptor, true, true, true);
         descriptor.id = "myId";
         validate(descriptor, true, true, true);
-        descriptor.function = FilterFunction.class;
+        descriptor.transformer = new PipeDescriptor.TransformingFunction();
         validate(descriptor, false, true, true);
         PipeDescriptor.Supplier supplier = new PipeDescriptor.Supplier();
         descriptor.supplier = supplier;
         validate(descriptor, false, true, true);
-        supplier.events = Collections.singletonList("bob");
+        PipeDescriptor.PipeEvent event = new PipeDescriptor.PipeEvent();
+        event.name = "bob";
+        supplier.events = Collections.singletonList(event);
         validate(descriptor, false, false, true);
         PipeDescriptor.Consumer logConsumer = new PipeDescriptor.Consumer();
         descriptor.consumer = logConsumer;
@@ -54,23 +56,25 @@ public class TestPipeDescriptor {
     }
 
     @Test
-    public void TestValidFunction() {
+    public void testValidFunction() {
         PipeDescriptor pipeDescriptor = new PipeDescriptor();
-        pipeDescriptor.function = UnaryOperator.class;
+        PipeDescriptor.TransformingFunction transformingFunction = new PipeDescriptor.TransformingFunction();
+        transformingFunction.function = UnaryOperator.class;
+        pipeDescriptor.transformer = transformingFunction;
         try {
-            pipeDescriptor.getFunction();
-            assertFalse(true); //never get here
+            pipeDescriptor.getFunction(null);
+            fail();
         } catch (NuxeoException e) {
-            assertTrue(e.getMessage().contains("must define a valid Function class"));
+            assertTrue(e.getMessage().contains("must define a valid transformer function"));
         }
     }
 
-    public void validate(PipeDescriptor descriptor, boolean func, boolean supplier, boolean consumer) {
+    public void validate(PipeDescriptor descriptor, boolean transformer, boolean supplier, boolean consumer) {
         try {
             descriptor.validate();
-            assertFalse(true); //never get here
+            fail();
         } catch (NuxeoException e) {
-            assertEquals(func, e.getMessage().contains("You must specify a function"));
+            assertEquals(transformer, e.getMessage().contains("You must specify a transformer"));
             assertEquals(supplier, e.getMessage().contains("Invalid supplier configuration"));
             assertEquals(consumer, e.getMessage().contains("Invalid consumer configuration"));
         }
