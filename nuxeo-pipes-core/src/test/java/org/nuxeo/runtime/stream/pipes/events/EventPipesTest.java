@@ -18,17 +18,9 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
-import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.doc;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.event;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.hasFacets;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isNotProxy;
-import static org.nuxeo.runtime.stream.pipes.functions.Predicates.isPicture;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
@@ -38,8 +30,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,20 +38,14 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelFactory;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
-import org.nuxeo.runtime.stream.pipes.functions.FilterFunction;
-import org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction;
-import org.nuxeo.runtime.stream.pipes.pipes.PicturePipeFunction;
-import org.nuxeo.runtime.stream.pipes.services.PipelineService;
+import org.nuxeo.runtime.stream.pipes.consumers.LogAppenderConsumer;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -79,13 +63,7 @@ public class EventPipesTest {
     public static final String TEST_MIME_TYPE = "text/plain";
 
     @Inject
-    protected PipelineService pipeService;
-
-    @Inject
-    protected CoreSession session;
-
-    @Inject
-    protected EventService eventService;
+    CoreSession session;
 
     public static Event getTestEvent(CoreSession session) throws Exception {
         DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
@@ -107,108 +85,25 @@ public class EventPipesTest {
         return event;
     }
 
-    @Test
-    public void testFilterFunctions() throws Exception {
+    public static void assertMetric(int expected, String metric, NuxeoMetricSet metricSet) {
+        assertEquals(expected, getMetricValue(metricSet, metric));
+    }
 
-        Event event = getTestEvent(session);
-        NuxeoMetricSet funcMetric = new NuxeoMetricSet("nuxeo", "func", "test");
-
-        FilterFunction<Event, Event> func = new FilterFunction<>(event(), e -> e);
-        func.withMetrics(funcMetric);
-        assertMetric(0, "nuxeo.func.test.supplied", funcMetric);
-        assertEquals("Filter passed so must be an event", event, func.apply(event));
-        assertMetric(1, "nuxeo.func.test.supplied", funcMetric);
-        assertMetric(1, "nuxeo.func.test.transformed", funcMetric);
-
-        func = new FilterFunction<>(event().and(Event::isPublic), e -> e);
-        assertEquals("Filter passed so must be an event", event, func.apply(event));
-
-        func = new FilterFunction<>(event().and(e -> !e.isImmediate()), e -> e);
-        assertEquals("Filter passed so must be an event", event, func.apply(event));
-
-        func = new FilterFunction<>(docEvent(doc()), e -> e);
-        assertEquals("Filter passed so must be an event", event, func.apply(event));
-
-        func = new FilterFunction<>(docEvent(isNotProxy().and(d -> d.getName().equals("My Doc"))), e -> e);
-        assertEquals("Filter passed so must be My Doc", event, func.apply(event));
-        func = new FilterFunction<>(docEvent(isNotProxy().and(hasFacets("Versionable", "Commentable"))), e -> e);
-        assertEquals("Filter passed so must be an event", event, func.apply(event));
-
-        func = new FilterFunction<>(docEvent(isNotProxy().and(hasFacets("Folderish"))), e -> e);
-        func.withMetrics(funcMetric);
-        assertMetric(0, "nuxeo.func.test.filterFailed", funcMetric);
-        assertNull("Must not have folderish", func.apply(event));
-        assertMetric(1, "nuxeo.func.test.filterFailed", funcMetric);
-        func = new FilterFunction<>(docEvent(isNotProxy().and(hasFacets("Folderish").negate())), e -> e);
-        assertEquals("Filter passed so must not have folderish", event, func.apply(event));
-
-        func = new FilterFunction<>(docEvent(isNotProxy().and(isPicture())), e -> e);
-        assertNull("It's not a picture", func.apply(event));
-
-        func = new FilterFunction<>(in -> true, s -> {
-            throw new NuxeoException("Invalid");
-        });
-        func.withMetrics(funcMetric);
-        assertMetric(0, "nuxeo.func.test.errors", funcMetric);
-        func.apply(event);
-        assertMetric(1, "nuxeo.func.test.errors", funcMetric);
+    @SuppressWarnings("rawtypes")
+    public static long getMetricValue(NuxeoMetricSet metricSet, String metric) {
+        Map<String, Metric> metricMap = metricSet.getMetrics();
+        Gauge g = (Gauge) metricMap.get(metric);
+        return (Long) g.getValue();
     }
 
     @Test
-    public void testFunctions() throws Exception {
-
-        Event event = getTestEvent(session);
-        FilterFunction<Event, Collection<Record>> func = new PicturePipeFunction();
-        assertNull("Its not a picture event", func.apply(event));
-        Collection<Record> applied = func.transformation.apply(event);
-        assertTrue("Must turn an event into a record", applied.size() == 1);
-        func = new DocumentPipeFunction();
-        applied = func.apply(event);
-        assertTrue("It is a document", applied.size() == 1);
+    public void testConsumer() {
+        LogAppenderConsumer consumer = new LogAppenderConsumer(null);
+        assertNotNull("toString shouldn't throw a null pointer even if the appender is null", consumer.toString());
     }
 
     @Test
-    public void testEventPipes() throws Exception {
-        StringBuilder buffy = new StringBuilder();
-        NuxeoMetricSet nuxeoMetricSet = new NuxeoMetricSet("nuxeo", "pipes", "test");
-        FilterFunction<Event, Collection<String>> func =
-                new FilterFunction<>(event(), f -> Collections.singletonList(f.getName()));
-        pipeService.addEventPipe("myDocEvent", nuxeoMetricSet, func, buffy::append);
-        assertMetric(0, "nuxeo.pipes.test.events", nuxeoMetricSet);
-        eventService.fireEvent(getTestEvent(session));
-        eventService.waitForAsyncCompletion();
-        assertEquals("myDocEvent", buffy.toString());
-        assertMetric(1, "nuxeo.pipes.test.consumed", nuxeoMetricSet);
-        assertMetric(1, "nuxeo.pipes.test.events", nuxeoMetricSet);
-    }
-
-    @Test
-    public void TestBasicFunction() {
-        FilterFunction<String, String> func = new FilterFunction<>(in -> true, t -> t);
-        assertEquals("Hello World", func.apply("Hello World"));
-
-        func = new FilterFunction<>(in -> true, String::toLowerCase);
-        assertEquals("hello", func.apply("Hello"));
-
-        func = new FilterFunction<>(in -> in.toLowerCase().startsWith("h"), t -> t);
-
-        long matched = Stream.of("hello  ", "I", "am", "Happy  ", "hopefully  ").filter(func.filter).count();
-        assertEquals(3, matched);
-
-        StringBuffer ints = new StringBuffer();
-        final FilterFunction<Integer, Integer> function = new FilterFunction<>(in -> in % 2 == 0, in -> in * in);
-
-        IntStream.of(2, 3, 6, 1, 4).forEach(i -> {
-            Integer applied = function.apply(i);
-            if (applied != null) {
-                ints.append(applied);
-            }
-        });
-        assertEquals("43616", ints.toString());
-    }
-
-    @Test
-    public void TestDocEventToStream() throws Exception {
+    public void testDocEventToStream() throws Exception {
         DocEventToStream doc2stream = new DocEventToStream();
         Collection<BlobTextStream> result =
                 doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File")));
@@ -264,22 +159,5 @@ public class EventPipesTest {
 
         BlobTextStream andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextStream.class);
         assertEquals(firstResult, andBackAgain);
-    }
-
-    @Test
-    public void TestClassCast() {
-        FilterFunction<String, Integer> ff = new FilterFunction<>(in -> true, null);
-        assertNull(ff.apply("Hello"));
-    }
-
-    protected void assertMetric(int expected, String metric, NuxeoMetricSet metricSet) {
-        assertEquals(expected, getMetricValue(metricSet, metric));
-    }
-
-    @SuppressWarnings("rawtypes")
-    protected long getMetricValue(NuxeoMetricSet metricSet, String metric) {
-        Map<String, Metric> metricMap = metricSet.getMetrics();
-        Gauge g = (Gauge) metricMap.get(metric);
-        return (Long) g.getValue();
     }
 }

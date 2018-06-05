@@ -33,6 +33,9 @@ public interface FunctionStreamProcessorTopology extends StreamProcessorTopology
 
     @Override
     default Topology getTopology(Map<String, String> options) {
+        if (this instanceof Initializable) {
+            ((Initializable) this).init(options);
+        }
         return new FunctionStreamProcessor().getTopology(this, options);
     }
 }

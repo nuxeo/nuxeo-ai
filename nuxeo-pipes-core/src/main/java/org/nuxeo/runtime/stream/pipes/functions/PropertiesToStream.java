@@ -47,6 +47,7 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
  * <p>
  * The properties are not mutually exclusive. For example, if you specify "file:content" in <code>blobProperties</code>
  * and "dc:title" and "dc:creator" in <code>customProperties</code> you will have 1 record with those 3 properties.
+ *
  * @see PreFilterFunction
  */
 public class PropertiesToStream extends PreFilterFunction<Event, Collection<Record>> {
@@ -77,7 +78,7 @@ public class PropertiesToStream extends PreFilterFunction<Event, Collection<Reco
     /**
      * Sets up the transformation function to be applied
      */
-    protected Function<? super Event, ? extends Collection<Record>> setupTransformation() {
+    protected Function<Event, Collection<Record>> setupTransformation() {
         Function<Event, Collection<BlobTextStream>> func =
                 new DocEventToStream(blobProperties, textProperties, customProperties);
         return e -> {

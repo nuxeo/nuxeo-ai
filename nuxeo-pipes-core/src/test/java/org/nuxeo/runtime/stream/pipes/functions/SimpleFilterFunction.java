@@ -31,6 +31,6 @@ public class SimpleFilterFunction extends PreFilterFunction<Record, Optional<Rec
 
     public SimpleFilterFunction() {
         this.filter = r -> r.data.length > 0;
-        this.transformation = rec -> Optional.of(rec);
+        this.transformation = Optional::of;
     }
 }

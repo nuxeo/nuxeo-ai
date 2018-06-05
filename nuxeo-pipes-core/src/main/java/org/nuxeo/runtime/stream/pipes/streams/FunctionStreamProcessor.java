@@ -111,9 +111,7 @@ public class FunctionStreamProcessor {
             }
             try {
                 Optional<Record> applied = function.apply(record);
-                if (applied.isPresent()) {
-                    writeToStreams(context, applied.get());
-                }
+                applied.ifPresent(rec -> writeToStreams(context, rec));
                 context.askForCheckpoint();
             } catch (NuxeoException e) {
                 log.error("Discard invalid record: " + record, e);

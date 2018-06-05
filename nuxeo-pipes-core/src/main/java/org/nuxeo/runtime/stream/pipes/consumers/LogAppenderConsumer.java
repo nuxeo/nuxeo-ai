@@ -44,7 +44,7 @@ public class LogAppenderConsumer implements Consumer<Record> {
         }
     }
 
-    public LogAppender<Record> getAppender() {
+    protected LogAppender<Record> getAppender() {
         if (appender.closed()) {
             log.warn("We can't append to a closed appender. " + appender.name());
         }

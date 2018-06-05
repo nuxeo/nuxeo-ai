@@ -49,6 +49,11 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
     private static final Log log = LogFactory.getLog(DocEventToStream.class);
+
+    public static final String BLOB_PROPERTIES = "blobProperties";
+    public static final String TEXT_PROPERTIES = "textProperties";
+    public static final String CUSTOM_PROPERTIES = "customProperties";
+
     protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
     protected final List<String> blobProperties;
     protected final List<String> textProperties;
@@ -66,6 +71,10 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         this.blobProperties = blobProperties != null ? blobProperties : Collections.emptyList();
         this.textProperties = textProperties != null ? textProperties : Collections.emptyList();
         this.customProperties = customProperties != null ? customProperties : Collections.emptyList();
+
+        if(this.blobProperties.isEmpty() && this.textProperties.isEmpty() && this.customProperties.isEmpty()) {
+            throw new IllegalArgumentException("DocEventToStream requires at least one property name.");
+        }
     }
 
     @Override

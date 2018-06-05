@@ -42,13 +42,18 @@ public class Predicates {
         return Objects::nonNull;
     }
 
-    public static Predicate<Event> docEvent(Predicate<DocumentModel> doc) {
-        Objects.requireNonNull(doc);
-        return event().and(e -> {
+    public static Predicate<Event> docEvent(Predicate<DocumentModel> predicate) {
+        return docEvent(event(), predicate);
+    }
+
+    public static Predicate<Event> docEvent(Predicate<Event> eventPredicate, Predicate<DocumentModel> predicate) {
+        Objects.requireNonNull(eventPredicate);
+        Objects.requireNonNull(predicate);
+        return eventPredicate.and(e -> {
             DocumentEventContext docCtx = (DocumentEventContext) e.getContext();
             if (docCtx == null) return false;
-            DocumentModel d = docCtx.getSourceDocument();
-            return d != null && doc.test(d);
+            DocumentModel doc = docCtx.getSourceDocument();
+            return doc != null && predicate.test(doc);
         });
     }
 
@@ -62,10 +67,6 @@ public class Predicates {
 
     public static Predicate<DocumentModel> isPicture() {
         return isNotProxy().and(d -> d.hasFacet("Picture"));
-    }
-
-    public static Predicate<DocumentModel> notSystem() {
-        return isNotProxy().and(d -> !d.hasFacet("SystemDocument"));
     }
 
 }

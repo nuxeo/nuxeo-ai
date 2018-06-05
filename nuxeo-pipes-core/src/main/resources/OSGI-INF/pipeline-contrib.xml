@@ -3,10 +3,10 @@
 
   <require>org.nuxeo.ecm.core.event.EventServiceComponent</require>
   <require>org.nuxeo.runtime.stream.service</require>
-  <implementation class="org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl" />
+  <implementation class="org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl"/>
 
   <service>
-    <provide interface="org.nuxeo.runtime.stream.pipes.services.PipelineService" />
+    <provide interface="org.nuxeo.runtime.stream.pipes.services.PipelineService"/>
   </service>
 
   <extension-point name="pipes">
@@ -18,14 +18,12 @@
             <event>myDocEvent</event>
           </supplier>
           <consumer>
-            <stream name="text" />
+            <stream name="text"/>
           </consumer>
         </pipe>
       </code>
     </documentation>
-    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor" />
-    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor$Consumer" />
-    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor$Supplier" />
+    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor"/>
   </extension-point>
 
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">

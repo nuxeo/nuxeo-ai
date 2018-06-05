@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.pipes.DocumentPipeFunction;
+import org.nuxeo.runtime.stream.pipes.functions.PropertiesToStream;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -64,34 +65,48 @@ public class RecordsTest {
     CoreSession session;
 
     @Test
-    public void TestEventsToRecord() throws Exception {
-        DocumentPipeFunction func = new DocumentPipeFunction();
+    public void testEventsToRecord() throws Exception {
+        PropertiesToStream func = new PropertiesToStream();
+        Map<String, String> params = new HashMap<>();
+        params.put("blobProperties", "file:content");
+        func.init(params);
+        List<Record> recs = (List<Record>) func.apply(getTestEvent(session));
+        assertEquals(1, recs.size());
 
-        List<Record> recs = (List<Record>) func.transformation.apply(getTestEvent(session));
-        assertNotNull(recs);
+        params.put("textProperties", "dc:creator");
+        func.init(params);
+        recs = (List<Record>) func.apply(getTestEvent(session));
+        assertEquals(2, recs.size());
+
+        params.remove("textProperties");
+        params.put("customProperties", "dc:creator");
+        func.init(params);
+        recs = (List<Record>) func.apply(getTestEvent(session));
+        assertEquals(1, recs.size());
 
         BlobTextStream andBack = fromRecord(recs.get(0), BlobTextStream.class);
         assertNotNull(andBack);
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
-        assertEquals("file:content", andBack.getXPaths().iterator().next());
+        assertEquals("dc:creator", andBack.getXPaths().get(0));
+        assertEquals("file:content", andBack.getXPaths().get(1));
         assertEquals(7, andBack.getBlob().getLength());
         assertEquals(TEST_MIME_TYPE, andBack.getBlob().getMimeType());
     }
 
     @Test(expected = NuxeoException.class)
-    public void TestToRecord() throws Exception {
+    public void testToRecord() throws Exception {
         toRecord("akey", getTestEvent(session));
     }
 
     @Test(expected = NuxeoException.class)
-    public void TestFromRecord() throws Exception {
+    public void testFromRecord() throws Exception {
         String value = "Some test";
         fromRecord(Record.of("33", value.getBytes("UTF-8")), DocumentModel.class);
     }
 
     @Test
-    public void TestJacksonUtil() throws IOException {
+    public void testJacksonUtil() throws IOException {
         String raw = toJsonString(jg -> jg.writeStringField("myField", "cake"));
 
         assertEquals("{\"myField\":\"cake\"}", raw);
