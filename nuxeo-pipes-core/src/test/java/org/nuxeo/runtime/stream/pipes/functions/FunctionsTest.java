@@ -47,9 +47,8 @@ import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
-import org.nuxeo.runtime.stream.pipes.filters.CoreFilterAdapter;
 import org.nuxeo.runtime.stream.pipes.filters.DocumentEventFilter;
-import org.nuxeo.runtime.stream.pipes.filters.FacetFilterOld;
+import org.nuxeo.runtime.stream.pipes.filters.FacetFilter;
 import org.nuxeo.runtime.stream.pipes.filters.Filter;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -154,9 +153,9 @@ public class FunctionsTest {
         } catch (IllegalArgumentException ignored) {
         }
 
-        FacetFilterOld facetFilterOld = new FacetFilterOld();
-        facetFilterOld.init(Collections.singletonMap("includedFacets", "Picture"));
-        func.filter = docEvent(facetFilterOld);
+        FacetFilter facetFilter = new FacetFilter();
+        facetFilter.init(Collections.singletonMap("includedFacets", "Picture"));
+        func.filter = docEvent(facetFilter);
         func.init(Collections.singletonMap("textProperties", "dc:creator"));
         assertNull("Its not a picture event", func.apply(event));
         func.filter = docEvent(d -> true);
