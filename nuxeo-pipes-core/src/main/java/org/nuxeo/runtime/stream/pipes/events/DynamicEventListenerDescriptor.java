@@ -30,8 +30,8 @@ import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
  */
 public class DynamicEventListenerDescriptor extends EventListenerDescriptor {
 
-    public DynamicEventListenerDescriptor(String eventName, EventListener eventListener) {
-        this(eventName + "_" + UUID.randomUUID(), false, true, eventName, eventListener);
+    public DynamicEventListenerDescriptor(String eventName, EventListener eventListener, boolean isAsync) {
+        this(eventName + "_" + UUID.randomUUID(), false, isAsync, eventName, eventListener);
     }
 
     public DynamicEventListenerDescriptor(String name, boolean isPostCommit, boolean isAsync, String eventName, EventListener eventListener) {

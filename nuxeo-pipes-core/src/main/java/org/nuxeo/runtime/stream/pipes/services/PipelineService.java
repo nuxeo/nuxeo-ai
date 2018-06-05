@@ -37,9 +37,11 @@ public interface PipelineService {
      *
      * @param eventName The name of the event to act on
      * @param metricSet A set of metrics
-     * @param function  A function to apply
+     * @param eventFunction  A function to apply
+     * @param isAsync Is the event listener asynchronous
      * @param consumer  A consumer to consume the result
      */
-    <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, Collection<R>> function, Consumer<R> consumer);
+    <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet,
+                          Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer);
 
 }

@@ -18,6 +18,8 @@
  */
 package org.nuxeo.runtime.stream.pipes.services;
 
+import static org.nuxeo.runtime.stream.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
 import org.nuxeo.lib.stream.computation.Record;
@@ -43,6 +46,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
 import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.stream.pipes.consumers.LogAppenderConsumer;
+import org.nuxeo.runtime.stream.pipes.events.DirtyEventListener;
 import org.nuxeo.runtime.stream.pipes.events.DynamicEventListenerDescriptor;
 import org.nuxeo.runtime.stream.pipes.events.EventConsumer;
 
@@ -96,18 +100,21 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         return consumers;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void addPipe(PipeDescriptor descriptor) {
         if (descriptor != null && descriptor.enabled) {
             descriptor.supplier.events.forEach(e -> {
                 NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", descriptor.id);
                 List<Consumer<Record>> consumers = getConsumers(descriptor);
+                if (descriptor.hasDirtyCheckFilter(e)) {
+                    //We are going to do a special hack here.
+                    addDirtyCheckEvent(e.options);
+                }
                 consumers.forEach(consumer -> {
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Listening for %s event and sending it to %s", e, consumer.toString()));
                     }
-                    addEventPipe(e, pipeMetrics, descriptor.getFunction(), consumer);
+                    addEventPipe(e.name, pipeMetrics, descriptor.getFunction(e), descriptor.isAsync, consumer);
                 });
                 registry.registerAll(pipeMetrics);
 
@@ -115,12 +122,22 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         }
     }
 
+    protected void addDirtyCheckEvent(Map<String, String> options) {
+        DirtyEventListener dirtyEventListener = new DirtyEventListener(options);
+        addEventListener(DIRTY_EVENT_NAME, false, dirtyEventListener);
+    }
+
     @Override
-    public <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet, Function<Event, Collection<R>> function, Consumer<R> consumer) {
-        EventService eventService = Framework.getService(EventService.class);
-        EventConsumer<R> eventConsumer = new EventConsumer<>(function, consumer);
+    public <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet,
+                                 Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer) {
+        EventConsumer<R> eventConsumer = new EventConsumer<>(eventFunction, consumer);
         eventConsumer.withMetrics(metricSet);
-        EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer);
+        addEventListener(eventName, isAsync, eventConsumer);
+    }
+
+    protected void addEventListener(String eventName, boolean isAsync, EventListener eventConsumer) {
+        EventService eventService = Framework.getService(EventService.class);
+        EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer, isAsync);
         listenerDescriptors.add(listenerDescriptor);
         eventService.addEventListener(listenerDescriptor);
     }
