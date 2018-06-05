@@ -16,16 +16,16 @@
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="simpleProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">images.out</option>
+      <option name="source">test_images</option>
+      <option name="sink">test_images.out</option>
       <option name="enrichmentServiceName">simpleTest</option>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="tagsProcessor" logConfig="test_enrichment" daultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="tagsProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
-      <option name="source">images.out</option>
+      <option name="source">test_images.out</option>
     </streamProcessor>
   </extension>
 
@@ -33,7 +33,7 @@
     <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
                      logConfig="test_enrichment"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
-      <option name="source">images.out</option>
+      <option name="source">test_images.out</option>
     </streamProcessor>
   </extension>
 </component>

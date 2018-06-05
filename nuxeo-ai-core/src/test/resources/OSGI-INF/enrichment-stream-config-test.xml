@@ -3,7 +3,6 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
     <logConfig name="test_enrichment">
-      <option name="retention">3h</option>
     </logConfig>
   </extension>
 

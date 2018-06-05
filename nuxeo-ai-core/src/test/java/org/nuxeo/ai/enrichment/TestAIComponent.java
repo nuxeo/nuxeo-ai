@@ -59,6 +59,7 @@ import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
 import org.nuxeo.lib.stream.log.LogAppender;
+import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.LogOffset;
 import org.nuxeo.runtime.api.Framework;
@@ -84,15 +85,6 @@ public class TestAIComponent {
 
     @Inject
     protected AIComponent aiComponent;
-
-    @Inject
-    protected CoreSession session;
-
-    @Inject
-    protected TagService tagService;
-
-    @Inject
-    protected TransactionalFeature txFeature;
 
     @Test
     public void TestBasicComponent() {
@@ -186,49 +178,6 @@ public class TestAIComponent {
         assertEquals(1, computation.errors);
         assertEquals(1, computation.called);
         assertEquals(1, computation.success);
-    }
-
-    @Test
-    @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml"})
-    public void TestConfiguredStreamProcessor() throws Exception {
-
-        DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
-        testDoc = session.createDocument(testDoc);
-        String docId = testDoc.getId();
-        session.save();
-        txFeature.nextTransaction();
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setId(docId);
-        blobTextStream.setRepositoryName(testDoc.getRepositoryName());
-        blobTextStream.setBlob(new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
-        Record record = toRecord("k", blobTextStream);
-        String metricPrefix = "nuxeo.streams.enrichment.images>simpleTest>images.out.";
-        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
-        Map<String, Gauge> gauges = registry.getGauges().entrySet().stream()
-                                            .filter(e -> e.getKey().startsWith(metricPrefix))
-                                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Gauge called = gauges.get(metricPrefix + "called");
-        Gauge produced = gauges.get(metricPrefix + "produced");
-        assertEquals(0L, called.getValue());
-        assertEquals(0L, produced.getValue());
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
-        LogAppender<Record> appender = manager.getAppender("images");
-        LogOffset offset = appender.append("mykey", record);
-        appender.waitFor(offset, "images.out>StoreLabelsAsTags", Duration.ofSeconds(10));
-
-        txFeature.nextTransaction();
-        DocumentModel enrichedDoc = session.getDocument(new IdRef(docId));
-        assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
-        Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
-        Assert.assertNotNull(classProp);
-        assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
-        Set<String> tags = tagService.getTags(session, docId);
-        assertEquals(2, tags.size());
-
-        assertEquals(1L, called.getValue());
-        assertEquals(1L, produced.getValue());
-
-
     }
 
     @Test
