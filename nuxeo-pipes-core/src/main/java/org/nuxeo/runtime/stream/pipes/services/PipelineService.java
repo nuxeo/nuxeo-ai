@@ -23,8 +23,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 
+/**
+ * Works with events and streams using the Pipeline metaphor
+ */
 public interface PipelineService {
 
     /**
@@ -35,13 +37,13 @@ public interface PipelineService {
     /**
      * Add a pipe that acts on an event
      *
-     * @param eventName The name of the event to act on
-     * @param metricSet A set of metrics
-     * @param eventFunction  A function to apply
-     * @param isAsync Is the event listener asynchronous
-     * @param consumer  A consumer to consume the result
+     * @param eventName     The name of the event to act on
+     * @param supplierId    A unique id
+     * @param eventFunction A function to apply
+     * @param isAsync       Is the event listener asynchronous
+     * @param consumer      A consumer to consume the result
      */
-    <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet,
+    <R> void addEventPipe(String eventName, String supplierId,
                           Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer);
 
 }

@@ -33,8 +33,8 @@ import org.nuxeo.runtime.stream.pipes.filters.Filter.EventFilter;
  */
 public class DocumentEventFilter implements EventFilter {
 
-    final Predicate<Event> eventPredicate;
-    final Predicate<DocumentModel> docPredicate;
+    protected final Predicate<Event> eventPredicate;
+    protected final Predicate<DocumentModel> docPredicate;
 
     protected DocumentEventFilter(Predicate<Event> eventPredicate, Predicate<DocumentModel> docPredicate) {
         this.eventPredicate = eventPredicate;
@@ -63,13 +63,8 @@ public class DocumentEventFilter implements EventFilter {
 
     public static class Builder {
 
-        List<DocumentFilter> documentFilters = new ArrayList<>();
-        List<EventFilter> eventFilters = new ArrayList<>();
-
-        public Builder() {
-            withEventFilter(Objects::nonNull);
-            withDocumentFilter(Objects::nonNull);
-        }
+        protected List<DocumentFilter> documentFilters = new ArrayList<>();
+        protected List<EventFilter> eventFilters = new ArrayList<>();
 
         public Builder withDocumentFilter(DocumentFilter filter) {
             documentFilters.add(filter);
@@ -81,28 +76,18 @@ public class DocumentEventFilter implements EventFilter {
             return this;
         }
 
-        protected Predicate<Event> buildEventPredicate(Predicate<Event> predicate, int index) {
-            Predicate<Event> filter = eventFilters.get(index);
-            return predicate.and(filter);
-        }
-
-        protected Predicate<DocumentModel> buildDocPredicate(Predicate<DocumentModel> predicate, int index) {
-            Predicate<DocumentModel> filter = documentFilters.get(index);
-            return predicate.and(filter);
-        }
-
         public EventFilter build() {
-            Predicate<Event> eventFilter = eventFilters.get(0);
-            for (int i = 1; i < eventFilters.size(); i++) {
-                eventFilter = buildEventPredicate(eventFilter, i);
+            Predicate<Event> eventFilter = Objects::nonNull;
+            for (Predicate<Event> eFilter : eventFilters) {
+                eventFilter = eventFilter.and(eFilter);
             }
 
-            Predicate<DocumentModel> filter = documentFilters.get(0);
-            for (int i = 1; i < documentFilters.size(); i++) {
-                filter = buildDocPredicate(filter, i);
+            Predicate<DocumentModel> docFilter = Objects::nonNull;
+            for (Predicate<DocumentModel> dFilter : documentFilters) {
+                docFilter = docFilter.and(dFilter);
             }
 
-            return new DocumentEventFilter(eventFilter, filter);
+            return new DocumentEventFilter(eventFilter, docFilter);
         }
 
     }

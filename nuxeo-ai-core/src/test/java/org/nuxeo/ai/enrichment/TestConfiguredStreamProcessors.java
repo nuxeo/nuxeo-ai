@@ -107,7 +107,7 @@ public class TestConfiguredStreamProcessors {
         LogOffset offset = appender.append("mykey", record);
         appender.waitFor(offset, "test_images>simpleTest>test_images.out", Duration.ofSeconds(10));
         assertEquals("We must have been called once", 1L, called.getValue());
-        assertEquals("We must have produces one record", 1L, produced.getValue());
+        assertEquals("We must have produced one record", 1L, produced.getValue());
         lag = manager.getLag("test_images.out", "test_images.out>SaveEnrichmentFunction");
         assertEquals(0, lag.lag());
         txFeature.nextTransaction();

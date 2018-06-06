@@ -109,6 +109,9 @@ public class PipeDescriptor {
         }
     }
 
+    /**
+     * Get the function that acts on the specified event
+     */
     public Function<Event, Collection<Record>> getFunction(PipeEvent event) {
         try {
             if (transformer.function == null) {
@@ -127,11 +130,17 @@ public class PipeDescriptor {
         }
     }
 
+    /**
+     * Indicates that this event has a dirtycheck filter
+     */
     public boolean hasDirtyCheckFilter(PipeEvent event) {
         return event.filters.stream()
                             .anyMatch(pipeFilter -> DirtyPropertyFilter.class.isAssignableFrom(pipeFilter.clazz));
     }
 
+    /**
+     * Get event filters for the specified event
+     */
     public Filter<Event> getEventFilter(PipeEvent event) {
         if (event != null) {
             try {
@@ -144,7 +153,7 @@ public class PipeDescriptor {
                     }
                     if (theFilter instanceof DocumentFilter) {
                         builder.withDocumentFilter((DocumentFilter) theFilter);
-                    } else if (theFilter instanceof EventFilter) {
+                    } else {
                         builder.withEventFilter((EventFilter) theFilter);
                     }
                 }
@@ -183,7 +192,7 @@ public class PipeDescriptor {
         @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
         public Map<String, String> options = new HashMap<>();
         @XNode("@class")
-        protected Class<? extends DocumentFilter> clazz;
+        protected Class<? extends EventFilter> clazz;
     }
 
     @XObject("consumer")

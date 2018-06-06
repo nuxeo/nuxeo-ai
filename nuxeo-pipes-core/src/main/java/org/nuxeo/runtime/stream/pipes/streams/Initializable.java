@@ -8,7 +8,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * A marker interface to indicate the class can be initialized with a Map of options
+ * An interface to indicate the class can be initialized with a Map of options
  */
 public interface Initializable {
 

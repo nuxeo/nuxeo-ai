@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.functions;
 
+import static java.util.Optional.empty;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 
 import java.util.Optional;
@@ -36,6 +37,6 @@ public abstract class AbstractEnrichmentConsumer implements FunctionStreamProces
     public Optional<Record> apply(Record record) {
         EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
         this.accept(metadata);
-        return Optional.empty();
+        return empty();
     }
 }

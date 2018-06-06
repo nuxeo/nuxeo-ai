@@ -18,12 +18,9 @@
  */
 package org.nuxeo.ai.functions;
 
-import java.util.Optional;
-
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.platform.tag.TagService;
-import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 

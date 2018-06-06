@@ -34,9 +34,6 @@ public abstract class PropertyFilter implements Filter.DocumentFilter, Initializ
 
     protected List<String> properties;
 
-    public PropertyFilter() {
-    }
-
     @Override
     public void init(Map<String, String> options) {
         properties = propsList(options.get("properties"));
@@ -47,10 +44,7 @@ public abstract class PropertyFilter implements Filter.DocumentFilter, Initializ
      */
     @Override
     public boolean test(DocumentModel documentModel) {
-        if (documentModel != null) {
-            return properties.stream().anyMatch(prop -> testProperty(documentModel, prop));
-        }
-        return false;
+        return documentModel != null && properties.stream().anyMatch(prop -> testProperty(documentModel, prop));
     }
 
     /**

@@ -67,9 +67,6 @@
 
     <pipe id="pipe.video" enabled="true" function="org.nuxeo.runtime.stream.pipes.functions.PropertiesToStream">
       <supplier>
-
-        "Video",
-
         <event name="documentCreated">
           <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
           <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
@@ -96,9 +93,6 @@
 
     <pipe id="pipe.audio" enabled="true">
       <supplier>
-
-        ,"Audio"
-
         <event name="documentCreated">
           <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
           <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">

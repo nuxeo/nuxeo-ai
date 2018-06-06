@@ -93,6 +93,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         listenerDescriptors.forEach(eventService::removeEventListener);
     }
 
+    /**
+     * Get the consumers defined by the descriptor
+     */
     protected List<Consumer<Record>> getConsumers(PipeDescriptor descriptor) {
         List<Consumer<Record>> consumers = new ArrayList<>();
         List<LogConfigDescriptor.StreamDescriptor> streams = descriptor.consumer.streams;
@@ -104,37 +107,42 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void addPipe(PipeDescriptor descriptor) {
         if (descriptor != null && descriptor.enabled) {
             descriptor.supplier.events.forEach(e -> {
-                NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", descriptor.id);
                 List<Consumer<Record>> consumers = getConsumers(descriptor);
                 if (descriptor.hasDirtyCheckFilter(e)) {
-                    //We are going to do a special hack here.
-                    addDirtyCheckEvent(e.options);
+                    //If we have a dirty check then add a special pre-commit listener
+                    addDirtyCheckListener(DIRTY_EVENT_NAME, e.options);
                 }
                 consumers.forEach(consumer -> {
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Listening for %s event and sending it to %s", e, consumer.toString()));
                     }
-                    addEventPipe(e.name, pipeMetrics, descriptor.getFunction(e), descriptor.isAsync, consumer);
+                    addEventPipe(e.name, descriptor.id, descriptor.getFunction(e), descriptor.isAsync, consumer);
                 });
-                registry.registerAll(pipeMetrics);
-
             });
         }
     }
 
-    protected void addDirtyCheckEvent(Map<String, String> options) {
+    /**
+     * Add a <code>DirtyEventListener</code> to listen for properties that are dirty
+     */
+    protected void addDirtyCheckListener(String eventName, Map<String, String> options) {
         DirtyEventListener dirtyEventListener = new DirtyEventListener(options);
-        addEventListener(DIRTY_EVENT_NAME, false, dirtyEventListener);
+        addEventListener(eventName, false, dirtyEventListener);
     }
 
     @Override
-    public <R> void addEventPipe(String eventName, NuxeoMetricSet metricSet,
+    public <R> void addEventPipe(String eventName, String supplierId,
                                  Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer) {
+        NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", supplierId, eventName);
         EventConsumer<R> eventConsumer = new EventConsumer<>(eventFunction, consumer);
-        eventConsumer.withMetrics(metricSet);
+        eventConsumer.withMetrics(pipeMetrics);
+        registry.registerAll(pipeMetrics);
         addEventListener(eventName, isAsync, eventConsumer);
     }
 
+    /**
+     * Add an <code>EventListener</code> using the <code>EventService</code>
+     */
     protected void addEventListener(String eventName, boolean isAsync, EventListener eventConsumer) {
         EventService eventService = Framework.getService(EventService.class);
         EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer, isAsync);
@@ -142,6 +150,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         eventService.addEventListener(listenerDescriptor);
     }
 
+    /**
+     * Create a <code>LogAppenderConsumer</code> for the specified log/stream</code>
+     */
     protected LogAppenderConsumer addLogConsumer(String logName, int size) {
         LogManager manager = Framework.getService(StreamService.class).getLogManager(pipeConfigName);
         manager.createIfNotExists(logName, size);
