@@ -13,108 +13,20 @@
     <documentation>
       Configure a pipeline to send an event to a nuxeo-stream.
       <code>
-        <pipe id="pipe.myid" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
+        <pipe id="pipe.doc" enabled="true">
           <supplier>
-            <event>myDocEvent</event>
+            <event name="myDocEvent"/>
           </supplier>
           <consumer>
             <stream name="text"/>
           </consumer>
+          <transformer>
+            <option name="textProperties">dc:creator</option>
+          </transformer>
         </pipe>
       </code>
     </documentation>
     <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor"/>
   </extension-point>
 
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
-    <pipe id="pipe.images" enabled="true">
-      <supplier>
-        <event name="pictureViewsGenerationDone">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.FacetFilter">
-            <option name="includedFacets">Picture</option>
-          </filter>
-        </event>
-        <event name="documentCreated">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.FacetFilter">
-            <option name="excludedFacets">Picture,Folderish</option>
-          </filter>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
-            <option name="mimePattern">image.*</option>
-            <option name="properties">file:content</option>
-          </filter>
-        </event>
-        <event name="documentModified">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.DirtyPropertyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.FacetFilter">
-            <option name="excludedFacets">Picture,Folderish</option>
-          </filter>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
-            <option name="mimePattern">image.*</option>
-          </filter>
-          <option name="properties">file:content</option>
-        </event>
-      </supplier>
-      <consumer>
-        <stream name="images"/>
-      </consumer>
-      <transformer class="org.nuxeo.runtime.stream.pipes.functions.PropertiesToStream">
-        <option name="blobProperties">file:content</option>
-      </transformer>
-    </pipe>
-
-    <pipe id="pipe.video" enabled="true" function="org.nuxeo.runtime.stream.pipes.functions.PropertiesToStream">
-      <supplier>
-        <event name="documentCreated">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
-            <option name="mimePattern">video.*</option>
-            <option name="properties">file:content</option>
-          </filter>
-        </event>
-        <event name="documentModified">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.DirtyPropertyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
-            <option name="mimePattern">video.*</option>
-          </filter>
-          <option name="properties">file:content</option>
-        </event>
-      </supplier>
-      <consumer>
-        <stream name="video"/>
-      </consumer>
-      <transformer>
-        <option name="blobProperties">file:content</option>
-      </transformer>
-    </pipe>
-
-    <pipe id="pipe.audio" enabled="true">
-      <supplier>
-        <event name="documentCreated">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
-            <option name="mimePattern">audio.*</option>
-            <option name="properties">file:content</option>
-          </filter>
-        </event>
-        <event name="documentModified">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.DirtyPropertyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
-            <option name="mimePattern">audio.*</option>
-          </filter>
-          <option name="properties">file:content</option>
-        </event>
-      </supplier>
-      <consumer>
-        <stream name="audio"/>
-      </consumer>
-      <transformer>
-        <option name="blobProperties">file:content</option>
-      </transformer>
-    </pipe>
-  </extension>
 </component>
