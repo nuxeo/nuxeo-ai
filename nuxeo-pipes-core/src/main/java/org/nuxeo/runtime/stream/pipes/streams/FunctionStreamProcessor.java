@@ -64,8 +64,8 @@ public class FunctionStreamProcessor {
     }
 
     public static String buildName(String simpleName, String streamIn, String streamOut) {
-        String in = streamIn != null ? streamIn + ">" : "";
-        String out = streamOut != null ? ">" + streamOut : "";
+        String in = streamIn != null ? streamIn + "$" : "";
+        String out = streamOut != null ? "$" + streamOut : "";
         return in + simpleName + out;
     }
 

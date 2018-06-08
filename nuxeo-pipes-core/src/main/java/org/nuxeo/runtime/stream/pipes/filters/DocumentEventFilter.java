@@ -63,8 +63,8 @@ public class DocumentEventFilter implements EventFilter {
 
     public static class Builder {
 
-        protected List<DocumentFilter> documentFilters = new ArrayList<>();
-        protected List<EventFilter> eventFilters = new ArrayList<>();
+        protected List<Predicate<DocumentModel>> documentFilters = new ArrayList<>();
+        protected List<Predicate<Event>> eventFilters = new ArrayList<>();
 
         public Builder withDocumentFilter(DocumentFilter filter) {
             documentFilters.add(filter);
@@ -77,15 +77,8 @@ public class DocumentEventFilter implements EventFilter {
         }
 
         public EventFilter build() {
-            Predicate<Event> eventFilter = Objects::nonNull;
-            for (Predicate<Event> eFilter : eventFilters) {
-                eventFilter = eventFilter.and(eFilter);
-            }
-
-            Predicate<DocumentModel> docFilter = Objects::nonNull;
-            for (Predicate<DocumentModel> dFilter : documentFilters) {
-                docFilter = docFilter.and(dFilter);
-            }
+            Predicate<Event> eventFilter = eventFilters.stream().reduce(Objects::nonNull, Predicate::and);
+            Predicate<DocumentModel> docFilter = documentFilters.stream().reduce(Objects::nonNull, Predicate::and);
 
             return new DocumentEventFilter(eventFilter, docFilter);
         }

@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.functions;
 
+import static java.util.stream.Collectors.toList;
 import static org.nuxeo.runtime.stream.pipes.events.DocEventToStream.BLOB_PROPERTIES;
 import static org.nuxeo.runtime.stream.pipes.events.DocEventToStream.CUSTOM_PROPERTIES;
 import static org.nuxeo.runtime.stream.pipes.events.DocEventToStream.TEXT_PROPERTIES;
@@ -27,7 +28,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.lib.stream.computation.Record;
@@ -81,10 +81,7 @@ public class PropertiesToStream extends PreFilterFunction<Event, Collection<Reco
     protected Function<Event, Collection<Record>> setupTransformation() {
         Function<Event, Collection<BlobTextStream>> func =
                 new DocEventToStream(blobProperties, textProperties, customProperties);
-        return e -> {
-            Collection<BlobTextStream> items = func.apply(e);
-            return items.stream().map(i -> toRecord(i.getKey(), i)).collect(Collectors.toList());
-        };
+        return func.andThen(items -> items.stream().map(i -> toRecord(i.getKey(), i)).collect(toList()));
     }
 
 }

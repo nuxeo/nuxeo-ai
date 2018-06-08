@@ -25,25 +25,26 @@ import java.util.function.Function;
 import org.nuxeo.ecm.core.event.Event;
 
 /**
- * Works with events and streams using the Pipeline metaphor
+ * Works with events and streams using the Pipeline metaphor.
  */
 public interface PipelineService {
 
     /**
-     * Add a pipe based on its descriptor
+     * Add a pipe based on its descriptor.
      */
     void addPipe(PipeDescriptor descriptor);
 
     /**
-     * Add a pipe that acts on an event
+     * Add a pipe that acts on an event.
+     * The eventFunction is applied to each event and any result is sent to the consumer.
      *
      * @param eventName     The name of the event to act on
-     * @param supplierId    A unique id
-     * @param eventFunction A function to apply
+     * @param pipelineId    A unique id for this pipeline, used as a description
+     * @param eventFunction A function to apply for each event
      * @param isAsync       Is the event listener asynchronous
      * @param consumer      A consumer to consume the result
      */
-    <R> void addEventPipe(String eventName, String supplierId,
+    <R> void addEventPipe(String eventName, String pipelineId,
                           Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer);
 
 }

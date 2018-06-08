@@ -75,14 +75,14 @@ public class StreamsPipesTest {
             eventService.fireEvent(event);
             eventService.waitForAsyncCompletion();
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
-            assertNotNull(record.message());
+            assertNotNull(record);
         }
 
         DocumentModel theTestDoc;
         //Now check the MimeBlobPropertyFilter filter the blob by "text" mimetype
         try (LogTailer<Record> tailer = manager.createTailer("group", "pipe.text.out")) {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(1));
-            assertNotNull(record.message());
+            assertNotNull(record);
             BlobTextStream andBack = fromRecord(record.message(), BlobTextStream.class);
             theTestDoc = session.getDocument(new IdRef(andBack.getId()));
         }
@@ -93,13 +93,10 @@ public class StreamsPipesTest {
             theTestDoc.setPropertyValue("dc:title", "Dirty Document");
             session.saveDocument(theTestDoc);
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
-            assertNotNull(record.message());
+            assertNotNull(record);
             BlobTextStream dirtyDoc = fromRecord(record.message(), BlobTextStream.class);
             assertEquals("Dirty Document", dirtyDoc.getText());
         }
-
-        //Now check closing, it doesn't throw an error
-        manager.close();
     }
 
     @Test
@@ -131,10 +128,10 @@ public class StreamsPipesTest {
         assertEquals("Should not error even though nulls passed in",
                      "aname", buildName("aname", null, null)
         );
-        assertEquals("bob>king>hope", buildName("king", "bob", "hope"));
-        assertEquals("bob>king>hope,rope", buildName("king", "bob", "hope,rope"));
+        assertEquals("bob$king$hope", buildName("king", "bob", "hope"));
+        assertEquals("bob$king$hope,rope", buildName("king", "bob", "hope,rope"));
 
-        assertEquals("bob>king", buildName("king", "bob", null));
-        assertEquals("king>kong", buildName("king", null, "kong"));
+        assertEquals("bob$king", buildName("king", "bob", null));
+        assertEquals("king$kong", buildName("king", null, "kong"));
     }
 }

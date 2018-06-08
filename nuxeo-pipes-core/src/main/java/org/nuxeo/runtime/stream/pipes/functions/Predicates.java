@@ -51,7 +51,9 @@ public class Predicates {
         Objects.requireNonNull(predicate);
         return eventPredicate.and(e -> {
             DocumentEventContext docCtx = (DocumentEventContext) e.getContext();
-            if (docCtx == null) return false;
+            if (docCtx == null)  {
+                return false;
+            }
             DocumentModel doc = docCtx.getSourceDocument();
             return doc != null && predicate.test(doc);
         });

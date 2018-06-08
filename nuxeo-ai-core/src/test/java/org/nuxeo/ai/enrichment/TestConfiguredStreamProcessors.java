@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,7 +61,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
-import com.google.inject.Inject;
 
 /**
  * Tests a fully configured stream processor
@@ -81,41 +82,53 @@ public class TestConfiguredStreamProcessors {
     @Test
     public void testConfiguredStreamProcessor() throws Exception {
 
+        //Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc = session.createDocument(testDoc);
         String docId = testDoc.getId();
         session.save();
         txFeature.nextTransaction();
+
+        //Create metadata about the blob and document
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setId(docId);
         blobTextStream.setRepositoryName(testDoc.getRepositoryName());
         blobTextStream.setBlob(new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
-        Record record = toRecord("k", blobTextStream);
-        String metricPrefix = "nuxeo.streams.enrichment.test_images>simpleTest>test_images.out.";
+
+        //Check metrics, nothing produced
+        String metricPrefix = "nuxeo.streams.enrichment.test_images$simpleTest$test_images.out.";
         MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
         Map<String, Gauge> gauges = registry.getGauges().entrySet().stream()
                                             .filter(e -> e.getKey().startsWith(metricPrefix))
                                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Gauge called = gauges.get(metricPrefix + "called");
         Gauge produced = gauges.get(metricPrefix + "produced");
-        assertEquals(0L, called.getValue());
+        assertEquals("The service should not be called yet.", 0L, called.getValue());
         assertEquals(0L, produced.getValue());
+
+        //Now check and append a Record to the "test_images" stream
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         LogAppender<Record> appender = manager.getAppender("test_images");
-        LogLag lag = manager.getLag("test_images.out", "test_images.out>SaveEnrichmentFunction");
-        assertEquals(0, lag.lag());
-        LogOffset offset = appender.append("mykey", record);
-        appender.waitFor(offset, "test_images>simpleTest>test_images.out", Duration.ofSeconds(10));
+        LogLag lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
+        assertEquals("There should be nothing waiting to be processed", 0, lag.lag());
+        LogOffset offset = appender.append("mykey", toRecord("k", blobTextStream));
+        appender.waitFor(offset, "test_images$simpleTest$test_images.out", Duration.ofSeconds(10));
+
+        //After waiting for the appender lets check the 1 record was read
         assertEquals("We must have been called once", 1L, called.getValue());
         assertEquals("We must have produced one record", 1L, produced.getValue());
-        lag = manager.getLag("test_images.out", "test_images.out>SaveEnrichmentFunction");
-        assertEquals(0, lag.lag());
+        lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
+        assertEquals("All records should be processed", 0, lag.lag());
+
+        //Confirm the document was enriched with the metadata
         txFeature.nextTransaction();
         DocumentModel enrichedDoc = session.getDocument(new IdRef(docId));
         assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
         Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
         Assert.assertNotNull(classProp);
         assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
+
+        //Confirm 2 tags were added
         Set<String> tags = tagService.getTags(session, docId);
         assertEquals(2, tags.size());
 

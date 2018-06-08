@@ -26,13 +26,14 @@ import java.util.Map;
 
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
+import org.nuxeo.runtime.stream.pipes.filters.Filter.EventFilter;
 import org.nuxeo.runtime.stream.pipes.streams.Initializable;
 
 /**
  * A filter that returns true if dirty property is found in the document context.
  * It is dependent on {@link org.nuxeo.runtime.stream.pipes.events.DirtyEventListener} having run first.
  */
-public class DirtyPropertyFilter implements Filter.EventFilter, Initializable {
+public class DirtyPropertyFilter implements EventFilter, Initializable {
 
     protected List<String> properties;
 

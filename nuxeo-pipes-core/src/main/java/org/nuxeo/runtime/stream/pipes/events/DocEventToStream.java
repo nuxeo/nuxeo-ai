@@ -72,7 +72,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         this.textProperties = textProperties != null ? textProperties : Collections.emptyList();
         this.customProperties = customProperties != null ? customProperties : Collections.emptyList();
 
-        if(this.blobProperties.isEmpty() && this.textProperties.isEmpty() && this.customProperties.isEmpty()) {
+        if (this.blobProperties.isEmpty() && this.textProperties.isEmpty() && this.customProperties.isEmpty()) {
             throw new IllegalArgumentException("DocEventToStream requires at least one property name.");
         }
     }

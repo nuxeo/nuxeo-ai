@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.services;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -117,7 +118,7 @@ public class PipeDescriptor {
             if (transformer.function == null) {
                 transformer.function = DEFAULT_TRANSFORMER;
             }
-            Function func = transformer.function.newInstance();
+            Function func = transformer.function.getDeclaredConstructor().newInstance();
             if (func instanceof Initializable) {
                 ((Initializable) func).init(transformer.options);
             }
@@ -125,7 +126,8 @@ public class PipeDescriptor {
                 ((PreFilterFunction) func).setFilter(getEventFilter(event));
             }
             return func;
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                | NoSuchMethodException | InvocationTargetException e) {
             throw new NuxeoException(String.format("PipeDescriptor %s must define a valid transformer function", this.id), e);
         }
     }
