@@ -44,8 +44,6 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobInfo;
-import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -86,7 +84,7 @@ public class TestEnrichmentOp {
         assertNotNull(returned);
         @SuppressWarnings("unchecked")
         List<EnrichmentMetadata> results = (List<EnrichmentMetadata>) ctx.get("theresult");
-        assertEquals(1, results.size());
+        assertEquals(2, results.size());
         EnrichmentMetadata resultMetadata = results.get(0);
         String reversed = StringUtils.reverse(title);
         assertTrue(resultMetadata.isSingleLabel());

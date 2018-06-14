@@ -31,6 +31,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +54,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import junit.framework.TestCase;
+
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
 @Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
@@ -68,7 +71,7 @@ public class TestDocMetadataService {
     protected DocMetadataService docMetadataService;
 
     @Test
-    public void TestSavesData() throws IOException {
+    public void testSavesData() throws IOException {
         assertNotNull(docMetadataService);
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "File");
@@ -85,7 +88,9 @@ public class TestDocMetadataService {
         blobTextStream.addXPath("dc:myprop");
         String serviceName = "reverse";
         EnrichmentService service = aiComponent.getEnrichmentService(serviceName);
-        EnrichmentMetadata metadata = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
+        TestCase.assertEquals(2, results.size());
+        EnrichmentMetadata metadata = results.iterator().next();
 
         DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
         session.save();
@@ -102,7 +107,7 @@ public class TestDocMetadataService {
         assertEquals(SecurityConstants.SYSTEM_USERNAME, classification.get(AI_CREATOR_PROPERTY));
         assertEquals("/classification/custom", classification.get(ENRICHMENT_KIND_PROPERTY));
         String[] labels = (String[]) classification.get(ENRICHMENT_LABELS_PROPERTY);
-        assertEquals(textReversed, labels[0]);
+        assertEquals(textReversed.toLowerCase(), labels[0]);
         String[] targetProps = (String[]) classification.get(ENRICHMENT_TARGET_DOCPROP_PROPERTY);
         assertEquals("dc:myprop", targetProps[0]);
         Blob blob = (Blob) classification.get(ENRICHMENT_RAW_KEY_PROPERTY);

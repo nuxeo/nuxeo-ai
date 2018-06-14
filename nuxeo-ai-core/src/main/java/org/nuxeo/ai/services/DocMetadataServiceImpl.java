@@ -93,8 +93,8 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         AIComponent aiComponent = Framework.getService(AIComponent.class);
 
         List<String> labels = metadata.getLabels().stream()
-                                      .map(EnrichmentMetadata.Label::getName)
                                       .filter(Objects::nonNull)
+                                      .map(label -> label.getName().toLowerCase())
                                       .distinct()
                                       .collect(Collectors.toList());
 

@@ -25,10 +25,12 @@ import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STR
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.getStreamsList;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -125,7 +127,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 log.debug("Processing record " + record);
             }
             BlobTextStream blobTextStream = fromRecord(record, BlobTextStream.class);
-            Callable<EnrichmentMetadata> callable = getCallable(blobTextStream);
+            Callable<Collection<EnrichmentMetadata>> callable = getService(blobTextStream);
 
             if (callable != null) {
                 called++;
@@ -133,30 +135,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextStream.getId()));
                 }
                 try {
-                    EnrichmentMetadata result =
-                            Failsafe.with(retryPolicy)
-                                    .onSuccess(r -> {
-                                        success++;
-                                        if (log.isDebugEnabled()) {
-                                            log.debug("Enrichment result is " + r);
-                                        }
-                                    })
-                                    .onFailure(failure ->
-                                                       log.error("Enrichment failed for record: " + record, failure))
-                                    .onFailedAttempt(failure -> {
-                                        errors++;
-                                        log.warn("Enrichment attempt error for record: " + record, failure);
-                                    })
-                                    .onRetry(c -> {
-                                        retries++;
-                                        if (log.isDebugEnabled()) {
-                                            log.debug("Retrying record " + record);
-                                        }
-                                    })
-                                    .get(callable);
+                    Collection<EnrichmentMetadata> result = callService(record, callable);
                     if (result != null) {
-                        Record recordResult = toRecord(result.targetDocumentRef, result);
-                        writeToStreams(context, recordResult);
+                        List<Record> results = result.stream()
+                                                     .map(meta -> toRecord(meta.targetDocumentRef, meta))
+                                                     .collect(Collectors.toList());
+                        writeToStreams(context, results);
                     }
                 } catch (Exception e) {
                     throw new NuxeoException(e);
@@ -169,11 +153,38 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 }
             }
             context.askForCheckpoint();
-
-
         }
 
-        protected Callable<EnrichmentMetadata> getCallable(BlobTextStream blobTextStream) {
+        /**
+         * Calls the service using the retryPolicy
+         */
+        protected Collection<EnrichmentMetadata> callService(Record record, Callable<Collection<EnrichmentMetadata>> callable) {
+            return Failsafe.with(retryPolicy)
+                           .onSuccess(r -> {
+                               success++;
+                               if (log.isDebugEnabled()) {
+                                   log.debug("Enrichment result is " + r);
+                               }
+                           })
+                           .onFailure(failure -> log.error("Enrichment failed for record: " + record, failure))
+                           .onFailedAttempt(failure -> {
+                               errors++;
+                               log.warn("Enrichment attempt error for record: " + record, failure);
+                           })
+                           .onRetry(c -> {
+                               retries++;
+                               if (log.isDebugEnabled()) {
+                                   log.debug("Retrying record " + record);
+                               }
+                           })
+                           .get(callable);
+        }
+
+        /**
+         * Try to get a reference to an enrichment service if the BlobTextStream meets the requirements,
+         * otherwise return null,
+         */
+        protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextStream blobTextStream) {
             BlobMeta blob = blobTextStream.getBlob();
             if (blob != null &&
                     service.supportsMimeType(blob.getMimeType()) &&
@@ -181,8 +192,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 return () -> service.enrich(blobTextStream);
             } else if (blob != null) {
                 log.info(String.format("%s does not support a blob with these characteristics %s %s",
-                                       metadata.name(), blob.getMimeType(), blob.getLength()
-                ));
+                                       metadata.name(), blob.getMimeType(), blob.getLength()));
                 return null;
             }
             return () -> service.enrich(blobTextStream);
@@ -196,10 +206,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         /**
          * Writes to the output streams.  Performs no action if no Record or output streams.
          */
-        protected void writeToStreams(ComputationContext context, Record record) {
-            if (record != null && !metadata.outputStreams().isEmpty()) {
+        protected void writeToStreams(ComputationContext context, List<Record> records) {
+            if (records != null && !records.isEmpty() && !metadata.outputStreams().isEmpty()) {
                 metadata.outputStreams().forEach(o -> {
-                    context.produceRecord(o, record);
+                    records.forEach(record -> context.produceRecord(o, record));
                     produced++;
                 });
             }

@@ -18,9 +18,21 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.UUID;
 
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobInfo;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import net.jodah.failsafe.RetryPolicy;
@@ -67,7 +79,7 @@ public interface EnrichmentService {
     /**
      * The main method for the service to implement.  Enriching the blob or text and returning a result.
      */
-    EnrichmentMetadata enrich(BlobTextStream blobTextStream);
+    Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream);
 
     /**
      * The retry policy for the service
@@ -77,4 +89,31 @@ public interface EnrichmentService {
         return new RetryPolicy().abortOn(NuxeoException.class);
     }
 
+    /**
+     * Saves the blob using the using the specified transient store and returns the blob key
+     */
+    default String saveRawBlob(Blob rawBlob, String transientStoreName) {
+        TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
+        String blobKey = UUID.randomUUID().toString();
+        transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
+        return blobKey;
+    }
+
+    /**
+     * Read the blob as an input stream.
+     *
+     * @throws IOException
+     */
+    default InputStream readBlob(BlobMeta blobMeta) throws IOException {
+        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blobMeta.getProviderId());
+        if (blobProvider != null) {
+            BlobInfo blobInfo = new BlobInfo();
+            blobInfo.key = blobMeta.getKey();
+            Blob blob = blobProvider.readBlob(blobInfo);
+            if (blob != null) {
+                return blob.getStream();
+            }
+        }
+        throw new IOException("Unable to read blob: " + blobMeta);
+    }
 }

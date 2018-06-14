@@ -20,6 +20,8 @@ package org.nuxeo.ai.enrichment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,9 +44,14 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
-        return new EnrichmentMetadata.Builder("/classification/custom", name,  blobTextStream.getRepositoryName(), blobTextStream.getId())
-                .withLabels(labels).build();
+    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
+        return Collections.singletonList(
+                        new EnrichmentMetadata.Builder("/classification/custom",
+                                                       name,
+                                                       blobTextStream.getRepositoryName(),
+                                                       blobTextStream.getId())
+                                                       .withLabels(labels)
+                                                       .build());
 
     }
 }

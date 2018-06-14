@@ -18,6 +18,9 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
@@ -30,8 +33,8 @@ public class LoggingEnrichmentService extends AbstractEnrichmentService {
     private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
 
     @Override
-    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
         log.info("Logging: " + blobTextStream);
-        return null;
+        return Collections.emptyList();
     }
 }

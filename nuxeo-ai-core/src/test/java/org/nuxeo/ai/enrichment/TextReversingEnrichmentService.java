@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,15 +34,33 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 public class TextReversingEnrichmentService extends AbstractEnrichmentService {
 
     @Override
-    public EnrichmentMetadata enrich(BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
         String reversedText = StringUtils.reverse(blobTextStream.getText());
         List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());
-        return new EnrichmentMetadata.Builder( "/classification/custom", name, "test", blobTextStream.getId())
-                .withRawKey(saveJsonAsRawBlob(reversedText))
-                .withLabels(labels)
-                .withCreator(SecurityConstants.SYSTEM_USERNAME)
-                .withTargetDocumentProperties(blobTextStream.getXPaths()).build();
+
+        String rawKey = saveJsonAsRawBlob(reversedText);
+        //Return 2 records
+        return Arrays.asList(
+                new EnrichmentMetadata.Builder("/classification/custom",
+                                               name,
+                                               "test",
+                                               blobTextStream.getId()
+                )
+                        .withRawKey(rawKey)
+                        .withLabels(labels)
+                        .withCreator(SecurityConstants.SYSTEM_USERNAME)
+                        .withTargetDocumentProperties(blobTextStream.getXPaths()).build(),
+                new EnrichmentMetadata.Builder("/classification/custom",
+                                               name,
+                                               "test",
+                                               blobTextStream.getId()
+                )
+                        .withRawKey(rawKey)
+                        .withLabels(labels)
+                        .withCreator(SecurityConstants.ANONYMOUS)
+                        .withTargetDocumentProperties(blobTextStream.getXPaths()).build()
+        );
     }
 }
