@@ -48,7 +48,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(builder = EnrichmentMetadata.Builder.class)
 public class EnrichmentMetadata extends AIMetadata {
 
-    protected final List<Label> labels;
+    private static final long serialVersionUID = -8838535848960975096L;
+    private final List<Label> labels;
 
     private EnrichmentMetadata(Builder builder) {
         super(builder.serviceName, builder.kind, builder.context,
@@ -101,6 +102,7 @@ public class EnrichmentMetadata extends AIMetadata {
 
     public static class Label implements Serializable {
 
+        private static final long serialVersionUID = 8838956163616827139L;
         private final String name;
         private final float confidence;
 
@@ -155,8 +157,8 @@ public class EnrichmentMetadata extends AIMetadata {
         //Context
         private final String repositoryName;
         private final String documentRef;
-        public Set<String> documentProperties;
-        public Map<String, String> properties;
+        private Set<String> documentProperties;
+        private Map<String, String> properties;
         private Context context;
 
         //optional

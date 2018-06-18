@@ -31,7 +31,6 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,6 +41,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public abstract class AIMetadata implements Serializable {
 
+    private static final long serialVersionUID = 4590486107702875095L;
     public final Instant created;
     public final String creator;
     public final String serviceName;
@@ -109,8 +109,9 @@ public abstract class AIMetadata implements Serializable {
     /**
      * The context about which the metadata was created
      */
-    public static class Context {
+    public static class Context implements Serializable {
 
+        private static final long serialVersionUID = 3212595777234047338L;
         public final String repositoryName;
         public final String documentRef; //Document reference
         public final String blobDigest;

@@ -31,6 +31,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import javax.inject.Inject;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.Blob;
@@ -115,6 +117,20 @@ public class TestDocMetadataService {
         assertEquals(textReversed, blob.getString());
         blob = (Blob) classification.get(NORMALIZED_PROPERTY);
         assertEquals(metadata, JacksonUtil.MAPPER.readValue(blob.getString(), EnrichmentMetadata.class));
+
+        //Check when there's no metadata to save
+        EnrichmentMetadata meta = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
+                                                                     new AIMetadata.Context(testDoc.getRepositoryName(),
+                                                                                            testDoc.getId(),
+                                                                                            null,
+                                                                                            null,
+                                                                                            null)).build();
+        doc = docMetadataService.saveEnrichment(session, meta);
+        session.save();
+        classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        assertNotNull(classProp);
+        classifications = classProp.getValue(List.class);
+        assertEquals("There is still only 1 classification because nothing was saved", 1, classifications.size());
 
     }
 }

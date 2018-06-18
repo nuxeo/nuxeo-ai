@@ -18,7 +18,6 @@
  */
 package org.nuxeo.runtime.stream.pipes.types;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;

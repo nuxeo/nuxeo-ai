@@ -98,7 +98,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                                       .distinct()
                                       .collect(Collectors.toList());
 
-        if (labels != null && !labels.isEmpty()) {
+        if (!labels.isEmpty()) {
             anEntry.put(ENRICHMENT_LABELS_PROPERTY, labels);
 
             Blob metaDataBlob;

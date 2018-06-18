@@ -45,9 +45,6 @@ public class DirtyPropertyFilter implements EventFilter, Initializable {
     @Override
     public boolean test(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
-        if (docCtx == null) {
-            return false;
-        }
-        return properties.stream().anyMatch(p -> docCtx.hasProperty(makeDirtyKey(p)));
+        return docCtx != null && properties.stream().anyMatch(p -> docCtx.hasProperty(makeDirtyKey(p)));
     }
 }
