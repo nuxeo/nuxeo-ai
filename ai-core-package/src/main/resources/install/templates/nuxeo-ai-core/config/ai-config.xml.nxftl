@@ -21,4 +21,14 @@
   </extension>
 </#if>
 
+<#if "${nuxeo.enrichment.raiseEvent}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
+      <option name="source">${nuxeo.enrichment.source.stream}</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
 </component>

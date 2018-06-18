@@ -10,3 +10,4 @@ nuxeo.pipes.audio.enabled=false
 nuxeo.enrichment.source.stream=enrichment.in
 nuxeo.enrichment.save.tags=false
 nuxeo.enrichment.save.facets=true
+nuxeo.enrichment.raiseEvent=true

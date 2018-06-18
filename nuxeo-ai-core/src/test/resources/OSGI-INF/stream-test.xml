@@ -36,4 +36,20 @@
       <option name="source">test_images.out</option>
     </streamProcessor>
   </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="test_enrichment"
+                     class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
+      <option name="source">test_images.out</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+
+    <listener name="testMetadataListener" script="script/metadataListener.groovy">
+      <event>enrichmentMetadataCreated</event>
+    </listener>
+
+  </extension>
 </component>
