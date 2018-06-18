@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.blob.BlobMeta;
@@ -56,12 +57,18 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     protected final List<String> textProperties;
     protected final List<String> customProperties;
 
+    /**
+     * Creates an instance with default values
+     */
     public DocEventToStream() {
         this.blobProperties = DEFAULT_BLOB_PROPERTIES;
         this.textProperties = Collections.emptyList();
         this.customProperties = Collections.emptyList();
     }
 
+    /**
+     * Creates an instance with the specified values
+     */
     public DocEventToStream(List<String> blobProperties,
                             List<String> textProperties,
                             List<String> customProperties) {
@@ -80,7 +87,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         if (doc != null) {
             try {
                 return docSerialize(doc);
-            } catch (PropertyNotFoundException e) {
+            } catch (PropertyException e) {
                 log.error("Unable to serialize event document", e);
                 throw e;
             }
@@ -94,19 +101,24 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     public Collection<BlobTextStream> docSerialize(DocumentModel doc) {
         List<BlobTextStream> items = new ArrayList<>();
         blobProperties.forEach(propName -> {
-            Property property = doc.getProperty(propName);
-            Blob blob = (Blob) property.getValue();
-            if (blob != null && blob instanceof ManagedBlob) {
-                BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.addXPath(propName);
-                blobTextStream.setBlob(getBlobInfo((ManagedBlob) blob));
-                items.add(blobTextStream);
+            try {
+                Property property = doc.getProperty(propName);
+                Blob blob = (Blob) property.getValue();
+                if (blob != null && blob instanceof ManagedBlob) {
+                    BlobTextStream blobTextStream = getBlobTextStream(doc);
+                    blobTextStream.addXPath(propName);
+                    blobTextStream.setBlob(getBlobInfo((ManagedBlob) blob));
+                    items.add(blobTextStream);
+                }
+            } catch (PropertyNotFoundException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Unable to find blob property %s so I am ignoring it.", propName));
+                }
             }
         });
 
         textProperties.forEach(propName -> {
-            Property property = doc.getProperty(propName);
-            String text = (String) property.getValue();
+            String text = getPropertyValue(doc, propName);
             if (text != null) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
                 blobTextStream.addXPath(propName);
@@ -122,29 +134,47 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         return items;
     }
 
-    public BlobTextStream getBlobTextStream(DocumentModel doc) {
+    /**
+     * Create a BlobTextStream based on the specified document
+     */
+    protected BlobTextStream getBlobTextStream(DocumentModel doc) {
         BlobTextStream blobTextStream =
                 new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
                         .getType(), doc.getFacets());
         Map<String, String> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {
-            try {
-                Serializable propVal = doc.getPropertyValue(propName);
-                if (propVal != null) {
-                    properties.put(propName, String.valueOf(propVal));
-                    blobTextStream.addXPath(propName);
-                }
-            } catch (PropertyNotFoundException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Unable to find property %s so I am ignoring it.", propName));
-                }
+            String propVal = getPropertyValue(doc, propName);
+            if (propVal != null) {
+                properties.put(propName, propVal);
+                blobTextStream.addXPath(propName);
             }
         });
 
         return blobTextStream;
     }
 
+    /**
+     * Get a property value as a String and handle errors
+     */
+    protected String getPropertyValue(DocumentModel doc, String propertyName) {
+        try {
+            Property property = doc.getProperty(propertyName);
+            Serializable propVal = property.getValue();
+            if (propVal != null) {
+                return propVal.toString();
+            }
+        } catch (PropertyNotFoundException e) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Unable to find property %s so I am ignoring it.", propertyName));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the BlobMeta for the ManagedBlob
+     */
     protected BlobMeta getBlobInfo(ManagedBlob blob) {
         //Hopefully, in the future ManagedBlob will implement BlobMeta
         return new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(), blob.getKey(),

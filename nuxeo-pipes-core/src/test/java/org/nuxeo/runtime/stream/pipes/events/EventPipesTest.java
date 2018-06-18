@@ -27,7 +27,6 @@ import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -118,17 +117,11 @@ public class EventPipesTest {
 
         List<String> unknownProp = singletonList("dublinapple:core");
 
-        try {
-            new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
-            fail();
-        } catch (PropertyNotFoundException ignored) {
-        }
+        result = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
+        assertEquals("2 properties were specified by only 1 is valid", 1, result.size());
 
-        try {
-            new DocEventToStream(unknownProp, null, null).apply(testEvent);
-            fail();
-        } catch (PropertyNotFoundException ignored) {
-        }
+        result = new DocEventToStream(unknownProp, null, null).apply(testEvent);
+        assertEquals("No valid properties were specified so no results are returned", 0, result.size());
 
         List<String> creator = singletonList("dc:creator");
         doc2stream = new DocEventToStream(null, null, creator);
