@@ -24,7 +24,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -48,13 +47,11 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
  */
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
-    private static final Log log = LogFactory.getLog(DocEventToStream.class);
-
     public static final String BLOB_PROPERTIES = "blobProperties";
     public static final String TEXT_PROPERTIES = "textProperties";
     public static final String CUSTOM_PROPERTIES = "customProperties";
-
     protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
+    private static final Log log = LogFactory.getLog(DocEventToStream.class);
     protected final List<String> blobProperties;
     protected final List<String> textProperties;
     protected final List<String> customProperties;
@@ -91,6 +88,9 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         return Collections.emptyList();
     }
 
+    /**
+     * Serialize the document properties as a Collection of BlobTextStream
+     */
     public Collection<BlobTextStream> docSerialize(DocumentModel doc) {
         List<BlobTextStream> items = new ArrayList<>();
         blobProperties.forEach(propName -> {
@@ -126,20 +126,20 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         BlobTextStream blobTextStream =
                 new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
                         .getType(), doc.getFacets());
-        Map<String, Map<String, String>> properties = blobTextStream.getProperties();
+        Map<String, String> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {
-            Property property = doc.getProperty(propName);
-            String schema = property.getSchema().getName();
-            String prop = property.getField().getName().getLocalName();
-            Serializable val = property.getValue();
-            if (val != null) {
-                Map<String, String> schemaProps = properties.getOrDefault(schema, new HashMap<>());
-                schemaProps.put(prop, String.valueOf(val));
-                properties.put(schema, schemaProps);
-                blobTextStream.addXPath(propName);
+            try {
+                Serializable propVal = doc.getPropertyValue(propName);
+                if (propVal != null) {
+                    properties.put(propName, String.valueOf(propVal));
+                    blobTextStream.addXPath(propName);
+                }
+            } catch (PropertyNotFoundException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Unable to find property %s so I am ignoring it.", propName));
+                }
             }
-
         });
 
         return blobTextStream;

@@ -69,11 +69,9 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder(kind,
                                                name,
-                                               blobTextStream.getRepositoryName(),
-                                               blobTextStream.getId())
+                                               blobTextStream)
                         .withRawKey(rawKey)
                         .withLabels(labels)
-                        .withTargetDocumentProperties(blobTextStream.getXPaths())
                         .build());
     }
 }

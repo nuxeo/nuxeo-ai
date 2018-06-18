@@ -48,8 +48,7 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
         return Collections.singletonList(
                         new EnrichmentMetadata.Builder("/classification/custom",
                                                        name,
-                                                       blobTextStream.getRepositoryName(),
-                                                       blobTextStream.getId())
+                                                       blobTextStream)
                                                        .withLabels(labels)
                                                        .build());
 

@@ -45,22 +45,16 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
         return Arrays.asList(
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
-                                               "test",
-                                               blobTextStream.getId()
-                )
-                        .withRawKey(rawKey)
-                        .withLabels(labels)
-                        .withCreator(SecurityConstants.SYSTEM_USERNAME)
-                        .withTargetDocumentProperties(blobTextStream.getXPaths()).build(),
+                                               blobTextStream)
+                    .withRawKey(rawKey)
+                    .withLabels(labels)
+                    .withCreator(SecurityConstants.SYSTEM_USERNAME).build(),
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
-                                               "test",
-                                               blobTextStream.getId()
-                )
-                        .withRawKey(rawKey)
-                        .withLabels(labels)
-                        .withCreator(SecurityConstants.ANONYMOUS)
-                        .withTargetDocumentProperties(blobTextStream.getXPaths()).build()
+                                               blobTextStream)
+                    .withRawKey(rawKey)
+                    .withLabels(labels)
+                    .withCreator(SecurityConstants.ANONYMOUS).build()
         );
     }
 }

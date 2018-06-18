@@ -62,7 +62,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
         //TODO: Handle versions here? and doc not found
-        DocumentModel doc = session.getDocument(new IdRef(metadata.getTargetDocumentRef()));
+        DocumentModel doc = session.getDocument(new IdRef(metadata.context.documentRef));
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
         }
@@ -122,7 +122,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
             anEntry.put(AI_SERVICE_PROPERTY, metadata.getServiceName());
             anEntry.put(ENRICHMENT_KIND_PROPERTY, metadata.getKind());
-            anEntry.put(ENRICHMENT_TARGET_DOCPROP_PROPERTY, metadata.getTargetDocumentProperties());
+            anEntry.put(ENRICHMENT_TARGET_DOCPROP_PROPERTY, metadata.context.documentProperties);
             anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlob);
             anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
             if (StringUtils.isNotBlank(metadata.getCreator())) {
@@ -130,8 +130,9 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             }
         } else {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("No labels for %s so not saving any enrichment data", metadata
-                        .getTargetDocumentRef()));
+                log.debug(String.format("No labels for %s so not saving any enrichment data",
+                                        metadata.context.documentRef
+                ));
             }
             return null;
         }

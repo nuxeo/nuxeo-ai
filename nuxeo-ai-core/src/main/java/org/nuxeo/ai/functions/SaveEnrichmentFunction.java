@@ -32,7 +32,7 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
     @Override
     public void accept(EnrichmentMetadata metadata) {
         TransactionHelper.runInTransaction(
-                () -> CoreInstance.doPrivileged(metadata.repositoryName, session -> {
+                () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
                     DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
                     docMetadataService.saveEnrichment(session, metadata);
                 })

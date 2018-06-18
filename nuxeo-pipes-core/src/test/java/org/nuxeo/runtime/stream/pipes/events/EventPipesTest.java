@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
+import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -113,9 +114,9 @@ public class EventPipesTest {
         Event testEvent = getTestEvent(session);
         result = doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, result.size());
-        assertEquals("file:content", result.iterator().next().getXPaths().get(0));
+        assertEquals("file:content", result.iterator().next().getXPaths().iterator().next());
 
-        List<String> unknownProp = Collections.singletonList("dublinapple:core");
+        List<String> unknownProp = singletonList("dublinapple:core");
 
         try {
             new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
@@ -129,32 +130,25 @@ public class EventPipesTest {
         } catch (PropertyNotFoundException ignored) {
         }
 
-        try {
-            new DocEventToStream(null, null, unknownProp).apply(testEvent);
-            fail();
-        } catch (PropertyNotFoundException ignored) {
-        }
-
-        List<String> creator = Collections.singletonList("dc:creator");
+        List<String> creator = singletonList("dc:creator");
         doc2stream = new DocEventToStream(null, null, creator);
         List<BlobTextStream> validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
-        assertEquals("dc:creator", validResult.get(0).getXPaths().get(0));
-        assertEquals("Administrator", validResult.get(0).getProperties().get("dublincore").get("creator"));
+        assertEquals("dc:creator", validResult.get(0).getXPaths().iterator().next());
+        assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
 
         doc2stream = new DocEventToStream(null, creator, null);
         validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
-        assertEquals("dc:creator", validResult.get(0).getXPaths().get(0));
+        assertEquals("dc:creator", validResult.get(0).getXPaths().iterator().next());
         assertEquals("Administrator", validResult.get(0).getText());
 
         doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator,
-                                          Collections.singletonList("dc:modified")
-        );
+                                          singletonList("dc:modified"));
         validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         BlobTextStream firstResult = validResult.get(0);
-        assertEquals("file:content", firstResult.getXPaths().get(1));
-        assertEquals("dc:modified", firstResult.getXPaths().get(0));
+        assertEquals("file:content", firstResult.getXPaths().toArray()[1]);
+        assertEquals("dc:modified", firstResult.getXPaths().toArray()[0]);
         assertEquals("1 blob and 1 text", 2, validResult.size());
 
         BlobTextStream andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextStream.class);

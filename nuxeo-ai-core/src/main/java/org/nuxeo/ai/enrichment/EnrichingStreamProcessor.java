@@ -138,7 +138,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     Collection<EnrichmentMetadata> result = callService(record, callable);
                     if (result != null) {
                         List<Record> results = result.stream()
-                                                     .map(meta -> toRecord(meta.targetDocumentRef, meta))
+                                                     .map(meta -> toRecord(meta.context.documentRef, meta))
                                                      .collect(Collectors.toList());
                         writeToStreams(context, results);
                     }

@@ -18,9 +18,9 @@
  */
 package org.nuxeo.runtime.stream.pipes.types;
 
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -34,12 +34,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * A POJO representation of BlobTextStream.avsc used as a record data in a stream.
  * <p>
  * The main subject of this class is usually either a blob or a piece of text (not a Nuxeo Document).
- * The List<String> contains the names of the original document properties used.
+ * The List<String> xPaths contains the names of the original document properties used.
  * <p>
  * Additional properties can be held in the "properties" map.
  */
 public class BlobTextStream implements Partitionable {
 
+    private final Set<String> xPaths = new LinkedHashSet<>();
+    private final Map<String, String> properties = new HashMap<>();
     private String id;
     private String repositoryName;
     private String parentId;
@@ -47,8 +49,6 @@ public class BlobTextStream implements Partitionable {
     private Set<String> facets;
     private String text;
     private BlobMeta blob;
-    private final List<String> xPaths = new ArrayList<>();
-    private final Map<String, Map<String, String>> properties = new HashMap<>();
 
     public BlobTextStream() {
     }
@@ -105,7 +105,7 @@ public class BlobTextStream implements Partitionable {
         xPaths.add(propName);
     }
 
-    public List<String> getXPaths() {
+    public Set<String> getXPaths() {
         return xPaths;
     }
 
@@ -125,7 +125,7 @@ public class BlobTextStream implements Partitionable {
         this.blob = blob;
     }
 
-    public Map<String, Map<String, String>> getProperties() {
+    public Map<String, String> getProperties() {
         return properties;
     }
 

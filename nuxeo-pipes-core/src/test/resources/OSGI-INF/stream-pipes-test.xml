@@ -58,6 +58,7 @@
       </consumer>
       <transformer>
         <option name="blobProperties">file:content</option>
+        <option name="customProperties">picture:info/width,picture:info/height</option>
       </transformer>
     </pipe>
   </extension>

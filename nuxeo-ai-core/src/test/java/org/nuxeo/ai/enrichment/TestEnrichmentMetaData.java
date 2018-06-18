@@ -23,15 +23,17 @@ import static org.junit.Assert.assertEquals;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
@@ -41,27 +43,34 @@ public class TestEnrichmentMetaData {
 
     @Test
     public void testBuilder() {
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test", repositoryName, "doc1").build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
+                                                                     new AIMetadata.Context(repositoryName,
+                                                                                            "doc1",
+                                                                                            null,
+                                                                                            null,
+                                                                                            null)).build();
         assertNotNull(metadata);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalid() {
-        new EnrichmentMetadata.Builder("m1", "test", null, null).build();
+        new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", null).build();
     }
 
     @Test
-    public void testJson() {
+    public void testJson() throws IOException {
         List<EnrichmentMetadata.Label> labels = Stream.of("label1", "l2", "lab3")
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());
+        BlobTextStream blobTextStream = new BlobTextStream("doc1", repositoryName, null, "File", null);
+        blobTextStream.addXPath("tbloby");
         EnrichmentMetadata metadata =
-                new EnrichmentMetadata.Builder("m1", "test",repositoryName, "doc1")
+                new EnrichmentMetadata.Builder("m1", "test", blobTextStream)
                         .withBlobDigest("blobxx")
                         .withLabels(labels)
                         .withCreator("bob")
                         .withRawKey("xyz")
-                        .withTargetDocumentProperties(Collections.singletonList("tbloby")).build();
+                        .build();
         assertNotNull(metadata);
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);

@@ -86,7 +86,7 @@ public class TestConfiguredStreamProcessors {
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc = session.createDocument(testDoc);
         String docId = testDoc.getId();
-        session.save();
+        session.saveDocument(testDoc);
         txFeature.nextTransaction();
 
         //Create metadata about the blob and document
@@ -131,8 +131,6 @@ public class TestConfiguredStreamProcessors {
         //Confirm 2 tags were added
         Set<String> tags = tagService.getTags(session, docId);
         assertEquals(2, tags.size());
-
-
     }
 
 }

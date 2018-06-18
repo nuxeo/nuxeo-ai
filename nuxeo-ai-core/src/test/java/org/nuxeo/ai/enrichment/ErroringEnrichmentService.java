@@ -60,7 +60,6 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder("test",
                                                name,
-                                               "default",
-                                               "myDocId").build());
+                                               blobTextStream).build());
     }
 }

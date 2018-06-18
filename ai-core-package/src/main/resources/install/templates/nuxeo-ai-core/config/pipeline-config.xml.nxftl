@@ -50,6 +50,7 @@
     </consumer>
     <transformer class="org.nuxeo.runtime.stream.pipes.functions.PropertiesToStream">
       <option name="blobProperties">file:content</option>
+      <option name="customProperties">picture:info/width,picture:info/height</option>
     </transformer>
   </pipe>
 

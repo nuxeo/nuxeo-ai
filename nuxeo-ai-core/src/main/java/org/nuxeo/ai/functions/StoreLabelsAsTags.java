@@ -32,10 +32,10 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
     @Override
     public void accept(EnrichmentMetadata metadata) {
         TransactionHelper.runInTransaction(
-            () -> CoreInstance.doPrivileged(metadata.repositoryName, session -> {
+            () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
                 TagService tagService = Framework.getService(TagService.class);
                 metadata.getLabels()
-                        .forEach(l -> tagService.tag(session, metadata.getTargetDocumentRef(), l.getName()));
+                        .forEach(l -> tagService.tag(session, metadata.context.documentRef, l.getName()));
             })
         );
     }

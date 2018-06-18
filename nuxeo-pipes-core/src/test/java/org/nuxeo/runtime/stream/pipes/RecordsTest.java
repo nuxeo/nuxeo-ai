@@ -40,6 +40,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -88,8 +89,8 @@ public class RecordsTest {
         assertNotNull(andBack);
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
-        assertEquals("dc:creator", andBack.getXPaths().get(0));
-        assertEquals("file:content", andBack.getXPaths().get(1));
+        assertEquals("dc:creator", andBack.getXPaths().toArray()[0]);
+        assertEquals("file:content", andBack.getXPaths().toArray()[1]);
         assertEquals(7, andBack.getBlob().getLength());
         assertEquals(TEST_MIME_TYPE, andBack.getBlob().getMimeType());
     }

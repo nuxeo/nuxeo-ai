@@ -24,55 +24,30 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import java.time.Duration;
 import java.util.Collections;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.services.AIComponent;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
-import org.nuxeo.ecm.core.test.TransactionalFeature;
-import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.ComputationMetadata;
 import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
-import org.nuxeo.lib.stream.log.LogAppender;
-import org.nuxeo.lib.stream.log.LogLag;
-import org.nuxeo.lib.stream.log.LogManager;
-import org.nuxeo.lib.stream.log.LogOffset;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.metrics.MetricsService;
-import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
 import com.google.inject.Inject;
 
 /**
@@ -129,6 +104,8 @@ public class TestAIComponent {
                 ), Collections.emptyMap());
         ComputationContext testContext = new ComputationContextImpl(meta);
         BlobTextStream blobTextStream = new BlobTextStream();
+        blobTextStream.setId("xderftgt");
+        blobTextStream.setRepositoryName("test");
         blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
 
