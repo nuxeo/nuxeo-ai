@@ -46,10 +46,27 @@
   </extension>
 
   <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
-
     <listener name="testMetadataListener" script="script/metadataListener.groovy">
       <event>enrichmentMetadataCreated</event>
     </listener>
+  </extension>
 
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="event-handlers">
+    <handler chainId="metaListening">
+      <event>enrichmentMetadataCreated</event>
+      <filters>
+        <doctype>File</doctype>
+      </filters>
+    </handler>
+  </extension>
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="chains">
+    <chain id="metaListening">
+      <operation id="Context.FetchDocument"/>
+      <operation id="Document.SetProperty">
+        <param type="string" name="xpath">dc:description</param>
+        <param type="boolean" name="save">true</param>
+        <param type="serializable" name="value">I_AM_LISTENING</param>
+      </operation>
+    </chain>
   </extension>
 </component>

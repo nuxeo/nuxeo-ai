@@ -36,7 +36,9 @@ public abstract class AbstractEnrichmentConsumer implements FunctionStreamProces
     @Override
     public Optional<Record> apply(Record record) {
         EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
-        this.accept(metadata);
+        if (metadata != null) {
+            this.accept(metadata);
+        }
         return empty();
     }
 }

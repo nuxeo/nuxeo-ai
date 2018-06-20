@@ -67,7 +67,8 @@ import com.codahale.metrics.SharedMetricRegistries;
  */
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml"})
+@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ecm.automation.core",
+        "org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml"})
 public class TestConfiguredStreamProcessors {
 
     @Inject
@@ -112,7 +113,7 @@ public class TestConfiguredStreamProcessors {
         LogLag lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
         assertEquals("There should be nothing waiting to be processed", 0, lag.lag());
         LogOffset offset = appender.append("mykey", toRecord("k", blobTextStream));
-        appender.waitFor(offset, "test_images$simpleTest$test_images.out", Duration.ofSeconds(10));
+        waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
 
         //After waiting for the appender lets check the 1 record was read
         assertEquals("We must have been called once", 1L, called.getValue());
@@ -128,9 +129,32 @@ public class TestConfiguredStreamProcessors {
         Assert.assertNotNull(classProp);
         assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
 
+        //Confirm event listeners fired
+        String description = (String) enrichedDoc.getPropertyValue("dc:description");
+        assertEquals("The metaListening chain must have fired and set the description",
+                     "I_AM_LISTENING", description);
+        String title = (String) enrichedDoc.getPropertyValue("dc:title");
+        assertEquals("The event listener must have set the title",
+                     "George Paul", title);
+
         //Confirm 2 tags were added
         Set<String> tags = tagService.getTags(session, docId);
         assertEquals(2, tags.size());
     }
 
+    /**
+     * Wait until there is no lag or timesout.
+     * This is a temporary solution until this logic is available in the framework.
+     */
+    protected void waitForNoLag(LogManager manager, String name, String group, Duration timeout) throws InterruptedException {
+
+        final long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            Thread.sleep(1000);
+            LogLag lag = manager.getLag(name, group);
+            if (lag.upper() == 1 && lag.lag() == 0) {
+                return;
+            }
+        }
+    }
 }

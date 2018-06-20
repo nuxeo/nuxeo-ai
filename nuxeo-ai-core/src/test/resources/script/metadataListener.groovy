@@ -29,8 +29,8 @@ EnrichmentMetadata metadata = context.properties["enrichmentMetadata"]
 TransactionHelper.runInTransaction {
     CoreInstance.doPrivileged(metadata.context.repositoryName, { session ->
         def doc = session.getDocument(new IdRef(metadata.context.documentRef))
-        doc.setPropertyValue("dc:description", meta.labels.collect { it.name }.join(" "))
+        doc.setPropertyValue("dc:title", metadata.labels.collect { it.name }.join(" "))
         session.saveDocument(doc)
-        println(doc.getPropertyValue("dc:description"))
+        println(doc.getPropertyValue("dc:title"))
     } as Consumer)
 }
