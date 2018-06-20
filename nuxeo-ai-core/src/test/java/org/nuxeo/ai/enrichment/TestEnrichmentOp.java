@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +78,8 @@ public class TestEnrichmentOp {
         params.put("enrichmentName", "reverse");
         params.put("textProperties", "dc:title");
         params.put("outputVariable", "theresult");
+        params.put("outputProperty", "dc:description");
+        params.put("save", "true");
         ctx.setInput(testDoc);
         OperationChain chain = new OperationChain("testChain1");
         chain.add(EnrichmentOp.ID).from(params);
@@ -95,8 +98,8 @@ public class TestEnrichmentOp {
         assertEquals("There must be 1 raw blob", 1, rawBlobs.size());
         Blob blob = rawBlobs.get(0);
         assertEquals(reversed, blob.getString());
-        assertNotNull(resultMetadata.getTargetDocumentRef());
-        assertEquals(Arrays.asList("dc:title"), resultMetadata.getTargetDocumentProperties());
+        assertNotNull(resultMetadata.context.documentRef);
+        assertEquals(new HashSet<>(Arrays.asList("dc:title")), resultMetadata.context.documentProperties);
         assertTrue("reverse service sets the username so must be true", resultMetadata.isHuman());
         assertTrue("reverse service must return a single label", resultMetadata.isSingleLabel());
 

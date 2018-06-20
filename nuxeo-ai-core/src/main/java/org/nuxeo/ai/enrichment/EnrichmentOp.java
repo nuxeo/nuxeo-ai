@@ -21,6 +21,7 @@ package org.nuxeo.ai.enrichment;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -33,6 +34,7 @@ import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.automation.core.util.StringList;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -54,6 +56,9 @@ public class EnrichmentOp {
     protected OperationContext ctx;
 
     @Context
+    protected CoreSession session;
+
+    @Context
     protected AIComponent aiComponent;
 
     @Param(name = "enrichmentName", description = "The name of the enrichment service to call", required = true)
@@ -66,8 +71,14 @@ public class EnrichmentOp {
     protected StringList textProperties;
 
     @Param(name = "outputVariable", description = "The key of the context output variable. "
-            + "The output variable is a list of EnrichmentMetadata objects. ", required = true)
+            + "The output variable is a list of EnrichmentMetadata objects. ")
     protected String outputVariable;
+
+    @Param(name = "outputProperty", description = "Name of a property to store the output result", required = false)
+    protected String outputProperty;
+
+    @Param(name = "save", description = "Should the document be saved?", required = false)
+    protected boolean save = false;
 
     @OperationMethod
     public DocumentModel run(DocumentModel doc) {
@@ -104,14 +115,38 @@ public class EnrichmentOp {
                     } catch (NuxeoException e) {
                         log.warn(String.format("Call to enrichment service %s failed.", enrichmentName), e);
                     }
-                    if (result != null) {
-                        results.addAll(result);
-                    }
+                    withMetadata(documentModel, result, results);
                 });
             });
 
-            ctx.put(outputVariable, results);
+            withResults(results);
         }
         return docs;
+    }
+
+    protected void withResults(List<EnrichmentMetadata> results) {
+        ctx.put(outputVariable, results);
+    }
+
+    protected void withMetadata(DocumentModel doc, Collection<EnrichmentMetadata> meta, List<EnrichmentMetadata> results) {
+        if (meta != null) {
+            results.addAll(meta);
+        }
+
+        if (StringUtils.isNotBlank(outputProperty) && meta != null) {
+            meta.forEach(metadata -> {
+                if (!metadata.getLabels().isEmpty()) {
+                    String labels = metadata.getLabels().stream()
+                                            .map(EnrichmentMetadata.Label::getName)
+                                            .sorted()
+                                            .collect(Collectors.joining(","));
+                    doc.setPropertyValue(outputProperty, labels);
+                }
+            });
+            if (save) {
+                session.saveDocument(doc);
+            }
+
+        }
     }
 }
