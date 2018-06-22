@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.rekognition.RekognitionService" version="1.0">
+
+  <require>org.nuxeo.runtime.stream.pipes.Pipeline</require>
+  <implementation class="org.nuxeo.ai.rekognition.RekognitionServiceImpl" />
+
+  <service>
+    <provide interface="org.nuxeo.ai.rekognition.RekognitionService" />
+  </service>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.labels" kind="/classification/detect/object"
+                class="org.nuxeo.ai.enrichment.LabelsEnrichmentService" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+      <option name="maxResults">55</option>
+      <option name="minConfidence">75</option>
+    </enrichment>
+  </extension>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.textDetection" kind="/classification/detect/text"
+                class="org.nuxeo.ai.enrichment.DetectTextEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+      <option name="textTypes">LINE,WORD</option>
+      <option name="minConfidence">75</option>
+    </enrichment>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.labels</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.textDetection</option>
+    </streamProcessor>
+  </extension>
+</component>
