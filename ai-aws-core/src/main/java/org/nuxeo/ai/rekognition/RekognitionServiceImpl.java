@@ -21,7 +21,7 @@ package org.nuxeo.ai.rekognition;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.storage.sql.RekognitionHelperWithS3;
 import org.nuxeo.runtime.api.Framework;
@@ -45,10 +45,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     protected RekognitionHelper rekognitionHelper;
 
     @Override
-    public DetectLabelsResult detectLabels(BlobMeta blob, int maxResults, float minConfidence) {
+    public DetectLabelsResult detectLabels(ManagedBlob blob, int maxResults, float minConfidence) {
 
-        BlobManager manager = Framework.getService(BlobManager.class);
-        BlobProvider blobProvider = manager.getBlobProvider(blob.getProviderId());
+        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         AmazonRekognition client = rekognitionHelper.getClient(blobProvider);
         Image image = rekognitionHelper.getImage(blobProvider, blob.getKey());
         if (image != null && client != null) {
@@ -68,10 +67,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     }
 
     @Override
-    public DetectTextResult detectText(BlobMeta blob) {
+    public DetectTextResult detectText(ManagedBlob blob) {
 
-        BlobManager manager = Framework.getService(BlobManager.class);
-        BlobProvider blobProvider = manager.getBlobProvider(blob.getProviderId());
+        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         AmazonRekognition client = rekognitionHelper.getClient(blobProvider);
         Image image = rekognitionHelper.getImage(blobProvider, blob.getKey());
         if (image != null && client != null) {
@@ -84,7 +82,6 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             }
             return detectTextResult;
         }
-
         return null;
     }
 

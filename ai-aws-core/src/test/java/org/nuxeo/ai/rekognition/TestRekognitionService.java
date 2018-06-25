@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import javax.inject.Inject;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,9 +37,9 @@ import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobMeta;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.stream.pipes.services.JacksonUtil;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
@@ -45,7 +47,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
-import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -61,7 +62,7 @@ public class TestRekognitionService {
     @Test
     public void testLabelsService() throws IOException {
 
-        BlobTextStream blobTextStream = setupBlobTextStream();
+        BlobTextStream blobTextStream = setupBlobTextStream("plane.jpg");
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.labels");
         assertNotNull(service);
@@ -78,7 +79,7 @@ public class TestRekognitionService {
     @Test
     public void testTextDetectionService() throws IOException {
 
-        BlobTextStream blobTextStream = setupBlobTextStream();
+        BlobTextStream blobTextStream = setupBlobTextStream("plane.jpg");
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.textDetection");
         assertNotNull(service);
@@ -96,10 +97,10 @@ public class TestRekognitionService {
     }
 
     @NotNull
-    protected BlobTextStream setupBlobTextStream() throws IOException {
+    protected BlobTextStream setupBlobTextStream(String name) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
-        Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/plane.jpg").getPath()), "image/jpeg");
-        BlobMeta plane = blob(blob, blobProvider.writeBlob(blob));
+        Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/" + name).getPath()), "image/jpeg");
+        ManagedBlob plane = blob(blob, blobProvider.writeBlob(blob));
 
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setRepositoryName("test");
@@ -108,7 +109,7 @@ public class TestRekognitionService {
         return blobTextStream;
     }
 
-    private BlobMeta blob(Blob blob, String key) {
+    private ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key,
                                 blob.getDigest(), blob.getEncoding(), blob.getLength()
         );

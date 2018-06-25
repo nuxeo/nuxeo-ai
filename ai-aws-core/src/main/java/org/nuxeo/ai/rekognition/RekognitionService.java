@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.rekognition;
 
-import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 
 import com.amazonaws.services.rekognition.model.DetectLabelsResult;
 import com.amazonaws.services.rekognition.model.DetectTextResult;
@@ -31,10 +31,10 @@ public interface RekognitionService {
     /**
      * Detect labels for the provided blob
      */
-    DetectLabelsResult detectLabels(BlobMeta blob, int maxResults, float minConfidence);
+    DetectLabelsResult detectLabels(ManagedBlob blob, int maxResults, float minConfidence);
 
     /**
      * Detect text for the provided blob
      */
-    DetectTextResult detectText(BlobMeta blob);
+    DetectTextResult detectText(ManagedBlob blob);
 }
