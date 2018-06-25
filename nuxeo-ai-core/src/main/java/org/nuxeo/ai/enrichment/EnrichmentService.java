@@ -18,18 +18,12 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobInfo;
-import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobMeta;
-import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.runtime.api.Framework;
@@ -99,21 +93,4 @@ public interface EnrichmentService {
         return blobKey;
     }
 
-    /**
-     * Read the blob as an input stream.
-     *
-     * @throws IOException
-     */
-    default InputStream readBlob(BlobMeta blobMeta) throws IOException {
-        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blobMeta.getProviderId());
-        if (blobProvider != null) {
-            BlobInfo blobInfo = new BlobInfo();
-            blobInfo.key = blobMeta.getKey();
-            Blob blob = blobProvider.readBlob(blobInfo);
-            if (blob != null) {
-                return blob.getStream();
-            }
-        }
-        throw new IOException("Unable to read blob: " + blobMeta);
-    }
 }

@@ -38,7 +38,7 @@ import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.rest.RestEnrichmentService;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,14 +70,14 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
     public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextStream blobTextStream) {
         try {
             List<Feature> features = new ArrayList<>();
-            BlobMeta blob = blobTextStream.getBlob();
+            ManagedBlob blob = blobTextStream.getBlob();
             String text = blobTextStream.getText();
 
             if (blob != null) {
                 features.add(new Feature(imageFeatureName, "image",
                                          new Feature.Content(null, null, blob.getMimeType(),
                                                              blob.getEncoding(), blob.getLength())));
-                builder.setEntity(EntityBuilder.create().setStream(readBlob(blob)).build());
+                builder.setEntity(EntityBuilder.create().setStream(blob.getStream()).build());
                 builder.setHeader(HttpHeaders.CONTENT_TYPE, blob.getMimeType());
             }
             if (StringUtils.isNotEmpty(text)) {

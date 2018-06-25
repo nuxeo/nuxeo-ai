@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -47,7 +47,7 @@ public class BlobTextStream implements Partitionable {
     private String primaryType;
     private Set<String> facets;
     private String text;
-    private BlobMeta blob;
+    private ManagedBlob blob;
 
     public BlobTextStream() {
     }
@@ -116,11 +116,11 @@ public class BlobTextStream implements Partitionable {
         this.text = text;
     }
 
-    public BlobMeta getBlob() {
+    public ManagedBlob getBlob() {
         return blob;
     }
 
-    public void setBlob(BlobMeta blob) {
+    public void setBlob(ManagedBlob blob) {
         this.blob = blob;
     }
 

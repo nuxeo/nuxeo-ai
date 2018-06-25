@@ -36,7 +36,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.Computation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -185,7 +185,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * otherwise return null,
          */
         protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextStream blobTextStream) {
-            BlobMeta blob = blobTextStream.getBlob();
+            ManagedBlob blob = blobTextStream.getBlob();
             if (blob != null &&
                     service.supportsMimeType(blob.getMimeType()) &&
                     service.supportsSize(blob.getLength())) {

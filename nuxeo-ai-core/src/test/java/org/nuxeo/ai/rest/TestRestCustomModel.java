@@ -18,9 +18,9 @@ import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobMeta;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.stream.pipes.services.JacksonUtil;
@@ -51,7 +51,7 @@ public class TestRestCustomModel {
 
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/plane.jpg").getPath()), "image/jpeg");
-        BlobMeta plane = blob(blob, blobProvider.writeBlob(blob));
+        ManagedBlob plane = blob(blob, blobProvider.writeBlob(blob));
         BlobTextStream blobTextStream = new BlobTextStream("docId", "default", "parent", "File", null);
         blobTextStream.setBlob(plane);
         Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
@@ -75,7 +75,7 @@ public class TestRestCustomModel {
         assertEquals("There must be 1 result", 1, results.size());        ;
     }
 
-    private BlobMeta blob(Blob blob, String key) {
+    private ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key,
                                 blob.getDigest(), blob.getEncoding(), blob.getLength()
         );

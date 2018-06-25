@@ -18,18 +18,26 @@
  */
 package org.nuxeo.ecm.core.blob;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
+
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.impl.blob.AbstractBlob;
+import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Simple POJO implementation of BlobMeta.  If ManagedBlob implements BlobMeta then this class isn't needed.
- * BlobInfo requires a provider id.
+ * Simple POJO implementation of ManagedBlob. That can be serialized as Json
  */
-public class BlobMetaImpl extends BlobInfo implements BlobMeta {
+public class BlobMetaImpl extends AbstractBlob implements ManagedBlob {
 
-    final String providerId;
+    private static final long serialVersionUID = -3811624887207152594L;
+    protected final String providerId;
+    protected final String key;
+    protected final Long length;
 
     @JsonCreator
     public BlobMetaImpl(@JsonProperty("providerId") String providerId,
@@ -92,6 +100,20 @@ public class BlobMetaImpl extends BlobInfo implements BlobMeta {
     @Override
     public String getDigest() {
         return digest;
+    }
+
+    @Override
+    public InputStream getStream() throws IOException {
+        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(getProviderId());
+        if (blobProvider != null) {
+            BlobInfo blobInfo = new BlobInfo();
+            blobInfo.key = getKey();
+            Blob blob = blobProvider.readBlob(blobInfo);
+            if (blob != null) {
+                return blob.getStream();
+            }
+        }
+        throw new IOException("Unable to read blob: " + this);
     }
 
     @Override

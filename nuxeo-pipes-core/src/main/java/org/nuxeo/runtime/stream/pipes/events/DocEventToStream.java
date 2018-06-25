@@ -35,8 +35,6 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
-import org.nuxeo.ecm.core.blob.BlobMeta;
-import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
@@ -107,7 +105,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
                 if (blob != null && blob instanceof ManagedBlob) {
                     BlobTextStream blobTextStream = getBlobTextStream(doc);
                     blobTextStream.addXPath(propName);
-                    blobTextStream.setBlob(getBlobInfo((ManagedBlob) blob));
+                    blobTextStream.setBlob((ManagedBlob) blob);
                     items.add(blobTextStream);
                 }
             } catch (PropertyNotFoundException e) {
@@ -170,16 +168,6 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             }
         }
         return null;
-    }
-
-    /**
-     * Get the BlobMeta for the ManagedBlob
-     */
-    protected BlobMeta getBlobInfo(ManagedBlob blob) {
-        //Hopefully, in the future ManagedBlob will implement BlobMeta
-        return new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(), blob.getKey(),
-                                blob.getDigest(), blob.getEncoding(), blob.getLength()
-        );
     }
 
 }

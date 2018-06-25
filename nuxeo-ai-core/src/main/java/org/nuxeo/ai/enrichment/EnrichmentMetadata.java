@@ -33,7 +33,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ecm.core.blob.BlobMeta;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -191,7 +191,7 @@ public class EnrichmentMetadata extends AIMetadata {
             this.documentRef = blobTextStream.getId();
             this.documentProperties = blobTextStream.getXPaths();
             this.properties = blobTextStream.getProperties();
-            BlobMeta blobMeta = blobTextStream.getBlob();
+            ManagedBlob blobMeta = blobTextStream.getBlob();
             if (blobMeta != null) {
                 this.blobDigest = blobMeta.getDigest();
             }

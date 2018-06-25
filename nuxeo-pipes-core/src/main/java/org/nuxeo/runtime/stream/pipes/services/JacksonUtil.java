@@ -24,6 +24,8 @@ import java.time.Instant;
 
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.lib.stream.computation.Record;
@@ -37,7 +39,9 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDelegatingDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.util.StdConverter;
 
 /**
  * Utilities for use with Jackson
@@ -51,6 +55,14 @@ public class JacksonUtil {
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Instant.class, new InstantDeserializer());
         module.addSerializer(Instant.class, new InstantSerializer());
+        module.addSerializer(ManagedBlob.class, new ManagedBlobSerializer());
+        module.addDeserializer(ManagedBlob.class, new StdDelegatingDeserializer<>(
+                new StdConverter<BlobMetaImpl, ManagedBlob>() {
+                    @Override
+                    public ManagedBlob convert(BlobMetaImpl value) {
+                        return value;
+                    }
+                }));
         MAPPER.registerModule(module);
     }
 
@@ -73,9 +85,9 @@ public class JacksonUtil {
      */
     public static DocumentModel toDoc(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
-        if (docCtx == null) return null;
+        if (docCtx == null) { return null; }
         DocumentModel doc = docCtx.getSourceDocument();
-        if (doc == null) return null;
+        if (doc == null) { return null; }
         return doc;
     }
 
@@ -110,7 +122,6 @@ public class JacksonUtil {
         void accept(JsonGenerator jg) throws IOException;
     }
 
-
     /**
      * Serializes an instant
      */
@@ -119,6 +130,24 @@ public class JacksonUtil {
         @Override
         public void serialize(Instant instant, JsonGenerator jg, SerializerProvider serializers) throws IOException {
             jg.writeObject(instant.toString());
+        }
+    }
+
+
+    /**
+     * Serializes a ManagedBlob
+     */
+    public static class ManagedBlobSerializer extends JsonSerializer<ManagedBlob> {
+        @Override
+        public void serialize(ManagedBlob blob, JsonGenerator jg, SerializerProvider serializers) throws IOException {
+            jg.writeStartObject();
+            jg.writeStringField("mimeType", blob.getMimeType());
+            jg.writeStringField("encoding", blob.getEncoding());
+            jg.writeStringField("digest", blob.getDigest());
+            jg.writeStringField("providerId", blob.getProviderId());
+            jg.writeStringField("key", blob.getKey());
+            jg.writeNumberField("length", blob.getLength());
+            jg.writeEndObject();
         }
     }
 
