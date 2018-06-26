@@ -57,7 +57,7 @@ public class TestComprehendService {
     @Test
     public void testSentiment() {
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.sentiment");
+        EnrichmentService service = aiComponent.getEnrichmentService("aws.textSentiment");
         assertNotNull(service);
         DetectSentimentResult results = Framework.getService(ComprehendService.class)
                                                  .detectSentiment("I am happy", "en");
@@ -82,7 +82,7 @@ public class TestComprehendService {
     @Test
     public void testGetLabel() throws IOException {
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.sentiment");
+        EnrichmentService service = aiComponent.getEnrichmentService("aws.textSentiment");
         SentimentEnrichmentService sentimentService = (SentimentEnrichmentService) service;
         try {
             sentimentService.getSentimentLabel(new DetectSentimentResult().withSentiment("snowy"));

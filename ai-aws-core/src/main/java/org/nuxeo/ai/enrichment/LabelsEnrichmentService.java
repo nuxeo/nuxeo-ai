@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.nuxeo.ai.rekognition.RekognitionService;
@@ -46,6 +47,7 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
     public static final String DEFAULT_MAX_RESULTS = "200";
+    public static final String DEFAULT_CONFIDENCE = "70";
     protected int maxResults;
     protected float minConfidence;
 
@@ -58,7 +60,7 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
         super.init(descriptor);
         Map<String, String> options = descriptor.options;
         maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
-        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, "70"));
+        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
     }
 
     @SuppressWarnings("unchecked")
@@ -69,32 +71,40 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        RekognitionService rekognitionService = Framework.getService(RekognitionService.class);
         DetectLabelsResult result;
         try {
-            result = rekognitionService.detectLabels(blobTextStream.getBlob(), maxResults, minConfidence);
+            result = Framework.getService(RekognitionService.class)
+                              .detectLabels(blobTextStream.getBlob(), maxResults, minConfidence);
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
 
         if (result != null && !result.getLabels().isEmpty()) {
-            List<EnrichmentMetadata.Label> labels = result.getLabels()
-                                                          .stream()
-                                                          .map(LabelsEnrichmentService::newLabel)
-                                                          .collect(Collectors.toList());
-
-            String raw = toJsonString(jg -> {
-                jg.writeObjectField("labels", result.getLabels());
-                jg.writeStringField("orientationCorrection", result.getOrientationCorrection());
-            });
-
-            String rawKey = saveJsonAsRawBlob(raw);
-            return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                                                     .withRawKey(rawKey)
-                                                     .withLabels(labels)
-                                                     .build());
+            return processResult(blobTextStream, result);
         }
         return emptyList();
+    }
+
+    /**
+     * Processes the result of the call to AWS
+     */
+    protected Collection<EnrichmentMetadata> processResult(BlobTextStream blobTextStream, DetectLabelsResult result) {
+        List<EnrichmentMetadata.Label> labels = result.getLabels()
+                                                      .stream()
+                                                      .map(LabelsEnrichmentService::newLabel)
+                                                      .filter(Objects::nonNull)
+                                                      .collect(Collectors.toList());
+
+        String raw = toJsonString(jg -> {
+            jg.writeObjectField("labels", result.getLabels());
+            jg.writeStringField("orientationCorrection", result.getOrientationCorrection());
+        });
+
+        String rawKey = saveJsonAsRawBlob(raw);
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+                                                 .withRawKey(rawKey)
+                                                 .withLabels(labels)
+                                                 .build());
     }
 
 }

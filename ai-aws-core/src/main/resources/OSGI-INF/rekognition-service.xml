@@ -9,7 +9,7 @@
   </service>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="aws.labels" kind="/classification/detect/object"
+    <enrichment name="aws.imageLabels" kind="/classification/imageLabels"
                 class="org.nuxeo.ai.enrichment.LabelsEnrichmentService" maxSize="10000000">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true" />
@@ -21,7 +21,7 @@
   </extension>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="aws.textDetection" kind="/classification/detect/text"
+    <enrichment name="aws.textDetection" kind="/tagging/imageText"
                 class="org.nuxeo.ai.enrichment.DetectTextEnrichmentService">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true" />
@@ -32,23 +32,25 @@
     </enrichment>
   </extension>
 
-  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     logConfig="${nuxeo.pipes.config.name}"
-                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.labels</option>
-    </streamProcessor>
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.faceDetection" kind="/tagging/face"
+                class="org.nuxeo.ai.enrichment.DetectFacesEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+      <option name="attribute">ALL</option>
+    </enrichment>
   </extension>
 
-  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     logConfig="${nuxeo.pipes.config.name}"
-                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.textDetection</option>
-    </streamProcessor>
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.celebrityDetection" kind="/tagging/celebrity"
+                class="org.nuxeo.ai.enrichment.DetectCelebritiesEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+    </enrichment>
   </extension>
+
 </component>

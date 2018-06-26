@@ -8,7 +8,7 @@
   </service>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="aws.sentiment" kind="/classification/sentiment"
+    <enrichment name="aws.textSentiment" kind="/classification/sentiment"
                 class="org.nuxeo.ai.enrichment.SentimentEnrichmentService" />
   </extension>
 

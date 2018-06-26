@@ -5,3 +5,5 @@
 nuxeo.template.includes=common
 
 # org.nuxeo.ecm.instance.description=Nuxeo ECM customized with ai-aws
+nuxeo.enrichment.aws.images=false
+nuxeo.enrichment.aws.text=false

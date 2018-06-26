@@ -28,9 +28,6 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.nuxeo.ai.comprehend.ComprehendService;
-import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
-import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
@@ -48,37 +45,45 @@ import net.jodah.failsafe.RetryPolicy;
 public class SentimentEnrichmentService extends AbstractEnrichmentService {
 
     public static final String LANGUAGE_CODE = "language";
+    public static final String DEFAULT_LANGUAGE = "en";
     protected String languageCode;
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        languageCode = descriptor.options.getOrDefault(LANGUAGE_CODE, "en");
+        languageCode = descriptor.options.getOrDefault(LANGUAGE_CODE, DEFAULT_LANGUAGE);
     }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
         DetectSentimentResult result;
-
         try {
-            result = Framework.getService(ComprehendService.class).detectSentiment(blobTextStream.getText(), languageCode);
+            result = Framework.getService(ComprehendService.class)
+                              .detectSentiment(blobTextStream.getText(), languageCode);
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
 
         if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {
-            List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
-            String raw = toJsonString(jg -> {
-                jg.writeObjectField("sentimentScore", result.getSentimentScore());
-                jg.writeStringField("sentiment", result.getSentiment());
-            });
-            String rawKey = saveJsonAsRawBlob(raw);
-            return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                                                     .withRawKey(rawKey)
-                                                     .withLabels(labels)
-                                                     .build());
+            return processResult(blobTextStream, result);
         }
         return emptyList();
+    }
+
+    /**
+     * Processes the result of the call to AWS
+     */
+    protected Collection<EnrichmentMetadata> processResult(BlobTextStream blobTextStream, DetectSentimentResult result) {
+        List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
+        String raw = toJsonString(jg -> {
+            jg.writeObjectField("sentimentScore", result.getSentimentScore());
+            jg.writeStringField("sentiment", result.getSentiment());
+        });
+        String rawKey = saveJsonAsRawBlob(raw);
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+                                                 .withRawKey(rawKey)
+                                                 .withLabels(labels)
+                                                 .build());
     }
 
     /**

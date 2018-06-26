@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.config" version="1.0">
+    <require>org.nuxeo.ai.services.AIComponent</require>
+
+<#if "${nuxeo.enrichment.aws.images}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.imageLabels</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.textDetection</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="faceProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.faceDetection</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="celebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.celebrityDetection</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
+<#if "${nuxeo.enrichment.aws.text}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textSentimentProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">text</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.textSentiment</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
+</component>

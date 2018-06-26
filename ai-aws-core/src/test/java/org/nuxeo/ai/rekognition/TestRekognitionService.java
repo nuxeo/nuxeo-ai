@@ -20,10 +20,12 @@ package org.nuxeo.ai.rekognition;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -33,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -46,7 +49,6 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -64,7 +66,7 @@ public class TestRekognitionService {
 
         BlobTextStream blobTextStream = setupBlobTextStream("plane.jpg");
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.labels");
+        EnrichmentService service = aiComponent.getEnrichmentService("aws.imageLabels");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
         assertEquals(1, metadataCollection.size());
@@ -74,6 +76,34 @@ public class TestRekognitionService {
         assertEquals(blobTextStream.getId(), metadata.context.documentRef);
         assertEquals(blobTextStream.getBlob().getDigest(), metadata.context.blobDigest);
         assertNotNull(metadata.getLabels());
+    }
+
+    @Test
+    public void testFaceDetectionService() throws IOException {
+        BlobTextStream blobTextStream = setupBlobTextStream("creative_commons3.jpg");
+        EnrichmentService service = aiComponent.getEnrichmentService("aws.faceDetection");
+        assertNotNull(service);
+        List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextStream);
+        assertEquals(1, metadataCollection.size());
+        assertTrue(metadataCollection.get(0).getTags().size() >= 3);
+        assertTrue(metadataCollection.get(0).getTags().get(0).features.size() >= 2);
+    }
+
+    @Test
+    public void testCelebrityDetectionService() throws IOException {
+        BlobTextStream blobTextStream = setupBlobTextStream("creative_commons2.jpg");
+        EnrichmentService service = aiComponent.getEnrichmentService("aws.celebrityDetection");
+        assertNotNull(service);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
+        assertEquals(1, metadataCollection.size());
+        AIMetadata.Tag single = metadataCollection.iterator().next().getTags().iterator().next();
+        assertEquals("Steve Ballmer", single.name);
+        assertNotNull(single.box);
+
+        blobTextStream = setupBlobTextStream("creative_commons3.jpg");
+        metadataCollection = service.enrich(blobTextStream);
+        assertEquals(1, metadataCollection.size());
+
     }
 
     @Test

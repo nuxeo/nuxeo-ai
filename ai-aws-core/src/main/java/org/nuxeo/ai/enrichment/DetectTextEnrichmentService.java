@@ -47,6 +47,8 @@ import com.amazonaws.services.rekognition.model.TextDetection;
 public class DetectTextEnrichmentService extends AbstractEnrichmentService {
 
     public static final String TEXT_TYPES = "textTypes";
+    public static final String DEFAULT_CONFIDENCE = "70";
+    public static final String DEFAULT_TEXT_TYPES = "LINE,WORD";
 
     protected float minConfidence;
     protected Set<String> textTypes;
@@ -55,9 +57,9 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         Map<String, String> options = descriptor.options;
-        String textList = options.getOrDefault(TEXT_TYPES, "LINE,WORD");
+        String textList = options.getOrDefault(TEXT_TYPES, DEFAULT_TEXT_TYPES);
         textTypes = new HashSet<>(Arrays.asList(textList.split(",")));
-        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, "70"));
+        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
     }
 
     /**
@@ -72,30 +74,35 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        RekognitionService rekognitionService = Framework.getService(RekognitionService.class);
         DetectTextResult result;
         try {
-            result = rekognitionService.detectText(blobTextStream.getBlob());
+            result = Framework.getService(RekognitionService.class).detectText(blobTextStream.getBlob());
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
 
         if (result != null && !result.getTextDetections().isEmpty()) {
-
-            List<EnrichmentMetadata.Label> labels = result.getTextDetections()
-                                                          .stream()
-                                                          .map(this::newLabel)
-                                                          .filter(Objects::nonNull)
-                                                          .collect(Collectors.toList());
-            String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
-            String rawKey = saveJsonAsRawBlob(raw);
-            return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                                                     .withRawKey(rawKey)
-                                                     .withLabels(labels)
-                                                     .build());
+            return processResults(blobTextStream, result);
         }
 
         return emptyList();
+    }
+
+    /**
+     * Processes the result of the call to AWS
+     */
+    protected Collection<EnrichmentMetadata> processResults(BlobTextStream blobTextStream, DetectTextResult result) {
+        List<EnrichmentMetadata.Label> labels = result.getTextDetections()
+                                                      .stream()
+                                                      .map(this::newLabel)
+                                                      .filter(Objects::nonNull)
+                                                      .collect(Collectors.toList());
+        String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
+        String rawKey = saveJsonAsRawBlob(raw);
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+                                                 .withRawKey(rawKey)
+                                                 .withLabels(labels)
+                                                 .build());
     }
 
 
