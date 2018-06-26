@@ -2,7 +2,7 @@
 <component name="org.nuxeo.enrichment.stream.test" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="simpleTest" kind="/classification/detect/object" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
+    <enrichment name="simpleTest" kind="/tagging/imageLabels" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
