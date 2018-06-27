@@ -51,7 +51,7 @@ public class JacksonUtil {
     public static final ObjectMapper MAPPER = new ObjectMapper();
 
     static {
-        MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Instant.class, new InstantDeserializer());
         module.addSerializer(Instant.class, new InstantSerializer());

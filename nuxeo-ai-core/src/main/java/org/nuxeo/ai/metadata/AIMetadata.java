@@ -18,13 +18,16 @@
  */
 package org.nuxeo.ai.metadata;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -156,6 +159,166 @@ public abstract class AIMetadata implements Serializable {
                     .append("blobDigest", blobDigest)
                     .append("documentProperties", documentProperties)
                     .append("properties", properties)
+                    .toString();
+        }
+    }
+
+    /**
+     * A label
+     */
+    public static class Label implements Serializable {
+
+        private static final long serialVersionUID = 8838956163616827139L;
+        private final String name;
+        private final float confidence;
+
+        @JsonCreator
+        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
+            this.name = name;
+            this.confidence = confidence;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public float getConfidence() {
+            return confidence;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Label label = (Label) o;
+            return Float.compare(label.confidence, confidence) == 0 &&
+                    Objects.equals(name, label.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, confidence);
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .append("name", name)
+                    .append("confidence", confidence)
+                    .toString();
+        }
+    }
+
+    /**
+     * A tag with location
+     */
+    public static class Tag implements Serializable {
+        private static final long serialVersionUID = -5340157925873173455L;
+        public final String name;
+        public final String kind;
+        public final String reference;
+        public final Box box;
+        public final float confidence;
+        public final List<Label> features;
+
+        @JsonCreator
+        public Tag(@JsonProperty("name") String name,
+                   @JsonProperty("kind") String kind,
+                   @JsonProperty("reference") String reference,
+                   @JsonProperty("box") Box box,
+                   @JsonProperty("features") List<Label> features,
+                   @JsonProperty("confidence") float confidence) {
+            this.name = name;
+            this.kind = kind;
+            this.reference = reference;
+            this.box = box;
+            this.confidence = confidence;
+            if (features == null) {
+                this.features = emptyList();
+            } else {
+                this.features = unmodifiableList(features);
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) { return true; }
+            if (o == null || getClass() != o.getClass()) { return false; }
+            Tag tag = (Tag) o;
+            return Float.compare(tag.confidence, confidence) == 0 &&
+                    Objects.equals(name, tag.name) &&
+                    Objects.equals(kind, tag.kind) &&
+                    Objects.equals(reference, tag.reference) &&
+                    Objects.equals(box, tag.box) &&
+                    Objects.equals(features, tag.features);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, kind, reference, box, confidence, features);
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .append("name", name)
+                    .append("kind", kind)
+                    .append("reference", reference)
+                    .append("box", box)
+                    .append("confidence", confidence)
+                    .append("features", features)
+                    .toString();
+        }
+    }
+
+    /**
+     * A Bounding box
+     */
+    public static class Box implements Serializable {
+        private static final long serialVersionUID = -6230967082128905676L;
+        public final float width;
+        public final float height;
+        public final float left;
+        public final float top;
+
+        @JsonCreator
+        public Box(@JsonProperty("width") float width,
+                   @JsonProperty("height") float height,
+                   @JsonProperty("left") float left,
+                   @JsonProperty("top") float top) {
+            this.width = width;
+            this.height = height;
+            this.left = left;
+            this.top = top;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) { return true; }
+            if (o == null || getClass() != o.getClass()) { return false; }
+            Box box = (Box) o;
+            return Float.compare(box.width, width) == 0 &&
+                    Float.compare(box.height, height) == 0 &&
+                    Float.compare(box.left, left) == 0 &&
+                    Float.compare(box.top, top) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(width, height, left, top);
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .append("width", width)
+                    .append("height", height)
+                    .append("left", left)
+                    .append("top", top)
                     .toString();
         }
     }

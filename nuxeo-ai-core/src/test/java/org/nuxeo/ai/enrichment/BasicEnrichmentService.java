@@ -30,7 +30,8 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 public class BasicEnrichmentService extends AbstractEnrichmentService {
 
-    private List<EnrichmentMetadata.Label> labels = new ArrayList<>();
+    protected List<EnrichmentMetadata.Label> labels = new ArrayList<>();
+    protected List<EnrichmentMetadata.Tag> tags = new ArrayList<>();
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
@@ -40,6 +41,7 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
             String[] theLabels = labelsList.split(",");
             labels = Arrays.stream(theLabels).map(l -> new EnrichmentMetadata.Label(l, 0.8f))
                            .collect(Collectors.toList());
+            tags = Collections.singletonList(new EnrichmentMetadata.Tag(name, "/classification/custom", null, null, labels,0.75f));
         }
     }
 
@@ -50,6 +52,7 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
                                                        name,
                                                        blobTextStream)
                                                        .withLabels(labels)
+                                                       .withTags(tags)
                                                        .build());
 
     }

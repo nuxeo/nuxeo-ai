@@ -23,7 +23,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -50,12 +49,18 @@ public class EnrichmentMetadata extends AIMetadata {
 
     private static final long serialVersionUID = -8838535848960975096L;
     private final List<Label> labels;
+    private final List<Tag> tags;
 
     private EnrichmentMetadata(Builder builder) {
         super(builder.serviceName, builder.kind, builder.context,
               builder.creator, builder.created, builder.rawKey
         );
         labels = unmodifiableList(builder.labels);
+        tags = unmodifiableList(builder.tags);
+    }
+
+    public List<Tag> getTags() {
+        return tags;
     }
 
     public List<Label> getLabels() {
@@ -79,72 +84,27 @@ public class EnrichmentMetadata extends AIMetadata {
             return false;
         }
         EnrichmentMetadata metadata = (EnrichmentMetadata) o;
-        return Objects.equals(labels, metadata.labels);
+        return Objects.equals(labels, metadata.labels) &&
+                Objects.equals(tags, metadata.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), labels);
+        return Objects.hash(super.hashCode(), labels, tags);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .append("labels", labels)
+                .append("tags", tags)
                 .append("created", created)
                 .append("creator", creator)
                 .append("serviceName", serviceName)
-                .append("kind", kind)
                 .append("context", context)
+                .append("kind", kind)
                 .append("rawKey", rawKey)
                 .toString();
-    }
-
-    public static class Label implements Serializable {
-
-        private static final long serialVersionUID = 8838956163616827139L;
-        private final String name;
-        private final float confidence;
-
-        @JsonCreator
-        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
-            this.name = name;
-            this.confidence = confidence;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public float getConfidence() {
-            return confidence;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Label label = (Label) o;
-            return Float.compare(label.confidence, confidence) == 0 &&
-                    Objects.equals(name, label.name);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, confidence);
-        }
-
-        @Override
-        public String toString() {
-            return new ToStringBuilder(this)
-                    .append("name", name)
-                    .append("confidence", confidence)
-                    .toString();
-        }
     }
 
     public static class Builder {
@@ -164,6 +124,7 @@ public class EnrichmentMetadata extends AIMetadata {
         //optional
         private String rawKey;
         private List<Label> labels;
+        private List<Tag> tags;
         private String creator;
         private String blobDigest;
 
@@ -212,6 +173,11 @@ public class EnrichmentMetadata extends AIMetadata {
             return this;
         }
 
+        public Builder withTags(List<Tag> tags) {
+            this.tags = tags;
+            return this;
+        }
+
         public Builder withCreator(String creator) {
             this.creator = creator;
             return this;
@@ -238,6 +204,9 @@ public class EnrichmentMetadata extends AIMetadata {
 
             if (labels == null) {
                 labels = emptyList();
+            }
+            if (tags == null) {
+                tags = emptyList();
             }
             if (documentProperties == null) {
                 documentProperties = emptySet();

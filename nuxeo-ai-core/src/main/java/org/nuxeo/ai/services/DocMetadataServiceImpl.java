@@ -42,10 +42,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
@@ -61,8 +63,14 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
-        //TODO: Handle versions here? and doc not found
-        DocumentModel doc = session.getDocument(new IdRef(metadata.context.documentRef));
+        //TODO: Handle versions here?
+        DocumentModel doc;
+        try {
+            doc = session.getDocument(new IdRef(metadata.context.documentRef));
+        } catch (DocumentNotFoundException e) {
+            log.info("Unable to save enrichment data for missing doc " + metadata.context.documentRef);
+            return null;
+        }
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
         }
@@ -92,11 +100,13 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         Map<String, Object> anEntry = new HashMap<>();
         AIComponent aiComponent = Framework.getService(AIComponent.class);
 
-        List<String> labels = metadata.getLabels().stream()
-                                      .filter(Objects::nonNull)
-                                      .map(label -> label.getName().toLowerCase())
-                                      .distinct()
-                                      .collect(Collectors.toList());
+        List<String> labels = new ArrayList<>();
+        labels.addAll(metadata.getLabels().stream()
+                              .filter(Objects::nonNull)
+                              .map(label -> label.getName().toLowerCase())
+                              .distinct()
+                              .collect(Collectors.toList()));
+        labels.addAll(getTagLabels(metadata.getTags()));
 
         if (!labels.isEmpty()) {
             anEntry.put(ENRICHMENT_LABELS_PROPERTY, labels);
@@ -138,6 +148,18 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         }
 
         return anEntry;
+    }
+
+    protected List<String> getTagLabels(List<AIMetadata.Tag> tags) {
+        List<String> labels = new ArrayList<>();
+        for (AIMetadata.Tag tag : tags) {
+            String tagName = tag.name;
+            labels.add(tagName);
+            if (!tag.features.isEmpty()) {
+                tag.features.forEach(feature -> labels.add(tagName + "/" + feature.getName()));
+            }
+        }
+        return labels;
     }
 
 }

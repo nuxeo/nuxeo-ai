@@ -19,12 +19,14 @@
 package org.nuxeo.ai.enrichment;
 
 import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,12 +64,23 @@ public class TestEnrichmentMetaData {
         List<EnrichmentMetadata.Label> labels = Stream.of("label1", "l2", "lab3")
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());
+
+        List<EnrichmentMetadata.Tag> tags =
+                Stream.of("tag1", "tag2")
+                      .map(l -> new EnrichmentMetadata.Tag(l,
+                                                           "t1",
+                                                           "myref"+l,
+                                                           new AIMetadata.Box(0.5f, 0.3f, -0.2f, 2f),
+                                                           singletonList(new EnrichmentMetadata.Label("f"+l, 1)),
+                                                           0.65f))
+                      .collect(Collectors.toList());
         BlobTextStream blobTextStream = new BlobTextStream("doc1", repositoryName, null, "File", null);
         blobTextStream.addXPath("tbloby");
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test", blobTextStream)
                         .withBlobDigest("blobxx")
                         .withLabels(labels)
+                        .withTags(tags)
                         .withCreator("bob")
                         .withRawKey("xyz")
                         .build();
