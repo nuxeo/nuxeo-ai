@@ -32,12 +32,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.DetectTextResult;
 import com.amazonaws.services.rekognition.model.TextDetection;
 
@@ -47,10 +49,13 @@ import com.amazonaws.services.rekognition.model.TextDetection;
 public class DetectTextEnrichmentService extends AbstractEnrichmentService {
 
     public static final String TEXT_TYPES = "textTypes";
+
     public static final String DEFAULT_CONFIDENCE = "70";
+
     public static final String DEFAULT_TEXT_TYPES = "LINE,WORD";
 
     protected float minConfidence;
+
     protected Set<String> textTypes;
 
     @Override
@@ -63,11 +68,15 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
     }
 
     /**
-     * Create a normalized label
+     * Create a normalized tag
      */
-    protected EnrichmentMetadata.Label newLabel(TextDetection textD) {
+    protected AIMetadata.Tag newTag(TextDetection textD) {
         if (textD.getConfidence() >= minConfidence && textTypes.contains(textD.getType())) {
-            return new EnrichmentMetadata.Label(textD.getDetectedText(), textD.getConfidence() / 100);
+            BoundingBox box = textD.getGeometry().getBoundingBox();
+            return new EnrichmentMetadata.Tag(textD.getDetectedText(), kind, null,
+                                              new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box
+                                                      .getTop()),
+                                              null, textD.getConfidence() / 100);
         }
         return null;
     }
@@ -92,16 +101,16 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResults(BlobTextStream blobTextStream, DetectTextResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getTextDetections()
-                                                      .stream()
-                                                      .map(this::newLabel)
-                                                      .filter(Objects::nonNull)
-                                                      .collect(Collectors.toList());
+        List<AIMetadata.Tag> tags = result.getTextDetections()
+                                          .stream()
+                                          .map(this::newTag)
+                                          .filter(Objects::nonNull)
+                                          .collect(Collectors.toList());
         String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
                                                  .withRawKey(rawKey)
-                                                 .withLabels(labels)
+                                                 .withTags(tags)
                                                  .build());
     }
 

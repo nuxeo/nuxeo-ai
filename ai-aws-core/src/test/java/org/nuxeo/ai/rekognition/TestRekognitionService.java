@@ -19,6 +19,7 @@
 package org.nuxeo.ai.rekognition;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -117,6 +118,8 @@ public class TestRekognitionService {
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata metadata = metadataCollection.iterator().next();
         assertNotNull(metadata);
+        assertFalse(metadata.getTags().isEmpty());
+        assertNotNull(metadata.getTags().get(0).box);
         String normalized = JacksonUtil.MAPPER.writeValueAsString(metadata);
         assertNotNull(normalized);
 
