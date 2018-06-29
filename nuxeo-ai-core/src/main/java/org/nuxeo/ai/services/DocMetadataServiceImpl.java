@@ -33,9 +33,11 @@ import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
@@ -100,7 +102,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         Map<String, Object> anEntry = new HashMap<>();
         AIComponent aiComponent = Framework.getService(AIComponent.class);
 
-        List<String> labels = new ArrayList<>();
+        Set<String> labels = new HashSet<>();
         labels.addAll(metadata.getLabels().stream()
                               .filter(Objects::nonNull)
                               .map(label -> label.getName().toLowerCase())
@@ -150,8 +152,11 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         return anEntry;
     }
 
-    protected List<String> getTagLabels(List<AIMetadata.Tag> tags) {
-        List<String> labels = new ArrayList<>();
+    /**
+     *  Produce a list of labels from these tags
+     */
+    protected Set<String> getTagLabels(List<AIMetadata.Tag> tags) {
+        Set<String> labels = new HashSet<>();
         for (AIMetadata.Tag tag : tags) {
             String tagName = tag.name;
             labels.add(tagName);
