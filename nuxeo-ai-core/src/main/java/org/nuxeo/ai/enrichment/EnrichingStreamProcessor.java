@@ -60,6 +60,7 @@ import net.jodah.failsafe.RetryPolicy;
 public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
     public static final String ENRICHER_NAME = "enrichmentServiceName";
+
     private static final Log log = LogFactory.getLog(EnrichingStreamProcessor.class);
 
     @Override
@@ -75,13 +76,17 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             throw new IllegalArgumentException("Unknown enrichment service " + enricher);
         }
         String computationName = buildName(enricher, streamIn, streamOut);
+        EnrichmentMetrics metrics = new EnrichmentMetrics(computationName);
+        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
+        registry.registerAll(metrics);
         return Topology.builder()
-                       .addComputation(addComputation(computationName, enrichmentService, streams), streams)
+                       .addComputation(addComputation(computationName, enrichmentService, streams, metrics), streams)
                        .build();
     }
 
-    public Supplier<Computation> addComputation(String name, EnrichmentService service, List<String> streams) {
-        return () -> new EnrichmentComputation(streams.size() - 1, name, service);
+    public Supplier<Computation> addComputation(String name, EnrichmentService service,
+                                                List<String> streams, EnrichmentMetrics metrics) {
+        return () -> new EnrichmentComputation(streams.size() - 1, name, service, metrics);
     }
 
     /**
@@ -89,35 +94,21 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
      */
     public static class EnrichmentComputation extends AbstractComputation {
 
-        protected final NuxeoMetricSet metrics;
+        protected final EnrichmentMetrics metrics;
+
         private final EnrichmentService service;
+
         protected RetryPolicy retryPolicy;
 
-        //metrics
-        protected long called = 0;
-        protected long success = 0;
-        protected long retries = 0;
-        protected long errors = 0;
-        protected long unsupported = 0;
-        protected long produced = 0;
-
-        public EnrichmentComputation(int outputStreams, String name, EnrichmentService service) {
+        public EnrichmentComputation(int outputStreams, String name, EnrichmentService service, EnrichmentMetrics metrics) {
             super(name, 1, outputStreams);
             this.service = service;
-            this.metrics = new NuxeoMetricSet("nuxeo", "streams", "enrichment", name);
-            metrics.putGauge(() -> called, "called");
-            metrics.putGauge(() -> success, "success");
-            metrics.putGauge(() -> retries, "retries");
-            metrics.putGauge(() -> errors, "errors");
-            metrics.putGauge(() -> produced, "produced");
-            metrics.putGauge(() -> unsupported, "unsupported");
+            this.metrics = metrics;
         }
 
         @Override
         public void init(ComputationContext context) {
             log.debug(String.format("Starting enrichment computation for %s", metadata.name()));
-            MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
-            registry.registerAll(metrics);
             this.retryPolicy = service.getRetryPolicy();
         }
 
@@ -130,7 +121,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             Callable<Collection<EnrichmentMetadata>> callable = getService(blobTextStream);
 
             if (callable != null) {
-                called++;
+                metrics.called();
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextStream.getId()));
                 }
@@ -146,7 +137,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     throw new NuxeoException(e);
                 }
             } else {
-                unsupported++;
+                metrics.unsupported();
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextStream
                             .getId()));
@@ -161,18 +152,18 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected Collection<EnrichmentMetadata> callService(Record record, Callable<Collection<EnrichmentMetadata>> callable) {
             return Failsafe.with(retryPolicy)
                            .onSuccess(r -> {
-                               success++;
+                               metrics.success();
                                if (log.isDebugEnabled()) {
                                    log.debug("Enrichment result is " + r);
                                }
                            })
                            .onFailure(failure -> log.error("Enrichment failed for record: " + record, failure))
                            .onFailedAttempt(failure -> {
-                               errors++;
+                               metrics.error();
                                log.warn("Enrichment attempt error for record: " + record, failure);
                            })
                            .onRetry(c -> {
-                               retries++;
+                               metrics.retry();
                                if (log.isDebugEnabled()) {
                                    log.debug("Retrying record " + record);
                                }
@@ -192,7 +183,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 return () -> service.enrich(blobTextStream);
             } else if (blob != null) {
                 log.info(String.format("%s does not support a blob with these characteristics %s %s",
-                                       metadata.name(), blob.getMimeType(), blob.getLength()));
+                                       metadata.name(), blob.getMimeType(), blob.getLength()
+                ));
                 return null;
             }
             return () -> service.enrich(blobTextStream);
@@ -210,9 +202,79 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             if (records != null && !records.isEmpty() && !metadata.outputStreams().isEmpty()) {
                 metadata.outputStreams().forEach(o -> {
                     records.forEach(record -> context.produceRecord(o, record));
-                    produced++;
+                    metrics.produced();
                 });
             }
+        }
+    }
+
+    /**
+     * Metrics about enrichment services.
+     */
+    public static class EnrichmentMetrics extends NuxeoMetricSet {
+
+        protected long called = 0;
+
+        protected long success = 0;
+
+        protected long retries = 0;
+
+        protected long errors = 0;
+
+        protected long unsupported = 0;
+
+        protected long produced = 0;
+
+        public EnrichmentMetrics(String name) {
+            super("nuxeo", "streams", "enrichment", name);
+            this.putGauge(() -> called, "called");
+            this.putGauge(() -> success, "success");
+            this.putGauge(() -> retries, "retries");
+            this.putGauge(() -> errors, "errors");
+            this.putGauge(() -> produced, "produced");
+            this.putGauge(() -> unsupported, "unsupported");
+        }
+
+        /**
+         * Increment called
+         */
+        public void called() {
+            called++;
+        }
+
+        /**
+         * Increment success
+         */
+        public void success() {
+            success++;
+        }
+
+        /**
+         * Increment retries
+         */
+        public void retry() {
+            retries++;
+        }
+
+        /**
+         * Increment errors
+         */
+        public void error() {
+            errors++;
+        }
+
+        /**
+         * Increment unsupported
+         */
+        public void unsupported() {
+            unsupported++;
+        }
+
+        /**
+         * Increment produced
+         */
+        public void produced() {
+            produced++;
         }
     }
 }

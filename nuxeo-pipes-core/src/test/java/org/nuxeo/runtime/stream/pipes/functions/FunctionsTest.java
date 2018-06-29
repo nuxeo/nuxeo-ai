@@ -68,14 +68,9 @@ public class FunctionsTest {
     public void testFilterFunctions() throws Exception {
 
         Event event = getTestEvent(session);
-        NuxeoMetricSet funcMetric = new NuxeoMetricSet("nuxeo", "func", "test");
 
         PreFilterFunction<Event, Event> func = new PreFilterFunction<>(event(), e -> e);
-        func.withMetrics(funcMetric);
-        assertMetric(0, "nuxeo.func.test.supplied", funcMetric);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
-        assertMetric(1, "nuxeo.func.test.supplied", funcMetric);
-        assertMetric(1, "nuxeo.func.test.transformed", funcMetric);
 
         func = new PreFilterFunction<>(event().and(Event::isPublic), e -> e);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
@@ -92,10 +87,7 @@ public class FunctionsTest {
         assertEquals("Filter passed so must be an event", event, func.apply(event));
 
         func = new PreFilterFunction<>(docEvent(isNotProxy().and(hasFacets("Folderish"))), e -> e);
-        func.withMetrics(funcMetric);
-        assertMetric(0, "nuxeo.func.test.filterFailed", funcMetric);
         assertNull("Must not have folderish", func.apply(event));
-        assertMetric(1, "nuxeo.func.test.filterFailed", funcMetric);
         func = new PreFilterFunction<>(docEvent(isNotProxy().and(hasFacets("Folderish").negate())), e -> e);
         assertEquals("Filter passed so must not have folderish", event, func.apply(event));
 
@@ -105,10 +97,7 @@ public class FunctionsTest {
         func = new PreFilterFunction<>(in -> true, s -> {
             throw new NuxeoException("Invalid");
         } );
-        func.withMetrics(funcMetric);
-        assertMetric(0, "nuxeo.func.test.errors", funcMetric);
-        func.apply(event);
-        assertMetric(1, "nuxeo.func.test.errors", funcMetric);
+        assertNull(func.apply(event));
     }
 
     @Test
@@ -135,12 +124,6 @@ public class FunctionsTest {
         });
         assertEquals("43616", ints.toString());
     }
-
-    //    @Test
-    //    public void testFilterAdapter() {
-    //        CoreFilterAdapter adapter = new CoreFilterAdapter();
-    //        adapter.init(null);
-    //    }
 
     @Test
     public void testFunctions() throws Exception {

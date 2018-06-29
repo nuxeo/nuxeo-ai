@@ -73,14 +73,15 @@ public class TestAIComponent {
         blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
 
+        EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
         EnrichingStreamProcessor.EnrichmentComputation computation
-                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", service);
+                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", service, metrics);
 
         computation.processRecord(testContext, null, record);
-        assertEquals(0, computation.errors);
-        assertEquals(0, computation.called);
-        assertEquals(0, computation.success);
-        assertEquals("PDF isn't a supported mimetype", 1, computation.unsupported);
+        assertEquals(0, metrics.errors);
+        assertEquals(0, metrics.called);
+        assertEquals(0, metrics.success);
+        assertEquals("PDF isn't a supported mimetype", 1, metrics.unsupported);
 
         service = aiComponent.getEnrichmentService("logging");
         service.enrich(blobTextStream);
@@ -109,29 +110,34 @@ public class TestAIComponent {
         blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
 
-        EnrichingStreamProcessor.EnrichmentComputation computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test",
-                                                                                                                        new ErroringEnrichmentService(new NoSuchElementException(), 3, 3)
-        );
+
+        EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test");
+        EnrichingStreamProcessor.EnrichmentComputation computation =
+                new EnrichingStreamProcessor.EnrichmentComputation(1, "test",
+                                                                   new ErroringEnrichmentService(new NoSuchElementException(), 3, 3),
+                                                                   metrics);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
-        assertEquals(3, computation.retries);
-        assertEquals(1, computation.called);
-        assertEquals(1, computation.success);
+        assertEquals(3, metrics.retries);
+        assertEquals(1, metrics.called);
+        assertEquals(1, metrics.success);
 
+        metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test2");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test2",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 0, 0)
-        );
+                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 0, 0),
+                                                                         metrics);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
-        assertEquals(0, computation.retries);
-        assertEquals(1, computation.called);
-        assertEquals(1, computation.success);
+        assertEquals(0, metrics.retries);
+        assertEquals(1, metrics.called);
+        assertEquals(1, metrics.success);
 
+        metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test3");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test3",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 1, 0)
-        );
+                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 1, 0),
+                                                                         metrics);
         computation.init(testContext);
         try {
             computation.processRecord(testContext, null, record);
@@ -140,21 +146,22 @@ public class TestAIComponent {
             assertEquals(NoSuchElementException.class, e.getCause().getClass());
         }
 
-        assertEquals(0, computation.retries);
-        assertEquals(1, computation.called);
-        assertEquals(0, computation.success);
-        assertEquals(1, computation.errors);
+        assertEquals(0, metrics.retries);
+        assertEquals(1, metrics.called);
+        assertEquals(0, metrics.success);
+        assertEquals(1, metrics.errors);
 
+        metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test4");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test4",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 1, 1)
-        );
+                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 1, 1),
+                                                                         metrics);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
-        assertEquals(1, computation.retries);
-        assertEquals(1, computation.errors);
-        assertEquals(1, computation.called);
-        assertEquals(1, computation.success);
+        assertEquals(1, metrics.retries);
+        assertEquals(1, metrics.errors);
+        assertEquals(1, metrics.called);
+        assertEquals(1, metrics.success);
     }
 
     @Test

@@ -133,7 +133,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     @Override
     public <R> void addEventPipe(String eventName, String supplierId,
                                  Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer) {
-        NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", supplierId, eventName);
+        NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", eventName, supplierId);
         EventConsumer<R> eventConsumer = new EventConsumer<>(eventFunction, consumer);
         eventConsumer.withMetrics(pipeMetrics);
         registry.registerAll(pipeMetrics);

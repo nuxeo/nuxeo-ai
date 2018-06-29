@@ -32,8 +32,11 @@ import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
+import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
-import org.nuxeo.runtime.stream.pipes.functions.MetricsProducer;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 
 /**
  * A stream processor using a Function.
@@ -41,7 +44,9 @@ import org.nuxeo.runtime.stream.pipes.functions.MetricsProducer;
 public class FunctionStreamProcessor {
 
     public static final String STREAM_IN = "source";
+
     public static final String STREAM_OUT = "sink";
+
     private static final Log log = LogFactory.getLog(FunctionStreamProcessor.class);
 
     /**
@@ -74,15 +79,13 @@ public class FunctionStreamProcessor {
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
         String computationName = buildName(function.getClass().getSimpleName(), streamIn, streamOut);
-        NuxeoMetricSet metrics = new NuxeoMetricSet("nuxeo", "streams", "func", computationName);
-        if (function instanceof MetricsProducer) {
-            ((MetricsProducer) function).withMetrics(metrics);
-        }
+        FunctionMetrics metrics = new FunctionMetrics(computationName);
+        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
+        registry.registerAll(metrics);
         return Topology.builder()
                        .addComputation(
                                () -> new FunctionComputation(streams.size() - 1,
-                                                             computationName, function
-                               ), streams)
+                                                             computationName, metrics, function), streams)
                        .build();
     }
 
@@ -91,11 +94,15 @@ public class FunctionStreamProcessor {
      */
     public static class FunctionComputation extends AbstractComputation {
 
-        private final Function<Record, Optional<Record>> function;
+        protected final FunctionMetrics metrics;
 
-        public FunctionComputation(int outputStreams, String name, Function<Record, Optional<Record>> function) {
+        protected final Function<Record, Optional<Record>> function;
+
+        public FunctionComputation(int outputStreams, String name,
+                                   FunctionMetrics metrics, Function<Record, Optional<Record>> function) {
 
             super(name, 1, outputStreams);
+            this.metrics = metrics;
             this.function = function;
         }
 
@@ -106,6 +113,7 @@ public class FunctionStreamProcessor {
 
         @Override
         public void processRecord(ComputationContext context, String inputStreamName, Record record) {
+            metrics.called();
             if (log.isDebugEnabled()) {
                 log.debug("Processing record " + record);
             }
@@ -115,6 +123,7 @@ public class FunctionStreamProcessor {
                 context.askForCheckpoint();
             } catch (NuxeoException e) {
                 log.error("Discard invalid record: " + record, e);
+                metrics.error();
             }
         }
 
@@ -128,8 +137,50 @@ public class FunctionStreamProcessor {
          */
         protected void writeToStreams(ComputationContext context, Record record) {
             if (record != null && !metadata.outputStreams().isEmpty()) {
+                metrics.produced();
                 metadata.outputStreams().forEach(o -> context.produceRecord(o, record));
             }
         }
     }
+
+    /**
+     * Metrics about the function
+     */
+    public static class FunctionMetrics extends NuxeoMetricSet {
+
+        protected long called = 0;
+
+        protected long errors = 0;
+
+        protected long produced = 0;
+
+        public FunctionMetrics(String name) {
+            super("nuxeo", "streams", "func", name);
+            this.putGauge(() -> called, "called");
+            this.putGauge(() -> errors, "errors");
+            this.putGauge(() -> produced, "produced");
+        }
+
+        /**
+         * Increment called
+         */
+        public void called() {
+            called++;
+        }
+
+        /**
+         * Increment errors
+         */
+        public void error() {
+            errors++;
+        }
+
+        /**
+         * Increment produced
+         */
+        public void produced() {
+            produced++;
+        }
+    }
+
 }

@@ -25,24 +25,18 @@ import java.util.function.Predicate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.pipes.streams.Initializable;
 
 /**
  * A function that first applies a predicate filter.
  */
-public class PreFilterFunction<T, R> implements Function<T, R>, MetricsProducer, Initializable {
+public class PreFilterFunction<T, R> implements Function<T, R>, Initializable {
 
     private static final Log log = LogFactory.getLog(PreFilterFunction.class);
 
     protected Predicate<? super T> filter;
-    protected Function<? super T, ? extends R> transformation;
 
-    //metrics
-    private long supplied = 0;
-    private long errors = 0;
-    private long transformed = 0;
-    private long filterFailed = 0;
+    protected Function<? super T, ? extends R> transformation;
 
     public PreFilterFunction() {
 
@@ -66,31 +60,16 @@ public class PreFilterFunction<T, R> implements Function<T, R>, MetricsProducer,
 
     @Override
     public R apply(T in) {
-        supplied++;
         try {
             if (filter == null || filter.test(in)) {
                 R transform = transformation.apply(in);
-                transformed++;
                 return transform;
-            } else {
-                filterFailed++;
             }
         } catch (NullPointerException | ClassCastException cce) {
             log.error("Invalid function definition ", cce);
-            errors++;
         } catch (NuxeoException ne) {
             log.error("Nuxeo error from function ", ne);
-            errors++;
         }
         return null;
     }
-
-    @Override
-    public void withMetrics(NuxeoMetricSet nuxeoMetrics) {
-        nuxeoMetrics.putGauge(() -> supplied, "supplied");
-        nuxeoMetrics.putGauge(() -> transformed, "transformed");
-        nuxeoMetrics.putGauge(() -> errors, "errors");
-        nuxeoMetrics.putGauge(() -> filterFailed, "filterFailed");
-    }
-
 }
