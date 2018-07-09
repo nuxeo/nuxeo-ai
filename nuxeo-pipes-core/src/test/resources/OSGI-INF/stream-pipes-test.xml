@@ -97,4 +97,19 @@
     </streamProcessor>
   </extension>
 
+  <extension point="text" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <text propertyName="fulltextBinary" windowSize="15">
+      <consumer>
+        <stream name="custom.binary.text" size="3"/>
+      </consumer>
+    </text>
+  </extension>
+
+  <extension point="text" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <text>
+      <consumer>
+        <stream name="default.binary.text"/>
+      </consumer>
+    </text>
+  </extension>
 </component>

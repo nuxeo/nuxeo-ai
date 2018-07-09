@@ -35,8 +35,8 @@ import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogManager;
+import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
@@ -49,6 +49,7 @@ import org.nuxeo.runtime.stream.pipes.consumers.LogAppenderConsumer;
 import org.nuxeo.runtime.stream.pipes.events.DirtyEventListener;
 import org.nuxeo.runtime.stream.pipes.events.DynamicEventListenerDescriptor;
 import org.nuxeo.runtime.stream.pipes.events.EventConsumer;
+import org.nuxeo.runtime.stream.pipes.functions.BinaryTextListener;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -56,11 +57,23 @@ import com.codahale.metrics.SharedMetricRegistries;
 public class PipelineServiceImpl extends DefaultComponent implements PipelineService {
 
     public static final String ROUTE_AP = "pipes";
+
+    public static final String TEXT_AP = "text";
+
     public static final String PIPES_CONFIG = "nuxeo.pipes.config.name";
+
     private static final Log log = LogFactory.getLog(PipelineServiceImpl.class);
+
     protected final Map<String, PipeDescriptor> configs = new HashMap<>();
+
+    protected final List<BinaryTextDescriptor> textConfigs = new ArrayList<>();
+
     protected final List<EventListenerDescriptor> listenerDescriptors = new ArrayList<>();
+
+    protected final Map<String, LogAppenderConsumer> logAppenderConsumers = new HashMap<>();
+
     protected final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
+
     private String pipeConfigName;
 
     @Override
@@ -74,6 +87,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
             }
             descriptor.validate();
             this.configs.put(descriptor.id, descriptor);
+        } else if (TEXT_AP.equals(extensionPoint)) {
+            BinaryTextDescriptor descriptor = (BinaryTextDescriptor) contribution;
+            textConfigs.add(descriptor);
         }
     }
 
@@ -82,6 +98,11 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         super.start(context);
         pipeConfigName = Framework.getProperty(PIPES_CONFIG, "pipes");
         this.configs.forEach((key, value) -> addPipe(value));
+        this.textConfigs.forEach(d ->
+                                 d.consumer.streams.forEach(s ->
+                                     addBinaryTextListener(d.eventName, s.name, s.size, d.propertyName, d.windowSize)
+                                 )
+        );
     }
 
     @Override
@@ -91,6 +112,8 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         //Remove event listeners
         EventService eventService = Framework.getService(EventService.class);
         listenerDescriptors.forEach(eventService::removeEventListener);
+
+        logAppenderConsumers.values().forEach(LogAppenderConsumer::close);
     }
 
     /**
@@ -130,20 +153,36 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         addEventListener(eventName, false, dirtyEventListener);
     }
 
+    /**
+     * Adds a listener for binary text and send the result to the specified log
+     */
+    @Override
+    public void addBinaryTextListener(String eventName, String logName, int partitions, String propertyName, int windowSizeSeconds) {
+        addLogConsumer(logName, partitions);
+        BinaryTextListener textListener = new BinaryTextListener(logName, propertyName, windowSizeSeconds);
+        addEventListener(eventName, false, textListener);
+    }
+
+    @Override
+    public Consumer<Record> getConsumer(String logName) {
+        return logAppenderConsumers.get(logName);
+    }
+
     @Override
     public <R> void addEventPipe(String eventName, String supplierId,
                                  Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer) {
         NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "streams", eventName, supplierId);
         EventConsumer<R> eventConsumer = new EventConsumer<>(eventFunction, consumer);
-        eventConsumer.withMetrics(pipeMetrics);
-        registry.registerAll(pipeMetrics);
+//        eventConsumer.withMetrics(pipeMetrics);
+//        registry.registerAll(pipeMetrics);
         addEventListener(eventName, isAsync, eventConsumer);
     }
 
     /**
      * Add an <code>EventListener</code> using the <code>EventService</code>
      */
-    protected void addEventListener(String eventName, boolean isAsync, EventListener eventConsumer) {
+    @Override
+    public void addEventListener(String eventName, boolean isAsync, EventListener eventConsumer) {
         EventService eventService = Framework.getService(EventService.class);
         EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer, isAsync);
         listenerDescriptors.add(listenerDescriptor);
@@ -156,7 +195,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     protected LogAppenderConsumer addLogConsumer(String logName, int size) {
         LogManager manager = Framework.getService(StreamService.class).getLogManager(pipeConfigName);
         manager.createIfNotExists(logName, size);
-        LogAppender<Record> appender = manager.getAppender(logName);
-        return new LogAppenderConsumer(appender);
+        CloseableLogAppender<Record> appender = (CloseableLogAppender) manager.getAppender(logName);
+        LogAppenderConsumer consumer = new LogAppenderConsumer(appender);
+        logAppenderConsumers.put(logName, consumer);
+        return consumer;
     }
 }

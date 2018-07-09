@@ -24,16 +24,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogAppender;
+import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 
 /**
  * A record consumer using a log appender
  */
-public class LogAppenderConsumer implements Consumer<Record> {
+public class LogAppenderConsumer implements Consumer<Record>, AutoCloseable {
 
     private static final Log log = LogFactory.getLog(LogAppenderConsumer.class);
-    private final LogAppender<Record> appender;
+    private final CloseableLogAppender<Record> appender;
 
-    public LogAppenderConsumer(LogAppender<Record> appender) {
+    public LogAppenderConsumer(CloseableLogAppender<Record> appender) {
         this.appender = appender;
     }
 
@@ -57,5 +58,12 @@ public class LogAppenderConsumer implements Consumer<Record> {
         sb.append("appender=").append(appender);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public void close() {
+        if (appender != null) {
+            appender.close();
+        }
     }
 }

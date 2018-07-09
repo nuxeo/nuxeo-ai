@@ -107,4 +107,13 @@
   </pipe>
 </extension>
 
+<#if "${nuxeo.pipes.text.enabled}" == "true">
+  <extension point="text" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+    <text windowSize="12">
+      <consumer>
+        <stream name="text" />
+      </consumer>
+    </text>
+  </extension>
+</#if>
 </component>

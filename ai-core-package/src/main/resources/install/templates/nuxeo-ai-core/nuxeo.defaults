@@ -6,6 +6,7 @@ nuxeo.pipes.config.name=pipes
 nuxeo.pipes.images.enabled=false
 nuxeo.pipes.video.enabled=false
 nuxeo.pipes.audio.enabled=false
+nuxeo.pipes.text.enabled=false
 
 nuxeo.enrichment.source.stream=enrichment.in
 nuxeo.enrichment.save.tags=false

@@ -72,14 +72,14 @@ public class EventPipesTest {
         doc.addFacet("Versionable");
         Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
         doc.setPropertyValue("file:content", (Serializable) blob);
-        return getTestEvent(session, doc);
+        return getTestEvent(session, doc, "myDocEvent");
     }
 
-    public static Event getTestEvent(CoreSession session, DocumentModel doc) {
+    public static Event getTestEvent(CoreSession session, DocumentModel doc, String eventName) {
         doc = session.createDocument(doc);
         session.save();
         EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), doc);
-        Event event = evctx.newEvent("myDocEvent");
+        Event event = evctx.newEvent(eventName);
         event.setInline(true);
         assertNotNull(event);
         return event;
@@ -106,7 +106,8 @@ public class EventPipesTest {
     public void testDocEventToStream() throws Exception {
         DocEventToStream doc2stream = new DocEventToStream();
         Collection<BlobTextStream> result =
-                doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File")));
+                doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File"),
+                                              "anyEvent"));
         assertNotNull(result);
         assertEquals("Nothing in the test event to serialize", 0, result.size());
 
