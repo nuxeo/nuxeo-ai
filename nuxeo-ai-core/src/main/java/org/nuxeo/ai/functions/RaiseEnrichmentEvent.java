@@ -25,6 +25,8 @@ import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
+import org.nuxeo.ecm.core.api.event.CoreEventConstants;
+import org.nuxeo.ecm.core.api.event.DocumentEventCategories;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventProducer;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
@@ -38,7 +40,11 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer {
 
     public static final String ENRICHMENT_CREATED = "enrichmentMetadataCreated";
+
     public static final String ENRICHMENT_METADATA = "enrichmentMetadata";
+
+    public static final String CATEGORY = "category";
+
     private static final Log log = LogFactory.getLog(RaiseEnrichmentEvent.class);
 
     @Override
@@ -55,6 +61,9 @@ public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer {
                     }
                     eCtx = new EventContextImpl();
                 }
+                eCtx.setProperty(CoreEventConstants.REPOSITORY_NAME, metadata.context.repositoryName);
+                eCtx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
+                eCtx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
                 eCtx.setProperty(ENRICHMENT_METADATA, metadata);
                 Event event = eCtx.newEvent(ENRICHMENT_CREATED);
                 Framework.getService(EventProducer.class).fireEvent(event);

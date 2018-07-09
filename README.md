@@ -73,6 +73,32 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 </streamProcessor>
 </extension>
 ```
+### Notes
+When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
+stream processors matches the number of partitions you have, eg. 4.
+#### Useful log config:
+```xml
+  <appender name="STREAMS" class="org.apache.log4j.FileAppender">
+    <errorHandler class="org.apache.log4j.helpers.OnlyOnceErrorHandler" />
+    <param name="File" value="${nuxeo.log.dir}/streams.log" />
+    <param name="Append" value="false" />
+    <layout class="org.apache.log4j.PatternLayout">
+      <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t][%c] %m%n" />
+    </layout>
+  </appender>
+  <category name="org.nuxeo.ai">
+    <priority value="DEBUG" />
+    <appender-ref ref="STREAMS" />
+  </category>
+  <category name="org.nuxeo.lib.stream">
+    <priority value="DEBUG" />
+    <appender-ref ref="STREAMS" />
+  </category>
+  <category name="org.nuxeo.runtime.stream">
+    <priority value="DEBUG" />
+    <appender-ref ref="STREAMS" />
+  </category>
+```
 
 # License
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
