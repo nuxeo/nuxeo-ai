@@ -10,4 +10,13 @@
       <option name="minConfidence">0.55</option>
     </enrichment>
   </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="customProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">custom1</option>
+    </streamProcessor>
+  </extension>
 </component>
