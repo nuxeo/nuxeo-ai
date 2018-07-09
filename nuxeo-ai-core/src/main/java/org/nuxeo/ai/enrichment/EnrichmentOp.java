@@ -61,7 +61,7 @@ public class EnrichmentOp {
     @Context
     protected AIComponent aiComponent;
 
-    @Param(name = "enrichmentName", description = "The name of the enrichment service to call", required = true)
+    @Param(name = "enrichmentName", description = "The name of the enrichment service to call")
     protected String enrichmentName;
 
     @Param(name = "blobProperties", required = false)

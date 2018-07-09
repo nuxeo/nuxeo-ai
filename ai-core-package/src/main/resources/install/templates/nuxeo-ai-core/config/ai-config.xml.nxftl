@@ -3,7 +3,7 @@
     <require>org.nuxeo.ai.services.AIComponent</require>
 <#if "${nuxeo.enrichment.save.tags}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="tagsProcessor" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="tagsProcessor" defaultConcurrency="2" defaultPartitions="4"
                      logConfig="${nuxeo.pipes.config.name}"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
       <option name="source">${nuxeo.enrichment.source.stream}</option>
@@ -13,7 +13,7 @@
 
 <#if "${nuxeo.enrichment.save.facets}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="saveMetadataProcessor" defaultConcurrency="2" defaultPartitions="4"
                      logConfig="${nuxeo.pipes.config.name}"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <option name="source">${nuxeo.enrichment.source.stream}</option>
@@ -23,7 +23,7 @@
 
 <#if "${nuxeo.enrichment.raiseEvent}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="raiseEventProcessor" defaultConcurrency="2" defaultPartitions="4"
                      logConfig="${nuxeo.pipes.config.name}"
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
       <option name="source">${nuxeo.enrichment.source.stream}</option>
