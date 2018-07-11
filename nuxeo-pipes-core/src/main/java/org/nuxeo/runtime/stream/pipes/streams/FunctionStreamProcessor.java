@@ -79,14 +79,27 @@ public class FunctionStreamProcessor {
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
         String computationName = buildName(function.getClass().getSimpleName(), streamIn, streamOut);
-        FunctionMetrics metrics = new FunctionMetrics(computationName);
-        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
-        registry.registerAll(metrics);
+        FunctionMetrics metrics = registerMetrics(new FunctionMetrics(computationName), computationName);
         return Topology.builder()
                        .addComputation(
                                () -> new FunctionComputation(streams.size() - 1,
                                                              computationName, metrics, function), streams)
                        .build();
+    }
+
+    /**
+     * Register metrics for this computation
+     */
+    public static <T extends NuxeoMetricSet> T registerMetrics(T metrics, String name) {
+        try {
+            MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
+            registry.registerAll(metrics);
+        } catch (IllegalArgumentException e) {
+            log.warn(
+                    String.format("Metrics are already registered for %s. They will only be recorded again after a full restart.",
+                                  name));
+        }
+        return metrics;
     }
 
     /**

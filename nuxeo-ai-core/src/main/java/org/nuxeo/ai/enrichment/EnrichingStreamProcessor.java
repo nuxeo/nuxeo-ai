@@ -24,6 +24,7 @@ import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STR
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_OUT;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.getStreamsList;
+import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.registerMetrics;
 
 import java.util.Collection;
 import java.util.List;
@@ -76,9 +77,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             throw new IllegalArgumentException("Unknown enrichment service " + enricher);
         }
         String computationName = buildName(enricher, streamIn, streamOut);
-        EnrichmentMetrics metrics = new EnrichmentMetrics(computationName);
-        MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
-        registry.registerAll(metrics);
+        EnrichmentMetrics metrics = registerMetrics(new EnrichmentMetrics(computationName), computationName);
         return Topology.builder()
                        .addComputation(addComputation(computationName, enrichmentService, streams, metrics), streams)
                        .build();
