@@ -18,7 +18,7 @@
             <event name="myDocEvent"/>
           </supplier>
           <consumer>
-            <stream name="text"/>
+            <stream name="special.stream"/>
           </consumer>
           <transformer>
             <option name="textProperties">dc:creator</option>
@@ -29,4 +29,17 @@
     <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor"/>
   </extension-point>
 
+  <extension-point name="text">
+    <documentation>
+      Configure text events like this.
+      <code>
+        <text windowSize="12">
+          <consumer>
+            <stream name="text" />
+          </consumer>
+        </text>
+      </code>
+    </documentation>
+    <object class="org.nuxeo.runtime.stream.pipes.services.BinaryTextDescriptor"/>
+  </extension-point>
 </component>

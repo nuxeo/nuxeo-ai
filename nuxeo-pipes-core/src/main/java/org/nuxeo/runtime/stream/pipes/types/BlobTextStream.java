@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -58,6 +59,14 @@ public class BlobTextStream implements Partitionable {
         this.parentId = parentId;
         this.primaryType = primaryType;
         this.facets = facets;
+    }
+
+    public BlobTextStream(DocumentModel doc) {
+        this.id = doc.getId();
+        this.repositoryName = doc.getRepositoryName();
+        this.parentId = doc.getParentRef().toString();
+        this.primaryType = doc.getType();
+        this.facets = doc.getFacets();
     }
 
     public String getId() {
