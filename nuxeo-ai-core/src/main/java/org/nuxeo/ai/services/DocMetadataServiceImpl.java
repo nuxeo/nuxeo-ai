@@ -28,6 +28,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
+import static org.nuxeo.runtime.stream.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.enrichment.EnrichedPropertiesEventListener;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
@@ -54,7 +56,10 @@ import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.runtime.services.config.ConfigurationService;
+import org.nuxeo.runtime.stream.pipes.services.PipelineService;
 
 /**
  * An implementation of DocMetadataService
@@ -62,6 +67,20 @@ import org.nuxeo.runtime.model.DefaultComponent;
 public class DocMetadataServiceImpl extends DefaultComponent implements DocMetadataService {
 
     private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
+
+    public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
+
+    public static final String ENRICHMENT_USING_FACETS = "nuxeo.enrichment.facets.inUse";
+
+    @Override
+    public void start(ComponentContext context) {
+        super.start(context);
+        if (Framework.getService(ConfigurationService.class).isBooleanPropertyTrue(ENRICHMENT_USING_FACETS)) {
+            // Facets are being used so lets clean it up as well.
+            Framework.getService(PipelineService.class)
+                     .addEventListener(DIRTY_EVENT_NAME, false, new EnrichedPropertiesEventListener());
+        }
+    }
 
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
@@ -88,11 +107,9 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             }
             classifications.add(anItem);
             doc.setProperty(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS, classifications);
-            return session.saveDocument(doc);
-        } else {
-            return doc;
+            doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
         }
-
+        return doc;
     }
 
     /**

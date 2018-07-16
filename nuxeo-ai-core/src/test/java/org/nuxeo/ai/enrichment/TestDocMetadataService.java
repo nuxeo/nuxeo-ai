@@ -49,6 +49,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.security.SecurityConstants;
+import org.nuxeo.ecm.core.test.TransactionalFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.stream.pipes.services.JacksonUtil;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
@@ -63,6 +64,12 @@ import junit.framework.TestCase;
 @Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
 public class TestDocMetadataService {
 
+    public static final String SERVICE_NAME = "reverse";
+
+    public static final String SOME_TEXT = "You can change me";
+
+    public static final String TEST_PROPERTY = "dc:title";
+
     @Inject
     protected CoreSession session;
 
@@ -72,46 +79,31 @@ public class TestDocMetadataService {
     @Inject
     protected DocMetadataService docMetadataService;
 
+    @Inject
+    protected TransactionalFeature txFeature;
+
+    @SuppressWarnings("unchecked")
     @Test
     public void testSavesData() throws IOException {
         assertNotNull(docMetadataService);
-
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "File");
-        testDoc.setPropertyValue("dc:title", "Testing document");
-        testDoc = session.createDocument(testDoc);
-        session.save();
-
-        BlobTextStream blobTextStream = new BlobTextStream(testDoc.getId(), testDoc.getRepositoryName(),
-                                                           testDoc.getParentRef().toString(), testDoc.getType(),
-                                                           testDoc.getFacets()
-        );
-        String text = "You can change me";
-        blobTextStream.setText(text);
-        blobTextStream.addXPath("dc:myprop");
-        String serviceName = "reverse";
-        EnrichmentService service = aiComponent.getEnrichmentService(serviceName);
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
-        TestCase.assertEquals(2, results.size());
-        EnrichmentMetadata metadata = results.iterator().next();
-
-        DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
-        session.save();
-
+        EnrichmentMetadata metadata = enrichTestDoc(testDoc);
+        DocumentModel doc = session.getDocument(testDoc.getRef());
         //Now read the values and check them
-        String textReversed = StringUtils.reverse(text);
+        String textReversed = StringUtils.reverse(SOME_TEXT);
         Property classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
         assertNotNull(classProp);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
-        assertEquals(1, classifications.size());
+        assertEquals(2, classifications.size());
         Map<String, Object> classification = classifications.get(0);
-        assertEquals(serviceName, classification.get(AI_SERVICE_PROPERTY));
+        assertEquals(SERVICE_NAME, classification.get(AI_SERVICE_PROPERTY));
         assertEquals(SecurityConstants.SYSTEM_USERNAME, classification.get(AI_CREATOR_PROPERTY));
         assertEquals("/classification/custom", classification.get(ENRICHMENT_KIND_PROPERTY));
         String[] labels = (String[]) classification.get(ENRICHMENT_LABELS_PROPERTY);
         assertEquals(textReversed.toLowerCase(), labels[0]);
         String[] targetProps = (String[]) classification.get(ENRICHMENT_TARGET_DOCPROP_PROPERTY);
-        assertEquals("dc:myprop", targetProps[0]);
+        assertEquals(TEST_PROPERTY, targetProps[0]);
         Blob blob = (Blob) classification.get(ENRICHMENT_RAW_KEY_PROPERTY);
         assertNotNull(blob);
         assertEquals(textReversed, blob.getString());
@@ -120,17 +112,65 @@ public class TestDocMetadataService {
 
         //Check when there's no metadata to save
         EnrichmentMetadata meta = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
-                                                                     new AIMetadata.Context(testDoc.getRepositoryName(),
-                                                                                            testDoc.getId(),
-                                                                                            null,
-                                                                                            null,
-                                                                                            null)).build();
+                                                                 new AIMetadata.Context(doc.getRepositoryName(),
+                                                                                        doc.getId(),
+                                                                                        null,
+                                                                                        null,
+                                                                                        null)).build();
         doc = docMetadataService.saveEnrichment(session, meta);
-        session.save();
+        txFeature.nextTransaction();
         classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
         assertNotNull(classProp);
         classifications = classProp.getValue(List.class);
-        assertEquals("There is still only 1 classification because nothing was saved", 1, classifications.size());
+        assertEquals("There is still 2 classifications because nothing was saved", 2, classifications.size());
 
+    }
+
+    @Test
+    public void testEnrichedFacetRemoval() {
+
+        // Confirm our test document is enriched
+        DocumentModel testDoc = session.createDocumentModel("/", "My Test Enriched document", "File");
+        EnrichmentMetadata metadata = enrichTestDoc(testDoc);
+        DocumentModel doc = session.getDocument(testDoc.getRef());
+        Property classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        assertNotNull(classProp);
+
+        // Dirty only 1 of the properties that was enriched, the enrichment will be removed, leaving just 1.
+        doc.setPropertyValue(TEST_PROPERTY, "Testing property change");
+        session.saveDocument(doc);
+        txFeature.nextTransaction();
+        doc = session.getDocument(testDoc.getRef());
+        classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        List<Map<String, Object>> classifications = classProp.getValue(List.class);
+        assertEquals("1 of the 2 enrichments must be removed because our test property is dirty",
+                     1, classifications.size());
+    }
+
+    /**
+     * Enrich our test document, save it and return some metadata
+     */
+    public EnrichmentMetadata enrichTestDoc(DocumentModel testDoc) {
+        testDoc.setPropertyValue(TEST_PROPERTY, "Testing document");
+        testDoc = session.createDocument(testDoc);
+        txFeature.nextTransaction();
+
+        BlobTextStream blobTextStream = new BlobTextStream(testDoc.getId(), testDoc.getRepositoryName(),
+                                                           testDoc.getParentRef().toString(), testDoc.getType(),
+                                                           testDoc.getFacets()
+        );
+        blobTextStream.setText(SOME_TEXT);
+        blobTextStream.addXPath(TEST_PROPERTY);
+        EnrichmentService service = aiComponent.getEnrichmentService(SERVICE_NAME);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
+        TestCase.assertEquals(2, results.size());
+        EnrichmentMetadata[] metaResults = results.toArray(new EnrichmentMetadata[0]);
+        EnrichmentMetadata metadata = metaResults[0];
+        DocumentModel docToSave = docMetadataService.saveEnrichment(session, metadata);
+        session.saveDocument(docToSave);
+        docToSave = docMetadataService.saveEnrichment(session, metaResults[1]);
+        session.saveDocument(docToSave);
+        txFeature.nextTransaction();
+        return metadata;
     }
 }

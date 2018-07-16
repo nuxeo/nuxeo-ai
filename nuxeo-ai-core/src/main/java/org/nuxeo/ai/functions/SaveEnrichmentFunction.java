@@ -21,6 +21,7 @@ package org.nuxeo.ai.functions;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
@@ -34,7 +35,8 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
         TransactionHelper.runInTransaction(
                 () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
                     DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
-                    docMetadataService.saveEnrichment(session, metadata);
+                    DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
+                    session.saveDocument(doc);
                 })
         );
     }

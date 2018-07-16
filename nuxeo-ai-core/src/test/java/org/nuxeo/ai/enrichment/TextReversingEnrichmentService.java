@@ -54,7 +54,8 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
                                                blobTextStream)
                     .withRawKey(rawKey)
                     .withLabels(labels)
-                    .withCreator(SecurityConstants.ANONYMOUS).build()
+                    .withDocumentProperties(Stream.of("dc:description").collect(Collectors.toSet()))
+                    .withCreator(SecurityConstants.SYSTEM_USERNAME).build()
         );
     }
 }
