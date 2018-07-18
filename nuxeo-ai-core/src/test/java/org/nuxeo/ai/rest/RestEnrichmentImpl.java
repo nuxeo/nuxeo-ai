@@ -50,9 +50,7 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
     @Override
     public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextStream blobTextStream) {
         builder.setHeader("nuxeo", "isGreat");
-        setMultipart(builder, multipartEntityBuilder -> {
-            multipartEntityBuilder.addTextBody("test", "ai");
-        });
+        setMultipart(builder, multipartEntityBuilder -> multipartEntityBuilder.addTextBody("test", "ai"));
         return builder.build();
     }
 

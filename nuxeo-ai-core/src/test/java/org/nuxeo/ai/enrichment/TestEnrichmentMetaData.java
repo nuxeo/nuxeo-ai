@@ -26,7 +26,6 @@ import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -69,9 +68,9 @@ public class TestEnrichmentMetaData {
                 Stream.of("tag1", "tag2")
                       .map(l -> new EnrichmentMetadata.Tag(l,
                                                            "t1",
-                                                           "myref"+l,
+                                                           "myref" + l,
                                                            new AIMetadata.Box(0.5f, 0.3f, -0.2f, 2f),
-                                                           singletonList(new EnrichmentMetadata.Label("f"+l, 1)),
+                                                           singletonList(new EnrichmentMetadata.Label("f" + l, 1)),
                                                            0.65f))
                       .collect(Collectors.toList());
         BlobTextStream blobTextStream = new BlobTextStream("doc1", repositoryName, null, "File", null);

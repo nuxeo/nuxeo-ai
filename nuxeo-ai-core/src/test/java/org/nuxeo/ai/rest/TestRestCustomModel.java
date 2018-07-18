@@ -72,7 +72,7 @@ public class TestRestCustomModel {
         blobTextStream.setBlob(null);
         blobTextStream.setText("Great product");
         results = service.enrich(blobTextStream);
-        assertEquals("There must be 1 result", 1, results.size());        ;
+        assertEquals("There must be 1 result", 1, results.size());
     }
 
     private ManagedBlob blob(Blob blob, String key) {

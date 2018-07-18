@@ -11,6 +11,7 @@ This modules provides 2 packages:
  * Interfaces and helper classes for building services.
  * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentService`.
  * An Operation called `EnrichmentOp` to call an `EnrichmentService` and return the result.
+ * Provides a `RestClient` and `RestEnrichmentService` for easily calling a custom json rest api. 
 
 
 ## Nuxeo Pipes
@@ -26,21 +27,23 @@ This modules provides 2 packages:
 These streams are *disabled by default* but can be enabled by id. For example
  to enable "pipe.images"
 :
- ```
+```xml
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
     <pipe id="pipe.images" enabled="true" />
   </extension>
-  ```
+```
 
 ### Customization
 ##### Events
 Using an Nuxeo extension you can dynamically register a pipeline for any custom event.  
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
-```
+```xml
   <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
     <pipe id="pipe.mypipe" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
       <supplier>
-        <event>MY_EVENT</event>
+        <event name="MY_EVENT">
+          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
+        </event>
       </supplier>
       <consumer>
         <stream name="mystream" />
@@ -48,9 +51,23 @@ For example to send `MY_EVENT` to a stream called `mystream` you would use the f
     </pipe>
   </extension>
 ```
+Transforming an input Event into an output stream is done using a function specified by the `function` parameter. Functions are explained below.
 
- Transforming an input Event into an output stream is done using a function specified by the `function` parameter. Functions are explained below.
-
+##### Custom enrichment services
+ New enrichment services can be added by implementing `EnrichmentService`.  `AbstractEnrichmentService` is a good starting point.
+ If you wish to call a custom rest api then extending `RestEnrichmentService` would allow access to the various `RestClient`
+ helper methods. See `CustomModelEnrichmentService` for an example.  To register your extension you would use configuration similar to this.
+ ```xml
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="custom1" kind="/classification/custom" class="org.nuxeo.ai.custom.CustomModelEnrichmentService">
+      <option name="uri">http://localhost:7000/invocations</option>
+      <option name="modelName">dnn</option>
+      <option name="imageFeatureName">image</option>
+      <option name="textFeatureName">text</option>
+      <option name="minConfidence">0.55</option>
+    </enrichment>
+  </extension>
+```
 
 ##### Functions
 Actions on streams or events are based on the standard Java `Function<T, R>` interface.  To send an event to a stream you would need to implement the `Function<Event, Record>` interface. `Record` is the type used for items in a nuxeo-stream.
@@ -64,12 +81,28 @@ Stream processing is achieved using a computation stream pattern that enables yo
 
 To use a custom processor, create a class that implements `FunctionStreamProcessorTopology` and specify it in the `class` parameter as shown below.
 
-```
+```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
 <streamProcessor name="basicProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="4"
                class="org.nuxeo.my.custom.StreamProcessor">
  <option name="source">mystream</option>
  <option name="sink">mystream.out</option>
+</streamProcessor>
+</extension>
+```
+
+##### Enrichment stream processing
+You can register your custom enrichment services to act as a stream processor using the `EnrichingStreamProcessor`.
+For example, the following configuration would register a stream processor that acts on a source stream called `images`,
+it runs the `custom1` enrichment service on each record and sends the result to the `enrichment.in` stream.
+```xml
+<extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+<streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"
+                 logConfig="${nuxeo.pipes.config.name}"
+                 class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+  <option name="source">images</option>
+  <option name="sink">enrichment.in</option>
+  <option name="enrichmentServiceName">custom1</option>
 </streamProcessor>
 </extension>
 ```
