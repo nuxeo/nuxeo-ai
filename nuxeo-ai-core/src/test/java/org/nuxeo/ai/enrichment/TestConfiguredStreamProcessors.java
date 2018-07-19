@@ -21,9 +21,9 @@ package org.nuxeo.ai.enrichment;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
@@ -125,7 +125,7 @@ public class TestConfiguredStreamProcessors {
         txFeature.nextTransaction();
         DocumentModel enrichedDoc = session.getDocument(new IdRef(docId));
         assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
-        Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         Assert.assertNotNull(classProp);
         assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
 

@@ -18,9 +18,9 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.ENRICHMENT_ADDED;
 
@@ -62,7 +62,7 @@ public class EnrichedPropertiesEventListener implements EventListener {
      */
     protected void checkAndCleanEnrichedProperties(DocumentModel doc) {
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> enriched = (List) doc.getProperty(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        List<Map<String, Object>> enriched = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         List<Map<String, Object>> cleanEnriched = new ArrayList<>();
 
         if (enriched == null || enriched.isEmpty()) {
@@ -77,7 +77,7 @@ public class EnrichedPropertiesEventListener implements EventListener {
 
         if (cleanEnriched.size() != enriched.size()) {
             //We made some changes lets update
-            doc.setProperty(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS, cleanEnriched);
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, cleanEnriched);
             if (cleanEnriched.isEmpty()) {
                 doc.removeFacet(ENRICHMENT_FACET);
             }

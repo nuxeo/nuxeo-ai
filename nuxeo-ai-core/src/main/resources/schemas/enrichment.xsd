@@ -23,7 +23,7 @@
     <xs:restriction base="xs:string" ref:resolver="directoryResolver" ref:directory="aikind"/>
   </xs:simpleType>
 
-  <xs:complexType name="classificationsType">
+  <xs:complexType name="itemsType">
     <xs:sequence>
       <xs:element name="creator">
         <xs:simpleType>
@@ -38,12 +38,12 @@
       <xs:element name="labels" type="nxrich:stringList"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:complexType name="classificationsListType">
+  <xs:complexType name="itemsListType">
     <xs:sequence>
-      <xs:element name="item" type="nxrich:classificationsType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="item" type="nxrich:itemsType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
-  <xs:element name="classifications" type="nxrich:classificationsListType"/>
+  <xs:element name="items" type="nxrich:itemsListType"/>
 
 </xs:schema>

@@ -22,11 +22,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
 
@@ -91,7 +91,7 @@ public class TestDocMetadataService {
         DocumentModel doc = session.getDocument(testDoc.getRef());
         //Now read the values and check them
         String textReversed = StringUtils.reverse(SOME_TEXT);
-        Property classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        Property classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
@@ -119,7 +119,7 @@ public class TestDocMetadataService {
                                                                                         null)).build();
         doc = docMetadataService.saveEnrichment(session, meta);
         txFeature.nextTransaction();
-        classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
         classifications = classProp.getValue(List.class);
         assertEquals("There is still 2 classifications because nothing was saved", 2, classifications.size());
@@ -133,7 +133,7 @@ public class TestDocMetadataService {
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Enriched document", "File");
         EnrichmentMetadata metadata = enrichTestDoc(testDoc);
         DocumentModel doc = session.getDocument(testDoc.getRef());
-        Property classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        Property classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
 
         // Dirty only 1 of the properties that was enriched, the enrichment will be removed, leaving just 1.
@@ -141,7 +141,7 @@ public class TestDocMetadataService {
         session.saveDocument(doc);
         txFeature.nextTransaction();
         doc = session.getDocument(testDoc.getRef());
-        classProp = doc.getPropertyObject(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
+        classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
         assertEquals("1 of the 2 enrichments must be removed because our test property is dirty",
                      1, classifications.size());

@@ -20,12 +20,12 @@ package org.nuxeo.ai.services;
 
 import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_CLASSIFICATIONS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
 import static org.nuxeo.runtime.stream.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
@@ -96,26 +96,25 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             doc.addFacet(ENRICHMENT_FACET);
         }
 
-        Map<String, Object> anItem = createClassification(metadata);
+        Map<String, Object> anItem = createEnrichment(metadata);
 
         if (anItem != null) {
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> classifications =
-                    (List) doc.getProperty(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS);
-            if (classifications == null) {
-                classifications = new ArrayList<>(1);
+            List<Map<String, Object>> enrichmentList = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+            if (enrichmentList == null) {
+                enrichmentList = new ArrayList<>(1);
             }
-            classifications.add(anItem);
-            doc.setProperty(ENRICHMENT_NAME, ENRICHMENT_CLASSIFICATIONS, classifications);
+            enrichmentList.add(anItem);
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, enrichmentList);
             doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
         }
         return doc;
     }
 
     /**
-     * Create a classification Map using the enrichment metadata
+     * Create a enrichment Map using the enrichment metadata
      */
-    protected Map<String, Object> createClassification(EnrichmentMetadata metadata) {
+    protected Map<String, Object> createEnrichment(EnrichmentMetadata metadata) {
         Map<String, Object> anEntry = new HashMap<>();
         AIComponent aiComponent = Framework.getService(AIComponent.class);
 
@@ -170,7 +169,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     }
 
     /**
-     *  Produce a list of labels from these tags
+     * Produce a list of labels from these tags
      */
     protected Set<String> getTagLabels(List<AIMetadata.Tag> tags) {
         Set<String> labels = new HashSet<>();

@@ -28,9 +28,9 @@ public class AIConstants {
 
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";
-    public static final String ENRICHMENT_NAME = "enrichment";
-    public static final String ENRICHMENT_PREFIX = "enrich:";
-    public static final String ENRICHMENT_CLASSIFICATIONS = "classifications";
+    public static final String ENRICHMENT_SCHEMA_NAME = "enrichment";
+    public static final String ENRICHMENT_SCHEMA_PREFIX = "enrichment:";
+    public static final String ENRICHMENT_ITEMS = "items";
     public static final String AI_SERVICE_PROPERTY = "service";
     public static final String ENRICHMENT_TARGET_DOCPROP_PROPERTY = "targetDocumentProperties";
     public static final String NORMALIZED_PROPERTY = "normalized";
