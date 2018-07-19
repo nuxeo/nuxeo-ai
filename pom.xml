@@ -87,4 +87,26 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <scm>
+    <connection>scm:git:git://github.com/nuxeo/ai-core.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:nuxeo/ai-core.git</developerConnection>
+    <url>http://nuxeo.github.io</url>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>public-releases</id>
+      <url>
+        http://mavenin.nuxeo.com/nexus/content/repositories/public-releases
+      </url>
+    </repository>
+    <snapshotRepository>
+      <id>public-snapshots</id>
+      <url>
+        http://mavenin.nuxeo.com/nexus/content/repositories/public-snapshots
+      </url>
+      <uniqueVersion>true</uniqueVersion>
+    </snapshotRepository>
+  </distributionManagement>
 </project>

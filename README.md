@@ -5,13 +5,20 @@ This modules provides 2 packages:
   * nuxeo-ai-core - Contains the core interfaces and AI component
   * nuxeo-pipes-core - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
 
+## Version Support
+
+| Ai-core Version | Nuxeo Version
+| --- | --- |
+| 1.0.X| 9.10 |
+| 2.0.X| 10.2 |
+
 ## Nuxeo AI Core
 ### Features
  * Provides an `AIComponent` to register services.  eg. An enrichment service.
  * Interfaces and helper classes for building services.
  * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentService`.
  * An Operation called `EnrichmentOp` to call an `EnrichmentService` and return the result.
- * Provides a `RestClient` and `RestEnrichmentService` for easily calling a custom json rest api. 
+ * Provides a `RestClient` and `RestEnrichmentService` for easily calling a custom json rest api.
 
 
 ## Nuxeo Pipes
@@ -109,6 +116,11 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 ### Notes
 When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
 stream processors matches the number of partitions you have, eg. 4.
+
+#### Download
+
+Download from [https://maven.nuxeo.org](https://maven.nuxeo.org/nexus/#nexus-search;gav~~org.nuxeo.ai).
+
 #### Useful log config:
 ```xml
   <appender name="STREAMS" class="org.apache.log4j.FileAppender">
