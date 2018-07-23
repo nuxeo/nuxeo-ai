@@ -5,13 +5,49 @@ This modules provides 2 packages:
   * nuxeo-ai-core - Contains the core interfaces and AI component
   * nuxeo-pipes-core - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
 
-## Version Support
+## Installation
+#### Version Support
 
 | Ai-core Version | Nuxeo Version
 | --- | --- |
 | 1.0.X| 9.10 |
 | 2.0.X| 10.2 |
 
+Download the package from [https://maven.nuxeo.org](https://maven.nuxeo.org/nexus/#nexus-search;gav~~org.nuxeo.ai).
+Install using the command line, e.g.
+```
+./bin/nuxeoctl mp-install PATH_TO_DOWNLOAD/nuxeo-ai-core-1.0.zip
+```
+#### Indexing and Search
+It is recommended that the Elasticsearch mappings are updated to allow a full text search on enrichment labels.
+ The following code will add this mapping to a server running locally.
+```json
+curl -X PUT \
+  http://localhost:9200/nuxeo/_mapping/doc/ \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "properties": {
+    "enrichment:items": {
+      "properties": {
+        "labels": {
+          "type": "keyword",
+          "copy_to": [
+            "all_field"
+          ],
+          "ignore_above": 256,
+          "fields": {
+            "fulltext": {
+              "analyzer": "fulltext",
+              "type": "text"
+            }
+          }
+        }
+      }
+    }
+  }
+}'
+```
 ## Nuxeo AI Core
 ### Features
  * Provides an `AIComponent` to register services.  eg. An enrichment service.
@@ -116,10 +152,6 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 ### Notes
 When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
 stream processors matches the number of partitions you have, eg. 4.
-
-#### Download
-
-Download from [https://maven.nuxeo.org](https://maven.nuxeo.org/nexus/#nexus-search;gav~~org.nuxeo.ai).
 
 #### Useful log config:
 ```xml
