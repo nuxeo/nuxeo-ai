@@ -48,6 +48,76 @@ curl -X PUT \
   }
 }'
 ```
+#### Configuration Parameters
+You can set these in your `nuxeo.conf`.
+<div class="table-scroll">
+<table class="hover">
+<tbody>
+<tr>
+<th width="250" colspan="1">Parameter</th>
+<th colspan="1">Description</th>
+<th width="250" colspan="1">Default value</th>
+<th width="150" colspan="1">Since</th>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.pipes.images.enabled`</td>
+<td colspan="1">Create a stream for creation/modification of images.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.pipes.video.enabled`</td>
+<td colspan="1">Create a stream for creation/modification of video files.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.pipes.audio.enabled`</td>
+<td colspan="1">Create a stream for creation/modification of audio files.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.pipes.text.enabled`</td>
+<td colspan="1">Create a stream for text extracted from blobs.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.pipes.config.name`</td>
+<td colspan="1">The name of the stream log config</td>
+<td colspan="1">`pipes`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.source.stream`</td>
+<td colspan="1">The name of the stream that receives Enrichment data</td>
+<td colspan="1">`enrichment.in`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.save.tags`</td>
+<td colspan="1">Should enrichment labels be saved as a standard Nuxeo tags?</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.save.facets`</td>
+<td colspan="1">Should enrichment data be saved as a document facet?</td>
+<td colspan="1">`true`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.raiseEvent`</td>
+<td colspan="1">Should an `enrichmentMetadataCreated` event be raised when new enrichment data is added to the stream?</td>
+<td colspan="1">`true`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
 ## Nuxeo AI Core
 ### Features
  * Provides an `AIComponent` to register services.  eg. An enrichment service.
@@ -67,14 +137,7 @@ curl -X PUT \
     * `audio` - When an audio file is added to a document.
     * `text` - When binary text is extracted from a document.
 
-These streams are *disabled by default* but can be enabled by id. For example
- to enable "pipe.images"
-:
-```xml
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
-    <pipe id="pipe.images" enabled="true" />
-  </extension>
-```
+These streams are *disabled by default* but can be enabled by the [corresponding configuration parameters](#configuration-parameters).
 
 ### Customization
 ##### Events
@@ -150,7 +213,7 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 </extension>
 ```
 ### Notes
-When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
+* When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
 stream processors matches the number of partitions you have, eg. 4.
 
 #### Useful log config:
