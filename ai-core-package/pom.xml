@@ -27,7 +27,11 @@
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-core</artifactId>
-    </dependency>    
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-ai-model</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

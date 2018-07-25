@@ -1,0 +1,9 @@
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Manifest-Version: 1.0
+Bundle-Vendor: org.nuxeo.ai
+Bundle-Version: 1.0.0
+Bundle-Name: ai-model
+Bundle-ManifestVersion: 2
+Require-Bundle: org.nuxeo.runtime.stream.pipes.nuxeo-pipes
+Bundle-SymbolicName: org.nuxeo.ai.ai-model;singleton=true
