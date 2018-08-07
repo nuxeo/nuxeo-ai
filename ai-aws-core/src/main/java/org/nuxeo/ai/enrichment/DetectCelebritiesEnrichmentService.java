@@ -87,8 +87,8 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                                                 .withRawKey(rawKey)
                                                  .withTags(tags)
+                                                 .withRawKey(rawKey)
                                                  .build());
     }
 

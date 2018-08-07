@@ -102,8 +102,8 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                                                 .withRawKey(rawKey)
                                                  .withLabels(labels)
+                                                 .withRawKey(rawKey)
                                                  .build());
     }
 

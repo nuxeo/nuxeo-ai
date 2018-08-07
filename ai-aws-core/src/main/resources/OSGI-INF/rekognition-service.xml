@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.rekognition.RekognitionService" version="1.0">
 
-  <require>org.nuxeo.runtime.stream.pipes.Pipeline</require>
   <implementation class="org.nuxeo.ai.rekognition.RekognitionServiceImpl" />
 
   <service>

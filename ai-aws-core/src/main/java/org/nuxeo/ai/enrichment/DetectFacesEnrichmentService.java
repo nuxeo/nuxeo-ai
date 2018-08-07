@@ -91,8 +91,8 @@ public class DetectFacesEnrichmentService extends AbstractEnrichmentService {
                                           .collect(Collectors.toList());
 
         metadata.add(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                             .withRawKey(rawKey)
                              .withTags(tags)
+                             .withRawKey(rawKey)
                              .build());
         return metadata;
     }

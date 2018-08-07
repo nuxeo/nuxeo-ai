@@ -109,8 +109,8 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
         String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
-                                                 .withRawKey(rawKey)
                                                  .withTags(tags)
+                                                 .withRawKey(rawKey)
                                                  .build());
     }
 
