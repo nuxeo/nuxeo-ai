@@ -71,8 +71,8 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
                 new EnrichmentMetadata.Builder(kind,
                                                name,
                                                blobTextStream)
-                        .withRawKey(rawKey)
                         .withLabels(labels)
+                        .withRawKey(rawKey)
                         .build());
     }
 }

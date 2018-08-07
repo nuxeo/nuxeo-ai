@@ -119,8 +119,8 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
                     new EnrichmentMetadata.Builder(kind,
                                                    name,
                                                    blobTextStream)
-                            .withRawKey(rawKey)
                             .withLabels(labels)
+                            .withRawKey(rawKey)
                             .build());
         } else {
             return Collections.emptyList();
