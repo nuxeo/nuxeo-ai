@@ -26,11 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -49,10 +52,15 @@ public class RestClient implements AutoCloseable {
     private static final Log log = LogFactory.getLog(RestClient.class);
 
     protected final String method;
+
     protected final String contentType;
+
     protected final String accept;
+
     protected final List<Header> headers = new ArrayList<>();
+
     protected final URI uri;
+
     protected CloseableHttpClient client;
 
     public RestClient(Map<String, String> options, Function<HttpClientBuilder, CloseableHttpClient> clientBuilderFunc) {
@@ -95,6 +103,18 @@ public class RestClient implements AutoCloseable {
                              new BasicHeader(HttpHeaders.CONTENT_TYPE, contentType),
                              new BasicHeader(HttpHeaders.ACCEPT, accept)
         );
+    }
+
+    /**
+     * Gets the http response content as a String
+     */
+    public String getContent(HttpResponse response) {
+        try {
+            return IOUtils.toString(response.getEntity().getContent(), Consts.UTF_8);
+        } catch (IOException e) {
+            log.warn("Unable to read the response.", e);
+            return null;
+        }
     }
 
     @Override

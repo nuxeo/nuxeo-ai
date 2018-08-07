@@ -33,6 +33,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentSupport;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
@@ -53,6 +54,7 @@ public class AIComponent extends DefaultComponent {
     private static final Log log = LogFactory.getLog(AIComponent.class);
 
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
+
     protected final Map<String, EnrichmentService> enrichmentServices = new HashMap<>();
 
     protected DirectoryEntryResolver kindResolver;
@@ -102,7 +104,9 @@ public class AIComponent extends DefaultComponent {
                     mimeTypes.add(mimeType.name);
                 }
             });
-            enrichmentService.addMimeTypes(mimeTypes);
+            if (enrichmentService instanceof EnrichmentSupport) {
+                ((EnrichmentSupport) enrichmentService).addMimeTypes(mimeTypes);
+            }
             enrichmentServices.put(descriptor.name, enrichmentService);
         }
     }
