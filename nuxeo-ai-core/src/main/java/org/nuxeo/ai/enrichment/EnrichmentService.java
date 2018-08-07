@@ -19,14 +19,8 @@
 package org.nuxeo.ai.enrichment;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.UUID;
 
-import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.transientstore.api.TransientStore;
-import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 import net.jodah.failsafe.RetryPolicy;

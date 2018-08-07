@@ -19,19 +19,15 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
@@ -48,13 +44,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 public class EnrichmentMetadata extends AIMetadata {
 
     private static final long serialVersionUID = -8838535848960975096L;
+
     private final List<Label> labels;
+
     private final List<Tag> tags;
 
     private EnrichmentMetadata(Builder builder) {
-        super(builder.serviceName, builder.kind, builder.context,
-              builder.creator, builder.created, builder.rawKey
-        );
+        super(builder.serviceName, builder.kind, builder.getContext(),
+              builder.getCreator(), builder.created, builder.getRawKey());
         labels = unmodifiableList(builder.labels);
         tags = unmodifiableList(builder.tags);
     }
@@ -107,65 +104,28 @@ public class EnrichmentMetadata extends AIMetadata {
                 .toString();
     }
 
-    public static class Builder {
-
-        //mandatory
-        private final Instant created;
-        private final String serviceName;
-        private final String kind;
-
-        //Context
-        private final String repositoryName;
-        private final String documentRef;
-        private Set<String> documentProperties;
-        private Map<String, String> properties;
-        private Context context;
+    public static class Builder extends AbstractMetaDataBuilder {
 
         //optional
-        private String rawKey;
         private List<Label> labels;
-        private List<Tag> tags;
-        private String creator;
-        private String blobDigest;
 
-        @JsonCreator
-        public Builder(@JsonProperty("created") Instant created,
-                       @JsonProperty("kind") String kind,
-                       @JsonProperty("serviceName") String serviceName,
-                       @JsonProperty("context") Context context) {
-            this.created = created;
-            this.kind = kind;
-            this.serviceName = serviceName;
-            if (context == null) {
-                throw new IllegalArgumentException("You must specify a valid context.");
-            }
-            this.context = context;
-            this.repositoryName = context.repositoryName;
-            this.documentRef = context.documentRef;
-        }
+        private List<Tag> tags;
 
         public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
-            this.created = Instant.now();
-            this.kind = kind;
-            this.serviceName = serviceName;
-            this.repositoryName = blobTextStream.getRepositoryName();
-            this.documentRef = blobTextStream.getId();
-            this.documentProperties = blobTextStream.getXPaths();
-            this.properties = blobTextStream.getProperties();
+            super(Instant.now(), kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
+                  null, blobTextStream.getXPaths(), blobTextStream.getProperties());
             ManagedBlob blobMeta = blobTextStream.getBlob();
             if (blobMeta != null) {
                 this.blobDigest = blobMeta.getDigest();
             }
         }
 
-        public Builder withDocumentProperties(Set<String> targetDocumentProperty) {
-            this.documentProperties = targetDocumentProperty;
-            return this;
-        }
-
-        public Builder withCustomProperties(Map<String, String> properties) {
-            this.properties = properties;
-            return this;
+        @JsonCreator
+        public Builder(@JsonProperty("created") Instant created,
+                       @JsonProperty("kind") String kind,
+                       @JsonProperty("serviceName") String serviceName,
+                       @JsonProperty("context") AIMetadata.Context context) {
+            super(created, kind, serviceName, context);
         }
 
         public Builder withLabels(List<Label> labels) {
@@ -178,44 +138,19 @@ public class EnrichmentMetadata extends AIMetadata {
             return this;
         }
 
-        public Builder withCreator(String creator) {
-            this.creator = creator;
-            return this;
-        }
-
-        public Builder withRawKey(String rawBlobKey) {
-            this.rawKey = rawBlobKey;
-            return this;
-        }
-
         public Builder withBlobDigest(String blobDigest) {
             this.blobDigest = blobDigest;
             return this;
         }
 
-        public EnrichmentMetadata build() {
-            if (StringUtils.isBlank(serviceName)
-                    || StringUtils.isBlank(kind)
-                    || StringUtils.isBlank(documentRef)
-                    || StringUtils.isBlank(repositoryName)
-                    || created == null) {
-                throw new IllegalArgumentException("Invalid Enrichment metadata has been given. " + this.toString());
-            }
+        @Override
+        protected EnrichmentMetadata build(AbstractMetaDataBuilder abstractMetaDataBuilder) {
 
             if (labels == null) {
                 labels = emptyList();
             }
             if (tags == null) {
                 tags = emptyList();
-            }
-            if (documentProperties == null) {
-                documentProperties = emptySet();
-            }
-            if (properties == null) {
-                properties = emptyMap();
-            }
-            if (context == null) {
-                context = new Context(repositoryName, documentRef, blobDigest, documentProperties, properties);
             }
 
             return new EnrichmentMetadata(this);
