@@ -82,7 +82,7 @@ public abstract class AbstractMetaDataBuilder {
         this.repositoryName = context.repositoryName;
         this.documentRef = context.documentRef;
         this.blobDigest = context.blobDigest;
-        this.documentProperties = context.documentProperties;
+        this.documentProperties = context.inputProperties;
         this.properties = context.properties;
     }
 

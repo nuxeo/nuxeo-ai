@@ -26,7 +26,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
 import static org.nuxeo.runtime.stream.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
@@ -150,7 +150,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
             anEntry.put(AI_SERVICE_PROPERTY, metadata.getServiceName());
             anEntry.put(ENRICHMENT_KIND_PROPERTY, metadata.getKind());
-            anEntry.put(ENRICHMENT_TARGET_DOCPROP_PROPERTY, metadata.context.documentProperties);
+            anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, metadata.context.inputProperties);
             anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlob);
             anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
             if (StringUtils.isNotBlank(metadata.getCreator())) {

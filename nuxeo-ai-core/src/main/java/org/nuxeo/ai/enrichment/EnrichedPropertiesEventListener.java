@@ -21,7 +21,7 @@ package org.nuxeo.ai.enrichment;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.ENRICHMENT_ADDED;
 
 import java.io.Serializable;
@@ -88,7 +88,7 @@ public class EnrichedPropertiesEventListener implements EventListener {
      * Have one of the supplied properties been modified?
      */
     protected boolean hadBeenModified(DocumentModel doc, Map<String, Object> enriched) {
-        String[] props = (String[]) enriched.get(ENRICHMENT_TARGET_DOCPROP_PROPERTY);
+        String[] props = (String[]) enriched.get(ENRICHMENT_INPUT_DOCPROP_PROPERTY);
         if (props != null) {
             for (String propName : props) {
                 try {

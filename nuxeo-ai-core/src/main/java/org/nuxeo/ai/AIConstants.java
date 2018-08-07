@@ -32,7 +32,7 @@ public class AIConstants {
     public static final String ENRICHMENT_SCHEMA_PREFIX = "enrichment:";
     public static final String ENRICHMENT_ITEMS = "items";
     public static final String AI_SERVICE_PROPERTY = "service";
-    public static final String ENRICHMENT_TARGET_DOCPROP_PROPERTY = "targetDocumentProperties";
+    public static final String ENRICHMENT_INPUT_DOCPROP_PROPERTY = "inputProperties";
     public static final String NORMALIZED_PROPERTY = "normalized";
     public static final String ENRICHMENT_RAW_KEY_PROPERTY = "raw";
     public static final String AI_CREATOR_PROPERTY = "creator";

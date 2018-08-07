@@ -27,7 +27,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_TARGET_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
 
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class TestDocMetadataService {
         assertEquals("/classification/custom", classification.get(ENRICHMENT_KIND_PROPERTY));
         String[] labels = (String[]) classification.get(ENRICHMENT_LABELS_PROPERTY);
         assertEquals(textReversed.toLowerCase(), labels[0]);
-        String[] targetProps = (String[]) classification.get(ENRICHMENT_TARGET_DOCPROP_PROPERTY);
+        String[] targetProps = (String[]) classification.get(ENRICHMENT_INPUT_DOCPROP_PROPERTY);
         assertEquals(TEST_PROPERTY, targetProps[0]);
         Blob blob = (Blob) classification.get(ENRICHMENT_RAW_KEY_PROPERTY);
         assertNotNull(blob);

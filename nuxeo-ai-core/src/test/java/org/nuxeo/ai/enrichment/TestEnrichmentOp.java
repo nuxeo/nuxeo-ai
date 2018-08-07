@@ -99,7 +99,7 @@ public class TestEnrichmentOp {
         Blob blob = rawBlobs.get(0);
         assertEquals(reversed, blob.getString());
         assertNotNull(resultMetadata.context.documentRef);
-        assertEquals(new HashSet<>(Arrays.asList("dc:title")), resultMetadata.context.documentProperties);
+        assertEquals(new HashSet<>(Arrays.asList("dc:title")), resultMetadata.context.inputProperties);
         assertTrue("reverse service sets the username so must be true", resultMetadata.isHuman());
         assertTrue("reverse service must return a single label", resultMetadata.isSingleLabel());
 

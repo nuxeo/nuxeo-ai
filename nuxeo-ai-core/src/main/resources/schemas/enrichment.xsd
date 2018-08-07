@@ -34,7 +34,7 @@
       <xs:element name="kind" type="nxrich:kindType" nillable="false" nxsv:nillable="false"/>
       <xs:element name="raw" type="nxrich:content"/>
       <xs:element name="normalized" type="nxrich:content"/>
-      <xs:element name="targetDocumentProperties" type="nxrich:stringList"/>
+      <xs:element name="inputProperties" type="nxrich:stringList"/>
       <xs:element name="labels" type="nxrich:stringList"/>
     </xs:sequence>
   </xs:complexType>

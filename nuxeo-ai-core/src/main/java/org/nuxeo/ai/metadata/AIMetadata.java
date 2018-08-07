@@ -118,19 +118,19 @@ public abstract class AIMetadata implements Serializable {
         public final String repositoryName;
         public final String documentRef; //Document reference
         public final String blobDigest;
-        public final Set<String> documentProperties;
+        public final Set<String> inputProperties;
         public final Map<String, String> properties;
 
         @JsonCreator
         public Context(@JsonProperty("repositoryName") String repositoryName,
                        @JsonProperty("documentRef") String documentRef,
                        @JsonProperty("blobDigest") String blobDigest,
-                       @JsonProperty("documentProperties") Set<String> documentProperties,
+                       @JsonProperty("inputProperties") Set<String> inputProperties,
                        @JsonProperty("properties") Map<String, String> properties) {
             this.repositoryName = repositoryName;
             this.documentRef = documentRef;
             this.blobDigest = blobDigest;
-            this.documentProperties = documentProperties != null ? unmodifiableSet(documentProperties) : emptySet();
+            this.inputProperties = inputProperties != null ? unmodifiableSet(inputProperties) : emptySet();
             this.properties = properties != null ? unmodifiableMap(properties) : emptyMap();
         }
 
@@ -142,13 +142,13 @@ public abstract class AIMetadata implements Serializable {
             return Objects.equals(repositoryName, context.repositoryName) &&
                     Objects.equals(documentRef, context.documentRef) &&
                     Objects.equals(blobDigest, context.blobDigest) &&
-                    Objects.equals(documentProperties, context.documentProperties) &&
+                    Objects.equals(inputProperties, context.inputProperties) &&
                     Objects.equals(properties, context.properties);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(repositoryName, documentRef, blobDigest, documentProperties, properties);
+            return Objects.hash(repositoryName, documentRef, blobDigest, inputProperties, properties);
         }
 
         @Override
@@ -157,7 +157,7 @@ public abstract class AIMetadata implements Serializable {
                     .append("repositoryName", repositoryName)
                     .append("documentRef", documentRef)
                     .append("blobDigest", blobDigest)
-                    .append("documentProperties", documentProperties)
+                    .append("inputProperties", inputProperties)
                     .append("properties", properties)
                     .toString();
         }
