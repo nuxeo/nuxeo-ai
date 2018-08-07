@@ -76,7 +76,9 @@ public class EnrichmentDescriptor {
     public EnrichmentService getService() {
         try {
             EnrichmentService serviceInstance = service.newInstance();
-            serviceInstance.init(this);
+            if (serviceInstance instanceof EnrichmentSupport) {
+                ((EnrichmentSupport) serviceInstance).init(this);
+            }
             return serviceInstance;
         } catch (IllegalAccessException | NullPointerException | InstantiationException e) {
             throw new NuxeoException(String.format("EnrichmentDescriptor for %s must define a valid EnrichmentService", name), e);

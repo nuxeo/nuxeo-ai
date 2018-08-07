@@ -92,12 +92,18 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected final EnrichmentMetrics metrics;
 
         private final EnrichmentService service;
+        private final EnrichmentSupport enrichmentSupport;
 
         protected RetryPolicy retryPolicy;
 
         public EnrichmentComputation(int outputStreams, String name, EnrichmentService service, EnrichmentMetrics metrics) {
             super(name, 1, outputStreams);
             this.service = service;
+            if (service instanceof EnrichmentSupport) {
+                this.enrichmentSupport = (EnrichmentSupport) service;
+            } else {
+                this.enrichmentSupport = null;
+            }
             this.metrics = metrics;
         }
 
@@ -172,9 +178,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          */
         protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextStream blobTextStream) {
             ManagedBlob blob = blobTextStream.getBlob();
-            if (blob != null &&
-                    service.supportsMimeType(blob.getMimeType()) &&
-                    service.supportsSize(blob.getLength())) {
+            if (blob != null && enrichmentSupport != null &&
+                    enrichmentSupport.supportsMimeType(blob.getMimeType()) &&
+                    enrichmentSupport.supportsSize(blob.getLength())) {
                 return () -> service.enrich(blobTextStream);
             } else if (blob != null) {
                 log.info(String.format("%s does not support a blob with these characteristics %s %s",

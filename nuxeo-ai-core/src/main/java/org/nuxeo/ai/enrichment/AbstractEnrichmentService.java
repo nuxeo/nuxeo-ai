@@ -19,10 +19,16 @@
 package org.nuxeo.ai.enrichment;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
+import org.nuxeo.runtime.api.Framework;
 
 /**
  * Basic implementation of an enrichment service with mimetype and max file size support.
@@ -31,14 +37,18 @@ import org.nuxeo.ecm.core.api.Blobs;
  * helper methods are provided by this class.  You can specify your own <code>TransientStore</code> name on the
  * descriptor using <code>transientStore</code>.
  */
-public abstract class AbstractEnrichmentService implements EnrichmentService {
+public abstract class AbstractEnrichmentService implements EnrichmentService, EnrichmentSupport {
 
     public static final String MAX_RESULTS = "maxResults";
 
     protected String name;
+
     protected long maxSize;
+
     protected String kind;
+
     protected String transientStoreName;
+
     protected Set<String> supportedMimeTypes = new HashSet<>();
 
     @Override
@@ -79,5 +89,15 @@ public abstract class AbstractEnrichmentService implements EnrichmentService {
      */
     public String saveJsonAsRawBlob(String rawJson) {
         return saveRawBlob(Blobs.createJSONBlob(rawJson), transientStoreName);
+    }
+
+    /**
+     * Saves the blob using the using the specified transient store and returns the blob key
+     */
+    public static String saveRawBlob(Blob rawBlob, String transientStoreName) {
+        TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
+        String blobKey = UUID.randomUUID().toString();
+        transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
+        return blobKey;
     }
 }

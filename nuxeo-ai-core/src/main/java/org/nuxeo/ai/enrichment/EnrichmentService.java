@@ -40,16 +40,6 @@ import net.jodah.failsafe.RetryPolicy;
 public interface EnrichmentService {
 
     /**
-     * Initialize the service based on the descriptor
-     */
-    void init(EnrichmentDescriptor descriptor);
-
-    /**
-     * Adds supported mimetypes
-     */
-    void addMimeTypes(Collection<String> mimeTypes);
-
-    /**
      * The name of the service
      */
     String getName();
@@ -58,17 +48,6 @@ public interface EnrichmentService {
      * The kind of service. The kind must match an id of an entry in the "aikind" vocabulary.
      */
     String getKind();
-
-    /**
-     * Does the service support the mimeType.
-     * If the service doesn't declare what it supports then this method will return true.
-     */
-    boolean supportsMimeType(String mimeType);
-
-    /**
-     * Does the service support a file of this size (in bytes).
-     */
-    boolean supportsSize(long size);
 
     /**
      * The main method for the service to implement.  Enriching the blob or text and returning a result.
@@ -81,16 +60,6 @@ public interface EnrichmentService {
     @SuppressWarnings("unchecked")
     default RetryPolicy getRetryPolicy() {
         return new RetryPolicy().abortOn(NuxeoException.class);
-    }
-
-    /**
-     * Saves the blob using the using the specified transient store and returns the blob key
-     */
-    default String saveRawBlob(Blob rawBlob, String transientStoreName) {
-        TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
-        String blobKey = UUID.randomUUID().toString();
-        transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
-        return blobKey;
     }
 
 }
