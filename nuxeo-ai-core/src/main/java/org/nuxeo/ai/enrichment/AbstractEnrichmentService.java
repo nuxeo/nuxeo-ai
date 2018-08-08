@@ -51,12 +51,15 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
 
     protected Set<String> supportedMimeTypes = new HashSet<>();
 
+    protected EnrichmentUtils enrichmentUtils;
+
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         this.name = descriptor.name;
         this.maxSize = descriptor.maxSize;
         this.kind = descriptor.kind;
         this.transientStoreName = descriptor.transientStoreName;
+        this.enrichmentUtils = new EnrichmentUtils();
     }
 
     @Override
@@ -88,16 +91,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
      * Save the rawJson String as a blob using the configured TransientStore for this service and returns the blob key.
      */
     public String saveJsonAsRawBlob(String rawJson) {
-        return saveRawBlob(Blobs.createJSONBlob(rawJson), transientStoreName);
+        return enrichmentUtils.saveRawBlob(Blobs.createJSONBlob(rawJson), transientStoreName);
     }
 
-    /**
-     * Saves the blob using the using the specified transient store and returns the blob key
-     */
-    public static String saveRawBlob(Blob rawBlob, String transientStoreName) {
-        TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
-        String blobKey = UUID.randomUUID().toString();
-        transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
-        return blobKey;
-    }
 }
