@@ -7,3 +7,4 @@ Bundle-Name: ai-model
 Bundle-ManifestVersion: 2
 Require-Bundle: org.nuxeo.runtime.stream.pipes.nuxeo-pipes
 Bundle-SymbolicName: org.nuxeo.ai.ai-model;singleton=true
+Nuxeo-Component: OSGI-INF/custom-model-types-contrib.xml

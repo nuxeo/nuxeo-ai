@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:nxs="http://www.nuxeo.org/ai/model/schemas/ai_corpus"
+           xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
+           xmlns:ref="http://www.nuxeo.org/ecm/schemas/core/external-references/"
+           targetNamespace="http://www.nuxeo.org/ai/model/schemas/ai_corpus">
+  <xs:element name="data_location" type="xs:string"/>
+  <xs:element name="documents_count" type="xs:integer"/>
+  <xs:complexType name="ai_corpus_inputsListType">
+    <xs:sequence>
+      <xs:element name="item" type="nxs:ai_corpus_inputsType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ai_corpus_inputsType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="type" nillable="false" nxsv:nillable="false">
+        <xs:simpleType>
+          <xs:restriction base="xs:string" ref:resolver="directoryResolver"
+                          ref:directory="InputOuputDataType"/>
+        </xs:simpleType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="inputs" type="nxs:ai_corpus_inputsListType"/>
+  <xs:complexType name="ai_corpus_inputs_histogramListType">
+    <xs:sequence>
+      <xs:element name="item" type="nxs:ai_corpus_inputs_histogramType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ai_corpus_inputs_histogramType">
+    <xs:sequence>
+      <xs:element name="field" type="xs:string"/>
+      <xs:element name="label" type="xs:string"/>
+      <xs:element name="count" type="xs:integer"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="inputs_histogram" type="nxs:ai_corpus_inputs_histogramListType"/>
+  <xs:complexType name="ai_corpus_outputsListType">
+    <xs:sequence>
+      <xs:element name="item" type="nxs:ai_corpus_outputsType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ai_corpus_outputsType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="type" nillable="false" nxsv:nillable="false">
+        <xs:simpleType>
+          <xs:restriction base="xs:string" ref:resolver="directoryResolver"
+                          ref:directory="InputOuputDataType"/>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="multi_class" type="xs:boolean"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="outputs" type="nxs:ai_corpus_outputsListType"/>
+  <xs:complexType name="ai_corpus_outputs_histogramListType">
+    <xs:sequence>
+      <xs:element name="item" type="nxs:ai_corpus_outputs_histogramType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="ai_corpus_outputs_histogramType">
+    <xs:sequence>
+      <xs:element name="field" type="xs:string"/>
+      <xs:element name="label" type="xs:string"/>
+      <xs:element name="count" type="xs:integer"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="outputs_histogram" type="nxs:ai_corpus_outputs_histogramListType"/>
+  <xs:element name="training_data" type="xs:boolean"/>
+</xs:schema>
