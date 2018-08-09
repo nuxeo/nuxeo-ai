@@ -175,8 +175,8 @@ public class EnrichmentMetadata extends AIMetadata {
 
         private List<Suggestion> suggestions;
 
-        public Builder(Instant created, String kind, String serviceName, BlobTextStream blobTextStream) {
-            super(created, kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
+        public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
+            super(Instant.now(), kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
                   null, blobTextStream.getXPaths());
             ManagedBlob blobMeta = blobTextStream.getBlob();
             if (blobMeta != null) {
