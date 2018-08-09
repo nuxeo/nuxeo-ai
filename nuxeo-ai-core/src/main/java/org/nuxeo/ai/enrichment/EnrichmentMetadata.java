@@ -113,7 +113,7 @@ public class EnrichmentMetadata extends AIMetadata {
 
         public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
             super(Instant.now(), kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
-                  null, blobTextStream.getXPaths(), blobTextStream.getProperties());
+                  null, blobTextStream.getXPaths());
             ManagedBlob blobMeta = blobTextStream.getBlob();
             if (blobMeta != null) {
                 this.blobDigest = blobMeta.getDigest();

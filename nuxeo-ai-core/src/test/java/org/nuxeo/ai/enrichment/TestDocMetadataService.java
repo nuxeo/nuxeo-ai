@@ -115,7 +115,6 @@ public class TestDocMetadataService {
                                                                  new AIMetadata.Context(doc.getRepositoryName(),
                                                                                         doc.getId(),
                                                                                         null,
-                                                                                        null,
                                                                                         null)).build();
         doc = docMetadataService.saveEnrichment(session, meta);
         txFeature.nextTransaction();

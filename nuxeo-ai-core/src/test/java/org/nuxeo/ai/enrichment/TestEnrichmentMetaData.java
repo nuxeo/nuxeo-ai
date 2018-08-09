@@ -48,7 +48,6 @@ public class TestEnrichmentMetaData {
                                                                      new AIMetadata.Context(repositoryName,
                                                                                             "doc1",
                                                                                             null,
-                                                                                            null,
                                                                                             null)).build();
         assertNotNull(metadata);
     }

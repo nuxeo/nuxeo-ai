@@ -119,19 +119,16 @@ public abstract class AIMetadata implements Serializable {
         public final String documentRef; //Document reference
         public final String blobDigest;
         public final Set<String> inputProperties;
-        public final Map<String, String> properties;
 
         @JsonCreator
         public Context(@JsonProperty("repositoryName") String repositoryName,
                        @JsonProperty("documentRef") String documentRef,
                        @JsonProperty("blobDigest") String blobDigest,
-                       @JsonProperty("inputProperties") Set<String> inputProperties,
-                       @JsonProperty("properties") Map<String, String> properties) {
+                       @JsonProperty("inputProperties") Set<String> inputProperties) {
             this.repositoryName = repositoryName;
             this.documentRef = documentRef;
             this.blobDigest = blobDigest;
             this.inputProperties = inputProperties != null ? unmodifiableSet(inputProperties) : emptySet();
-            this.properties = properties != null ? unmodifiableMap(properties) : emptyMap();
         }
 
         @Override
@@ -142,13 +139,12 @@ public abstract class AIMetadata implements Serializable {
             return Objects.equals(repositoryName, context.repositoryName) &&
                     Objects.equals(documentRef, context.documentRef) &&
                     Objects.equals(blobDigest, context.blobDigest) &&
-                    Objects.equals(inputProperties, context.inputProperties) &&
-                    Objects.equals(properties, context.properties);
+                    Objects.equals(inputProperties, context.inputProperties);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(repositoryName, documentRef, blobDigest, inputProperties, properties);
+            return Objects.hash(repositoryName, documentRef, blobDigest, inputProperties);
         }
 
         @Override
@@ -158,7 +154,6 @@ public abstract class AIMetadata implements Serializable {
                     .append("documentRef", documentRef)
                     .append("blobDigest", blobDigest)
                     .append("inputProperties", inputProperties)
-                    .append("properties", properties)
                     .toString();
         }
     }

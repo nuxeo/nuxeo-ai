@@ -18,11 +18,9 @@
  */
 package org.nuxeo.ai.metadata;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -46,9 +44,7 @@ public abstract class AbstractMetaDataBuilder {
 
     protected AIMetadata.Context context;
 
-    protected Set<String> documentProperties;
-
-    protected Map<String, String> properties;
+    protected Set<String> inputProperties;
 
     protected String blobDigest;
 
@@ -60,15 +56,14 @@ public abstract class AbstractMetaDataBuilder {
     public AbstractMetaDataBuilder(Instant created, String kind, String serviceName,
                                    String repositoryName, String documentRef,
                                    String blobDigest,
-                                   Set<String> documentProperties, Map<String, String> properties) {
+                                   Set<String> inputProperties) {
         this.created = created;
         this.kind = kind;
         this.serviceName = serviceName;
         this.repositoryName = repositoryName;
         this.documentRef = documentRef;
         this.blobDigest = blobDigest;
-        this.documentProperties = documentProperties;
-        this.properties = properties;
+        this.inputProperties = inputProperties;
     }
 
     public AbstractMetaDataBuilder(Instant created, String kind, String serviceName, AIMetadata.Context context) {
@@ -82,8 +77,7 @@ public abstract class AbstractMetaDataBuilder {
         this.repositoryName = context.repositoryName;
         this.documentRef = context.documentRef;
         this.blobDigest = context.blobDigest;
-        this.documentProperties = context.inputProperties;
-        this.properties = context.properties;
+        this.inputProperties = context.inputProperties;
     }
 
     public AIMetadata.Context getContext() {
@@ -99,12 +93,7 @@ public abstract class AbstractMetaDataBuilder {
     }
 
     public AbstractMetaDataBuilder withDocumentProperties(Set<String> targetDocumentProperty) {
-        this.documentProperties = targetDocumentProperty;
-        return this;
-    }
-
-    public AbstractMetaDataBuilder withCustomProperties(Map<String, String> properties) {
-        this.properties = properties;
+        this.inputProperties = targetDocumentProperty;
         return this;
     }
 
@@ -132,14 +121,11 @@ public abstract class AbstractMetaDataBuilder {
             throw new IllegalArgumentException("Invalid metadata has been given. " + this.toString());
         }
 
-        if (documentProperties == null) {
-            documentProperties = emptySet();
-        }
-        if (properties == null) {
-            properties = emptyMap();
+        if (inputProperties == null) {
+            inputProperties = emptySet();
         }
         if (context == null) {
-            context = new AIMetadata.Context(repositoryName, documentRef, blobDigest, documentProperties, properties);
+            context = new AIMetadata.Context(repositoryName, documentRef, blobDigest, inputProperties);
         }
         return build(this);
     }
