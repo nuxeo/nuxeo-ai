@@ -20,7 +20,6 @@ package org.nuxeo.runtime.stream.pipes.events;
 
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toDoc;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,10 +32,9 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
-import org.nuxeo.ecm.core.api.model.Property;
-import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.runtime.stream.pipes.functions.PropertyUtils;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
@@ -47,27 +45,35 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
     public static final String BLOB_PROPERTIES = "blobProperties";
+
     public static final String TEXT_PROPERTIES = "textProperties";
+
     public static final String CUSTOM_PROPERTIES = "customProperties";
+
     protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
+
     private static final Log log = LogFactory.getLog(DocEventToStream.class);
+
     protected final List<String> blobProperties;
+
     protected final List<String> textProperties;
+
     protected final List<String> customProperties;
+
+    protected final PropertyUtils propertyUtils;
 
     /**
      * Creates an instance with default values
      */
     public DocEventToStream() {
-        this.blobProperties = DEFAULT_BLOB_PROPERTIES;
-        this.textProperties = Collections.emptyList();
-        this.customProperties = Collections.emptyList();
+        this(DEFAULT_BLOB_PROPERTIES, null, null);
     }
 
     /**
      * Creates an instance with the specified values
      */
-    public DocEventToStream(List<String> blobProperties,
+    public DocEventToStream(PropertyUtils propertyUtils,
+                            List<String> blobProperties,
                             List<String> textProperties,
                             List<String> customProperties) {
         this.blobProperties = blobProperties != null ? blobProperties : Collections.emptyList();
@@ -77,6 +83,16 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         if (this.blobProperties.isEmpty() && this.textProperties.isEmpty() && this.customProperties.isEmpty()) {
             throw new IllegalArgumentException("DocEventToStream requires at least one property name.");
         }
+        this.propertyUtils = propertyUtils;
+    }
+
+    /**
+     * Creates an instance with the specified values
+     */
+    public DocEventToStream(List<String> blobProperties,
+                            List<String> textProperties,
+                            List<String> customProperties) {
+        this(new PropertyUtils(), blobProperties, textProperties, customProperties);
     }
 
     @Override
@@ -99,24 +115,17 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     public Collection<BlobTextStream> docSerialize(DocumentModel doc) {
         List<BlobTextStream> items = new ArrayList<>();
         blobProperties.forEach(propName -> {
-            try {
-                Property property = doc.getProperty(propName);
-                Blob blob = (Blob) property.getValue();
-                if (blob != null && blob instanceof ManagedBlob) {
-                    BlobTextStream blobTextStream = getBlobTextStream(doc);
-                    blobTextStream.addXPath(propName);
-                    blobTextStream.setBlob((ManagedBlob) blob);
-                    items.add(blobTextStream);
-                }
-            } catch (PropertyNotFoundException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Unable to find blob property %s so I am ignoring it.", propName));
-                }
+            Blob blob = propertyUtils.getPropertyValue(doc, propName, Blob.class);
+            if (blob != null && blob instanceof ManagedBlob) {
+                BlobTextStream blobTextStream = getBlobTextStream(doc);
+                blobTextStream.addXPath(propName);
+                blobTextStream.setBlob((ManagedBlob) blob);
+                items.add(blobTextStream);
             }
         });
 
         textProperties.forEach(propName -> {
-            String text = getPropertyValue(doc, propName);
+            String text = propertyUtils.getPropertyValue(doc, propName, String.class);
             if (text != null) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
                 blobTextStream.addXPath(propName);
@@ -142,7 +151,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         Map<String, String> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {
-            String propVal = getPropertyValue(doc, propName);
+            String propVal = propertyUtils.getPropertyValue(doc, propName, String.class);
             if (propVal != null) {
                 properties.put(propName, propVal);
                 blobTextStream.addXPath(propName);
@@ -150,24 +159,6 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         });
 
         return blobTextStream;
-    }
-
-    /**
-     * Get a property value as a String and handle errors
-     */
-    protected String getPropertyValue(DocumentModel doc, String propertyName) {
-        try {
-            Property property = doc.getProperty(propertyName);
-            Serializable propVal = property.getValue();
-            if (propVal != null) {
-                return propVal.toString();
-            }
-        } catch (PropertyNotFoundException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Unable to find property %s so I am ignoring it.", propertyName));
-            }
-        }
-        return null;
     }
 
 }
