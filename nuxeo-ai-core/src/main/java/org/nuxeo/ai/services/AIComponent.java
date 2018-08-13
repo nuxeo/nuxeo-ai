@@ -107,7 +107,7 @@ public class AIComponent extends DefaultComponent {
             if (enrichmentService instanceof EnrichmentSupport) {
                 ((EnrichmentSupport) enrichmentService).addMimeTypes(mimeTypes);
             }
-            enrichmentServices.put(descriptor.name, enrichmentService);
+            addEnrichmentService(descriptor.name, enrichmentService);
         }
     }
 
@@ -136,6 +136,15 @@ public class AIComponent extends DefaultComponent {
         }
 
         return null;
+    }
+
+    /**
+     * Add an enrichment service
+     * @param serviceName the name of the service
+     * @return service, the implementation of EnrichmentService
+     */
+    public void addEnrichmentService(String serviceName, EnrichmentService service) {
+        enrichmentServices.put(serviceName, service);
     }
 
     /**
