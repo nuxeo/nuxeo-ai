@@ -21,6 +21,7 @@ package org.nuxeo.ai.enrichment;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -49,11 +50,14 @@ public class EnrichmentMetadata extends AIMetadata {
 
     private final List<Tag> tags;
 
+    private final List<Suggestion> suggestions;
+
     private EnrichmentMetadata(Builder builder) {
         super(builder.serviceName, builder.kind, builder.getContext(),
               builder.getCreator(), builder.created, builder.getRawKey());
         labels = unmodifiableList(builder.labels);
         tags = unmodifiableList(builder.tags);
+        suggestions = unmodifiableList(builder.suggestions);
     }
 
     public List<Tag> getTags() {
@@ -62,6 +66,10 @@ public class EnrichmentMetadata extends AIMetadata {
 
     public List<Label> getLabels() {
         return labels;
+    }
+
+    public List<Suggestion> getSuggestions() {
+        return suggestions;
     }
 
     @JsonIgnore
@@ -82,12 +90,13 @@ public class EnrichmentMetadata extends AIMetadata {
         }
         EnrichmentMetadata metadata = (EnrichmentMetadata) o;
         return Objects.equals(labels, metadata.labels) &&
+                Objects.equals(suggestions, metadata.suggestions) &&
                 Objects.equals(tags, metadata.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), labels, tags);
+        return Objects.hash(super.hashCode(), labels, tags, suggestions);
     }
 
     @Override
@@ -95,6 +104,7 @@ public class EnrichmentMetadata extends AIMetadata {
         return new ToStringBuilder(this)
                 .append("labels", labels)
                 .append("tags", tags)
+                .append("suggestions", suggestions)
                 .append("created", created)
                 .append("creator", creator)
                 .append("serviceName", serviceName)
@@ -104,12 +114,66 @@ public class EnrichmentMetadata extends AIMetadata {
                 .toString();
     }
 
+    /**
+     * A suggestion, made up of a property name and one or more labels
+     */
+    public static class Suggestion implements Serializable {
+
+        private static final long serialVersionUID = 7549317566844895574L;
+
+        protected final String property;
+
+        protected final List<Label> values;
+
+        @JsonCreator
+        public Suggestion(@JsonProperty("property") String property, @JsonProperty("values") List<Label> values) {
+            this.property = property;
+            this.values = values != null ? unmodifiableList(values) : emptyList();
+        }
+
+        public String getProperty() {
+            return property;
+        }
+
+        public List<Label> getValues() {
+            return values;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Suggestion that = (Suggestion) o;
+            return Objects.equals(property, that.property) &&
+                    Objects.equals(values, that.values);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(property, values);
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder(this)
+                    .append("property", property)
+                    .append("values", values)
+                    .toString();
+        }
+    }
+
     public static class Builder extends AbstractMetaDataBuilder {
 
         //optional
         private List<Label> labels;
 
         private List<Tag> tags;
+
+        private List<Suggestion> suggestions;
 
         public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
             super(Instant.now(), kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
@@ -133,6 +197,11 @@ public class EnrichmentMetadata extends AIMetadata {
             return this;
         }
 
+        public Builder withSuggestions(List<Suggestion> suggestions) {
+            this.suggestions = suggestions;
+            return this;
+        }
+
         public Builder withTags(List<Tag> tags) {
             this.tags = tags;
             return this;
@@ -152,7 +221,9 @@ public class EnrichmentMetadata extends AIMetadata {
             if (tags == null) {
                 tags = emptyList();
             }
-
+            if (suggestions == null) {
+                suggestions = emptyList();
+            }
             return new EnrichmentMetadata(this);
         }
     }

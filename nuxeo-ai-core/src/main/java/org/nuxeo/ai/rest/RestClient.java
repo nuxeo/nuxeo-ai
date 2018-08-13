@@ -34,6 +34,7 @@ import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -49,6 +50,15 @@ import org.nuxeo.ecm.core.api.NuxeoException;
  * A basic rest client optimized for calling Json rest services.
  */
 public class RestClient implements AutoCloseable {
+
+    public static final String OPTION_CONTENT_TYPE = "contentType";
+
+    public static final String OPTION_URI = "uri";
+
+    public static final String OPTION_ACCEPT = "accept";
+
+    public static final String OPTION_METHOD_NAME = "methodName";
+
     private static final Log log = LogFactory.getLog(RestClient.class);
 
     protected final String method;
@@ -63,21 +73,57 @@ public class RestClient implements AutoCloseable {
 
     protected CloseableHttpClient client;
 
+    /**
+     * Create a rest client with the specified options
+     */
     public RestClient(Map<String, String> options, Function<HttpClientBuilder, CloseableHttpClient> clientBuilderFunc) {
-        contentType = options.getOrDefault("contentType", ContentType.APPLICATION_JSON.getMimeType());
-        accept = options.getOrDefault("accept", ContentType.APPLICATION_JSON.getMimeType());
-        method = options.getOrDefault("methodName", HttpPost.METHOD_NAME);
-        String uriParam = options.get("uri");
+        this(options, "", clientBuilderFunc);
+    }
+
+    /**
+     * Create a rest client with the specified options and a prefix that will be used when getting the options
+     */
+    public RestClient(Map<String, String> options, String optionPrefix,
+                      Function<HttpClientBuilder, CloseableHttpClient> clientBuilderFunc) {
+        contentType = options
+                .getOrDefault(optionPrefix + OPTION_CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+        accept = options.getOrDefault(optionPrefix + OPTION_ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+        method = options.getOrDefault(optionPrefix + OPTION_METHOD_NAME, HttpPost.METHOD_NAME);
+        String uriParam = options.get(optionPrefix + OPTION_URI);
         if (StringUtils.isBlank(uriParam)) {
             throw new NuxeoException("You must specify a URI");
         } else {
             uri = URI.create(uriParam);
         }
-        headers.addAll(defaultHeaders());
+        headers.addAll(getDefaultHeaders());
         HttpClientBuilder clientBuilder = HttpClientBuilder.create();
         client = clientBuilderFunc != null ? clientBuilderFunc.apply(clientBuilder) : clientBuilder.build();
     }
 
+    /**
+     * Checks to see if the uri specified returns successfully
+     * You can specify an optional prefix for the url options.
+     */
+    public static boolean isLive(Map<String, String> options, String prefix) {
+        try (RestClient restClient = new RestClient(options, prefix, null)) {
+            return restClient.call(null, response -> {
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
+                    log.warn(String.format("Live check failed for %s, status is %d", options.get("uri"), statusCode));
+                    return false;
+                }
+                return true;
+            });
+        } catch (IOException e) {
+            log.info("Error on rest client ", e);
+            return false;
+        }
+    }
+
+    /**
+     * Make the http request and handle the response.
+     * You can use an optional request builder and response handler.
+     */
     public <T> T call(Function<RequestBuilder, HttpUriRequest> requestBuilderFunc, ResponseHandler<T> handler) {
         RequestBuilder requestBuilder = RequestBuilder.create(method).setUri(uri);
         headers.forEach(requestBuilder::addHeader);
@@ -98,7 +144,10 @@ public class RestClient implements AutoCloseable {
         return client;
     }
 
-    public List<Header> defaultHeaders() {
+    /**
+     * Gets the default headers to add to the request
+     */
+    public List<Header> getDefaultHeaders() {
         return Arrays.asList(new BasicHeader(HttpHeaders.CACHE_CONTROL, "no-cache"),
                              new BasicHeader(HttpHeaders.CONTENT_TYPE, contentType),
                              new BasicHeader(HttpHeaders.ACCEPT, accept)
@@ -118,7 +167,7 @@ public class RestClient implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         CloseableHttpClient aClient = getClient();
         if (aClient != null) {
             aClient.close();

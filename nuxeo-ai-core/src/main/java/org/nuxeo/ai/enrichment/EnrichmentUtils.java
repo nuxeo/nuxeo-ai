@@ -18,10 +18,15 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
+import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.runtime.api.Framework;
@@ -31,6 +36,14 @@ import org.nuxeo.runtime.api.Framework;
  */
 public class EnrichmentUtils {
 
+    public static final String HEIGHT = "height";
+
+    public static final String WIDTH = "width";
+
+    public static final String DEPTH = "depth";
+
+    protected static final String PICTURE_RESIZE_CONVERTER = "pictureResize";
+
     /**
      * Saves the blob using the using the specified transient store and returns the blob key
      */
@@ -39,5 +52,17 @@ public class EnrichmentUtils {
         String blobKey = UUID.randomUUID().toString();
         transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
         return blobKey;
+    }
+
+    /**
+     * Convert the provided image blob.
+     */
+    public Blob convertImageBlob(Blob blob, int width, int height, int depth) {
+        SimpleBlobHolder bh = new SimpleBlobHolder(blob);
+        Map<String, Serializable> parameters = new HashMap<>();
+        parameters.put(WIDTH, width);
+        parameters.put(HEIGHT, height);
+        parameters.put(DEPTH, depth);
+        return Framework.getService(ConversionService.class).convert(PICTURE_RESIZE_CONVERTER, bh, parameters).getBlob();
     }
 }
