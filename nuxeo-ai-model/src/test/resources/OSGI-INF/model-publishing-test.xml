@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.model.publishing.ModelPublishing.test" version="1.0">
+
+  <extension point="publishers" target="org.nuxeo.ai.model.publishing.ModelPublishing">
+    <publisher id="myFileBased" default="false" class="org.nuxeo.ai.model.publishing.ModelPublisherTest">
+      <!--option name="servingPath">./models</option-->
+      <option name="modelFilename">mySuperModel.model</option>
+    </publisher>
+  </extension>
+
+</component>
