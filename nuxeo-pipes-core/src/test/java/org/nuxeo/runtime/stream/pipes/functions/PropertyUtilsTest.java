@@ -23,6 +23,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.TEST_MIME_TYPE;
+import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.base64EncodeBlob;
+import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.notNull;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -51,9 +54,11 @@ public class PropertyUtilsTest {
     public static final String FILE_CONTENT = "file:content";
 
     @Inject
-    CoreSession session;
+    protected CoreSession session;
 
-    PropertyUtils utils = new PropertyUtils();
+    protected static String stringProp(DocumentModel doc, String prop) {
+        return getPropertyValue(doc, prop, String.class);
+    }
 
     @Test
     public void testGetTextProps() {
@@ -76,13 +81,13 @@ public class PropertyUtilsTest {
         assertEquals("false", stringProp(doc, "ecm:isLatestVersion"));
         assertEquals("false", stringProp(doc, "ecm:isLatestMajorVersion"));
         assertEquals("0.0", stringProp(doc, "ecm:versionLabel"));
-        assertEquals(Boolean.FALSE, utils.getPropertyValue(doc, "ecm:isProxy", Boolean.class));
+        assertEquals(Boolean.FALSE, getPropertyValue(doc, "ecm:isProxy", Boolean.class));
         assertEquals("File", stringProp(doc, "ecm:primaryType"));
         assertEquals("Versionable,Publishable,Commentable,HasRelatedText,Downloadable",
                      stringProp(doc, "ecm:mixinType"));
         assertEquals("project", stringProp(doc, "ecm:currentLifeCycleState"));
         assertEquals("Administrator", stringProp(doc, "dc:creator"));
-        Instant created = utils.getPropertyValue(doc, "dc:created", Calendar.class).toInstant();
+        Instant created = getPropertyValue(doc, "dc:created", Calendar.class).toInstant();
         // This line tests that a date is returned as an ISO-8601 String.
         assertEquals(created, Instant.parse(stringProp(doc, "dc:created")));
 
@@ -98,32 +103,35 @@ public class PropertyUtilsTest {
         doc.setPropertyValue(FILE_CONTENT, (Serializable) blob);
         doc = session.createDocument(doc);
         assertEquals(doc.getId(), stringProp(doc, "ecm:uuid"));
-        Blob textBlob = utils.getPropertyValue(doc, FILE_CONTENT, Blob.class);
+        Blob textBlob = getPropertyValue(doc, FILE_CONTENT, Blob.class);
         assertEquals(blob.getLength(), textBlob.getLength());
-        assertEquals(utils.base64EncodeBlob(blob), utils.getPropertyValue(doc, FILE_CONTENT, String.class));
-        assertNull(utils.base64EncodeBlob(new BinaryBlob(null, "x", null, null,
-                                                         null, null, -1)));
+        assertEquals(base64EncodeBlob(blob), getPropertyValue(doc, FILE_CONTENT, String.class));
+        textBlob.getFile().delete();
+        assertNull(base64EncodeBlob(textBlob));
     }
 
     @Test
     public void testCheckNullProps() {
         DocumentModel doc = session.createDocumentModel("/", "My Not null Doc", "File");
         doc = session.createDocument(doc);
-        assertTrue(utils.notNull(doc, "ecm:name"));
-        assertFalse(utils.notNull(doc, "ecm:nope"));
+        assertTrue(notNull(doc, "ecm:name"));
+        assertFalse(notNull(doc, "ecm:nope"));
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void testMultivalue() {
         DocumentModel doc = session.createDocumentModel("/", "Multi", "File");
         List<String> subjects = Arrays.asList("birds", "flowers");
         doc.setPropertyValue("dc:subjects", (Serializable) subjects);
         doc = session.createDocument(doc);
-        assertEquals("birds,flowers", stringProp(doc, "dc:subjects"));
+        stringProp(doc, "dc:subjects");
     }
 
-    protected String stringProp(DocumentModel doc, String prop) {
-        return utils.getPropertyValue(doc, prop, String.class);
+    @Test(expected = UnsupportedOperationException.class)
+    public void testComplexConvert() {
+        DocumentModel doc = session.createDocumentModel("/", "Complex", "File");
+        doc = session.createDocument(doc);
+        getPropertyValue(doc, "ecm:isTrashed", Integer.class);
     }
 
 }

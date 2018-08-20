@@ -18,6 +18,7 @@
  */
 package org.nuxeo.runtime.stream.pipes.events;
 
+import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toDoc;
 
 import java.util.ArrayList;
@@ -34,7 +35,6 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.runtime.stream.pipes.functions.PropertyUtils;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 
 /**
@@ -60,8 +60,6 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
 
     protected final List<String> customProperties;
 
-    protected final PropertyUtils propertyUtils;
-
     /**
      * Creates an instance with default values
      */
@@ -72,8 +70,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     /**
      * Creates an instance with the specified values
      */
-    public DocEventToStream(PropertyUtils propertyUtils,
-                            List<String> blobProperties,
+    public DocEventToStream(List<String> blobProperties,
                             List<String> textProperties,
                             List<String> customProperties) {
         this.blobProperties = blobProperties != null ? blobProperties : Collections.emptyList();
@@ -83,16 +80,6 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         if (this.blobProperties.isEmpty() && this.textProperties.isEmpty() && this.customProperties.isEmpty()) {
             throw new IllegalArgumentException("DocEventToStream requires at least one property name.");
         }
-        this.propertyUtils = propertyUtils;
-    }
-
-    /**
-     * Creates an instance with the specified values
-     */
-    public DocEventToStream(List<String> blobProperties,
-                            List<String> textProperties,
-                            List<String> customProperties) {
-        this(new PropertyUtils(), blobProperties, textProperties, customProperties);
     }
 
     @Override
@@ -115,8 +102,8 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     public Collection<BlobTextStream> docSerialize(DocumentModel doc) {
         List<BlobTextStream> items = new ArrayList<>();
         blobProperties.forEach(propName -> {
-            Blob blob = propertyUtils.getPropertyValue(doc, propName, Blob.class);
-            if (blob != null && blob instanceof ManagedBlob) {
+            Blob blob = getPropertyValue(doc, propName, Blob.class);
+            if (blob instanceof ManagedBlob) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
                 blobTextStream.addXPath(propName);
                 blobTextStream.setBlob((ManagedBlob) blob);
@@ -125,7 +112,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         });
 
         textProperties.forEach(propName -> {
-            String text = propertyUtils.getPropertyValue(doc, propName, String.class);
+            String text = getPropertyValue(doc, propName, String.class);
             if (text != null) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
                 blobTextStream.addXPath(propName);
@@ -151,7 +138,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         Map<String, String> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {
-            String propVal = propertyUtils.getPropertyValue(doc, propName, String.class);
+            String propVal = getPropertyValue(doc, propName, String.class);
             if (propVal != null) {
                 properties.put(propName, propVal);
                 blobTextStream.addXPath(propName);
