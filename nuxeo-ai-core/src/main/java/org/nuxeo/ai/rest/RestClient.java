@@ -110,18 +110,21 @@ public class RestClient implements AutoCloseable {
      */
     public static boolean isLive(Map<String, String> options, String prefix) {
         try (RestClient restClient = new RestClient(options, prefix, null)) {
-            return restClient.call(null, response -> {
+            Boolean callResult = restClient.call(null, response -> {
                 int statusCode = response.getStatusLine().getStatusCode();
                 if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
-                    log.warn(String.format("Live check failed for %s, status is %d", options.get("uri"), statusCode));
+                    log.info(String.format("Live check failed for %s, status is %d", options.get("uri"), statusCode));
                     return false;
                 }
                 return true;
             });
+            if (Boolean.TRUE.equals(callResult)) {
+                return true;
+            }
         } catch (IOException e) {
             log.info("Error on rest client ", e);
-            return false;
         }
+        return false;
     }
 
     /**
@@ -139,7 +142,7 @@ public class RestClient implements AutoCloseable {
                 return handler.handleResponse(response);
             }
         } catch (IOException e) {
-            log.warn(String.format("Unsuccessful call to rest api %s", uri.toString()), e);
+            log.info(String.format("Unsuccessful call to rest api %s", uri.toString()), e);
         }
         return null;
     }
