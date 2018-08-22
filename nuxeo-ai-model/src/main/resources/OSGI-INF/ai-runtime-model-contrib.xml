@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.model.serving.ModelServing" version="1.0">
+  <require>org.nuxeo.ai.services.AIComponent</require>
+  <require>org.nuxeo.ai.model.custom.documents</require>
+  <implementation class="org.nuxeo.ai.model.serving.ModelServingServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.model.serving.ModelServingService"/>
+  </service>
+`
+  <extension-point name="models">
+    <documentation>
+    </documentation>
+    <object class="org.nuxeo.ai.model.serving.ModelDescriptor"/>
+  </extension-point>
+
+</component>

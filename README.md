@@ -4,7 +4,7 @@ Core functionality for using AI with the Nuxeo Platform.
 This modules provides 2 packages:
   * nuxeo-ai-core - Contains the core interfaces and AI component
   * nuxeo-pipes-core - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
-
+  * nuxeo-ai-model - Adds support for custom machine learning models
 ## Installation
 #### Version Support
 

@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/v1/models/dnn/versions/1:predict?myModelParam=fail_testing"
+  },
+  "response": {
+    "status": 303,
+    "jsonBody": {
+      "health": "FAIL"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

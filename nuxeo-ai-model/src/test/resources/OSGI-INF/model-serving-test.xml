@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.model.serving.ModelServing.test" version="1.0">
+  <extension target="org.nuxeo.ecm.core.transientstore.TransientStorageComponent" point="store">
+    <store name="testTransient">
+      <targetMaxSizeMB>0</targetMaxSizeMB>
+      <absoluteMaxSizeMB>5</absoluteMaxSizeMB>
+    </store>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl" point="converter">
+    <converter name="pictureResize" class="org.nuxeo.ai.model.serving.PassThroughConverter">
+      <sourceMimeType>image/jpeg</sourceMimeType>
+      <sourceMimeType>image/png</sourceMimeType>
+      <sourceMimeType>image/gif</sourceMimeType>
+      <destinationMimeType>image/jpeg</destinationMimeType>
+      <destinationMimeType>image/png</destinationMimeType>
+      <destinationMimeType>image/gif</destinationMimeType>
+    </converter>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
+
+    <directory name="template-directory" template="true">
+      <createTablePolicy>on_missing_columns</createTablePolicy>
+      <idField>id</idField>
+    </directory>
+
+    <directory name="template-vocabulary" template="true" extends="template-directory">
+      <schema>vocabulary</schema>
+      <idField>id</idField>
+    </directory>
+
+  </extension>
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="xyz">
+      <filter primaryType="File" />
+      <config name="uri">http://localhost:5089/v1/models/</config>
+      <config name="transientStore">testTransient</config>
+      <config name="liveness.uri">http://localhost:5089/health</config>
+      <config name="liveness.methodName">GET</config>
+      <input name="dc:title" type="txt"/>
+      <input name="ecm:path" type="txt"/>
+      <input name="ecm:mixinType" type="txt"/>
+      <output>dc:description</output>
+      <option name="myModelParam">super_testing</option>
+      <info name="modelName">dnn</info>
+      <info name="modelVersion">1</info>
+    </model>
+  </extension>
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="failingModel">
+      <filter primaryType="Note" />
+      <config name="uri">http://localhost:5089/v1/models/</config>
+      <input name="dc:description" type="txt"/>
+      <output>dc:title</output>
+      <option name="myModelParam">fail_testing</option>
+      <info name="modelName">dnn</info>
+      <info name="modelVersion">1</info>
+    </model>
+  </extension>
+
+</component>
