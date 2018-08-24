@@ -94,7 +94,7 @@
     </lifecycle>
   </extension>
   <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
-    <directory name="InputOuputDataType" extends="template-vocabulary">
+    <directory name="InputOutputDataType" extends="template-vocabulary">
       <dataFile>data/vocabularies/InputOutputDataType.csv</dataFile>
     </directory>
   </extension>

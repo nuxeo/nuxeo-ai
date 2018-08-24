@@ -18,7 +18,7 @@
       <xs:element name="type" nillable="false" nxsv:nillable="false">
         <xs:simpleType>
           <xs:restriction base="xs:string" ref:resolver="directoryResolver"
-                          ref:directory="InputOuputDataType"/>
+                          ref:directory="InputOutputDataType"/>
         </xs:simpleType>
       </xs:element>
     </xs:sequence>
@@ -48,7 +48,7 @@
       <xs:element name="type" nillable="false" nxsv:nillable="false">
         <xs:simpleType>
           <xs:restriction base="xs:string" ref:resolver="directoryResolver"
-                          ref:directory="InputOuputDataType"/>
+                          ref:directory="InputOutputDataType"/>
         </xs:simpleType>
       </xs:element>
       <xs:element name="multi_class" type="xs:boolean"/>

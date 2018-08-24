@@ -46,7 +46,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class ModelServingServiceImpl extends DefaultComponent implements ModelServingService {
 
-    public static final String AI_INPUT_OUTPUT_TYPES_DIRECTORY = "InputOuputDataType";
+    public static final String AI_INPUT_OUTPUT_TYPES_DIRECTORY = "InputOutputDataType";
 
     private static final String MODELS_AP = "models";
 
