@@ -162,15 +162,12 @@ Transforming an input Event into an output stream is done using a function speci
 ##### Custom enrichment services
  New enrichment services can be added by implementing `EnrichmentService`.  `AbstractEnrichmentService` is a good starting point.
  If you wish to call a custom rest api then extending `RestEnrichmentService` would allow access to the various `RestClient`
- helper methods. See `CustomModelEnrichmentService` for an example.  To register your extension you would use configuration similar to this.
+ helper methods. To register your extension you would use configuration similar to this.
  ```xml
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="custom1" kind="/classification/custom" class="org.nuxeo.ai.custom.CustomModelEnrichmentService">
-      <option name="uri">http://localhost:7000/invocations</option>
-      <option name="modelName">dnn</option>
-      <option name="imageFeatureName">image</option>
-      <option name="textFeatureName">text</option>
-      <option name="minConfidence">0.55</option>
+    <enrichment name="custom1" kind="/classification/custom"
+                class="org.nuxeo.ai.custom.CustomModelEnrichmentService" maxSize="10000000">
+      <option name="minConfidence">0.75</option>
     </enrichment>
   </extension>
 ```
