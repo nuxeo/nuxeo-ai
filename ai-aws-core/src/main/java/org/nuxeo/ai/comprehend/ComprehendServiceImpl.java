@@ -34,32 +34,33 @@ import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 public class ComprehendServiceImpl implements ComprehendService {
 
     private static final Log log = LogFactory.getLog(ComprehendServiceImpl.class);
+
     protected volatile AmazonComprehend client;
 
     /**
      * Get the AmazonComprehend client
      */
     protected AmazonComprehend getClient() {
-        AmazonComprehend result = client;
-        if (result == null) {
+        if (client == null) {
             synchronized (this) {
-                result = client;
-                if (result == null) {
-                    AmazonComprehendClientBuilder builder = AmazonComprehendClientBuilder.standard();
-                    builder.withCredentials(NuxeoCredentialsProviderChain.getInstance())
-                           .withRegion(NuxeoRegionProviderChain.getInstance().getRegion());
-                    result = client = builder.build();
+                if (client == null) {
+                    AmazonComprehendClientBuilder builder =
+                            AmazonComprehendClientBuilder.standard()
+                                                         .withCredentials(NuxeoCredentialsProviderChain.getInstance())
+                                                         .withRegion(NuxeoRegionProviderChain.getInstance()
+                                                                                             .getRegion());
+                    client = builder.build();
                 }
             }
         }
-        return result;
+        return client;
     }
 
     @Override
     public DetectSentimentResult detectSentiment(String text, String languageCode) {
 
         if (log.isDebugEnabled()) {
-            log.debug("Calling DetectSentiment for "+text);
+            log.debug("Calling DetectSentiment for " + text);
         }
 
         DetectSentimentRequest detectSentimentRequest = new DetectSentimentRequest().withText(text)
@@ -67,7 +68,7 @@ public class ComprehendServiceImpl implements ComprehendService {
         DetectSentimentResult detectSentimentResult = getClient().detectSentiment(detectSentimentRequest);
 
         if (log.isDebugEnabled()) {
-            log.debug("DetectSentimentResult is "+detectSentimentResult);
+            log.debug("DetectSentimentResult is " + detectSentimentResult);
         }
         return detectSentimentResult;
     }

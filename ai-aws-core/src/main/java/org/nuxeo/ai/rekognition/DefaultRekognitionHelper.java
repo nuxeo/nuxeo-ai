@@ -39,6 +39,7 @@ import com.amazonaws.services.rekognition.model.Image;
 public class DefaultRekognitionHelper implements RekognitionHelper {
 
     private static final Log log = LogFactory.getLog(DefaultRekognitionHelper.class);
+
     protected volatile AmazonRekognition client;
 
     @Override
@@ -50,19 +51,19 @@ public class DefaultRekognitionHelper implements RekognitionHelper {
      * Gets the client
      */
     protected AmazonRekognition getClient() {
-        AmazonRekognition result = client;
-        if (result == null) {
+        if (client == null) {
             synchronized (this) {
-                result = client;
-                if (result == null) {
-                    AmazonRekognitionClientBuilder builder = AmazonRekognitionClientBuilder.standard();
-                    builder.withCredentials(NuxeoCredentialsProviderChain.getInstance());
-                    builder.withRegion(NuxeoRegionProviderChain.getInstance().getRegion());
-                    result = client = builder.build();
+                if (client == null) {
+                    AmazonRekognitionClientBuilder builder =
+                            AmazonRekognitionClientBuilder.standard()
+                                                          .withCredentials(NuxeoCredentialsProviderChain.getInstance())
+                                                          .withRegion(NuxeoRegionProviderChain.getInstance()
+                                                                                              .getRegion());
+                    client = builder.build();
                 }
             }
         }
-        return result;
+        return client;
     }
 
     @Override
