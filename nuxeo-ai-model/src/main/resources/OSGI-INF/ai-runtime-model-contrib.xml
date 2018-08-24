@@ -14,4 +14,7 @@
     <object class="org.nuxeo.ai.model.serving.ModelDescriptor"/>
   </extension-point>
 
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="org.nuxeo.ai.model.serving.SuggestionOp"/>
+  </extension>
 </component>
