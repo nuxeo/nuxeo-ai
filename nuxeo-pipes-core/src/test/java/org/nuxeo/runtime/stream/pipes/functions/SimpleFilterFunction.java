@@ -30,7 +30,7 @@ public class SimpleFilterFunction extends PreFilterFunction<Record, Optional<Rec
         implements FunctionStreamProcessorTopology {
 
     public SimpleFilterFunction() {
-        this.filter = r -> r.data.length > 0;
+        this.filter = r -> r.getData().length > 0;
         this.transformation = Optional::of;
     }
 }

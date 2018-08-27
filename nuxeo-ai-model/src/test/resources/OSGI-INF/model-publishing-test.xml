@@ -2,7 +2,7 @@
 <component name="org.nuxeo.ai.model.publishing.ModelPublishing.test" version="1.0">
 
   <extension point="publishers" target="org.nuxeo.ai.model.publishing.ModelPublishing">
-    <publisher id="myFileBased" default="false" class="org.nuxeo.ai.model.publishing.ModelPublisherTest">
+    <publisher id="myFileBased" default="false" class="org.nuxeo.ai.model.publishing.ModelPublisherTestExtension">
       <!--option name="servingPath">./models</option-->
       <option name="modelFilename">mySuperModel.model</option>
     </publisher>

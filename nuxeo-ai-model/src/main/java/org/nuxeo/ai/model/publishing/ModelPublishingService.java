@@ -57,7 +57,7 @@ public interface ModelPublishingService {
      *
      * @param aiModelDocumentId A DocumentModel ID of the type Ai_Model, or extension
      * @param publisherId An extension Id
-     * @throws IOException
+     * @throws IOException If something goes wrong
      */
     void publishModel(String aiModelDocumentId, String publisherId) throws IOException;
 
@@ -66,7 +66,7 @@ public interface ModelPublishingService {
      *
      * @param aiModelDocumentId A DocumentModel ID of the type Ai_Model, or extension
      * @param publisherId An extension Id
-     * @throws IOException
+     * @throws IOException If something goes wrong
      */
     void unpublishModel(String aiModelDocumentId, String publisherId) throws IOException;
 

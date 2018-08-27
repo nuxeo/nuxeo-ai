@@ -95,16 +95,16 @@ public class AIComponent extends DefaultComponent {
                                                                  descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY));
             }
 
-            List<String> mimeTypes = new ArrayList<>();
-            descriptor.getMimeTypes().forEach(mimeType -> {
-                if (mimeType.normalized) {
-                    MimetypeEntry entry = mimeRegistry.getMimetypeEntryByMimeType(mimeType.name);
-                    mimeTypes.addAll(entry.getMimetypes());
-                } else {
-                    mimeTypes.add(mimeType.name);
-                }
-            });
             if (enrichmentService instanceof EnrichmentSupport) {
+                List<String> mimeTypes = new ArrayList<>();
+                descriptor.getMimeTypes().forEach(mimeType -> {
+                    if (mimeType.normalized) {
+                        MimetypeEntry entry = mimeRegistry.getMimetypeEntryByMimeType(mimeType.name);
+                        mimeTypes.addAll(entry.getMimetypes());
+                    } else {
+                        mimeTypes.add(mimeType.name);
+                    }
+                });
                 ((EnrichmentSupport) enrichmentService).addMimeTypes(mimeTypes);
             }
             addEnrichmentService(descriptor.name, enrichmentService);
@@ -141,7 +141,6 @@ public class AIComponent extends DefaultComponent {
     /**
      * Add an enrichment service
      * @param serviceName the name of the service
-     * @return service, the implementation of EnrichmentService
      */
     public void addEnrichmentService(String serviceName, EnrichmentService service) {
         enrichmentServices.put(serviceName, service);

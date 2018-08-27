@@ -26,9 +26,8 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.nuxeo.common.Environment;
-import org.nuxeo.ecm.core.api.DocumentModel;
 
-public class ModelPublisherTest implements ModelPublisherExtension {
+public class ModelPublisherTestExtension implements ModelPublisherExtension {
 
     public static final int MODEL_VERSION = 10;
 

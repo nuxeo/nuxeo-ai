@@ -58,7 +58,7 @@ public class TestEnrichmentMetaData {
     }
 
     @Test
-    public void testJson() throws IOException {
+    public void testJson() {
         List<EnrichmentMetadata.Label> labels = Stream.of("label1", "l2", "lab3")
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());

@@ -21,8 +21,6 @@ package org.nuxeo.ai.model.publishing;
 import java.io.IOException;
 import java.util.Map;
 
-import org.nuxeo.ecm.core.api.DocumentModel;
-
 public interface ModelPublisherExtension {
 
     /**

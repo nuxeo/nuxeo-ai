@@ -23,7 +23,6 @@ import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.assertMetric;
 import static org.nuxeo.runtime.stream.pipes.events.EventPipesTest.getTestEvent;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.doc;
 import static org.nuxeo.runtime.stream.pipes.functions.Predicates.docEvent;
@@ -46,7 +45,6 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.pipes.filters.DocumentEventFilter;
 import org.nuxeo.runtime.stream.pipes.filters.FacetFilter;
 import org.nuxeo.runtime.stream.pipes.filters.Filter;
@@ -55,6 +53,8 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 import com.google.inject.Inject;
+
+import junit.framework.TestCase;
 
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
@@ -143,7 +143,7 @@ public class FunctionsTest {
         assertNull("Its not a picture event", func.apply(event));
         func.filter = docEvent(d -> true);
         Collection<Record> applied = func.apply(event);
-        assertTrue("It is a document with a creator", applied.size() == 1);
+        assertEquals("It is a document with a creator", 1, applied.size());
     }
 
     @Test

@@ -45,6 +45,7 @@ public class TestCustomDocumentsTypes {
     @Inject
     CoreSession session;
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testModelDocument() {
         DocumentModel doc = session.createDocumentModel("/", "testModel", "AI_Model");
@@ -81,15 +82,15 @@ public class TestCustomDocumentsTypes {
         assertEquals(returnLong, accuracyValue);
 
         List<Map<String, Object>> inputsDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_INPUTS);
-        assertEquals(inputsDataRes.size(), 1);
-        assertEquals((inputsDataRes.get(0)).get("name"), "question");
-        assertEquals((inputsDataRes.get(0)).get("type"), "txt");
+        assertEquals(1, inputsDataRes.size());
+        assertEquals("question", (inputsDataRes.get(0)).get("name"));
+        assertEquals("txt",  (inputsDataRes.get(0)).get("type"));
 
         List<Map<String, Object>> outputsDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_OUTPUTS);
-        assertEquals(inputsDataRes.size(), 1);
-        assertEquals((outputsDataRes.get(0)).get("name"), "question");
-        assertEquals((outputsDataRes.get(0)).get("type"), "txt");
-        assertEquals((outputsDataRes.get(0)).get("multi_class"), Boolean.TRUE);
+        assertEquals(1, inputsDataRes.size());
+        assertEquals("question", (outputsDataRes.get(0)).get("name"));
+        assertEquals("txt", (outputsDataRes.get(0)).get("type"));
+        assertEquals(Boolean.TRUE, (outputsDataRes.get(0)).get("multi_class"));
 
         String[] resDocList = (String[]) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_TRAINING_DATA);
         assertEquals(corpusDoc.getId(), resDocList[0]);
@@ -98,6 +99,7 @@ public class TestCustomDocumentsTypes {
         assertEquals(corpusDoc.getId(), resDocList[0]);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testCorpusDocument() {
         DocumentModel doc = session.createDocumentModel("/", "corpora", "AI_Corpus");
@@ -146,23 +148,23 @@ public class TestCustomDocumentsTypes {
 
         // Now check complex types
         List<Map<String, Object>> inputsDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_INPUT_FIELDS);
-        assertEquals(inputsDataRes.size(), 1);
-        assertEquals(inputsDataRes.get(0).get("name"), "question");
-        assertEquals(inputsDataRes.get(0).get("type"), "txt");
+        assertEquals(1, inputsDataRes.size());
+        assertEquals("question", inputsDataRes.get(0).get("name"));
+        assertEquals("txt", inputsDataRes.get(0).get("type"));
 
         List<Map<String, Object>> outputsDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUT_FIELDS);
-        assertEquals(inputsDataRes.size(), 1);
-        assertEquals(outputsDataRes.get(0).get("name"), "question");
-        assertEquals(outputsDataRes.get(0).get("type"), "txt");
-        assertEquals(outputsDataRes.get(0).get("multi_class"), Boolean.TRUE);
+        assertEquals(1, inputsDataRes.size());
+        assertEquals("question", outputsDataRes.get(0).get("name"));
+        assertEquals("txt", outputsDataRes.get(0).get("type"));
+        assertEquals(Boolean.TRUE, outputsDataRes.get(0).get("multi_class"));
 
         List<Map<String, Object>> inputHistDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_INPUT_HISTOGRAM);
-        assertEquals(inputHistDataRes.size(), 2);
+        assertEquals(2, inputHistDataRes.size());
         assertEquals(inputHistDataRes.get(0), firstFieldLabel);
         assertEquals(inputHistDataRes.get(1), secondFieldLabel);
 
         List<Map<String, Object>> outputHistDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUT_HISTOGRAM);
-        assertEquals(outputHistDataRes.size(), 2);
+        assertEquals(2, outputHistDataRes.size());
         assertEquals(inputHistDataRes.get(0), firstFieldLabel);
         assertEquals(inputHistDataRes.get(1), secondFieldLabel);
     }

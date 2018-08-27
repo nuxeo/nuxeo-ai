@@ -167,8 +167,7 @@ public class TestModelServing {
         assertEquals("There must be 1 result", 1, results.size());
     }
 
-
-    private ManagedBlob blob(Blob blob, String key) {
+    protected ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key,
                                 blob.getDigest(), blob.getEncoding(), blob.getLength()
         );

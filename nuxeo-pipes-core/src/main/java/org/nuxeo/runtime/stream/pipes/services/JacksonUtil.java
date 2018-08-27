@@ -108,9 +108,9 @@ public class JacksonUtil {
     public static <T> T fromRecord(Record record, Class<T> valueType) {
 
         try {
-            return MAPPER.readValue(record.data, valueType);
+            return MAPPER.readValue(record.getData(), valueType);
         } catch (IOException e) {
-            throw new NuxeoException("Unable to read record data for : " + record.key, e);
+            throw new NuxeoException("Unable to read record data for : " + record.getKey(), e);
         }
     }
 

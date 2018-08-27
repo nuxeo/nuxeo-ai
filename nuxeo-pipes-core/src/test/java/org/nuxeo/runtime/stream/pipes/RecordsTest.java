@@ -121,7 +121,7 @@ public class RecordsTest {
             });
             fail();
         } catch (NuxeoException handled) {
-            assertTrue(handled.getCause().getClass().getSimpleName().equals("IOException"));
+            assertEquals("IOException", handled.getCause().getClass().getSimpleName());
         }
         Instant rightNow = Instant.now();
         String instant = toJsonString(jg -> jg.writeObjectField("now", rightNow));

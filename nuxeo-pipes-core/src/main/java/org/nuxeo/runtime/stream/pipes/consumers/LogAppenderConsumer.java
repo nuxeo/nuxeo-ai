@@ -41,7 +41,7 @@ public class LogAppenderConsumer implements Consumer<Record>, AutoCloseable {
     @Override
     public void accept(Record record) {
         if (record != null) {
-            getAppender().append(record.key, record);
+            getAppender().append(record.getKey(), record);
         }
     }
 

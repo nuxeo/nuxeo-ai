@@ -80,7 +80,7 @@ public class StreamsPipesTest {
 
         //First check the event goes from text-> text.pass -> text.out streams
         try (LogTailer<Record> tailer = manager.createTailer("group", "text.out")) {
-            assertEquals(null, tailer.read(Duration.ofSeconds(1)));
+            assertNull(tailer.read(Duration.ofSeconds(1)));
             eventService.fireEvent(event);
             eventService.waitForAsyncCompletion();
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));

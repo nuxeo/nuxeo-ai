@@ -19,7 +19,6 @@
  */
 package org.nuxeo.ai.model.publishing;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,14 +39,14 @@ public class ModelPublishingDescriptor {
     @XNode("@default")
     public boolean isDefault;
 
-    @XNode("@class")
-    protected Class<? extends ModelPublisherExtension> clazz;
-
     /**
      * Configuration options
      */
     @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
     public Map<String, String> options = new HashMap<>();
+
+    @XNode("@class")
+    protected Class<? extends ModelPublisherExtension> clazz;
 
     public ModelPublisherExtension getInstance() {
         try {
