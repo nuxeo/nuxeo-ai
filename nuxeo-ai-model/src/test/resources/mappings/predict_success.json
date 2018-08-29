@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/v1/models/dnn/versions/1:predict?myModelParam=super_testing"
+    "url": "/v1/models/predict?myModelParam=super_testing"
   },
   "response": {
     "status": 200,

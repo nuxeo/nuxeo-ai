@@ -131,7 +131,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                                                boolean isSuggestion) {
         String content = client.getContent(response);
         EnrichmentMetadata.Builder builder =
-                new EnrichmentMetadata.Builder(Instant.now(), getKind(), getName(),
+                new EnrichmentMetadata.Builder(Instant.now(), getKind(), getId(),
                                                new AIMetadata.Context(repositoryName, docRef, null, inputNames));
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
@@ -209,10 +209,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
      * Builds the uri.
      */
     protected String buildUri(String verb, String baseUri) {
-        String version = getVersion();
-        return baseUri + super.getName() +
-                (StringUtils.isNotBlank(version) ? "/versions/" + getVersion() : "") +
-                ":" + verb;
+        return baseUri + verb;
     }
 
     @Override
