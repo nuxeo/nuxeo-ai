@@ -42,6 +42,16 @@
       <option name="enrichmentServiceName">aws.celebrityDetection</option>
     </streamProcessor>
   </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="unsafeImagesProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.pipes.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.unsafeImages</option>
+    </streamProcessor>
+  </extension>
 </#if>
 
 <#if "${nuxeo.enrichment.aws.text}" == "true">

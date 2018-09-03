@@ -53,7 +53,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.aws.aws-core"})
+@Deploy({"org.nuxeo.ai.aws.aws-core", "org.nuxeo.ai.aws.aws-core:OSGI-INF/rekognition-test.xml"})
 public class TestRekognitionService {
 
     @Inject
@@ -105,6 +105,21 @@ public class TestRekognitionService {
         metadataCollection = service.enrich(blobTextStream);
         assertEquals(1, metadataCollection.size());
 
+    }
+
+    @Test
+    public void testUnsafeImagesService() throws IOException {
+
+        BlobTextStream blobTextStream = setupBlobTextStream("creative_commons3.jpg");
+        EnrichmentService service = aiComponent.getEnrichmentService("aws.unsafeImages");
+        assertNotNull(service);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
+        assertEquals(0, metadataCollection.size());
+
+        blobTextStream = setupBlobTextStream("creative_adults-beautiful-blue.jpg");
+        metadataCollection = service.enrich(blobTextStream);
+        assertEquals(1, metadataCollection.size());
+        assertTrue(metadataCollection.iterator().next().getLabels().size() >= 2);
     }
 
     @Test

@@ -32,6 +32,17 @@
   </extension>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+      <option name="minConfidence">75</option>
+    </enrichment>
+  </extension>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.faceDetection" kind="/tagging/face"
                 class="org.nuxeo.ai.enrichment.DetectFacesEnrichmentService">
       <mimeTypes>

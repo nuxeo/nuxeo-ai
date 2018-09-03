@@ -23,6 +23,7 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import com.amazonaws.services.rekognition.model.Attribute;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.DetectLabelsResult;
+import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
 import com.amazonaws.services.rekognition.model.DetectTextResult;
 import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
 
@@ -40,6 +41,11 @@ public interface RekognitionService {
      * Detect text for the provided blob
      */
     DetectTextResult detectText(ManagedBlob blob);
+
+    /**
+     * Detect if the provided blob contains explicit or suggestive adult content.
+     */
+    DetectModerationLabelsResult detectUnsafeImages(ManagedBlob blob);
 
     /**
      * Detect faces for the provided blob

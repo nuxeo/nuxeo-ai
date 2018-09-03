@@ -37,6 +37,8 @@ import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
 import com.amazonaws.services.rekognition.model.DetectLabelsRequest;
 import com.amazonaws.services.rekognition.model.DetectLabelsResult;
+import com.amazonaws.services.rekognition.model.DetectModerationLabelsRequest;
+import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
 import com.amazonaws.services.rekognition.model.DetectTextRequest;
 import com.amazonaws.services.rekognition.model.DetectTextResult;
 import com.amazonaws.services.rekognition.model.Image;
@@ -49,6 +51,7 @@ import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
 public class RekognitionServiceImpl extends DefaultComponent implements RekognitionService {
 
     public static final boolean USE_S3_STORAGE;
+
     private static final Log log = LogFactory.getLog(RekognitionServiceImpl.class);
 
     static {
@@ -95,6 +98,14 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         return detectWithClient(blob, (client, image) -> {
             RecognizeCelebritiesRequest request = new RecognizeCelebritiesRequest().withImage(image);
             return client.recognizeCelebrities(request);
+        });
+    }
+
+    @Override
+    public DetectModerationLabelsResult detectUnsafeImages(ManagedBlob blob) {
+        return detectWithClient(blob, (client, image) -> {
+            DetectModerationLabelsRequest request = new DetectModerationLabelsRequest().withImage(image);
+            return client.detectModerationLabels(request);
         });
     }
 

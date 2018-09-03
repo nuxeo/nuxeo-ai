@@ -7,4 +7,15 @@
     </logConfig>
   </extension>
 
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+      <option name="minConfidence">55</option>
+    </enrichment>
+  </extension>
+
 </component>
