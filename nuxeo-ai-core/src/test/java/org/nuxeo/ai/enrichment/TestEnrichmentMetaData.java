@@ -54,7 +54,7 @@ public class TestEnrichmentMetaData {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalid() {
-        new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", null).build();
+        new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
     }
 
     @Test
@@ -76,9 +76,9 @@ public class TestEnrichmentMetaData {
         blobTextStream.addXPath("tbloby");
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test", blobTextStream)
-                        .withBlobDigest("blobxx")
                         .withLabels(labels)
                         .withTags(tags)
+                        .withBlobDigest("blobxx")
                         .withCreator("bob")
                         .withRawKey("xyz")
                         .build();

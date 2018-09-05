@@ -59,6 +59,8 @@ public class RestClient implements AutoCloseable {
 
     public static final String OPTION_METHOD_NAME = "methodName";
 
+    public static final String OPTION_DEFAULT_HEADERS = "headers.default";
+
     private static final Log log = LogFactory.getLog(RestClient.class);
 
     protected final String method;
@@ -95,7 +97,9 @@ public class RestClient implements AutoCloseable {
         } else {
             uri = URI.create(uriParam);
         }
-        headers.addAll(getDefaultHeaders());
+        if (Boolean.parseBoolean(options.getOrDefault(optionPrefix + OPTION_DEFAULT_HEADERS, "true"))) {
+            headers.addAll(getDefaultHeaders());
+        }
         HttpClientBuilder clientBuilder = HttpClientBuilder.create();
         client = clientBuilderFunc != null ? clientBuilderFunc.apply(clientBuilder) : clientBuilder.build();
     }
