@@ -175,13 +175,17 @@ public class EnrichmentMetadata extends AIMetadata {
 
         private List<Suggestion> suggestions;
 
-        public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
-            super(Instant.now(), kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
+        public Builder(Instant created, String kind, String serviceName, BlobTextStream blobTextStream) {
+            super(created, kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
                   null, blobTextStream.getXPaths());
             ManagedBlob blobMeta = blobTextStream.getBlob();
             if (blobMeta != null) {
                 this.blobDigest = blobMeta.getDigest();
             }
+        }
+
+        public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
+            this(Instant.now(), kind, serviceName, blobTextStream);
         }
 
         @JsonCreator
@@ -204,11 +208,6 @@ public class EnrichmentMetadata extends AIMetadata {
 
         public Builder withTags(List<Tag> tags) {
             this.tags = tags;
-            return this;
-        }
-
-        public Builder withBlobDigest(String blobDigest) {
-            this.blobDigest = blobDigest;
             return this;
         }
 

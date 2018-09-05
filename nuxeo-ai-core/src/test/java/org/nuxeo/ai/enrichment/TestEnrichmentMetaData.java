@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +53,7 @@ public class TestEnrichmentMetaData {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalid() {
-        new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", null).build();
+        new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
     }
 
     @Test
@@ -76,9 +75,9 @@ public class TestEnrichmentMetaData {
         blobTextStream.addXPath("tbloby");
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test", blobTextStream)
-                        .withBlobDigest("blobxx")
                         .withLabels(labels)
                         .withTags(tags)
+                        .withBlobDigest("blobxx")
                         .withCreator("bob")
                         .withRawKey("xyz")
                         .build();

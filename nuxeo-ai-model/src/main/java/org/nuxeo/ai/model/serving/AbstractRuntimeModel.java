@@ -70,8 +70,6 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
 
     protected String transientStore;
 
-    protected EnrichmentUtils enrichmentUtils;
-
     protected int imageWidth;
 
     protected int imageHeight;
@@ -85,7 +83,6 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         this.outputs = descriptor.outputs;
         this.defaultOptions = descriptor.defaultOptions;
         this.details = descriptor.info;
-        this.enrichmentUtils = new EnrichmentUtils();
         Map<String, String> config = descriptor.configuration;
         this.minConfidence = Float.parseFloat(config.getOrDefault("minConfidence", DEFAULT_CONFIDENCE));
         this.imageWidth = Integer.parseInt(config.getOrDefault(IMAGE + "." + EnrichmentUtils.WIDTH, DEFAULT_IMAGE_WIDTH));
@@ -128,7 +125,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
      */
     public String saveJsonAsRawBlob(String rawJson) {
         if (transientStore != null && StringUtils.isNotBlank(rawJson)) {
-            return enrichmentUtils.saveRawBlob(Blobs.createJSONBlob(rawJson), transientStore);
+            return EnrichmentUtils.saveRawBlob(Blobs.createJSONBlob(rawJson), transientStore);
         } else {
             return null;
         }
@@ -157,7 +154,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
      */
     protected Serializable convertImageBlob(Blob sourceBlob) {
         if (sourceBlob != null) {
-            Blob blob = enrichmentUtils.convertImageBlob(sourceBlob, imageWidth, imageHeight, imageDepth);
+            Blob blob = EnrichmentUtils.convertImageBlob(sourceBlob, imageWidth, imageHeight, imageDepth);
             return base64EncodeBlob(blob);
         }
         return null;

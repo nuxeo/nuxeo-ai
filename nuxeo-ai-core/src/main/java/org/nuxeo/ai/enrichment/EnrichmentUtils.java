@@ -18,14 +18,21 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
+import org.nuxeo.ecm.core.blob.BlobInfo;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
@@ -36,6 +43,8 @@ import org.nuxeo.runtime.api.Framework;
  */
 public class EnrichmentUtils {
 
+    private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
+
     public static final String HEIGHT = "height";
 
     public static final String WIDTH = "width";
@@ -44,10 +53,15 @@ public class EnrichmentUtils {
 
     protected static final String PICTURE_RESIZE_CONVERTER = "pictureResize";
 
+    // Static Utility class
+    private EnrichmentUtils() {
+    }
+
     /**
-     * Saves the blob using the using the specified transient store and returns the blob key
+     * Saves the blob using the using the specified transient store and returns the blob key.
+     * If the transientStoreName is NULL the TransientStoreService will still return the default TransientStore
      */
-    public String saveRawBlob(Blob rawBlob, String transientStoreName) {
+    public static String saveRawBlob(Blob rawBlob, String transientStoreName) {
         TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
         String blobKey = UUID.randomUUID().toString();
         transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
@@ -55,9 +69,24 @@ public class EnrichmentUtils {
     }
 
     /**
+     * Looks up the blob provider for the ManagedBlob and retrieves the blob using its key.
+     */
+    public static Blob getBlobFromProvider(ManagedBlob managedBlob) {
+        BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(managedBlob.getProviderId());
+        BlobInfo blobInfo = new BlobInfo();
+        blobInfo.key = managedBlob.getKey();
+        try {
+            return provider.readBlob(blobInfo);
+        } catch (IOException e) {
+            log.error(String.format("Failed to read blob %s", managedBlob.getKey()), e);
+        }
+        return null;
+    }
+
+    /**
      * Convert the provided image blob.
      */
-    public Blob convertImageBlob(Blob blob, int width, int height, int depth) {
+    public static Blob convertImageBlob(Blob blob, int width, int height, int depth) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(WIDTH, width);
