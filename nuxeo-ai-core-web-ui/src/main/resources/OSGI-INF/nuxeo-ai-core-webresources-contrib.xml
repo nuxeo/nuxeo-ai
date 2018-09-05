@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<component name="org.nuxeo.ai.core.webui.resources.contrib">
+
+    <require>org.nuxeo.web.ui.resources</require>
+
+    <extension target="org.nuxeo.ecm.platform.WebResources" point="resources">
+        <resource name="nuxeo-ai-suggestions.html" type="import">
+            <uri>/ui/nuxeo-ai-html/nuxeo-ai-suggestions.html</uri>
+        </resource>
+    </extension>
+
+    <extension target="org.nuxeo.ecm.platform.WebResources" point="bundles">
+        <bundle name="web-ui">
+            <resources append="true">
+                <resource>nuxeo-ai-suggestions.html</resource>
+            </resources>
+        </bundle>
+    </extension>
+
+</component>
