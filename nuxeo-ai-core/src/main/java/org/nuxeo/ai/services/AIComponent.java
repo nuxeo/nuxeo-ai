@@ -20,7 +20,6 @@ package org.nuxeo.ai.services;
 
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +50,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class AIComponent extends DefaultComponent {
 
+    public static final String ENRICHMENT_XP = "enrichment";
     private static final Log log = LogFactory.getLog(AIComponent.class);
 
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();

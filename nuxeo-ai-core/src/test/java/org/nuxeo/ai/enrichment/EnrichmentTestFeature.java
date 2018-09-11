@@ -44,6 +44,7 @@ import org.nuxeo.runtime.test.runner.SimpleFeature;
 public class EnrichmentTestFeature extends SimpleFeature {
 
     public static final String PIPES_TEST_CONFIG = "test_enrichment";
+    public static final String FILE_CONTENT = "file:content";
 
     @Override
     public void beforeRun(FeaturesRunner runner) throws Exception {
@@ -63,6 +64,7 @@ public class EnrichmentTestFeature extends SimpleFeature {
         blobTextStream.setRepositoryName("test");
         blobTextStream.setId(UUID.randomUUID().toString());
         blobTextStream.setBlob(managedBlob);
+        blobTextStream.addXPath(FILE_CONTENT);
         return blobTextStream;
     }
 

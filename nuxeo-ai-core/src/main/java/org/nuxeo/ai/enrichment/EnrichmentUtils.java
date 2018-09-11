@@ -36,6 +36,7 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
+import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
 
 /**
@@ -43,15 +44,17 @@ import org.nuxeo.runtime.api.Framework;
  */
 public class EnrichmentUtils {
 
+    public static final int DEFAULT_IMAGE_WIDTH = 299;
+
+    public static final int DEFAULT_IMAGE_HEIGHT = 299;
+
+    public static final int DEFAULT_IMAGE_DEPTH = 16;
+
+    public static final String DEFAULT_CONVERSATION_FORMAT = "jpg";
+
+    public static final String PICTURE_RESIZE_CONVERTER = "pictureResize";
+
     private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
-
-    public static final String HEIGHT = "height";
-
-    public static final String WIDTH = "width";
-
-    public static final String DEPTH = "depth";
-
-    protected static final String PICTURE_RESIZE_CONVERTER = "pictureResize";
 
     // Static Utility class
     private EnrichmentUtils() {
@@ -73,12 +76,19 @@ public class EnrichmentUtils {
      */
     public static Blob getBlobFromProvider(ManagedBlob managedBlob) {
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(managedBlob.getProviderId());
+        return getBlobFromProvider(provider, managedBlob.getKey());
+    }
+
+    /**
+     * Looks up the blob by key
+     */
+    public static Blob getBlobFromProvider(BlobProvider provider, String key) {
         BlobInfo blobInfo = new BlobInfo();
-        blobInfo.key = managedBlob.getKey();
+        blobInfo.key = key;
         try {
             return provider.readBlob(blobInfo);
         } catch (IOException e) {
-            log.error(String.format("Failed to read blob %s", managedBlob.getKey()), e);
+            log.error(String.format("Failed to read blob %s", key), e);
         }
         return null;
     }
@@ -86,12 +96,23 @@ public class EnrichmentUtils {
     /**
      * Convert the provided image blob.
      */
-    public static Blob convertImageBlob(Blob blob, int width, int height, int depth) {
+    public static Blob convertImageBlob(Blob blob, int width, int height, int depth, String conversionFormat) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
-        parameters.put(WIDTH, width);
-        parameters.put(HEIGHT, height);
-        parameters.put(DEPTH, depth);
-        return Framework.getService(ConversionService.class).convert(PICTURE_RESIZE_CONVERTER, bh, parameters).getBlob();
+        parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, width);
+        parameters.put(ImagingConvertConstants.OPTION_RESIZE_HEIGHT, height);
+        parameters.put(ImagingConvertConstants.OPTION_RESIZE_DEPTH, depth);
+        parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, conversionFormat);
+        return Framework.getService(ConversionService.class).convert(PICTURE_RESIZE_CONVERTER, bh, parameters)
+                        .getBlob();
     }
+
+    /**
+     * Get an option as an integer
+     */
+    public static int optionAsInteger(Map<String, String> options, String option, int defaultValue) {
+        String value = options.get(option);
+        return value == null ? defaultValue : Integer.parseInt(value);
+    }
+
 }
