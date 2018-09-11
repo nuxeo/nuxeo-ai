@@ -16,7 +16,7 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.model.serving;
+package org.nuxeo.ai.enrichment;
 
 import java.io.Serializable;
 import java.util.Map;

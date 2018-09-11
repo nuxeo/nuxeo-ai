@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.bulk.recordwriter.test" version="1.0">
+
+  <extension point="recordWriter" target="org.nuxeo.ai.services.AIComponent">
+    <recordWriter class="org.nuxeo.ai.tensorflow.TFRecordWriter">
+      <name>training</name>
+      <name>validation</name>
+      <option name="blobProvider">test</option>
+    </recordWriter>
+  </extension>
+  <extension point="recordWriter" target="org.nuxeo.ai.services.AIComponent">
+    <recordWriter class="org.nuxeo.ai.bulk.BadRecordWriter">
+      <name>bad</name>
+    </recordWriter>
+  </extension>
+</component>

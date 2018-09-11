@@ -24,7 +24,7 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_XP;
+import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
 import java.util.Collections;

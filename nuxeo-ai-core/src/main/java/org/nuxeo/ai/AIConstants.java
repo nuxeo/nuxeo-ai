@@ -24,7 +24,6 @@ package org.nuxeo.ai;
 public class AIConstants {
 
     public static final String AI_KIND_DIRECTORY = "aikind";
-    public static final String ENRICHMENT_XP = "enrichment";
 
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";

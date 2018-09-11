@@ -51,6 +51,13 @@
     </dependency>
     <!-- test scope -->
     <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-ai-core</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.ecm.platform</groupId>
       <artifactId>nuxeo-platform-default-config</artifactId>
       <scope>test</scope>

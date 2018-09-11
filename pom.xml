@@ -13,7 +13,9 @@
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
-
+  <properties>
+    <tensorflow.version>1.10.0</tensorflow.version>
+  </properties>
   <modules>
     <module>nuxeo-pipes-core</module>
     <module>nuxeo-ai-core</module>

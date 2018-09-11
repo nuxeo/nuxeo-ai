@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.getPropertyValue;
 
@@ -34,6 +35,7 @@ import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 
 /**
  * An abstract implementation of a Runtime Model
@@ -43,14 +45,6 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
     public static final String LIVENESS = "liveness.";
 
     public static final String DEFAULT_CONFIDENCE = "0.7";
-
-    public static final String DEFAULT_IMAGE_WIDTH = "299";
-
-    public static final String DEFAULT_IMAGE_HEIGHT = "299";
-
-    public static final String DEFAULT_IMAGE_DEPTH = "16";
-
-    public static final String IMAGE = "image";
 
     public static final String IMAGE_TYPE = "img";
 
@@ -76,6 +70,8 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
 
     protected int imageDepth;
 
+    protected String imageFormat;
+
     @Override
     public void init(ModelDescriptor descriptor) {
         this.id = descriptor.id;
@@ -85,9 +81,11 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         this.details = descriptor.info;
         Map<String, String> config = descriptor.configuration;
         this.minConfidence = Float.parseFloat(config.getOrDefault("minConfidence", DEFAULT_CONFIDENCE));
-        this.imageWidth = Integer.parseInt(config.getOrDefault(IMAGE + "." + EnrichmentUtils.WIDTH, DEFAULT_IMAGE_WIDTH));
-        this.imageHeight = Integer.parseInt(config.getOrDefault(IMAGE + "." + EnrichmentUtils.HEIGHT, DEFAULT_IMAGE_HEIGHT));
-        this.imageDepth = Integer.parseInt(config.getOrDefault(IMAGE + "." + EnrichmentUtils.DEPTH, DEFAULT_IMAGE_DEPTH));
+        this.imageWidth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_WIDTH, EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
+        this.imageHeight = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
+        this.imageDepth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
+        this.imageFormat = config
+                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
         String transientStoreName = config.get("transientStore");
         if (StringUtils.isNotBlank(transientStoreName)) {
             this.transientStore = transientStoreName;
@@ -154,7 +152,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
      */
     protected Serializable convertImageBlob(Blob sourceBlob) {
         if (sourceBlob != null) {
-            Blob blob = EnrichmentUtils.convertImageBlob(sourceBlob, imageWidth, imageHeight, imageDepth);
+            Blob blob = EnrichmentUtils.convertImageBlob(sourceBlob, imageWidth, imageHeight, imageDepth, imageFormat);
             return base64EncodeBlob(blob);
         }
         return null;

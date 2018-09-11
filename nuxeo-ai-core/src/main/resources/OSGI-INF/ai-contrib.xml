@@ -15,6 +15,13 @@
     <object class="org.nuxeo.ai.enrichment.EnrichmentDescriptor$MimeType"/>
   </extension-point>
 
+  <extension-point name="recordWriter">
+    <documentation>
+      Adds a Record Writer
+    </documentation>
+    <object class="org.nuxeo.ai.bulk.RecordWriterDescriptor"/>
+  </extension-point>
+
   <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
 
     <directory name="aikind" extends="template-xvocabulary">

@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -65,8 +66,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
  * Tests the overall Model Serving
  */
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
+@Features({EnrichmentTestFeature.class, PlatformFeature.class})
+@Deploy({"org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
 public class TestModelServing {
 
     @Rule
