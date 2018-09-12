@@ -5,9 +5,18 @@
            xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
            xmlns:ref="http://www.nuxeo.org/ecm/schemas/core/external-references/"
            targetNamespace="http://www.nuxeo.org/ai/model/schemas/ai_model">
+  <xs:include schemaLocation="core-types.xsd" />
   
   <xs:element name="name" type="xs:string"/>
   <xs:element name="result_accuracy" type="xs:double"/>
+  <xs:element name="model_artifacts" type="nxs:content"/>
+  <xs:element name="job_name" type="xs:string"/>
+  <xs:element name="training_information" type="xs:string"/>
+  <xs:element name="training_engine">
+    <xs:simpleType>
+      <xs:restriction base="xs:string" ref:resolver="directoryResolver" ref:directory="AiTrainingEngines"/>
+    </xs:simpleType>
+  </xs:element>
   <xs:complexType name="ai_model_inputsListType">
     <xs:sequence>
       <xs:element name="item" type="nxs:ai_model_inputsType" minOccurs="0" maxOccurs="unbounded"/>

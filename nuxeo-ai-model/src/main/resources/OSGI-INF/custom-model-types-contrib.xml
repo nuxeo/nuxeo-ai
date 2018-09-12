@@ -97,5 +97,8 @@
     <directory name="InputOutputDataType" extends="template-vocabulary">
       <dataFile>data/vocabularies/InputOutputDataType.csv</dataFile>
     </directory>
+    <directory name="AiTrainingEngines" extends="template-vocabulary">
+      <dataFile>data/vocabularies/AiTrainingEngines.csv</dataFile>
+    </directory>
   </extension>
 </component>

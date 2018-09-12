@@ -27,6 +27,12 @@ public class AiDocumentTypeConstants {
 
     public static final String MODEL_ACCURACY = "ai_model:result_accuracy";
 
+    public static final String MODEL_JOB_NAME = "ai_model:job_name";
+
+    public static final String MODEL_TRAINING_INFORMATION = "ai_model:training_information";
+
+    public static final String MODEL_TRAINING_ENGINE = "ai_model:training_engine";
+
     public static final String MODEL_INPUTS = "ai_model:inputs";
 
     public static final String MODEL_OUTPUTS = "ai_model:outputs";

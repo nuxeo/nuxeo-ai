@@ -59,6 +59,15 @@ public class TestCustomDocumentsTypes {
         Double accuracyValue = 0.82D;
         doc.setPropertyValue(AiDocumentTypeConstants.MODEL_ACCURACY, accuracyValue);
 
+        String jobNameValueString = "myCoolJob";
+        doc.setPropertyValue(AiDocumentTypeConstants.MODEL_JOB_NAME, jobNameValueString);
+
+        String trainInfoValueString = "Train on TF 1.10";
+        doc.setPropertyValue(AiDocumentTypeConstants.MODEL_TRAINING_INFORMATION, trainInfoValueString);
+
+        String trainEngineValueString = "sm";
+        doc.setPropertyValue(AiDocumentTypeConstants.MODEL_TRAINING_ENGINE, trainEngineValueString);
+
         // Now check complex types
         Map<String, Object> newInput = new HashMap<>();
         newInput.put("name", "question");
@@ -80,6 +89,12 @@ public class TestCustomDocumentsTypes {
         assertEquals(returnString, nameValueString);
         Double returnLong = (Double) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_ACCURACY);
         assertEquals(returnLong, accuracyValue);
+        returnString = (String) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_JOB_NAME);
+        assertEquals(returnString, jobNameValueString);
+        returnString = (String) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_TRAINING_INFORMATION);
+        assertEquals(returnString, trainInfoValueString);
+        returnString = (String) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_TRAINING_ENGINE);
+        assertEquals(returnString, trainEngineValueString);
 
         List<Map<String, Object>> inputsDataRes = (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.MODEL_INPUTS);
         assertEquals(1, inputsDataRes.size());
