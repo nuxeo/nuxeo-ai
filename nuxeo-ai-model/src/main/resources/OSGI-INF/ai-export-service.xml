@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.model.export.DatasetExport" version="1.0">
+  <require>org.nuxeo.ai.services.AIComponent</require>
+  <require>org.nuxeo.ai.model.custom.documents</require>
+  <implementation class="org.nuxeo.ai.model.export.DatasetExportServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.model.export.DatasetExportService"/>
+  </service>
+
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="org.nuxeo.ai.model.export.DatasetExportOperation"/>
+  </extension>
+</component>

@@ -60,11 +60,13 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Tests the overall ModelInfo Serving
+ * Tests the overall Model Serving
  */
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
+@Deploy("org.nuxeo.ai.ai-core")
+@Deploy("org.nuxeo.ai.ai-model")
+@Deploy("org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml")
 public class TestModelServing {
 
     @Rule

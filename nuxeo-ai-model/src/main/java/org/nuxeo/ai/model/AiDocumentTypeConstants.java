@@ -22,6 +22,7 @@ package org.nuxeo.ai.model;
  * Simple class to store constantes related to AI Document Types: Ai_Model and Ai_Corpus
  */
 public class AiDocumentTypeConstants {
+
     // model type constants
     public static final String MODEL_NAME = "ai_model:name";
 
@@ -42,19 +43,25 @@ public class AiDocumentTypeConstants {
     public static final String MODEL_EVALUATION_DATA = "ai_model:evaluation_data";
 
     // corpus type constants
-    public static final String CORPUS_DATA_LOCATION = "ai_corpus:data_location";
+    public static final String CORPUS_TYPE = "AI_Corpus";
+
+    public static final String CORPUS_JOBID = "ai_corpus:job_id";
+
+    public static final String CORPUS_QUERY = "ai_corpus:query";
+
+    public static final String CORPUS_SPLIT = "ai_corpus:split";
 
     public static final String CORPUS_DOCUMENTS_COUNT = "ai_corpus:documents_count";
 
+    public static final String CORPUS_INPUTS = "ai_corpus:inputs";
+
+    public static final String CORPUS_OUTPUTS = "ai_corpus:outputs";
+
     public static final String CORPUS_TRAINING_DATA = "ai_corpus:training_data";
 
-    public static final String CORPUS_INPUT_FIELDS = "ai_corpus:inputs";
+    public static final String CORPUS_EVALUATION_DATA = "ai_corpus:evaluation_data";
 
-    public static final String CORPUS_OUTPUT_FIELDS = "ai_corpus:outputs";
-
-    public static final String CORPUS_INPUT_HISTOGRAM = "ai_corpus:inputs_histogram";
-
-    public static final String CORPUS_OUTPUT_HISTOGRAM = "ai_corpus:outputs_histogram";
+    public static final String CORPUS_FEATURES_HISTOGRAM = "ai_corpus:features_histogram";
 
     private AiDocumentTypeConstants() {
         // just Constants

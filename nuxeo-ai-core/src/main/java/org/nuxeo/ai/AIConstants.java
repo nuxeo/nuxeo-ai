@@ -38,6 +38,9 @@ public class AIConstants {
     public static final String ENRICHMENT_LABELS_PROPERTY = "labels";
     public static final String ENRICHMENT_KIND_PROPERTY = "kind";
 
+    public static final String EXPORT_ACTION_NAME = "bulkDatasetExport";
+    public static final String EXPORT_FEATURES_PARAM = "features";
+    public static final String EXPORT_SPLIT_PARAM = "split";
 
     public static final String IMAGE_TYPE = "img";
     public static final String TEXT_TYPE = "txt";
