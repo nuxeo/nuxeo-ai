@@ -22,6 +22,25 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.entity.EntityBuilder;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.model.ModelProperty;
+import org.nuxeo.ai.rest.RestClient;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
@@ -33,26 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.entity.EntityBuilder;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.rest.RestClient;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
  * A runtime model that calls TensorFlow Serving rest api
@@ -93,7 +92,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         client = new RestClient(descriptor.configuration, "", null);
         useLabels = Boolean.parseBoolean(descriptor.configuration.getOrDefault(USE_LABELS, Boolean.TRUE.toString()));
         kind = descriptor.configuration.getOrDefault(KIND_CONFIG, PREDICTION_CUSTOM);
-        inputNames = inputs.stream().map(i -> i.name).collect(Collectors.toSet());
+        inputNames = inputs.stream().map(ModelProperty::getName).collect(Collectors.toSet());
     }
 
     @Override
@@ -191,7 +190,6 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
      * Prepares the http request to send to Tensorflow serving
      */
     protected HttpUriRequest prepareRequest(String verb, RequestBuilder builder, Map<String, Serializable> inputs) {
-        defaultOptions.forEach(builder::addParameter);  //First add default options
         builder.setUri(buildUri(verb, builder.getUri().toString()));
 
         try {

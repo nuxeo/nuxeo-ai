@@ -24,15 +24,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,12 +51,16 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * Tests the overall Model Serving
+ * Tests the overall ModelInfo Serving
  */
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -92,14 +89,13 @@ public class TestModelServing {
     public void testServiceConfig() {
         assertNotNull(modelServingService);
         TFRuntimeModel model = (TFRuntimeModel) modelServingService.getModel("xyz");
-        assertEquals("dnn", model.getDetails().get(MODEL_NAME));
+        assertEquals("dnn", model.getInfo().get(MODEL_NAME));
         assertEquals("1", model.getVersion());
-        assertEquals("Default options are passed in the request, super_testing must be set.",
-                     "super_testing", model.getDefaultOptions().get("myModelParam"));
         assertTrue("Model inputs must be set correctly",
                    model.inputNames.containsAll(Arrays.asList("dc:title", "ecm:path")));
-        assertTrue("Model outputs must be set correctly",
-                   model.getOutputs().contains("dc:description"));
+        assertEquals(1, model.getOutputs().size());
+        assertEquals("Model outputs must be set correctly",
+                     "dc:description", model.getOutputs().iterator().next().getName());
     }
 
     @Test

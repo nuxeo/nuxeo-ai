@@ -18,24 +18,25 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static org.nuxeo.ai.AIConstants.IMAGE_TYPE;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.getPropertyValue;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * An abstract implementation of a Runtime Model
@@ -46,19 +47,15 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
 
     public static final String DEFAULT_CONFIDENCE = "0.7";
 
-    public static final String IMAGE_TYPE = "img";
-
     protected static final Log log = LogFactory.getLog(AbstractRuntimeModel.class);
 
     protected String id;
 
-    protected Set<ModelDescriptor.Property> inputs;
+    protected Set<ModelProperty> inputs;
 
-    protected Set<String> outputs;
+    protected Set<ModelProperty> outputs;
 
-    protected Map<String, String> defaultOptions;
-
-    protected Map<String, String> details;
+    protected Map<String, String> info;
 
     protected float minConfidence;
 
@@ -75,10 +72,9 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
     @Override
     public void init(ModelDescriptor descriptor) {
         this.id = descriptor.id;
-        this.inputs = descriptor.inputs;
-        this.outputs = descriptor.outputs;
-        this.defaultOptions = descriptor.defaultOptions;
-        this.details = descriptor.info;
+        this.inputs = descriptor.getInputs();
+        this.outputs = descriptor.getOutputs();
+        this.info = descriptor.info;
         Map<String, String> config = descriptor.configuration;
         this.minConfidence = Float.parseFloat(config.getOrDefault("minConfidence", DEFAULT_CONFIDENCE));
         this.imageWidth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_WIDTH, EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
@@ -94,28 +90,32 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
     }
 
     @Override
-    public Map<String, String> getDefaultOptions() {
-        return defaultOptions;
-    }
-
-    @Override
-    public Map<String, String> getDetails() {
-        return details;
-    }
-
-    @Override
     public String getId() {
         return id;
     }
 
+    public Map<String, String> getInfo() {
+        return info;
+    }
+
     @Override
-    public Set<ModelDescriptor.Property> getInputs() {
+    public Set<ModelProperty> getInputs() {
         return inputs;
     }
 
     @Override
-    public Set<String> getOutputs() {
+    public Set<ModelProperty> getOutputs() {
         return outputs;
+    }
+
+    @Override
+    public String getName() {
+        return info.get(MODEL_NAME);
+    }
+
+    @Override
+    public String getVersion() {
+        return info.get(MODEL_VERSION);
     }
 
     /**
@@ -134,14 +134,14 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
      */
     public Map<String, Serializable> getProperties(DocumentModel doc) {
         Map<String, Serializable> props = new HashMap<>(inputs.size());
-        for (ModelDescriptor.Property input : inputs) {
-            switch (input.type) {
+        for (ModelProperty input : inputs) {
+            switch (input.getType()) {
                 case IMAGE_TYPE:
-                    props.put(input.name, convertImageBlob(getPropertyValue(doc, input.name, Blob.class)));
+                    props.put(input.getName(), convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class)));
                     break;
                 default:
                     // default to text String
-                    props.put(input.name, getPropertyValue(doc, input.name, String.class));
+                    props.put(input.getName(), getPropertyValue(doc, input.getName(), String.class));
             }
         }
         return props;

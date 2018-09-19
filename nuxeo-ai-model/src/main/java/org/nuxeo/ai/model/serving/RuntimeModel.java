@@ -18,9 +18,6 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import java.util.Map;
-import java.util.Set;
-
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.AIModel;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -31,24 +28,9 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 public interface RuntimeModel extends AIModel {
 
     /**
-     * Get any default options to be used with a request to the model
-     */
-    Map<String, String> getDefaultOptions();
-
-    /**
      * Initialize the model using the Model Descriptor
      */
     void init(ModelDescriptor modelDescriptor);
-
-    /**
-     * The input properties
-     */
-    Set<ModelDescriptor.Property> getInputs();
-
-    /**
-     * The output properties
-     */
-    Set<String> getOutputs();
 
     /**
      * Predict a result for the supplied document

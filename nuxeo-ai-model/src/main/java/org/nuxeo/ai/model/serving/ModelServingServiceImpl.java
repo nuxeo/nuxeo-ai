@@ -19,6 +19,7 @@
 package org.nuxeo.ai.model.serving;
 
 import static java.util.Collections.singletonMap;
+import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.notNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,12 +27,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.model.AIModel;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
@@ -40,6 +44,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.runtime.stream.pipes.functions.Predicates;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -75,9 +80,9 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     @Override
     public void addModel(ModelDescriptor descriptor) {
 
-        if (!descriptor.inputs.stream().allMatch(i -> getInputTypesResolver().validate(i.type))) {
+        if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
             throw new IllegalArgumentException(String.format("The input types %s for service %s must be defined in the %s vocabulary",
-                                                             descriptor.inputs, descriptor.id, AI_INPUT_OUTPUT_TYPES_DIRECTORY));
+                                                             descriptor.getInputs(), descriptor.id, AI_INPUT_OUTPUT_TYPES_DIRECTORY));
         }
 
         RuntimeModel model = descriptor.getModel();
@@ -85,7 +90,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
             Framework.getService(AIComponent.class).addEnrichmentService(descriptor.id, (EnrichmentService) model);
         }
         models.put(descriptor.id, model);
-        predicates.put(descriptor.id, descriptor.getPredicate());
+        predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter.primaryType));
     }
 
     @Override
@@ -119,6 +124,17 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                          .map(e -> models.get(e.getKey()).predict(document))
                          .filter(Objects::nonNull)
                          .collect(Collectors.toList());
+    }
+
+    /**
+     * Makes a DocumentModel predicate
+     */
+    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs, String primaryType) {
+        Predicate<DocumentModel> docPredicate = Predicates.doc();
+        if (StringUtils.isNotBlank(primaryType)) {
+            docPredicate = docPredicate.and(d -> primaryType.equals(d.getType()));
+        }
+        return docPredicate.and(d -> inputs.stream().allMatch(i -> notNull(d, i.getName())));
     }
 
     /**

@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.model;
 
-import java.util.Map;
+import java.util.Set;
 
 /**
  * An Artificial Intelligence model
@@ -35,21 +35,22 @@ public interface AIModel {
     String getId();
 
     /**
-     * Any details about this model, used for information purposes
+     * The input properties
      */
-    Map<String, String> getDetails();
+    Set<ModelProperty> getInputs();
+
+    /**
+     * The output properties
+     */
+    Set<ModelProperty> getOutputs();
 
     /**
      * Get the model name
      */
-    default String getName() {
-        return getDetails().get(MODEL_NAME);
-    }
+    String getName();
 
     /**
      * Get the model version
      */
-    default String getVersion() {
-        return getDetails().get(MODEL_VERSION);
-    }
+    String getVersion();
 }

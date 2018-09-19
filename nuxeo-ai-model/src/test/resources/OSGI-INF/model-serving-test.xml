@@ -17,16 +17,19 @@
 
   <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
     <model id="xyz">
-      <filter primaryType="File" />
-      <config name="uri">http://localhost:5089/v1/models/</config>
+      <filter primaryType="File"/>
+      <config name="uri">http://localhost:5089/v1/models/super_testing/</config>
       <config name="transientStore">testTransient</config>
       <config name="liveness.uri">http://localhost:5089/health</config>
       <config name="liveness.methodName">GET</config>
-      <input name="dc:title" type="txt"/>
-      <input name="ecm:path" type="txt"/>
-      <input name="ecm:mixinType" type="txt"/>
-      <output>dc:description</output>
-      <option name="myModelParam">super_testing</option>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+        <property name="ecm:path" type="txt"/>
+        <property name="ecm:mixinType" type="txt"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
       <info name="modelName">dnn</info>
       <info name="modelVersion">1</info>
     </model>
@@ -34,11 +37,14 @@
 
   <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
     <model id="failingModel">
-      <filter primaryType="Note" />
-      <config name="uri">http://localhost:5089/v1/models/</config>
-      <input name="dc:description" type="txt"/>
-      <output>dc:title</output>
-      <option name="myModelParam">fail_testing</option>
+      <filter primaryType="Note"/>
+      <config name="uri">http://localhost:5089/v1/models/fail_testing/</config>
+      <inputProperties>
+        <property name="dc:description" type="txt"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:title" type="txt"/>
+      </outputProperties>
       <info name="modelName">dnn</info>
       <info name="modelVersion">1</info>
     </model>

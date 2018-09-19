@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/v1/models/predict?myModelParam=fail_testing"
+    "url": "/v1/models/fail_testing/predict"
   },
   "response": {
     "status": 303,

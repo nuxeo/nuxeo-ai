@@ -38,6 +38,10 @@ public class AIConstants {
     public static final String ENRICHMENT_LABELS_PROPERTY = "labels";
     public static final String ENRICHMENT_KIND_PROPERTY = "kind";
 
+
+    public static final String IMAGE_TYPE = "img";
+    public static final String TEXT_TYPE = "txt";
+
     private AIConstants() {
         // just Constants
     }

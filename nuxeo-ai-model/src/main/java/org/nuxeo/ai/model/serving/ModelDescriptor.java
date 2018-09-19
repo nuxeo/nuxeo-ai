@@ -18,22 +18,16 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.notNull;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-
-import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
-import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.stream.pipes.functions.Predicates;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Definition of an AI model at runtime
@@ -46,23 +40,11 @@ public class ModelDescriptor {
     @XNode("@id")
     public String id;
 
-    @XNodeList(value = "input", type = HashSet.class, componentType = Property.class)
-    public Set<Property> inputs = new HashSet<>();
-
-    @XNodeList(value = "output", type = HashSet.class, componentType = String.class)
-    public Set<String> outputs = new HashSet<>();
-
     /**
      * Endpoint configuration, used only on initialization. e.g. URI
      */
     @XNodeMap(value = "config", key = "@name", type = HashMap.class, componentType = String.class)
     public Map<String, String> configuration = new HashMap<>();
-
-    /**
-     * Default options to send with the request
-     */
-    @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
-    public Map<String, String> defaultOptions = new HashMap<>();
 
     /**
      * Information about the model, e.g. name, training reference
@@ -73,8 +55,22 @@ public class ModelDescriptor {
     @XNode("filter")
     public ModelPredicate filter;
 
+    @XNode("inputProperties")
+    protected InputProperties inputProperties;
+
+    @XNode("outputProperties")
+    protected OutputProperties outputProperties;
+
     @XNode("@class")
     protected Class<? extends RuntimeModel> clazz;
+
+    public Set<ModelProperty> getInputs() {
+        return inputProperties.properties;
+    }
+
+    public Set<ModelProperty> getOutputs() {
+        return outputProperties.properties;
+    }
 
     /**
      * Get a runtime model
@@ -92,17 +88,6 @@ public class ModelDescriptor {
         }
     }
 
-    /**
-     * Get a Predicate to test before using the model
-     */
-    public Predicate<DocumentModel> getPredicate() {
-        Predicate<DocumentModel> predicate = Predicates.doc();
-        if (filter != null && StringUtils.isNotBlank(filter.primaryType)) {
-            predicate = predicate.and(d -> filter.primaryType.equals(d.getType()));
-        }
-        return predicate.and(d -> inputs.stream().allMatch(i -> notNull(d, i.name)));
-    }
-
     @XObject("filter")
     public static class ModelPredicate {
 
@@ -110,22 +95,16 @@ public class ModelDescriptor {
         String primaryType;
     }
 
-    @XObject("input")
-    public static class Property {
-
-        @XNode("@name")
-        String name;
-
-        @XNode("@type")
-        String type;
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("Property{");
-            sb.append("name='").append(name).append('\'');
-            sb.append(", type='").append(type).append('\'');
-            sb.append('}');
-            return sb.toString();
-        }
+    @XObject("inputProperties")
+    public static class InputProperties {
+        @XNodeList(value = "property", type = HashSet.class, componentType = ModelProperty.class)
+        protected Set<ModelProperty> properties = new HashSet<>();
     }
+
+    @XObject("outputProperties")
+    public static class OutputProperties {
+        @XNodeList(value = "property", type = HashSet.class, componentType = ModelProperty.class)
+        protected Set<ModelProperty> properties = new HashSet<>();
+    }
+
 }
