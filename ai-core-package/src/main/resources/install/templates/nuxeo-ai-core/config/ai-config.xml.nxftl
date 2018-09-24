@@ -36,4 +36,14 @@
   </extension>
 </#if>
 
+<#if "${nuxeo.ai.export.tensorflow}" == "true">
+  <extension point="recordWriter" target="org.nuxeo.ai.services.AIComponent">
+    <recordWriter class="org.nuxeo.ai.tensorflow.TFRecordWriter">
+      <name>training</name>
+      <name>validation</name>
+      <option name="blobProvider">default</option>
+    </recordWriter>
+  </extension>
+</#if>
+
 </component>

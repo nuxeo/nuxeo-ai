@@ -26,18 +26,6 @@ import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -57,6 +45,16 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
+import javax.inject.Inject;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -96,16 +94,23 @@ public class TensorTest {
 
         assertTrue(blob.getLength() > 0);
         // System.out.println("File: " + blob.getFile().getAbsolutePath());
+        assertEquals(numberOfRecords, countNumberOfExamples(blob, 2));
+    }
+
+    /**
+     * Count the number of tensorflow record example records.
+     */
+    public static int countNumberOfExamples(Blob blob, int numOfFeatures) throws IOException {
         DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
         TFRecordReader tfRecordReader = new TFRecordReader(input, true);
         byte[] exampleData;
         int countExamples = 0;
         while ((exampleData = tfRecordReader.read()) != null) {
             Example example = Example.parseFrom(exampleData);
-            assertEquals(2, example.getFeatures().getFeatureCount());
+            assertEquals(numOfFeatures, example.getFeatures().getFeatureCount());
             countExamples++;
         }
-        assertEquals(numberOfRecords, countExamples);
+        return countExamples;
     }
 
 

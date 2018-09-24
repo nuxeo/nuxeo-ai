@@ -12,3 +12,5 @@ nuxeo.enrichment.source.stream=enrichment.in
 nuxeo.enrichment.save.tags=false
 nuxeo.enrichment.save.facets=true
 nuxeo.enrichment.raiseEvent=true
+
+nuxeo.ai.export.tensorflow=true

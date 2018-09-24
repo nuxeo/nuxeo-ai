@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.model.export;
 
+import static org.nuxeo.ai.bulk.DataSetBulkAction.ExportingComputation.DEFAULT_SPLIT;
+
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -47,7 +49,7 @@ public class DatasetExportOperation {
     protected StringList outputs;
 
     @Param(name = "split", required = false)
-    protected int split = 80;
+    protected int split = DEFAULT_SPLIT;
 
     @OperationMethod
     public String run() {
