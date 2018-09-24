@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.nuxeo.ecm.core</groupId>
       <artifactId>nuxeo-core-binarymanager-s3</artifactId>
-      <version>10.1-SNAPSHOT</version>
+      <version>${binarymanager.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
