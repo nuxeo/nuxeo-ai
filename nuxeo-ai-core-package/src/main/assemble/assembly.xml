@@ -39,8 +39,7 @@
           <artifact groupId="org.nuxeo*" />
           <artifact groupId="nuxeo-studio" />
           <!-- Include your artifacts using their groupId for instance -->
-          <artifact groupId="org.nuxeo.runtime.stream.pipes*" />
-          <artifact groupId="org.nuxeo.ai*" />	  
+          <artifact groupId="org.nuxeo.ai*" />
         </includes>
         <excludes>
           <artifact groupId="${maven.project.groupId}" artifactId="${maven.project.artifactId}" version="${maven.project.version}" type="${maven.project.packaging}"/>
@@ -64,7 +63,6 @@
           <artifact type="pom" />
           <artifact groupId="nuxeo-studio" />
           <!-- Filter out your artifacts using their groupId for instance -->
-          <artifact groupId="org.nuxeo.runtime.stream.pipes*" />
           <artifact groupId="org.nuxeo.ai*" />
         </excludes>
       </artifact:set>

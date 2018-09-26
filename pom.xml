@@ -15,9 +15,9 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>nuxeo-pipes-core</module>
+    <module>nuxeo-ai-pipes</module>
     <module>nuxeo-ai-core</module>
-    <module>ai-core-package</module>
+    <module>nuxeo-ai-core-package</module>
   </modules>
 
   <repositories>
@@ -71,8 +71,8 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.nuxeo.runtime.stream.pipes</groupId>
-        <artifactId>nuxeo-pipes-core</artifactId>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-pipes</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -82,7 +82,7 @@
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
-        <artifactId>ai-core-package</artifactId>
+        <artifactId>nuxeo-ai-core-package</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

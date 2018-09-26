@@ -6,9 +6,9 @@
     <artifactId>ai-core-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.nuxeo.runtime.stream.pipes</groupId>
-  <artifactId>nuxeo-pipes-core</artifactId>
-  <name>Nuxeo pipes core</name>
+  <groupId>org.nuxeo.ai</groupId>
+  <artifactId>nuxeo-ai-pipes</artifactId>
+  <name>Ai pipes</name>
   <description>Nuxeo pipelines using Nuxeo Streams</description>
 
   <dependencies>

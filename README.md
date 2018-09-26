@@ -3,7 +3,7 @@ Core functionality for using AI with the Nuxeo Platform.
 
 This modules provides 2 packages:
   * nuxeo-ai-core - Contains the core interfaces and AI component
-  * nuxeo-pipes-core - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
+  * nuxeo-ai-pipes - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
 
 ## Installation
 #### Version Support
@@ -144,11 +144,11 @@ These streams are *disabled by default* but can be enabled by the [corresponding
 Using an Nuxeo extension you can dynamically register a pipeline for any custom event.  
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
 ```xml
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.pipes.Pipeline">
     <pipe id="pipe.mypipe" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
       <supplier>
         <event name="MY_EVENT">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
         </event>
       </supplier>
       <consumer>
