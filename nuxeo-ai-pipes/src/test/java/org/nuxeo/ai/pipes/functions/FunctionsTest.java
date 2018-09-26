@@ -58,7 +58,7 @@ import junit.framework.TestCase;
 
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.pipes.nuxeo-pipes"})
+@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes"})
 public class FunctionsTest {
 
     @Inject

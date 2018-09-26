@@ -59,8 +59,8 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 @RunWith(FeaturesRunner.class)
 @Features({PipesTestConfigFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.pipes.nuxeo-pipes",
-        "org.nuxeo.ai.pipes.nuxeo-pipes:OSGI-INF/stream-pipes-test.xml"})
+@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
+        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml"})
 public class StreamsPipesTest {
 
     @Inject
