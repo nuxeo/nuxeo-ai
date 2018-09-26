@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.pipes.mock.streams">
+<component name="org.nuxeo.ai.pipes.mock.streams">
 
-  <require>org.nuxeo.runtime.stream.pipes.Pipeline</require>
+  <require>org.nuxeo.ai.Pipeline</require>
 
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
     <logConfig name="test_log_pipes">
@@ -10,11 +10,11 @@
   </extension>
 
   <!-- Turn on the picture view pipe -->
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.images" enabled="true"/>
   </extension>
 
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.doc" enabled="false">
       <supplier>
         <event name="willnotbeused"/>
@@ -27,7 +27,7 @@
     </pipe>
   </extension>
 
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.doc" enabled="true">
       <supplier>
         <event name="myDocEvent"/>
@@ -43,11 +43,11 @@
     </pipe>
   </extension>
 
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.text" enabled="true">
       <supplier>
         <event name="myDocEvent">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.MimeBlobPropertyFilter">
+          <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
             <option name="mimePattern">text.*</option>
             <option name="properties">file:content</option>
           </filter>
@@ -63,12 +63,12 @@
     </pipe>
   </extension>
 
-  <extension point="pipes" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.isDirty" enabled="true">
       <supplier>
         <event name="documentModified">
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.NotSystemOrProxyFilter"/>
-          <filter class="org.nuxeo.runtime.stream.pipes.filters.DirtyPropertyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
           <option name="properties">dc:title</option>
         </event>
       </supplier>
@@ -83,7 +83,7 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="basicProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="4"
-                     class="org.nuxeo.runtime.stream.pipes.PassThrough">
+                     class="org.nuxeo.ai.pipes.PassThrough">
       <option name="source">text</option>
       <option name="sink">text.pass,text.other</option>
     </streamProcessor>
@@ -91,13 +91,13 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="testProcessor" logConfig="test_log_pipes" defaultConcurrency="1" defaultPartitions="4"
-                     class="org.nuxeo.runtime.stream.pipes.functions.SimpleFilterFunction">
+                     class="org.nuxeo.ai.pipes.functions.SimpleFilterFunction">
       <option name="source">text.pass</option>
       <option name="sink">text.out</option>
     </streamProcessor>
   </extension>
 
-  <extension point="text" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="text" target="org.nuxeo.ai.Pipeline">
     <text propertyName="fulltextBinary" windowSize="15">
       <consumer>
         <stream name="custom.binary.text" size="3"/>
@@ -105,7 +105,7 @@
     </text>
   </extension>
 
-  <extension point="text" target="org.nuxeo.runtime.stream.pipes.Pipeline">
+  <extension point="text" target="org.nuxeo.ai.Pipeline">
     <text>
       <consumer>
         <stream name="default.binary.text"/>

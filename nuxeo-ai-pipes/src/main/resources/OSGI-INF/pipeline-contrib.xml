@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.runtime.stream.pipes.Pipeline" version="1.0">
+<component name="org.nuxeo.ai.Pipeline" version="1.0">
 
   <require>org.nuxeo.ecm.core.event.EventServiceComponent</require>
   <require>org.nuxeo.runtime.stream.service</require>
-  <implementation class="org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl"/>
+  <implementation class="org.nuxeo.ai.pipes.services.PipelineServiceImpl"/>
 
   <service>
-    <provide interface="org.nuxeo.runtime.stream.pipes.services.PipelineService"/>
+    <provide interface="org.nuxeo.ai.pipes.services.PipelineService"/>
   </service>
 
   <extension-point name="pipes">
@@ -26,7 +26,7 @@
         </pipe>
       </code>
     </documentation>
-    <object class="org.nuxeo.runtime.stream.pipes.services.PipeDescriptor"/>
+    <object class="org.nuxeo.ai.pipes.services.PipeDescriptor"/>
   </extension-point>
 
   <extension-point name="text">
@@ -40,6 +40,6 @@
         </text>
       </code>
     </documentation>
-    <object class="org.nuxeo.runtime.stream.pipes.services.BinaryTextDescriptor"/>
+    <object class="org.nuxeo.ai.pipes.services.BinaryTextDescriptor"/>
   </extension-point>
 </component>

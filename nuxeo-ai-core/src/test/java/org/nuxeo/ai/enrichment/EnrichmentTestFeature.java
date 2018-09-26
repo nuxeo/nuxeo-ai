@@ -37,7 +37,7 @@ import org.nuxeo.runtime.test.runner.SimpleFeature;
 /**
  * Sets the configuration for Enrichment tests
  */
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.pipes.nuxeo-pipes",
+@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
         "org.nuxeo.ecm.default.config",
         "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-stream-config-test.xml",
         "org.nuxeo.ai.ai-core"})
