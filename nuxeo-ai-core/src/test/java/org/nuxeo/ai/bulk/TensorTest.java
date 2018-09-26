@@ -24,7 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,7 +39,7 @@ import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;

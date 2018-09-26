@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.rest;
 
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  * An implementation of a service that calls a rest api

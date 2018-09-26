@@ -21,7 +21,7 @@ package org.nuxeo.ai.enrichment;
 import java.util.Collection;
 
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 import net.jodah.failsafe.RetryPolicy;
 

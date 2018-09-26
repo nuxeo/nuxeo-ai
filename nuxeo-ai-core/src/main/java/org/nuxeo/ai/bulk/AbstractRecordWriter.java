@@ -30,7 +30,7 @@ import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import org.nuxeo.runtime.stream.pipes.streams.Initializable;
+import org.nuxeo.ai.pipes.streams.Initializable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;

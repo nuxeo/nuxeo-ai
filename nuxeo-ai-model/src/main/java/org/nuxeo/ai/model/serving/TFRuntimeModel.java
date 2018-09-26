@@ -20,7 +20,7 @@ package org.nuxeo.ai.model.serving;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,7 +40,7 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;

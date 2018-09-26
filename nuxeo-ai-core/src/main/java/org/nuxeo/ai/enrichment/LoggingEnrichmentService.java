@@ -23,7 +23,7 @@ import java.util.Collections;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  * Just writes to a log

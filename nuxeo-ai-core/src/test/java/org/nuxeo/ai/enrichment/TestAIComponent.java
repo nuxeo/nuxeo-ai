@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -43,7 +43,7 @@ import org.nuxeo.lib.stream.computation.ComputationMetadata;
 import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;

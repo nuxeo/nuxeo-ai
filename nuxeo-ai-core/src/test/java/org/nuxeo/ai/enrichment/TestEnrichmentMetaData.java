@@ -21,8 +21,8 @@ package org.nuxeo.ai.enrichment;
 import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,7 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)

@@ -23,7 +23,7 @@ import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.stream.pipes.streams.Initializable;
+import org.nuxeo.ai.pipes.streams.Initializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

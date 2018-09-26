@@ -20,7 +20,7 @@ package org.nuxeo.ai.tensorflow;
 
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +32,7 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.tensorflow.example.BytesList;
 import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;

@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 import java.util.List;

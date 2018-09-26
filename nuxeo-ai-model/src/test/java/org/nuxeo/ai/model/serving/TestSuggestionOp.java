@@ -20,7 +20,7 @@ package org.nuxeo.ai.model.serving;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 

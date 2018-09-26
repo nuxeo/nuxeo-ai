@@ -19,14 +19,14 @@
 package org.nuxeo.ai.functions;
 
 import static java.util.Optional.empty;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
 import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessorTopology;
+import org.nuxeo.ai.pipes.streams.FunctionStreamProcessorTopology;
 
 /**
  * Consumes enrichment metadata and doesn't return any result.

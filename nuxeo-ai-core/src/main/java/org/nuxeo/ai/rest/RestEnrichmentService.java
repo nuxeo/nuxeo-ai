@@ -40,7 +40,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  * An enrichment service that calls a Rest api.

@@ -20,8 +20,8 @@ package org.nuxeo.ai.model.serving;
 
 import static org.nuxeo.ai.AIConstants.IMAGE_TYPE;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.base64EncodeBlob;
-import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;

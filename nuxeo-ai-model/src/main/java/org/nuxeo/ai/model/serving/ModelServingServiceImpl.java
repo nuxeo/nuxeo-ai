@@ -19,7 +19,7 @@
 package org.nuxeo.ai.model.serving;
 
 import static java.util.Collections.singletonMap;
-import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.notNull;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +44,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
-import org.nuxeo.runtime.stream.pipes.functions.Predicates;
+import org.nuxeo.ai.pipes.functions.Predicates;
 
 /**
  * An implementation of a service that serves runtime AI models

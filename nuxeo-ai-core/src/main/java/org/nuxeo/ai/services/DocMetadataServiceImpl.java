@@ -28,8 +28,8 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
-import static org.nuxeo.runtime.stream.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.services.config.ConfigurationService;
-import org.nuxeo.runtime.stream.pipes.services.PipelineService;
+import org.nuxeo.ai.pipes.services.PipelineService;
 
 /**
  * An implementation of DocMetadataService

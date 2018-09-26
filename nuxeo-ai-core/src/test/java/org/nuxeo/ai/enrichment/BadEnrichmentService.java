@@ -21,7 +21,7 @@ package org.nuxeo.ai.enrichment;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 public class BadEnrichmentService extends AbstractEnrichmentService {
 

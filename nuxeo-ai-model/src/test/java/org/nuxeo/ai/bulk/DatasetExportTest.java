@@ -45,7 +45,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.services.PipelineService;
+import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
