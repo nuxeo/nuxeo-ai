@@ -1,7 +1,7 @@
 "id","label","parent","obsolete"
 "classification","Classification","","0"
 "tagging","Tagging","","0"
-"prediction",Prediction","","0"
+"prediction","Prediction","","0"
 "face","Face Detection","tagging","0"
 "celebrity","Celebrity Detection","tagging","0"
 "imageLabels","Object Detection in images","classification","0"

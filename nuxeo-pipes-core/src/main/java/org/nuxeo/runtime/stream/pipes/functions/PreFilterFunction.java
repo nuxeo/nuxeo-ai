@@ -62,8 +62,7 @@ public class PreFilterFunction<T, R> implements Function<T, R>, Initializable {
     public R apply(T in) {
         try {
             if (filter == null || filter.test(in)) {
-                R transform = transformation.apply(in);
-                return transform;
+                return transformation.apply(in);
             }
         } catch (NullPointerException | ClassCastException cce) {
             log.error("Invalid function definition ", cce);

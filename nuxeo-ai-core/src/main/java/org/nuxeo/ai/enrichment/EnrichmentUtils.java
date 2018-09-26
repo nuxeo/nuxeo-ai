@@ -18,13 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.Blob;
@@ -38,6 +31,12 @@ import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Helper methods for enrichment services

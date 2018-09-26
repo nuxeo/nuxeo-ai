@@ -18,13 +18,12 @@
  */
 package org.nuxeo.ai.rest;
 
-import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
-import static junit.framework.TestCase.assertEquals;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -40,9 +39,12 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -77,4 +79,14 @@ public class TestRestEnrichment {
                      0, results.size());
 
     }
+
+    @Test
+    public void testIsLive() {
+        Map<String, String> options = new HashMap<>();
+        String prefix = "testing.";
+        options.put(prefix + "uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
+        options.put(prefix + "methodName", "GET");
+        assertTrue(RestClient.isLive(options, prefix));
+    }
+
 }

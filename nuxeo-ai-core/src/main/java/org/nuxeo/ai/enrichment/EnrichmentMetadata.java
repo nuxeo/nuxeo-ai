@@ -211,6 +211,7 @@ public class EnrichmentMetadata extends AIMetadata {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         protected EnrichmentMetadata build(AbstractMetaDataBuilder abstractMetaDataBuilder) {
 

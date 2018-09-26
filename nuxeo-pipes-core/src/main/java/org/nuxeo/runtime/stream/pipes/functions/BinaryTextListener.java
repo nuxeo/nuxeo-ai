@@ -112,6 +112,8 @@ public class BinaryTextListener implements EventListener {
 
         private static final Log log = LogFactory.getLog(TextToStreamWork.class);
 
+        private static final long serialVersionUID = 164995918890660173L;
+
         protected final String binaryProperty;
 
         protected final String consumerName;

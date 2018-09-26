@@ -19,25 +19,20 @@
 package org.nuxeo.ai.metadata;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
-
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * A normalized view of metadata returned by an intelligent service
@@ -45,11 +40,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public abstract class AIMetadata implements Serializable {
 
     private static final long serialVersionUID = 4590486107702875095L;
+
     public final Instant created;
+
     public final String creator;
+
     public final String serviceName;
+
     public final Context context;
+
     public final String kind;
+
     public final String rawKey;
 
     public AIMetadata(String serviceName, String kind, Context context,
@@ -115,9 +116,13 @@ public abstract class AIMetadata implements Serializable {
     public static class Context implements Serializable {
 
         private static final long serialVersionUID = 3212595777234047338L;
+
         public final String repositoryName;
+
         public final String documentRef; //Document reference
+
         public final String blobDigest;
+
         public final Set<String> inputProperties;
 
         @JsonCreator
@@ -164,7 +169,9 @@ public abstract class AIMetadata implements Serializable {
     public static class Label implements Serializable {
 
         private static final long serialVersionUID = 8838956163616827139L;
+
         private final String name;
+
         private final float confidence;
 
         @JsonCreator
@@ -213,11 +220,17 @@ public abstract class AIMetadata implements Serializable {
      */
     public static class Tag implements Serializable {
         private static final long serialVersionUID = -5340157925873173455L;
+
         public final String name;
+
         public final String kind;
+
         public final String reference;
+
         public final Box box;
+
         public final float confidence;
+
         public final List<Label> features;
 
         @JsonCreator
@@ -275,9 +288,13 @@ public abstract class AIMetadata implements Serializable {
      */
     public static class Box implements Serializable {
         private static final long serialVersionUID = -6230967082128905676L;
+
         public final float width;
+
         public final float height;
+
         public final float left;
+
         public final float top;
 
         @JsonCreator

@@ -21,19 +21,15 @@ package org.nuxeo.ai.enrichment;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,10 +53,11 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
+import javax.inject.Inject;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Tests a fully configured stream processor

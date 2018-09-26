@@ -38,7 +38,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -141,6 +141,7 @@ public class TestDocMetadataService {
         txFeature.nextTransaction();
         doc = session.getDocument(testDoc.getRef());
         classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        //noinspection unchecked
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
         assertEquals("1 of the 2 enrichments must be removed because our test property is dirty",
                      1, classifications.size());

@@ -19,16 +19,10 @@
 package org.nuxeo.ai.enrichment;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
-import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.transientstore.api.TransientStore;
-import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
-import org.nuxeo.runtime.api.Framework;
 
 /**
  * Basic implementation of an enrichment service with mimetype and max file size support.

@@ -47,21 +47,26 @@ import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
 
     public static final String BLOB_PROPERTIES = "blobProperties";
+
     public static final String TEXT_PROPERTIES = "textProperties";
+
     public static final String CUSTOM_PROPERTIES = "customProperties";
+
     protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
+
     private static final Log log = LogFactory.getLog(DocEventToStream.class);
+
     protected final List<String> blobProperties;
+
     protected final List<String> textProperties;
+
     protected final List<String> customProperties;
 
     /**
      * Creates an instance with default values
      */
     public DocEventToStream() {
-        this.blobProperties = DEFAULT_BLOB_PROPERTIES;
-        this.textProperties = Collections.emptyList();
-        this.customProperties = Collections.emptyList();
+        this(DEFAULT_BLOB_PROPERTIES, null, null);
     }
 
     /**

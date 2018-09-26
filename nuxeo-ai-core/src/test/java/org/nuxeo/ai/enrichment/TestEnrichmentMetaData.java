@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,7 +57,7 @@ public class TestEnrichmentMetaData {
     }
 
     @Test
-    public void testJson() throws IOException {
+    public void testJson() {
         List<EnrichmentMetadata.Label> labels = Stream.of("label1", "l2", "lab3")
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());
