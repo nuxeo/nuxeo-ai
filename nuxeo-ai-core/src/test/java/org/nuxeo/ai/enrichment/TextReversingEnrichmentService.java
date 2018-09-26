@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.security.SecurityConstants;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  * Reverse a text field and add it to the raw response

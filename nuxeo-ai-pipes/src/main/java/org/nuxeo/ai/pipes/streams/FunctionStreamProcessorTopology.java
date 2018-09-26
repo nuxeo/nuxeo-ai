@@ -16,29 +16,26 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.functions;
+package org.nuxeo.ai.pipes.streams;
 
-import static java.util.Optional.empty;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.ai.pipes.streams.FunctionStreamProcessorTopology;
+import org.nuxeo.lib.stream.computation.Topology;
+import org.nuxeo.runtime.stream.StreamProcessorTopology;
 
 /**
- * Consumes enrichment metadata and doesn't return any result.
+ * An implementation of a StreamProcessorTopology that makes use of a generic Function<Record, Record>
  */
-public abstract class AbstractEnrichmentConsumer implements FunctionStreamProcessorTopology, Consumer<EnrichmentMetadata> {
+public interface FunctionStreamProcessorTopology extends StreamProcessorTopology, Function<Record, Optional<Record>> {
 
     @Override
-    public Optional<Record> apply(Record record) {
-        EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
-        if (metadata != null) {
-            this.accept(metadata);
+    default Topology getTopology(Map<String, String> options) {
+        if (this instanceof Initializable) {
+            ((Initializable) this).init(options);
         }
-        return empty();
+        return new FunctionStreamProcessor().getTopology(this, options);
     }
 }

@@ -39,8 +39,8 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
-import org.nuxeo.runtime.stream.pipes.events.DocEventToStream;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.events.DocEventToStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  *

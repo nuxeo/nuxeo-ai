@@ -16,25 +16,14 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.enrichment;
+package org.nuxeo.ai.pipes.functions;
 
-import java.util.Collection;
-import java.util.Collections;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 
 /**
- * Just writes to a log
+ * Something that uses NuxeoMetrics
  */
-public class LoggingEnrichmentService extends AbstractEnrichmentService {
+public interface MetricsProducer {
 
-    private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
-
-    @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        log.info("Logging: " + blobTextStream);
-        return Collections.emptyList();
-    }
+    void withMetrics(NuxeoMetricSet nuxeoMetrics);
 }

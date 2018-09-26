@@ -16,21 +16,29 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.enrichment;
+package org.nuxeo.ai.pipes.services;
 
-import java.util.Collection;
-import java.util.Collections;
+import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
+import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.BINARYTEXT_UPDATED;
 
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.common.xmap.annotation.XNode;
+import org.nuxeo.common.xmap.annotation.XObject;
 
-public class BadEnrichmentService extends AbstractEnrichmentService {
+@XObject("text")
+public class BinaryTextDescriptor {
 
-    public BadEnrichmentService(String name) {
-        super();
-    }
+    @XNode("@eventName")
+    public String eventName = BINARYTEXT_UPDATED;
 
-    @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        return Collections.emptyList();
-    }
+    @XNode("@propertyName")
+    public String propertyName = BINARY_TEXT_SYS_PROP;
+
+    /**
+     * Size in Seconds
+     */
+    @XNode("@windowSize")
+    public int windowSize = -1;
+
+    @XNode("consumer")
+    protected PipeDescriptor.Consumer consumer;
 }

@@ -16,25 +16,12 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.enrichment;
-
-import java.util.Collection;
-import java.util.Collections;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+package org.nuxeo.ai.pipes.types;
 
 /**
- * Just writes to a log
+ * Does this object have a unique key used for partitioning?
  */
-public class LoggingEnrichmentService extends AbstractEnrichmentService {
+public interface Partitionable {
 
-    private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
-
-    @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        log.info("Logging: " + blobTextStream);
-        return Collections.emptyList();
-    }
+    String getKey();
 }

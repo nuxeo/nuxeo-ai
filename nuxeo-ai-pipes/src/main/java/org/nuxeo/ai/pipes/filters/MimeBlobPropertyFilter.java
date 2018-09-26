@@ -16,25 +16,31 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.enrichment;
+package org.nuxeo.ai.pipes.filters;
 
-import java.util.Collection;
-import java.util.Collections;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+
+import org.nuxeo.ecm.core.api.Blob;
 
 /**
- * Just writes to a log
+ * Tests to see if a Blob mimetype matches the regular expression.
  */
-public class LoggingEnrichmentService extends AbstractEnrichmentService {
+public class MimeBlobPropertyFilter extends PropertyFilter.BlobPropertyFilter {
 
-    private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
+    protected Predicate<String> mimeRegex;
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        log.info("Logging: " + blobTextStream);
-        return Collections.emptyList();
+    public void init(Map<String, String> options) {
+        super.init(options);
+        mimeRegex = Pattern.compile(options.get("mimePattern")).asPredicate();
+    }
+
+    @Override
+    public boolean testBlob(Blob blob) {
+        String mimeType = blob.getMimeType();
+        return mimeType != null && mimeRegex.test(mimeType);
     }
 }

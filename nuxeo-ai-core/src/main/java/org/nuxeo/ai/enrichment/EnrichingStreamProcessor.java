@@ -18,13 +18,13 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
-import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_IN;
-import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.STREAM_OUT;
-import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.buildName;
-import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.getStreamsList;
-import static org.nuxeo.runtime.stream.pipes.streams.FunctionStreamProcessor.registerMetrics;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.STREAM_IN;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.STREAM_OUT;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.registerMetrics;
 
 import java.util.Collection;
 import java.util.List;
@@ -46,7 +46,7 @@ import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;

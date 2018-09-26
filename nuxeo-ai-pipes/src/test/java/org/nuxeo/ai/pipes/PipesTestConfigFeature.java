@@ -16,25 +16,24 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.enrichment;
+package org.nuxeo.ai.pipes;
 
-import java.util.Collection;
-import java.util.Collections;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
+import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.SimpleFeature;
 
 /**
- * Just writes to a log
+ * Sets the configuration for tests
  */
-public class LoggingEnrichmentService extends AbstractEnrichmentService {
+public class PipesTestConfigFeature extends SimpleFeature {
 
-    private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
+    public static final String PIPES_TEST_CONFIG = "test_log_pipes";
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        log.info("Logging: " + blobTextStream);
-        return Collections.emptyList();
+    public void beforeRun(FeaturesRunner runner) throws Exception {
+        super.beforeRun(runner);
+        Framework.getProperties().put(PipelineServiceImpl.PIPES_CONFIG, PIPES_TEST_CONFIG);
     }
+
 }

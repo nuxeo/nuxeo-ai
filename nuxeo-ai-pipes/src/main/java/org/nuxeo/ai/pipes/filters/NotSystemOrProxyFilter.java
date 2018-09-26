@@ -16,25 +16,17 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.enrichment;
+package org.nuxeo.ai.pipes.filters;
 
-import java.util.Collection;
-import java.util.Collections;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
- * Just writes to a log
+ * A filter that returns true if a document in not a proxy and not a system document
  */
-public class LoggingEnrichmentService extends AbstractEnrichmentService {
-
-    private static final Log log = LogFactory.getLog(LoggingEnrichmentService.class);
+public class NotSystemOrProxyFilter implements Filter.DocumentFilter {
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        log.info("Logging: " + blobTextStream);
-        return Collections.emptyList();
+    public boolean test(DocumentModel doc) {
+        return !doc.isProxy() && !doc.hasFacet("SystemDocument");
     }
 }

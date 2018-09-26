@@ -16,29 +16,21 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.functions;
-
-import static java.util.Optional.empty;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+package org.nuxeo.ai.pipes.functions;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.streams.FunctionStreamProcessorTopology;
 
 /**
- * Consumes enrichment metadata and doesn't return any result.
+ * Just a simple pass through
  */
-public abstract class AbstractEnrichmentConsumer implements FunctionStreamProcessorTopology, Consumer<EnrichmentMetadata> {
+public class SimpleFilterFunction extends PreFilterFunction<Record, Optional<Record>>
+        implements FunctionStreamProcessorTopology {
 
-    @Override
-    public Optional<Record> apply(Record record) {
-        EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
-        if (metadata != null) {
-            this.accept(metadata);
-        }
-        return empty();
+    public SimpleFilterFunction() {
+        this.filter = r -> r.data.length > 0;
+        this.transformation = Optional::of;
     }
 }

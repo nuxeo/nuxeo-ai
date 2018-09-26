@@ -1,0 +1,151 @@
+/*
+ * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Contributors:
+ *     Gethin James
+ */
+package org.nuxeo.ai.pipes.events;
+
+import static java.util.Collections.singletonList;
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelFactory;
+import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
+import org.nuxeo.ecm.core.event.impl.EventContextImpl;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.runtime.metrics.NuxeoMetricSet;
+import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.runtime.test.runner.Deploy;
+import org.nuxeo.runtime.test.runner.Features;
+import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
+import com.google.inject.Inject;
+
+@RunWith(FeaturesRunner.class)
+@Features({PlatformFeature.class})
+@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.pipes.nuxeo-pipes"})
+public class EventPipesTest {
+
+    public static final String TEST_MIME_TYPE = "text/plain";
+
+    @Inject
+    CoreSession session;
+
+    public static Event getTestEvent(CoreSession session) throws Exception {
+        DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
+        ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
+        doc.addFacet("Publishable");
+        doc.addFacet("Versionable");
+        Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
+        doc.setPropertyValue("file:content", (Serializable) blob);
+        return getTestEvent(session, doc, "myDocEvent");
+    }
+
+    public static Event getTestEvent(CoreSession session, DocumentModel doc, String eventName) {
+        doc = session.createDocument(doc);
+        session.save();
+        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), doc);
+        Event event = evctx.newEvent(eventName);
+        event.setInline(true);
+        assertNotNull(event);
+        return event;
+    }
+
+    public static void assertMetric(int expected, String metric, NuxeoMetricSet metricSet) {
+        assertEquals(expected, getMetricValue(metricSet, metric));
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static long getMetricValue(NuxeoMetricSet metricSet, String metric) {
+        Map<String, Metric> metricMap = metricSet.getMetrics();
+        Gauge g = (Gauge) metricMap.get(metric);
+        return (Long) g.getValue();
+    }
+
+    @Test
+    public void testConsumer() {
+        LogAppenderConsumer consumer = new LogAppenderConsumer(null);
+        assertNotNull("toString shouldn't throw a null pointer even if the appender is null", consumer.toString());
+    }
+
+    @Test
+    public void testDocEventToStream() throws Exception {
+        DocEventToStream doc2stream = new DocEventToStream();
+        Collection<BlobTextStream> result =
+                doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File"),
+                                              "anyEvent"));
+        assertNotNull(result);
+        assertEquals("Nothing in the test event to serialize", 0, result.size());
+
+        Event testEvent = getTestEvent(session);
+        result = doc2stream.apply(testEvent);
+        assertEquals("There is 1 blob", 1, result.size());
+        assertEquals("file:content", result.iterator().next().getXPaths().iterator().next());
+
+        List<String> unknownProp = singletonList("dublinapple:core");
+
+        result = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
+        assertEquals("2 properties were specified by only 1 is valid", 1, result.size());
+
+        result = new DocEventToStream(unknownProp, null, null).apply(testEvent);
+        assertEquals("No valid properties were specified so no results are returned", 0, result.size());
+
+        List<String> creator = singletonList("dc:creator");
+        doc2stream = new DocEventToStream(null, null, creator);
+        List<BlobTextStream> validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        assertEquals("There is 1 blob", 1, validResult.size());
+        assertEquals("dc:creator", validResult.get(0).getXPaths().iterator().next());
+        assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
+
+        doc2stream = new DocEventToStream(null, creator, null);
+        validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        assertEquals("There is 1 blob", 1, validResult.size());
+        assertEquals("dc:creator", validResult.get(0).getXPaths().iterator().next());
+        assertEquals("Administrator", validResult.get(0).getText());
+
+        doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator,
+                                          singletonList("dc:modified"));
+        validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        BlobTextStream firstResult = validResult.get(0);
+        assertEquals("file:content", firstResult.getXPaths().toArray()[1]);
+        assertEquals("dc:modified", firstResult.getXPaths().toArray()[0]);
+        assertEquals("1 blob and 1 text", 2, validResult.size());
+
+        BlobTextStream andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextStream.class);
+        assertEquals(firstResult, andBackAgain);
+    }
+}

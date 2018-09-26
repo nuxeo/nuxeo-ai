@@ -28,8 +28,8 @@ import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.services.PipelineServiceImpl;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.SimpleFeature;
@@ -37,7 +37,7 @@ import org.nuxeo.runtime.test.runner.SimpleFeature;
 /**
  * Sets the configuration for Enrichment tests
  */
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.runtime.stream.pipes.nuxeo-pipes",
+@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.pipes.nuxeo-pipes",
         "org.nuxeo.ecm.default.config",
         "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-stream-config-test.xml",
         "org.nuxeo.ai.ai-core"})
