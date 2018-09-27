@@ -28,28 +28,20 @@ import static org.nuxeo.ecm.core.bulk.StreamBulkProcessor.KVWRITER_ACTION_NAME;
 import static org.nuxeo.runtime.stream.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toRecord;
 
-import org.nuxeo.ecm.core.api.CloseableCoreSession;
-import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkCounter;
 import org.nuxeo.ecm.core.bulk.actions.AbstractBulkAction;
-import org.nuxeo.lib.stream.computation.Computation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.ComputationPolicy;
 import org.nuxeo.lib.stream.computation.ComputationPolicyBuilder;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-import org.nuxeo.runtime.transaction.TransactionHelper;
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.HashSet;
@@ -70,10 +62,6 @@ public class DataSetBulkAction extends AbstractBulkAction {
     public static final String VALIDATION_ID = "o2";
 
     public static final String VALIDATION_COMPUTATION_NAME = "validation";
-
-    public DataSetBulkAction() {
-        super(EXPORT_ACTION_NAME);
-    }
 
     @Override
     public Topology getTopology(Map<String, String> options) {
@@ -100,25 +88,26 @@ public class DataSetBulkAction extends AbstractBulkAction {
         // validation RecordWriterBatchComputation.
         // The RecordWriterBatchComputation updates the counter action to indicate progress.
         // DataSetExportDoneComputation listen for the end
-        return Topology.builder()
-                       .addComputation(() -> createComputation(size, timer),
-                                       asList("i1:" + getActionName(),
-                                              TRAINING_ID + ":" + TRAINING_COMPUTATION_NAME,
-                                              VALIDATION_ID + ":" + VALIDATION_COMPUTATION_NAME,
-                                              "o3:" + COUNTER_ACTION_NAME))
-                       .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION_NAME, 1, 1, trainingPolicy),
-                                       asList("i1:" + TRAINING_COMPUTATION_NAME, "o1:" + COUNTER_ACTION_NAME))
-                       .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION_NAME, 1, 1, validationPolicy),
-                                       asList("i1:" + VALIDATION_COMPUTATION_NAME, "o1:" + COUNTER_ACTION_NAME))
-                       .addComputation(() -> new DataSetExportDoneComputation("end_training_validation",
-                                                                              new HashSet<>(asList(TRAINING_COMPUTATION_NAME, VALIDATION_COMPUTATION_NAME))),
-                                       asList("i1:" + KVWRITER_ACTION_NAME))
-                       .build();
+        Topology.Builder builder = Topology.builder();
+        addComputations(builder, size, timer);
+        return builder
+                .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION_NAME, 1, 1, trainingPolicy),
+                                asList("i1:" + TRAINING_COMPUTATION_NAME, "o1:" + COUNTER_ACTION_NAME))
+                .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION_NAME, 1, 1, validationPolicy),
+                                asList("i1:" + VALIDATION_COMPUTATION_NAME, "o1:" + COUNTER_ACTION_NAME))
+                .addComputation(() -> new DataSetExportDoneComputation("end_training_validation",
+                                                                       new HashSet<>(asList(TRAINING_COMPUTATION_NAME, VALIDATION_COMPUTATION_NAME))),
+                                asList("i1:" + KVWRITER_ACTION_NAME))
+                .build();
     }
 
     @Override
-    protected Computation createComputation(int batchSize, int batchThresholdMs) {
-        return new ExportingComputation(getActionName(), batchSize, batchThresholdMs);
+    protected Topology.Builder addComputations(Topology.Builder builder, int size, int threshold) {
+        return builder.addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME, size, threshold),
+                                      asList("i1:" + EXPORT_ACTION_NAME,
+                                             TRAINING_ID + ":" + TRAINING_COMPUTATION_NAME,
+                                             VALIDATION_ID + ":" + VALIDATION_COMPUTATION_NAME,
+                                             "o3:" + COUNTER_ACTION_NAME));
     }
 
     /**
@@ -141,28 +130,8 @@ public class DataSetBulkAction extends AbstractBulkAction {
         }
 
         @Override
-        protected void processBatch(ComputationContext context) {
-            //TODO: This is cut and pasted from the parent, just so that the parent doesn't write the counter
-            // please remove this method when the parent is updated.
-            if (!documentIds.isEmpty()) {
-                TransactionHelper.runInTransaction(() -> {
-                    try {
-                        LoginContext loginContext = Framework.loginAsUser(currentCommand.getUsername());
-                        String repository = currentCommand.getRepository();
-                        try (CloseableCoreSession session = CoreInstance.openCoreSession(repository)) {
-                            compute(session, documentIds, currentCommand.getParams());
-                        } finally {
-                            loginContext.logout();
-                        }
-                    } catch (LoginException e) {
-                        throw new NuxeoException(e);
-                    }
-                });
-//                BulkCounter counter = new BulkCounter(currentCommandId, documentIds.size());
-//                context.produceRecord("o1", currentCommandId, BulkCodecs.getBulkCounterCodec().encode(counter));
-                documentIds.clear();
-                context.askForCheckpoint();
-            }
+        public void produceOutput(ComputationContext context) {
+            // The parent produces a counter, we don't want to do that.
         }
 
         @Override

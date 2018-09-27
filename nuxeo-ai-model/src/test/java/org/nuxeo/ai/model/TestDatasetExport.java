@@ -56,6 +56,7 @@ import java.util.Map;
 @RunWith(FeaturesRunner.class)
 @Features({AutomationFeature.class, CoreBulkFeature.class})
 @Deploy("org.nuxeo.ai.ai-core")
+@Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
 public class TestDatasetExport {
 

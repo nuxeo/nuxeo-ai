@@ -67,6 +67,9 @@ public class DataSetExportDoneComputation extends AbstractComputation {
         if (isCompleted(status)) {
             for (String name : writerNames) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
+                if (writer == null) {
+                    throw new NuxeoException(String.format("Unable to find record writer: %s", name));
+                }
                 if (writer.exists(status.getId())) {
                     try {
                         Optional<String> blob = writer.complete(status.getId());

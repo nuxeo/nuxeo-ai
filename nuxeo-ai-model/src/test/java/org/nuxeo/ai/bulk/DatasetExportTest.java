@@ -120,6 +120,9 @@ public class DatasetExportTest {
         assertEquals(500, status.getProcessed());
 
         eventService.waitForAsyncCompletion();
+        // We wait for the eventService to complete but still it sometimes fails, so I added a little extra time for
+        // the async listener to make sure its reliable.
+        Thread.sleep(100L);
         assertEquals(2, collector.size());
         int trainingCount = countBlobRecords(commandId, TRAINING_COMPUTATION_NAME, collector);
         int validationCount = countBlobRecords(commandId, VALIDATION_COMPUTATION_NAME, collector);
