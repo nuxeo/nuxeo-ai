@@ -60,31 +60,31 @@ You can set these in your `nuxeo.conf`.
 <th width="150" colspan="1">Since</th>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.pipes.images.enabled`</td>
+<td colspan="1">`nuxeo.ai.images.enabled`</td>
 <td colspan="1">Create a stream for creation/modification of images.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.pipes.video.enabled`</td>
+<td colspan="1">`nuxeo.ai.video.enabled`</td>
 <td colspan="1">Create a stream for creation/modification of video files.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.pipes.audio.enabled`</td>
+<td colspan="1">`nuxeo.ai.audio.enabled`</td>
 <td colspan="1">Create a stream for creation/modification of audio files.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.pipes.text.enabled`</td>
+<td colspan="1">`nuxeo.ai.text.enabled`</td>
 <td colspan="1">Create a stream for text extracted from blobs.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.pipes.config.name`</td>
+<td colspan="1">`nuxeo.ai.stream.config.name`</td>
 <td colspan="1">The name of the stream log config</td>
 <td colspan="1">`pipes`</td>
 <td colspan="1">Since 1.0</td>
@@ -186,7 +186,7 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 
 ```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-<streamProcessor name="basicProcessor" logConfig="${nuxeo.pipes.config.name}" defaultConcurrency="1" defaultPartitions="4"
+<streamProcessor name="basicProcessor" logConfig="${nuxeo.ai.stream.config.name}" defaultConcurrency="1" defaultPartitions="4"
                class="org.nuxeo.my.custom.StreamProcessor">
  <option name="source">mystream</option>
  <option name="sink">mystream.out</option>
@@ -201,7 +201,7 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 ```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
 <streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"
-                 logConfig="${nuxeo.pipes.config.name}"
+                 logConfig="${nuxeo.ai.stream.config.name}"
                  class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
   <option name="source">images</option>
   <option name="sink">enrichment.in</option>

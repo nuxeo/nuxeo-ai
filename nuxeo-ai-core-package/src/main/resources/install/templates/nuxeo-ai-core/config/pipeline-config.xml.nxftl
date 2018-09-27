@@ -3,11 +3,11 @@
   <require>org.nuxeo.runtime.stream.service</require>
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
 <#if "${kafka.enabled}" == "true">
-    <logConfig name="${nuxeo.pipes.config.name}" type="kafka">
+    <logConfig name="${nuxeo.ai.stream.config.name}" type="kafka">
       <option name="kafkaConfig">default</option>
     </logConfig>
 <#else>
-    <logConfig name="${nuxeo.pipes.config.name}" type="chronicle">
+    <logConfig name="${nuxeo.ai.stream.config.name}" type="chronicle">
       <option name="retention">${nuxeo.stream.chronicle.retention.duration}</option>
     </logConfig>
 </#if>
@@ -15,7 +15,7 @@
 
 <extension point="pipes" target="org.nuxeo.ai.pipes.Pipeline">
 
-  <pipe id="pipe.images" enabled="${nuxeo.pipes.images.enabled}">
+  <pipe id="pipe.images" enabled="${nuxeo.ai.images.enabled}">
     <supplier>
       <event name="pictureViewsGenerationDone">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
@@ -54,7 +54,7 @@
     </transformer>
   </pipe>
 
-  <pipe id="pipe.video" enabled="${nuxeo.pipes.video.enabled}" function="org.nuxeo.ai.pipes.functions.PropertiesToStream">
+  <pipe id="pipe.video" enabled="${nuxeo.ai.video.enabled}" function="org.nuxeo.ai.pipes.functions.PropertiesToStream">
     <supplier>
       <event name="documentCreated">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
@@ -80,7 +80,7 @@
     </transformer>
   </pipe>
 
-  <pipe id="pipe.audio" enabled="${nuxeo.pipes.audio.enabled}">
+  <pipe id="pipe.audio" enabled="${nuxeo.ai.audio.enabled}">
     <supplier>
       <event name="documentCreated">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
@@ -107,7 +107,7 @@
   </pipe>
 </extension>
 
-<#if "${nuxeo.pipes.text.enabled}" == "true">
+<#if "${nuxeo.ai.text.enabled}" == "true">
   <extension point="text" target="org.nuxeo.ai.pipes.Pipeline">
     <text windowSize="12">
       <consumer>

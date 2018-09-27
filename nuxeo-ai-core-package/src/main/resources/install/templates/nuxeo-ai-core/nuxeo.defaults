@@ -2,11 +2,11 @@
 nuxeo.template.includes=common
 
 # org.nuxeo.ecm.instance.description=Nuxeo ECM customized with ai-core
-nuxeo.pipes.config.name=pipes
-nuxeo.pipes.images.enabled=false
-nuxeo.pipes.video.enabled=false
-nuxeo.pipes.audio.enabled=false
-nuxeo.pipes.text.enabled=false
+nuxeo.ai.stream.config.name=pipes
+nuxeo.ai.images.enabled=false
+nuxeo.ai.video.enabled=false
+nuxeo.ai.audio.enabled=false
+nuxeo.ai.text.enabled=false
 
 nuxeo.enrichment.source.stream=enrichment.in
 nuxeo.enrichment.save.tags=false
