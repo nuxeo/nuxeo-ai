@@ -60,7 +60,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
 
     public static final String TEXT_AP = "text";
 
-    public static final String PIPES_CONFIG = "nuxeo.pipes.config.name";
+    public static final String PIPES_CONFIG = "nuxeo.ai.stream.config.name";
 
     private static final Log log = LogFactory.getLog(PipelineServiceImpl.class);
 
