@@ -19,10 +19,10 @@
 package org.nuxeo.ai.bulk;
 
 import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION_NAME;
-import static org.nuxeo.ai.bulk.DataSetExportDoneComputation.ACTION_BLOB_REF;
-import static org.nuxeo.ai.bulk.DataSetExportDoneComputation.ACTION_DATA;
-import static org.nuxeo.ai.bulk.DataSetExportDoneComputation.ACTION_ID;
-import static org.nuxeo.ai.bulk.DataSetExportDoneComputation.ACTION_USERNAME;
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_BLOB_REF;
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_DATA;
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_ID;
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_USERNAME;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;

@@ -24,10 +24,10 @@ import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.bulk.CollectingDataSetDoneListener.makeKey;
 import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION_NAME;
 import static org.nuxeo.ai.bulk.DataSetBulkAction.VALIDATION_COMPUTATION_NAME;
-import static org.nuxeo.ai.bulk.DataSetExportDoneComputation.DATASET_EXPORT_DONE_EVENT;
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.DATASET_EXPORT_DONE_EVENT;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
-import static org.nuxeo.ecm.core.bulk.BulkStatus.State.COMPLETED;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,8 +40,8 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.bulk.BulkService;
-import org.nuxeo.ecm.core.bulk.BulkStatus;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
@@ -106,7 +106,6 @@ public class DatasetExportTest {
 
         Map<String, String> collector = new HashMap<>();
         pipesService.addEventListener(DATASET_EXPORT_DONE_EVENT, true, new CollectingDataSetDoneListener(collector));
-
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
         String commandId = Framework.getService(DatasetExportService.class)
                                     .export(session, nxql,

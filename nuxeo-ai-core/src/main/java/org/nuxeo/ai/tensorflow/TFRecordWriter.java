@@ -22,14 +22,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.fromRecord;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
+import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
@@ -45,8 +38,14 @@ import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
-
-import com.google.protobuf.ByteString;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Write TFRecords
@@ -71,7 +70,9 @@ public class TFRecordWriter extends AbstractRecordWriter {
     public static Feature blobFeature(Blob... blob) throws IOException {
         BytesList.Builder bytesList = BytesList.newBuilder();
         for (Blob aBlob : blob) {
-            bytesList.addValue(ByteString.readFrom(aBlob.getStream()));
+            try (InputStream blobStream = aBlob.getStream()) {
+                bytesList.addValue(ByteString.readFrom(blobStream));
+            }
         }
         return Feature.newBuilder().setBytesList(bytesList).build();
     }

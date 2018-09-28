@@ -18,12 +18,12 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.bulk.BulkCodecs;
-import org.nuxeo.ecm.core.bulk.BulkCounter;
 import org.nuxeo.lib.stream.computation.AbstractBatchComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.ComputationPolicy;
@@ -51,6 +51,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
         }
         try {
             writer.write(list);
+            updateExportStatusProcessed(computationContext, currentInputStream, list.size());
         } catch (IOException e) {
             throw new NuxeoException(String.format("Failed to write the %s batch for %s.", metadata.name(), bulkId), e);
         }
@@ -65,15 +66,5 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
     public void processRecord(ComputationContext context, String inputStreamName, Record record) {
         //Get the bulk command id from the record and use it as a key
         super.processRecord(context, record.getKey(), record);
-    }
-
-    @Override
-    protected void checkpointBatch(ComputationContext context) {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Updating batch count to %d for %s", batchRecords.size(), currentInputStream));
-        }
-        BulkCounter counter = new BulkCounter(currentInputStream, batchRecords.size());
-        super.checkpointBatch(context);
-        context.produceRecord("o1", currentInputStream, BulkCodecs.getBulkCounterCodec().encode(counter));
     }
 }
