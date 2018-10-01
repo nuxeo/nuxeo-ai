@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.ai.pipes.Pipeline.defaultConfig">
+<component name="org.nuxeo.ai.Pipeline.defaultConfig">
   <require>org.nuxeo.runtime.stream.service</require>
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
 <#if "${kafka.enabled}" == "true">
@@ -13,7 +13,7 @@
 </#if>
   </extension>
 
-<extension point="pipes" target="org.nuxeo.ai.pipes.Pipeline">
+<extension point="pipes" target="org.nuxeo.ai.Pipeline">
 
   <pipe id="pipe.images" enabled="${nuxeo.ai.images.enabled}">
     <supplier>
@@ -108,7 +108,7 @@
 </extension>
 
 <#if "${nuxeo.ai.text.enabled}" == "true">
-  <extension point="text" target="org.nuxeo.ai.pipes.Pipeline">
+  <extension point="text" target="org.nuxeo.ai.Pipeline">
     <text windowSize="12">
       <consumer>
         <stream name="text" />

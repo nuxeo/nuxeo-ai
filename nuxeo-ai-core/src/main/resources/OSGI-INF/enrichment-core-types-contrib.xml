@@ -19,4 +19,13 @@
 
   </extension>
 
+  <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
+    <directory name="aikind" extends="template-xvocabulary">
+      <types>
+        <type>system</type>
+      </types>
+      <dataFile>directories/ai_kinds.csv</dataFile>
+    </directory>
+  </extension>
+
 </component>
