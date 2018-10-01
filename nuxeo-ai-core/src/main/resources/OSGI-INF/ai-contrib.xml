@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.services.AIComponent" version="1.0">
 
+  <require>org.nuxeo.ecm.ai.schemas</require>
   <implementation class="org.nuxeo.ai.services.AIComponent"/>
 
   <service>
@@ -21,16 +22,6 @@
     </documentation>
     <object class="org.nuxeo.ai.bulk.RecordWriterDescriptor"/>
   </extension-point>
-
-  <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
-
-    <directory name="aikind" extends="template-xvocabulary">
-      <types>
-        <type>system</type>
-      </types>
-      <dataFile>directories/ai_kinds.csv</dataFile>
-    </directory>
-  </extension>
 
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
     <operation class="org.nuxeo.ai.enrichment.EnrichmentOp"/>

@@ -144,7 +144,7 @@ These streams are *disabled by default* but can be enabled by the [corresponding
 Using an Nuxeo extension you can dynamically register a pipeline for any custom event.  
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
 ```xml
-  <extension point="pipes" target="org.nuxeo.ai.pipes.Pipeline">
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.mypipe" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
       <supplier>
         <event name="MY_EVENT">
