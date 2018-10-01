@@ -49,7 +49,7 @@ import org.nuxeo.ai.pipes.types.BlobTextStream;
         description = "Calls an enrichment service on the provided document(s)")
 public class EnrichmentOp {
 
-    public static final String ID = "Document.EnrichmentOp";
+    public static final String ID = "Document.AIEnrichment";
     private static final Log log = LogFactory.getLog(EnrichmentOp.class);
 
     @Context
