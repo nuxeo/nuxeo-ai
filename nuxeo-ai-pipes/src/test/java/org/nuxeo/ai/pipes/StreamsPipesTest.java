@@ -104,7 +104,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
             BlobTextStream dirtyDoc = fromRecord(record.message(), BlobTextStream.class);
-            assertEquals("Dirty Document", dirtyDoc.getText());
+            assertEquals("Dirty Document", dirtyDoc.getProperties().get("dc:title"));
         }
     }
 
@@ -125,7 +125,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record.message());
             BlobTextStream andBack = fromRecord(record.message(), BlobTextStream.class);
-            assertEquals("My text", andBack.getText());
+            assertEquals("My text", andBack.getProperties().get(BINARY_TEXT_SYS_PROP));
         }
 
         //Create text twice but the second is ignore because its in the "window size"
@@ -141,7 +141,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
             BlobTextStream andBack = fromRecord(record.message(), BlobTextStream.class);
-            assertEquals("My custom text", andBack.getText());
+            assertEquals("My custom text", andBack.getProperties().get(BINARY_TEXT_SYS_PROP));
             record = tailer.read(Duration.ofSeconds(5));
             assertNull("The second record should be ignored because its inside the window", record);
 

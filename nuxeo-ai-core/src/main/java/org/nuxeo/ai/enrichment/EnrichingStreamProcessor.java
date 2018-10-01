@@ -26,15 +26,9 @@ import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.registerMetrics;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -46,7 +40,12 @@ import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -92,6 +91,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected final EnrichmentMetrics metrics;
 
         private final EnrichmentService service;
+
         private final EnrichmentSupport enrichmentSupport;
 
         protected RetryPolicy retryPolicy;
@@ -177,16 +177,18 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * otherwise return null,
          */
         protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextStream blobTextStream) {
-            ManagedBlob blob = blobTextStream.getBlob();
-            if (blob != null && enrichmentSupport != null &&
-                    enrichmentSupport.supportsMimeType(blob.getMimeType()) &&
-                    enrichmentSupport.supportsSize(blob.getLength())) {
-                return () -> service.enrich(blobTextStream);
-            } else if (blob != null) {
-                log.info(String.format("%s does not support a blob with these characteristics %s %s",
-                                       metadata.name(), blob.getMimeType(), blob.getLength()
-                ));
-                return null;
+            if (!blobTextStream.getBlobs().isEmpty() && enrichmentSupport != null) {
+                for (ManagedBlob blob : blobTextStream.getBlobs().values()) {
+                    if (enrichmentSupport.supportsMimeType(blob.getMimeType()) &&
+                            enrichmentSupport.supportsSize(blob.getLength())) {
+                        return () -> service.enrich(blobTextStream);
+                    } else {
+                        log.info(String.format("%s does not support a blob with these characteristics %s %s",
+                                               metadata.name(), blob.getMimeType(), blob.getLength()
+                        ));
+                        return null;
+                    }
+                }
             }
             return () -> service.enrich(blobTextStream);
         }

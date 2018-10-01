@@ -24,6 +24,7 @@ import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
@@ -91,7 +92,7 @@ public class TestConfiguredStreamProcessors {
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setId(docId);
         blobTextStream.setRepositoryName(testDoc.getRepositoryName());
-        blobTextStream.setBlob(new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
+        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
 
         //Check metrics, nothing produced
         String metricPrefix = "nuxeo.streams.enrichment.test_images$simpleTest$test_images.out.";

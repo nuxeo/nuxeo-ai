@@ -18,17 +18,15 @@
  */
 package org.nuxeo.ai.pipes.functions;
 
-import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
+import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.services.PipelineService;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.event.Event;
@@ -39,8 +37,9 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import org.nuxeo.ai.pipes.services.PipelineService;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * Listens to the "binaryTextUpdated" event and schedules an async post-commit worker to create
@@ -139,7 +138,7 @@ public class BinaryTextListener implements EventListener {
             BlobTextStream blobTextStream = new BlobTextStream(doc);
             binText.values().forEach(text -> {
                 if (StringUtils.isNotBlank(text)) {
-                    blobTextStream.setText(text);
+                    blobTextStream.addProperty(binaryProperty, text);
                     if (log.isDebugEnabled()) {
                         log.debug("Writing record for " + blobTextStream.getId());
                     }

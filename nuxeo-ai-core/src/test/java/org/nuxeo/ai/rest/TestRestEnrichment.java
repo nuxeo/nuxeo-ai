@@ -22,6 +22,7 @@ package org.nuxeo.ai.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
@@ -60,7 +61,7 @@ public class TestRestEnrichment {
         EnrichmentService service = aiComponent.getEnrichmentService("rest1");
 
         BlobTextStream blobTextStream = new BlobTextStream("docId", "default", "parent", "File", null);
-        blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
         assertEquals(1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();

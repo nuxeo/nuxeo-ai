@@ -46,6 +46,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.functions.PropertiesToStream;
@@ -89,10 +90,11 @@ public class RecordsTest {
         assertNotNull(andBack);
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
-        assertEquals("dc:creator", andBack.getXPaths().toArray()[0]);
-        assertEquals("file:content", andBack.getXPaths().toArray()[1]);
-        assertEquals(7, andBack.getBlob().getLength());
-        assertEquals(TEST_MIME_TYPE, andBack.getBlob().getMimeType());
+        assertEquals("Administrator", andBack.getProperties().get("dc:creator"));
+        ManagedBlob blob =  andBack.getBlobs().get("file:content");
+        assertNotNull(blob);
+        assertEquals(7, blob.getLength());
+        assertEquals(TEST_MIME_TYPE, blob.getMimeType());
     }
 
     @Test(expected = NuxeoException.class)

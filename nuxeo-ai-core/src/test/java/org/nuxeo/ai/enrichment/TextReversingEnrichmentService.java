@@ -35,7 +35,7 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        String reversedText = StringUtils.reverse(blobTextStream.getText());
+        String reversedText = StringUtils.reverse(blobTextStream.getProperties().values().iterator().next());
         List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());

@@ -20,6 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.blob.BlobInfo;
@@ -35,8 +36,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Helper methods for enrichment services
@@ -57,6 +62,22 @@ public class EnrichmentUtils {
 
     // Static Utility class
     private EnrichmentUtils() {
+    }
+
+    /**
+     * Gets the names of all properties used by the BlobTextStream.
+     */
+    public static Set<String> getPropertyNames(BlobTextStream blobTextStream) {
+        Set<String> inputProperties = new HashSet<>(blobTextStream.getBlobs().keySet());
+        inputProperties.addAll(blobTextStream.getProperties().keySet());
+        return inputProperties;
+    }
+
+    /**
+     * Gets the digests of any blobs used by the BlobTextStream.
+     */
+    public static Set<String> getDigests(BlobTextStream bts) {
+      return bts.getBlobs().values().stream().map(Blob::getDigest).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     /**

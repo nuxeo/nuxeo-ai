@@ -121,18 +121,18 @@ public abstract class AIMetadata implements Serializable {
 
         public final String documentRef; //Document reference
 
-        public final String blobDigest;
+        public final Set<String> digests;
 
         public final Set<String> inputProperties;
 
         @JsonCreator
         public Context(@JsonProperty("repositoryName") String repositoryName,
                        @JsonProperty("documentRef") String documentRef,
-                       @JsonProperty("blobDigest") String blobDigest,
+                       @JsonProperty("digests") Set<String> digests,
                        @JsonProperty("inputProperties") Set<String> inputProperties) {
             this.repositoryName = repositoryName;
             this.documentRef = documentRef;
-            this.blobDigest = blobDigest;
+            this.digests = digests != null ? unmodifiableSet(digests) : emptySet();
             this.inputProperties = inputProperties != null ? unmodifiableSet(inputProperties) : emptySet();
         }
 
@@ -143,13 +143,13 @@ public abstract class AIMetadata implements Serializable {
             Context context = (Context) o;
             return Objects.equals(repositoryName, context.repositoryName) &&
                     Objects.equals(documentRef, context.documentRef) &&
-                    Objects.equals(blobDigest, context.blobDigest) &&
+                    Objects.equals(digests, context.digests) &&
                     Objects.equals(inputProperties, context.inputProperties);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(repositoryName, documentRef, blobDigest, inputProperties);
+            return Objects.hash(repositoryName, documentRef, digests, inputProperties);
         }
 
         @Override
@@ -157,7 +157,7 @@ public abstract class AIMetadata implements Serializable {
             return new ToStringBuilder(this)
                     .append("repositoryName", repositoryName)
                     .append("documentRef", documentRef)
-                    .append("blobDigest", blobDigest)
+                    .append("digests", digests)
                     .append("inputProperties", inputProperties)
                     .toString();
         }

@@ -22,26 +22,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
 import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.Blob;
@@ -51,11 +45,15 @@ import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.security.SecurityConstants;
 import org.nuxeo.ecm.core.test.TransactionalFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.ai.pipes.services.JacksonUtil;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -159,8 +157,7 @@ public class TestDocMetadataService {
                                                            testDoc.getParentRef().toString(), testDoc.getType(),
                                                            testDoc.getFacets()
         );
-        blobTextStream.setText(SOME_TEXT);
-        blobTextStream.addXPath(TEST_PROPERTY);
+        blobTextStream.addProperty(TEST_PROPERTY, SOME_TEXT);
         EnrichmentService service = aiComponent.getEnrichmentService(SERVICE_NAME);
         Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
         TestCase.assertEquals(2, results.size());

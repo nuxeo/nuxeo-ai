@@ -18,16 +18,10 @@
  */
 package org.nuxeo.ai.custom;
 
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
-import org.apache.commons.lang.StringUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.Consts;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -36,12 +30,16 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ai.rest.RestEnrichmentService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Enriches using a custom model which is accessed via a rest call
@@ -49,12 +47,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class CustomModelEnrichmentService extends RestEnrichmentService {
 
     public static final String DEFAULT_MODEL = "dnn";
+
     public static final String DEFAULT_IMAGE_FEATURE = "image";
+
     public static final String DEFAULT_TEXT_FEATURE = "text";
+
     public static final String DEFAULT_CONFIDENCE = "0.7";
+
     protected String modelName;
+
     protected String imageFeatureName;
+
     protected String textFeatureName;
+
     protected float minConfidence;
 
     @Override
@@ -70,21 +75,24 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
     public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextStream blobTextStream) {
         try {
             List<Feature> features = new ArrayList<>();
-            ManagedBlob blob = blobTextStream.getBlob();
-            String text = blobTextStream.getText();
 
-            if (blob != null) {
+            if (!blobTextStream.getBlobs().isEmpty()) {
+                if (blobTextStream.getBlobs().size() != 1) {
+                    throw new NuxeoException("Sight engine only supports one blob image at a time.");
+                }
+                ManagedBlob blob = blobTextStream.getBlobs().values().stream().findFirst().get();
                 features.add(new Feature(imageFeatureName, "image",
                                          new Feature.Content(null, null, blob.getMimeType(),
                                                              blob.getEncoding(), blob.getLength())));
                 builder.setEntity(EntityBuilder.create().setStream(blob.getStream()).build());
                 builder.setHeader(HttpHeaders.CONTENT_TYPE, blob.getMimeType());
             }
-            if (StringUtils.isNotEmpty(text)) {
-                features.add(new Feature(textFeatureName, "text", text,
-                                         Consts.UTF_8.toString(), (long) text.length()));
-            }
 
+            blobTextStream.getProperties().forEach((k, v) ->
+                                                           features.add(
+                                                                   new Feature(k, "text", v,
+                                                                               Consts.UTF_8.toString(),
+                                                                               (long) v.length())));
             String json = MAPPER.writeValueAsString(features);
             builder.setHeader("modelName", modelName);
             builder.setHeader("features", json);
@@ -134,7 +142,9 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
     protected static class Feature {
 
         public final String name;
+
         public final String kind;
+
         public final Content content;
 
         public Feature(String name, String kind, Content content) {
@@ -151,9 +161,13 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
 
         protected static class Content {
             public final String text;
+
             public final URI uri;
+
             public final String mimeType;
+
             public final String encoding;
+
             public final Long length;
 
             private Content(String text, URI uri, String mimeType, String encoding, Long length) {
