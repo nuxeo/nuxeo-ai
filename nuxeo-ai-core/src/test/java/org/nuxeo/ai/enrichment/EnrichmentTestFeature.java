@@ -63,8 +63,7 @@ public class EnrichmentTestFeature extends SimpleFeature {
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setRepositoryName("test");
         blobTextStream.setId(UUID.randomUUID().toString());
-        blobTextStream.setBlob(managedBlob);
-        blobTextStream.addXPath(FILE_CONTENT);
+        blobTextStream.addBlob(FILE_CONTENT, managedBlob);
         return blobTextStream;
     }
 

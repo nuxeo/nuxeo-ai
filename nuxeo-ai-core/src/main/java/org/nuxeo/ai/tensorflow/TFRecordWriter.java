@@ -23,16 +23,15 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
 import com.google.protobuf.ByteString;
-import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ai.tensorflow.ext.TensorflowWriter;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.tensorflow.example.BytesList;
 import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
@@ -144,11 +143,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
      */
     protected Features writeFeatures(BlobTextStream blobTextStream) throws IOException {
         Features.Builder features = Features.newBuilder();
-        ManagedBlob blob = blobTextStream.getBlob();
-        if (blob != null && blobTextStream.getXPaths().size() == 1) {
-            features.putFeature(blobTextStream.getXPaths().iterator().next(), blobFeature(convertImageBlob(blob)));
-        } else if (StringUtils.isNotEmpty(blobTextStream.getText()) && blobTextStream.getXPaths().size() == 1) {
-            features.putFeature(blobTextStream.getXPaths().iterator().next(), textFeature(blobTextStream.getText()));
+        for (Map.Entry<String, ManagedBlob> blobEntry : blobTextStream.getBlobs().entrySet()) {
+            features.putFeature(blobEntry.getKey(), blobFeature(convertImageBlob(blobEntry.getValue())));
         }
         blobTextStream.getProperties().forEach((k, v) -> features.putFeature(k, textFeature(v)));
         return features.build();

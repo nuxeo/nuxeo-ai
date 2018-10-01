@@ -170,16 +170,13 @@ public class DataSetBulkAction extends AbstractBulkAction {
             propertiesList.forEach(propName -> {
                 Serializable propVal = getPropertyValue(doc, propName);
                 if (propVal instanceof ManagedBlob) {
-                    // Currently only 1 blob property is supported
-                    blobTextStream.addXPath(propName);
-                    blobTextStream.setBlob((ManagedBlob) propVal);
+                    blobTextStream.addBlob(propName, (ManagedBlob) propVal);
                 } else if (propVal != null) {
                     properties.put(propName, propVal.toString());
                 }
             });
 
-            int blobs = blobTextStream.getBlob() != null ? 1 : 0;
-            if (properties.size() + blobs == propertiesList.size()) {
+            if (properties.size() + blobTextStream.getBlobs().size() == propertiesList.size()) {
                 return blobTextStream;
             } else {
                 getLog().debug(String.format("Document %s one of the following properties is null so skipping. %s",

@@ -18,37 +18,35 @@
  */
 package org.nuxeo.ai.pipes.types;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * A POJO representation of BlobTextStream.avsc used as a record data in a stream.
  * <p>
  * The main subject of this class is usually either a blob or a piece of text (not a Nuxeo Document).
- * The List<String> xPaths contains the names of the original document properties used.
- * <p>
- * Additional properties can be held in the "properties" map.
  */
 public class BlobTextStream implements Partitionable {
 
-    private final Set<String> xPaths = new LinkedHashSet<>();
     private final Map<String, String> properties = new HashMap<>();
+
+    private final Map<String, ManagedBlob> blobs = new HashMap<>();
+
     private String id;
+
     private String repositoryName;
+
     private String parentId;
+
     private String primaryType;
+
     private Set<String> facets;
-    private String text;
-    private ManagedBlob blob;
 
     public BlobTextStream() {
     }
@@ -109,32 +107,20 @@ public class BlobTextStream implements Partitionable {
         this.facets = facets;
     }
 
-    public void addXPath(String propName) {
-        xPaths.add(propName);
+    public Map<String, ManagedBlob> getBlobs() {
+        return blobs;
     }
 
-    public Set<String> getXPaths() {
-        return xPaths;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public ManagedBlob getBlob() {
-        return blob;
-    }
-
-    public void setBlob(ManagedBlob blob) {
-        this.blob = blob;
+    public void addBlob(String name, ManagedBlob blob) {
+        blobs.put(name, blob);
     }
 
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    public void addProperty(String name, String propVal) {
+        properties.put(name, propVal);
     }
 
     @Override
@@ -151,15 +137,13 @@ public class BlobTextStream implements Partitionable {
                 Objects.equals(parentId, that.parentId) &&
                 Objects.equals(primaryType, that.primaryType) &&
                 Objects.equals(facets, that.facets) &&
-                Objects.equals(text, that.text) &&
-                Objects.equals(blob, that.blob) &&
-                Objects.equals(xPaths, that.xPaths) &&
+                Objects.equals(blobs, that.blobs) &&
                 Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, repositoryName, parentId, primaryType, facets, text, blob, xPaths, properties);
+        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobs, properties);
     }
 
     @Override
@@ -170,9 +154,7 @@ public class BlobTextStream implements Partitionable {
                 .append("parentId", parentId)
                 .append("primaryType", primaryType)
                 .append("facets", facets)
-                .append("text", text)
-                .append("blob", blob)
-                .append("xPaths", xPaths)
+                .append("blob", blobs)
                 .append("properties", properties)
                 .toString();
     }

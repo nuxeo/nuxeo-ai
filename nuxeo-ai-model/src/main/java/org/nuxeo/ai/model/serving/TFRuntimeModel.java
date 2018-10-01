@@ -19,7 +19,6 @@
 package org.nuxeo.ai.model.serving;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,12 +34,12 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.model.ModelProperty;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
@@ -223,15 +222,12 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextStream bts) {
-        ManagedBlob blob = bts.getBlob();
-        Map<String, Serializable> inputProperties;
-        if (blob != null && bts.getXPaths().size() == 1) {
-            inputProperties = singletonMap(bts.getXPaths().iterator().next(), convertImageBlob(blob));
-        } else if (bts.getText() != null) {
-            inputProperties = singletonMap(bts.getXPaths().iterator().next(), bts.getText());
-        } else {
-            inputProperties = new HashMap<>(bts.getProperties());
+        Map<String, Serializable> inputProperties = new HashMap<>();
+
+        for (Map.Entry<String, ManagedBlob> blobEntry : bts.getBlobs().entrySet()) {
+            inputProperties.put(blobEntry.getKey(), convertImageBlob(blobEntry.getValue()));
         }
+        inputProperties.putAll(bts.getProperties());
         if (inputProperties.isEmpty()) {
             log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), bts.getId()));
             return emptyList();

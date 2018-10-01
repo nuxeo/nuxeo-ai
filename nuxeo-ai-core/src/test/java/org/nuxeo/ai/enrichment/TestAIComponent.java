@@ -24,16 +24,14 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 
-import java.util.Collections;
-import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
@@ -43,12 +41,13 @@ import org.nuxeo.lib.stream.computation.ComputationMetadata;
 import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Tests the overall AIComponent
@@ -70,7 +69,7 @@ public class TestAIComponent {
 
         ComputationContext testContext = new ComputationContextImpl(null);
         BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
@@ -107,7 +106,7 @@ public class TestAIComponent {
         BlobTextStream blobTextStream = new BlobTextStream();
         blobTextStream.setId("xderftgt");
         blobTextStream.setRepositoryName("test");
-        blobTextStream.setBlob(new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextStream);
 
 

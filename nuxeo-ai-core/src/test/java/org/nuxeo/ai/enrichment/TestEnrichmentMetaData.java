@@ -72,12 +72,13 @@ public class TestEnrichmentMetaData {
                                                            0.65f))
                       .collect(Collectors.toList());
         BlobTextStream blobTextStream = new BlobTextStream("doc1", repositoryName, null, "File", null);
-        blobTextStream.addXPath("tbloby");
+        blobTextStream.addProperty("dc:title" ,"tbloby");
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test", blobTextStream)
                         .withLabels(labels)
                         .withTags(tags)
-                        .withBlobDigest("blobxx")
+                        .withDigest("blobxx")
+                        .withDigest("freblogs")
                         .withCreator("bob")
                         .withRawKey("xyz")
                         .build();

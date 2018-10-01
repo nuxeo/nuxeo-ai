@@ -20,15 +20,18 @@ package org.nuxeo.ai.model.serving;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 import javax.inject.Inject;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -37,6 +40,7 @@ import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -49,7 +53,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
  * Tests the Suggestion Operation.
  */
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class, AutomationFeature.class})
+@Features({EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class})
 @Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
 public class TestSuggestionOp {
 
@@ -62,12 +66,16 @@ public class TestSuggestionOp {
     @Inject
     protected AutomationService automationService;
 
+    @Inject
+    protected BlobManager manager;
+
     @Test
     public void shouldCall() throws OperationException, IOException {
 
         String title = "My document suggestion";
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc.setPropertyValue("dc:title", title);
+        testDoc.setPropertyValue("file:content", (Serializable) createTestBlob(manager));
         testDoc = session.createDocument(testDoc);
         session.save();
 

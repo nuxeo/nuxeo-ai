@@ -80,8 +80,7 @@ public class TensorTest {
 
         for (int i = 0; i < numberOfRecords; ++i) {
             BlobTextStream blobTextStream = new BlobTextStream("ixi" + i, "test", "aaf", "Picture", null);
-            blobTextStream.addXPath("dc:title");
-            blobTextStream.setText("my text " + i);
+            blobTextStream.addProperty("dc:title", "my text " + i);
             blobTextStream.getProperties().put("ecm:primaryType", "Picture");
             records.add(toRecord(test_key, blobTextStream));
         }

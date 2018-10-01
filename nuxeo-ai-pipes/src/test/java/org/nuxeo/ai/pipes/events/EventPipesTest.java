@@ -21,37 +21,37 @@ package org.nuxeo.ai.pipes.events;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
+import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelFactory;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
-import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-import com.google.inject.Inject;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
@@ -112,7 +112,7 @@ public class EventPipesTest {
         Event testEvent = getTestEvent(session);
         result = doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, result.size());
-        assertEquals("file:content", result.iterator().next().getXPaths().iterator().next());
+        assertTrue(result.iterator().next().getBlobs().containsKey("file:content"));
 
         List<String> unknownProp = singletonList("dublinapple:core");
 
@@ -126,21 +126,20 @@ public class EventPipesTest {
         doc2stream = new DocEventToStream(null, null, creator);
         List<BlobTextStream> validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
-        assertEquals("dc:creator", validResult.get(0).getXPaths().iterator().next());
         assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
 
         doc2stream = new DocEventToStream(null, creator, null);
         validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
-        assertEquals("dc:creator", validResult.get(0).getXPaths().iterator().next());
-        assertEquals("Administrator", validResult.get(0).getText());
+        assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
 
         doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator,
                                           singletonList("dc:modified"));
         validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
         BlobTextStream firstResult = validResult.get(0);
-        assertEquals("file:content", firstResult.getXPaths().toArray()[1]);
-        assertEquals("dc:modified", firstResult.getXPaths().toArray()[0]);
+        assertNotNull(firstResult.getProperties().get("dc:modified"));
+        ManagedBlob blob = firstResult.getBlobs().get("file:content");
+        assertNotNull(blob);
         assertEquals("1 blob and 1 text", 2, validResult.size());
 
         BlobTextStream andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextStream.class);

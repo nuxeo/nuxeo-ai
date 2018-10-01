@@ -23,18 +23,16 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * A normalized view of metadata returned by an intelligent service
@@ -123,18 +121,18 @@ public abstract class AIMetadata implements Serializable {
 
         public final String documentRef; //Document reference
 
-        public final String blobDigest;
+        public final Set<String> digests;
 
         public final Set<String> inputProperties;
 
         @JsonCreator
         public Context(@JsonProperty("repositoryName") String repositoryName,
                        @JsonProperty("documentRef") String documentRef,
-                       @JsonProperty("blobDigest") String blobDigest,
+                       @JsonProperty("digests") Set<String> digests,
                        @JsonProperty("inputProperties") Set<String> inputProperties) {
             this.repositoryName = repositoryName;
             this.documentRef = documentRef;
-            this.blobDigest = blobDigest;
+            this.digests = digests != null ? unmodifiableSet(digests) : emptySet();
             this.inputProperties = inputProperties != null ? unmodifiableSet(inputProperties) : emptySet();
         }
 
@@ -145,13 +143,13 @@ public abstract class AIMetadata implements Serializable {
             Context context = (Context) o;
             return Objects.equals(repositoryName, context.repositoryName) &&
                     Objects.equals(documentRef, context.documentRef) &&
-                    Objects.equals(blobDigest, context.blobDigest) &&
+                    Objects.equals(digests, context.digests) &&
                     Objects.equals(inputProperties, context.inputProperties);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(repositoryName, documentRef, blobDigest, inputProperties);
+            return Objects.hash(repositoryName, documentRef, digests, inputProperties);
         }
 
         @Override
@@ -159,7 +157,7 @@ public abstract class AIMetadata implements Serializable {
             return new ToStringBuilder(this)
                     .append("repositoryName", repositoryName)
                     .append("documentRef", documentRef)
-                    .append("blobDigest", blobDigest)
+                    .append("digests", digests)
                     .append("inputProperties", inputProperties)
                     .toString();
         }

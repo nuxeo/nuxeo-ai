@@ -21,6 +21,7 @@ package org.nuxeo.ai.metadata;
 import static java.util.Collections.emptySet;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +47,7 @@ public abstract class AbstractMetaDataBuilder {
 
     protected Set<String> inputProperties;
 
-    protected String blobDigest;
+    protected Set<String> digests;
 
     //optional
     protected String rawKey;
@@ -55,14 +56,14 @@ public abstract class AbstractMetaDataBuilder {
 
     public AbstractMetaDataBuilder(Instant created, String kind, String serviceName,
                                    String repositoryName, String documentRef,
-                                   String blobDigest,
+                                   Set<String> digests,
                                    Set<String> inputProperties) {
         this.created = created;
         this.kind = kind;
         this.serviceName = serviceName;
         this.repositoryName = repositoryName;
         this.documentRef = documentRef;
-        this.blobDigest = blobDigest;
+        this.digests = digests;
         this.inputProperties = inputProperties;
     }
 
@@ -76,7 +77,7 @@ public abstract class AbstractMetaDataBuilder {
         this.context = context;
         this.repositoryName = context.repositoryName;
         this.documentRef = context.documentRef;
-        this.blobDigest = context.blobDigest;
+        this.digests = new HashSet<>(context.digests);
         this.inputProperties = context.inputProperties;
     }
 
@@ -107,8 +108,8 @@ public abstract class AbstractMetaDataBuilder {
         return this;
     }
 
-    public AbstractMetaDataBuilder withBlobDigest(String blobDigest) {
-        this.blobDigest = blobDigest;
+    public AbstractMetaDataBuilder withDigest(String digest) {
+        this.digests.add(digest);
         return this;
     }
 
@@ -125,7 +126,7 @@ public abstract class AbstractMetaDataBuilder {
             inputProperties = emptySet();
         }
         if (context == null) {
-            context = new AIMetadata.Context(repositoryName, documentRef, blobDigest, inputProperties);
+            context = new AIMetadata.Context(repositoryName, documentRef, digests, inputProperties);
         }
         return build(this);
     }

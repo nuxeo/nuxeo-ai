@@ -20,22 +20,21 @@ package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
-
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A normalized view of the result of an Enrichment Service.
@@ -177,11 +176,7 @@ public class EnrichmentMetadata extends AIMetadata {
 
         public Builder(Instant created, String kind, String serviceName, BlobTextStream blobTextStream) {
             super(created, kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
-                  null, blobTextStream.getXPaths());
-            ManagedBlob blobMeta = blobTextStream.getBlob();
-            if (blobMeta != null) {
-                this.blobDigest = blobMeta.getDigest();
-            }
+                  getDigests(blobTextStream), getPropertyNames(blobTextStream));
         }
 
         public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {

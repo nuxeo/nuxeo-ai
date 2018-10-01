@@ -21,21 +21,19 @@ package org.nuxeo.ai.pipes.events;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Take a document event and turn it into a stream BlobTextStream.
@@ -105,8 +103,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             Blob blob = getPropertyValue(doc, propName, Blob.class);
             if (blob instanceof ManagedBlob) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.addXPath(propName);
-                blobTextStream.setBlob((ManagedBlob) blob);
+                blobTextStream.addBlob(propName, (ManagedBlob) blob);
                 items.add(blobTextStream);
             }
         });
@@ -115,8 +112,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
             String text = getPropertyValue(doc, propName, String.class);
             if (text != null) {
                 BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.addXPath(propName);
-                blobTextStream.setText(text);
+                blobTextStream.addProperty(propName, text);
                 items.add(blobTextStream);
             }
         });
@@ -135,13 +131,11 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
         BlobTextStream blobTextStream =
                 new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
                         .getType(), doc.getFacets());
-        Map<String, String> properties = blobTextStream.getProperties();
 
         customProperties.forEach(propName -> {
             String propVal = getPropertyValue(doc, propName, String.class);
             if (propVal != null) {
-                properties.put(propName, propVal);
-                blobTextStream.addXPath(propName);
+                blobTextStream.addProperty(propName, propVal);
             }
         });
 

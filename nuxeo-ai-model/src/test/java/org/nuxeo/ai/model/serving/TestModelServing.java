@@ -22,6 +22,8 @@ package org.nuxeo.ai.model.serving;
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -94,7 +96,7 @@ public class TestModelServing {
         assertEquals("dnn", model.getInfo().get(MODEL_NAME));
         assertEquals("1", model.getVersion());
         assertTrue("Model inputs must be set correctly",
-                   model.inputNames.containsAll(Arrays.asList("dc:title", "ecm:path")));
+                   model.inputNames.containsAll(Arrays.asList("dc:title", "file:content")));
         assertEquals(1, model.getOutputs().size());
         assertEquals("Model outputs must be set correctly",
                      "dc:description", model.getOutputs().iterator().next().getName());
@@ -110,27 +112,17 @@ public class TestModelServing {
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
 
+        testDoc.setPropertyValue("file:content", (Serializable) createTestBlob(manager));
         List<EnrichmentMetadata> predicated = modelServingService.predict(testDoc);
-        assertEquals(1, predicated.size());
-
-        testDoc.setPropertyValue("file:content", (Serializable) createTestBlob());
-        predicated = modelServingService.predict(testDoc);
         assertEquals(1, predicated.size());
     }
 
     @Test
     public void testEnrichment() throws IOException {
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setId("tgt");
-        blobTextStream.setRepositoryName("test");
-        blobTextStream.setBlob(createTestBlob());
+        BlobTextStream blobTextStream = blobTestImage(manager);
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
         assertNotNull(service);
         Collection<EnrichmentMetadata> enriched = service.enrich(blobTextStream);
-        assertTrue("It should not be enriched because we haven't specified input parameters.",
-                   enriched.isEmpty());
-        blobTextStream.addXPath("file:content");
-        enriched = service.enrich(blobTextStream);
         assertNotNull(enriched.iterator().next());
     }
 
@@ -139,13 +131,9 @@ public class TestModelServing {
         assertNotNull(aiComponent);
         EnrichmentService service = aiComponent.getEnrichmentService("failingModel");
 
-        BlobTextStream blobTextStream = new BlobTextStream("docId", "default", "parent", "File", null);
-        blobTextStream.setBlob(createTestBlob());
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
-        assertTrue("The api call must fail", results.isEmpty());
-        blobTextStream.addXPath("file:content");
+        BlobTextStream blobTextStream = blobTestImage(manager);
         service = aiComponent.getEnrichmentService("xyz");
-        results = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
@@ -160,13 +148,13 @@ public class TestModelServing {
         assertNotNull(jsonTree);
         assertEquals("The custom model should return results", 1, jsonTree.get("results").size());
 
-        blobTextStream.setBlob(null);
-        blobTextStream.setText("Great product");
+        blobTextStream.getBlobs().clear();
+        blobTextStream.addProperty("dc:name", "Great product");
         results = service.enrich(blobTextStream);
         assertEquals("There must be 1 result", 1, results.size());
     }
 
-    protected ManagedBlob blob(Blob blob, String key) {
+    protected static ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key,
                                 blob.getDigest(), blob.getEncoding(), blob.getLength()
         );
@@ -175,9 +163,9 @@ public class TestModelServing {
     /**
      * Create an image blob for testing
      */
-    public ManagedBlob createTestBlob() throws IOException {
+    public static ManagedBlob createTestBlob(BlobManager manager) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
-        Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/plane.jpg").getPath()), "image/jpeg");
+        Blob blob = Blobs.createBlob(new File(manager.getClass().getResource("/files/plane.jpg").getPath()), "image/jpeg");
         return blob(blob, blobProvider.writeBlob(blob));
     }
 
