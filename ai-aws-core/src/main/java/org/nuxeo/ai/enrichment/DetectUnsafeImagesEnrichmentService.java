@@ -18,25 +18,25 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyList;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
+import com.amazonaws.services.rekognition.model.ModerationLabel;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -73,24 +73,29 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        DetectModerationLabelsResult result;
+
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+
+        List<EnrichmentMetadata> enriched = new ArrayList<>();
         try {
-            result = Framework.getService(RekognitionService.class).detectUnsafeImages(blobTextStream.getBlob());
+            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+                DetectModerationLabelsResult result = Framework.getService(RekognitionService.class)
+                                                               .detectUnsafeImages(blob.getValue());
+                if (result != null && !result.getModerationLabels().isEmpty()) {
+                    enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
+                }
+            }
+            return enriched;
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
-
-        if (result != null && !result.getModerationLabels().isEmpty()) {
-            return processResult(blobTextStream, result);
-        }
-        return emptyList();
     }
 
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextStream blobTextStream, DetectModerationLabelsResult result) {
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
+                                                           DetectModerationLabelsResult result) {
         List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
                                                       .stream()
                                                       .map(this::newLabel)
@@ -100,9 +105,10 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
         String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
                                                  .withLabels(labels)
                                                  .withRawKey(rawKey)
+                                                 .withDocumentProperties(singleton(propName))
                                                  .build());
     }
 

@@ -18,24 +18,22 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyList;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
-import org.nuxeo.ai.comprehend.ComprehendService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 import com.amazonaws.services.comprehend.model.SentimentScore;
 import com.amazonaws.services.comprehend.model.SentimentType;
+import org.apache.commons.lang.StringUtils;
+import org.nuxeo.ai.comprehend.ComprehendService;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -45,7 +43,9 @@ import net.jodah.failsafe.RetryPolicy;
 public class SentimentEnrichmentService extends AbstractEnrichmentService {
 
     public static final String LANGUAGE_CODE = "language";
+
     public static final String DEFAULT_LANGUAGE = "en";
+
     protected String languageCode;
 
     @Override
@@ -55,34 +55,37 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        DetectSentimentResult result;
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+
+        List<EnrichmentMetadata> enriched = new ArrayList<>();
         try {
-            result = Framework.getService(ComprehendService.class)
-                              .detectSentiment(blobTextStream.getText(), languageCode);
+            for (Map.Entry<String, String> prop : blobTextFromDoc.getProperties().entrySet()) {
+                DetectSentimentResult result = Framework.getService(ComprehendService.class)
+                                                        .detectSentiment(prop.getValue(), languageCode);
+                if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {
+                    enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
+                }
+            }
+            return enriched;
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
-
-        if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {
-            return processResult(blobTextStream, result);
-        }
-        return emptyList();
     }
 
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextStream blobTextStream, DetectSentimentResult result) {
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName, DetectSentimentResult result) {
         List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
         String raw = toJsonString(jg -> {
             jg.writeObjectField("sentimentScore", result.getSentimentScore());
             jg.writeStringField("sentiment", result.getSentiment());
         });
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
                                                  .withLabels(labels)
                                                  .withRawKey(rawKey)
+                                                 .withDocumentProperties(Collections.singleton(propName))
                                                  .build());
     }
 

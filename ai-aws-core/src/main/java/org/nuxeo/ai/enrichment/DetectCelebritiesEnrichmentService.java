@@ -18,35 +18,37 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.Celebrity;
 import com.amazonaws.services.rekognition.model.ComparedFace;
 import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Detects celebrity faces in an image
  */
 public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentService {
-    
+
     public static final String DEFAULT_CONFIDENCE = "70";
+
     protected float minConfidence;
 
     @Override
@@ -56,24 +58,29 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        RecognizeCelebritiesResult result;
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+
+        List<EnrichmentMetadata> enriched = new ArrayList<>();
         try {
-            result = Framework.getService(RekognitionService.class).detectCelebrityFaces(blobTextStream.getBlob());
+            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+                RecognizeCelebritiesResult result =
+                        Framework.getService(RekognitionService.class).detectCelebrityFaces(blob.getValue());
+                if (result != null &&
+                        (!result.getCelebrityFaces().isEmpty() || !result.getUnrecognizedFaces().isEmpty())) {
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
+                }
+            }
+            return enriched;
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
-
-        if (result != null && (!result.getCelebrityFaces().isEmpty() || !result.getUnrecognizedFaces().isEmpty())) {
-            return processResults(blobTextStream, result);
-        }
-        return emptyList();
     }
 
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResults(BlobTextStream blobTextStream, RecognizeCelebritiesResult result) {
+    protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
+                                                            RecognizeCelebritiesResult result) {
         List<AIMetadata.Tag> tags = Stream.concat(
                 result.getCelebrityFaces().stream().map(this::newCelebrityTag),
                 result.getUnrecognizedFaces().stream().map(this::newFaceTag)
@@ -86,9 +93,10 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
         });
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
                                                  .withTags(tags)
                                                  .withRawKey(rawKey)
+                                                 .withDocumentProperties(singleton(propName))
                                                  .build());
     }
 

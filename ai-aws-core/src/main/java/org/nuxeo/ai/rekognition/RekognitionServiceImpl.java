@@ -119,7 +119,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         if (image != null && client != null) {
             T result = func.apply(client, image);
             if (log.isDebugEnabled()) {
-                log.debug("Result of call to AWS " + String.valueOf(result));
+                log.debug("Result of call to AWS " + result);
             }
             return result;
         }

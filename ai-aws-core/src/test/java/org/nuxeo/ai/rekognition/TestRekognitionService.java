@@ -23,13 +23,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
-import javax.inject.Inject;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +30,8 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -45,11 +40,15 @@ import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.runtime.stream.pipes.services.JacksonUtil;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -65,26 +64,28 @@ public class TestRekognitionService {
     @Test
     public void testLabelsService() throws IOException {
 
-        BlobTextStream blobTextStream = setupBlobTextStream("plane.jpg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("plane.jpg");
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.imageLabels");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata metadata = metadataCollection.iterator().next();
         assertNotNull(metadata);
-        assertEquals(blobTextStream.getRepositoryName(), metadata.context.repositoryName);
-        assertEquals(blobTextStream.getId(), metadata.context.documentRef);
-        assertEquals(blobTextStream.getBlob().getDigest(), metadata.context.blobDigest);
+        assertEquals(blobTextFromDoc.getRepositoryName(), metadata.context.repositoryName);
+        assertEquals(blobTextFromDoc.getId(), metadata.context.documentRef);
+        assertEquals(1, metadata.context.digests.size());
+        assertEquals(blobTextFromDoc.getBlobs().entrySet().iterator().next().getValue().getDigest(),
+                     metadata.context.digests.iterator().next());
         assertNotNull(metadata.getLabels());
     }
 
     @Test
     public void testFaceDetectionService() throws IOException {
-        BlobTextStream blobTextStream = setupBlobTextStream("creative_commons3.jpg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.faceDetection");
         assertNotNull(service);
-        List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextStream);
+        List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         assertTrue(metadataCollection.get(0).getTags().size() >= 3);
         assertTrue(metadataCollection.get(0).getTags().get(0).features.size() >= 2);
@@ -92,17 +93,17 @@ public class TestRekognitionService {
 
     @Test
     public void testCelebrityDetectionService() throws IOException {
-        BlobTextStream blobTextStream = setupBlobTextStream("creative_commons2.jpg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.celebrityDetection");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         AIMetadata.Tag single = metadataCollection.iterator().next().getTags().iterator().next();
         assertEquals("Steve Ballmer", single.name);
         assertNotNull(single.box);
 
-        blobTextStream = setupBlobTextStream("creative_commons3.jpg");
-        metadataCollection = service.enrich(blobTextStream);
+        blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
+        metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
 
     }
@@ -110,14 +111,14 @@ public class TestRekognitionService {
     @Test
     public void testUnsafeImagesService() throws IOException {
 
-        BlobTextStream blobTextStream = setupBlobTextStream("creative_commons3.jpg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.unsafeImages");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(0, metadataCollection.size());
 
-        blobTextStream = setupBlobTextStream("creative_adults-beautiful-blue.jpg");
-        metadataCollection = service.enrich(blobTextStream);
+        blobTextFromDoc = setupBlobTextFromDocument("creative_adults-beautiful-blue.jpg");
+        metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         assertTrue(metadataCollection.iterator().next().getLabels().size() >= 2);
     }
@@ -125,11 +126,11 @@ public class TestRekognitionService {
     @Test
     public void testTextDetectionService() throws IOException {
 
-        BlobTextStream blobTextStream = setupBlobTextStream("plane.jpg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("plane.jpg");
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.textDetection");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata metadata = metadataCollection.iterator().next();
         assertNotNull(metadata);
@@ -138,28 +139,27 @@ public class TestRekognitionService {
         String normalized = JacksonUtil.MAPPER.writeValueAsString(metadata);
         assertNotNull(normalized);
 
-        assertEquals(blobTextStream.getRepositoryName(), metadata.context.repositoryName);
-        assertEquals(blobTextStream.getId(), metadata.context.documentRef);
-        assertEquals(blobTextStream.getBlob().getDigest(), metadata.context.blobDigest);
+        assertEquals(blobTextFromDoc.getRepositoryName(), metadata.context.repositoryName);
+        assertEquals(blobTextFromDoc.getId(), metadata.context.documentRef);
         assertNotNull(metadata.getLabels());
     }
 
     @NotNull
-    protected BlobTextStream setupBlobTextStream(String name) throws IOException {
+    protected BlobTextFromDocument setupBlobTextFromDocument(String name) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/" + name).getPath()), "image/jpeg");
-        ManagedBlob plane = blob(blob, blobProvider.writeBlob(blob));
+        ManagedBlob managedBlob = blob(blob, blobProvider.writeBlob(blob));
 
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setRepositoryName("test");
-        blobTextStream.setId("docId");
-        blobTextStream.setBlob(plane);
-        return blobTextStream;
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
+        blobTextFromDoc.setRepositoryName("test");
+        blobTextFromDoc.setId(UUID.randomUUID().toString());
+        blobTextFromDoc.addBlob("file:content", managedBlob);
+        return blobTextFromDoc;
     }
 
     private ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key,
-                                blob.getDigest(), blob.getEncoding(), blob.getLength()
+                                key, blob.getEncoding(), blob.getLength()
         );
     }
 }

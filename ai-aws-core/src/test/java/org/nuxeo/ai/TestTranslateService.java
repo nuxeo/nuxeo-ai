@@ -35,7 +35,7 @@ import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -66,11 +66,10 @@ public class TestTranslateService {
     protected void assertTranslation(String serviceName, String sourceText, String translatedText) {
         EnrichmentService service = aiComponent.getEnrichmentService(serviceName);
         assertNotNull(service);
-        BlobTextStream textStream = new BlobTextStream();
+        BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
         textStream.setRepositoryName("test");
-        textStream.setText(sourceText);
-        textStream.addXPath("my:text");
+        textStream.addProperty("my:text", sourceText);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata result = metadataCollection.iterator().next();

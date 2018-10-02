@@ -18,26 +18,23 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.singletonMap;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.translate.model.TranslateTextResult;
+import org.apache.commons.lang.StringUtils;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.translate.TranslateService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang.StringUtils;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.translate.TranslateService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.translate.model.TranslateTextResult;
 
 /**
  * An enrichment service using AWS Translate.
@@ -66,29 +63,23 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        Map<String, String> text;
-        if (StringUtils.isNotEmpty(blobTextStream.getText()) && blobTextStream.getXPaths().size() == 1) {
-            text = singletonMap(blobTextStream.getXPaths().iterator().next(), blobTextStream.getText());
-        } else {
-            text = blobTextStream.getProperties();
-        }
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         try {
-            return Collections.singletonList(translate(blobTextStream, text));
+            return Collections.singletonList(translate(blobTextFromDoc));
         } catch (IOException e) {
             throw new NuxeoException(e);
         }
     }
 
     /**
-     * Translate the specified text properties using the blobTextStream for context info.
+     * Translate the specified text properties using the blobTextFromDoc for context info.
      */
-    protected EnrichmentMetadata translate(BlobTextStream blobTextStream, Map<String, String> text) throws IOException {
+    protected EnrichmentMetadata translate(BlobTextFromDocument blobTextFromDoc) throws IOException {
 
         List<EnrichmentMetadata.Suggestion> suggestions = new ArrayList<>();
         List<String> raw = new ArrayList<>();
 
-        for (Map.Entry<String, String> textEntry : text.entrySet()) {
+        for (Map.Entry<String, String> textEntry : blobTextFromDoc.getProperties().entrySet()) {
             try {
                 TranslateTextResult result = Framework.getService(TranslateService.class)
                                                       .translateText(textEntry.getValue(),
@@ -102,7 +93,7 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService {
             }
         }
 
-        EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextStream);
+        EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc);
         if (!raw.isEmpty()) {
             String rawKey = saveJsonAsRawBlob(MAPPER.writeValueAsString(raw));
             builder.withRawKey(rawKey);

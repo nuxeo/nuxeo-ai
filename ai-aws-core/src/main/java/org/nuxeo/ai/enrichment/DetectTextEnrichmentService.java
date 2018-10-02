@@ -18,10 +18,21 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.rekognition.model.BoundingBox;
+import com.amazonaws.services.rekognition.model.DetectTextResult;
+import com.amazonaws.services.rekognition.model.TextDetection;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,17 +42,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.DetectTextResult;
-import com.amazonaws.services.rekognition.model.TextDetection;
 
 /**
  * Detects words and lines in an image.
@@ -82,25 +82,28 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        DetectTextResult result;
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+
+
+        List<EnrichmentMetadata> enriched = new ArrayList<>();
         try {
-            result = Framework.getService(RekognitionService.class).detectText(blobTextStream.getBlob());
+            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+                DetectTextResult result = Framework.getService(RekognitionService.class)
+                                                    .detectText(blob.getValue());
+                if (result != null && !result.getTextDetections().isEmpty()) {
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
+                }
+            }
+            return enriched;
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
-
-        if (result != null && !result.getTextDetections().isEmpty()) {
-            return processResults(blobTextStream, result);
-        }
-
-        return emptyList();
     }
 
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResults(BlobTextStream blobTextStream, DetectTextResult result) {
+    protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName, DetectTextResult result) {
         List<AIMetadata.Tag> tags = result.getTextDetections()
                                           .stream()
                                           .map(this::newTag)
@@ -108,9 +111,10 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
                                           .collect(Collectors.toList());
         String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
                                                  .withTags(tags)
                                                  .withRawKey(rawKey)
+                                                 .withDocumentProperties(singleton(propName))
                                                  .build());
     }
 

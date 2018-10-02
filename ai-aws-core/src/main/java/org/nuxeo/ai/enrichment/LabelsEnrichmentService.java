@@ -18,25 +18,25 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyList;
-import static org.nuxeo.runtime.stream.pipes.services.JacksonUtil.toJsonString;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.DetectLabelsResult;
+import com.amazonaws.services.rekognition.model.Label;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
-
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectLabelsResult;
-import com.amazonaws.services.rekognition.model.Label;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -46,9 +46,13 @@ import net.jodah.failsafe.RetryPolicy;
 public class LabelsEnrichmentService extends AbstractEnrichmentService {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
+
     public static final String DEFAULT_MAX_RESULTS = "200";
+
     public static final String DEFAULT_CONFIDENCE = "70";
+
     protected int maxResults;
+
     protected float minConfidence;
 
     protected static EnrichmentMetadata.Label newLabel(Label l) {
@@ -70,25 +74,28 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        DetectLabelsResult result;
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+
+        List<EnrichmentMetadata> enriched = new ArrayList<>();
         try {
-            result = Framework.getService(RekognitionService.class)
-                              .detectLabels(blobTextStream.getBlob(), maxResults, minConfidence);
+            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+                DetectLabelsResult result = Framework.getService(RekognitionService.class)
+                                                     .detectLabels(blob.getValue(), maxResults, minConfidence);
+                if (result != null && !result.getLabels().isEmpty()) {
+                    enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
+                }
+            }
+            return enriched;
         } catch (AmazonClientException e) {
             throw new NuxeoException(e);
         }
-
-        if (result != null && !result.getLabels().isEmpty()) {
-            return processResult(blobTextStream, result);
-        }
-        return emptyList();
     }
 
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextStream blobTextStream, DetectLabelsResult result) {
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
+                                                           DetectLabelsResult result) {
         List<EnrichmentMetadata.Label> labels = result.getLabels()
                                                       .stream()
                                                       .map(LabelsEnrichmentService::newLabel)
@@ -101,9 +108,10 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
         });
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextStream)
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
                                                  .withLabels(labels)
                                                  .withRawKey(rawKey)
+                                                 .withDocumentProperties(singleton(propName))
                                                  .build());
     }
 

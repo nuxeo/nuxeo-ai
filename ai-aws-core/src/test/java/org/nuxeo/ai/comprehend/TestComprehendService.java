@@ -36,7 +36,7 @@ import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -64,16 +64,16 @@ public class TestComprehendService {
         assertNotNull(results);
         assertTrue(SentimentType.POSITIVE.toString().equals(results.getSentiment()));
 
-        BlobTextStream textStream = new BlobTextStream();
+        BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
         textStream.setRepositoryName("test");
-        textStream.setText("I am very disappointed");
+        textStream.addProperty("dc:title", "I am very disappointed");
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata result = metadataCollection.iterator().next();
         assertTrue(result.isSingleLabel());
         assertEquals(SentimentType.NEGATIVE.toString(), result.getLabels().get(0).getName());
-        textStream.setText("A car");
+        textStream.addProperty("dc:title", "A car");
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
         assertEquals(SentimentType.NEUTRAL.toString(), result.getLabels().get(0).getName());

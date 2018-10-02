@@ -51,8 +51,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.runtime.stream.pipes</groupId>
-      <artifactId>nuxeo-pipes-core</artifactId>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-ai-pipes</artifactId>
       <version>${ai-core.version}</version>
       <scope>provided</scope>
     </dependency>
