@@ -32,7 +32,7 @@ import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -105,7 +105,7 @@ public class EventPipesTest {
     @Test
     public void testDocEventToStream() throws Exception {
         DocEventToStream doc2stream = new DocEventToStream();
-        Collection<BlobTextStream> result =
+        Collection<BlobTextFromDocument> result =
                 doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File"),
                                               "anyEvent"));
         assertNotNull(result);
@@ -126,25 +126,25 @@ public class EventPipesTest {
 
         List<String> creator = singletonList("dc:creator");
         doc2stream = new DocEventToStream(null, null, creator);
-        List<BlobTextStream> validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        List<BlobTextFromDocument> validResult = (List<BlobTextFromDocument>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
         assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
 
         doc2stream = new DocEventToStream(null, creator, null);
-        validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
+        validResult = (List<BlobTextFromDocument>) doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, validResult.size());
         assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
 
         doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator,
                                           singletonList("dc:modified"));
-        validResult = (List<BlobTextStream>) doc2stream.apply(testEvent);
-        BlobTextStream firstResult = validResult.get(0);
+        validResult = (List<BlobTextFromDocument>) doc2stream.apply(testEvent);
+        BlobTextFromDocument firstResult = validResult.get(0);
         assertNotNull(firstResult.getProperties().get("dc:modified"));
         ManagedBlob blob = firstResult.getBlobs().get("file:content");
         assertNotNull(blob);
         assertEquals("1 blob and 1 text", 2, validResult.size());
 
-        BlobTextStream andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextStream.class);
+        BlobTextFromDocument andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextFromDocument.class);
         assertEquals(firstResult, andBackAgain);
     }
 }

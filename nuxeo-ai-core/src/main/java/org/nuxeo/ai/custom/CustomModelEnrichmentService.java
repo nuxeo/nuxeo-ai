@@ -30,7 +30,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rest.RestEnrichmentService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -72,15 +72,15 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
     }
 
     @Override
-    public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextStream blobTextStream) {
+    public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextFromDocument blobTextFromDoc) {
         try {
             List<Feature> features = new ArrayList<>();
 
-            if (!blobTextStream.getBlobs().isEmpty()) {
-                if (blobTextStream.getBlobs().size() != 1) {
+            if (!blobTextFromDoc.getBlobs().isEmpty()) {
+                if (blobTextFromDoc.getBlobs().size() != 1) {
                     throw new NuxeoException("Sight engine only supports one blob image at a time.");
                 }
-                ManagedBlob blob = blobTextStream.getBlobs().values().stream().findFirst().get();
+                ManagedBlob blob = blobTextFromDoc.getBlobs().values().stream().findFirst().get();
                 features.add(new Feature(imageFeatureName, "image",
                                          new Feature.Content(null, null, blob.getMimeType(),
                                                              blob.getEncoding(), blob.getLength())));
@@ -88,7 +88,7 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
                 builder.setHeader(HttpHeaders.CONTENT_TYPE, blob.getMimeType());
             }
 
-            blobTextStream.getProperties().forEach((k, v) ->
+            blobTextFromDoc.getProperties().forEach((k, v) ->
                                                            features.add(
                                                                    new Feature(k, "text", v,
                                                                                Consts.UTF_8.toString(),
@@ -103,7 +103,7 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc) {
         String content = getContent(response);
         String rawKey = saveJsonAsRawBlob(content);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
@@ -126,7 +126,7 @@ public class CustomModelEnrichmentService extends RestEnrichmentService {
             return Collections.singletonList(
                     new EnrichmentMetadata.Builder(kind,
                                                    name,
-                                                   blobTextStream)
+                                                   blobTextFromDoc)
                             .withLabels(labels)
                             .withRawKey(rawKey)
                             .build());

@@ -17,7 +17,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -54,9 +54,9 @@ public class TestRestCustomModel {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/plane.jpg").getPath()), "image/jpeg");
         ManagedBlob plane = blob(blob, blobProvider.writeBlob(blob));
-        BlobTextStream blobTextStream = new BlobTextStream("docId", "default", "parent", "File", null);
-        blobTextStream.addBlob(FILE_CONTENT, plane);
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
+        blobTextFromDoc.addBlob(FILE_CONTENT, plane);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
@@ -70,9 +70,9 @@ public class TestRestCustomModel {
         JsonNode jsonTree = JacksonUtil.MAPPER.readTree(raw);
         assertNotNull(jsonTree);
         assertEquals("The custom model should return 5 results", 5, jsonTree.get("results").size());
-        blobTextStream.getBlobs().clear();
-        blobTextStream.addProperty(TEST_PROPERTY, "Great product");
-        results = service.enrich(blobTextStream);
+        blobTextFromDoc.getBlobs().clear();
+        blobTextFromDoc.addProperty(TEST_PROPERTY, "Great product");
+        results = service.enrich(blobTextFromDoc);
         assertEquals("There must be 1 result", 1, results.size());
     }
 

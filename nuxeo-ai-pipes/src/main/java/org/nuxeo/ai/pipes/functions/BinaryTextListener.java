@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.services.PipelineService;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.event.Event;
@@ -43,7 +43,7 @@ import java.util.function.Consumer;
 
 /**
  * Listens to the "binaryTextUpdated" event and schedules an async post-commit worker to create
- * a BlobTextStream containing the binary text.
+ * a BlobTextFromDocument containing the binary text.
  * It uses a windowing approach to only emit an event if it hasn't been emitted for {timeout} seconds.
  * If the window size is less than zero then the work is scheduled anyway.
  */
@@ -135,16 +135,16 @@ public class BinaryTextListener implements EventListener {
             }
             DocumentModel doc = session.getDocument(docRef);
             Map<String, String> binText = doc.getBinaryFulltext();
-            BlobTextStream blobTextStream = new BlobTextStream(doc);
+            BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
             binText.values().forEach(text -> {
                 if (StringUtils.isNotBlank(text)) {
-                    blobTextStream.addProperty(binaryProperty, text);
+                    blobTextFromDoc.addProperty(binaryProperty, text);
                     if (log.isDebugEnabled()) {
-                        log.debug("Writing record for " + blobTextStream.getId());
+                        log.debug("Writing record for " + blobTextFromDoc.getId());
                     }
                     Consumer<Record> consumer = Framework.getService(PipelineService.class).getConsumer(consumerName);
                     if (consumer != null) {
-                        consumer.accept(toRecord(blobTextStream.getKey(), blobTextStream));
+                        consumer.accept(toRecord(blobTextFromDoc.getKey(), blobTextFromDoc));
                     }
 
                 }

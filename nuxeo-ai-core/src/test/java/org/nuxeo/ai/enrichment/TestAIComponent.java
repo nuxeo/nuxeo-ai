@@ -31,7 +31,7 @@ import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
@@ -68,9 +68,9 @@ public class TestAIComponent {
         assertEquals("e1", service.getName());
 
         ComputationContext testContext = new ComputationContextImpl(null);
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
-        Record record = toRecord("k", blobTextStream);
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
+        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        Record record = toRecord("k", blobTextFromDoc);
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
         EnrichingStreamProcessor.EnrichmentComputation computation
@@ -83,7 +83,7 @@ public class TestAIComponent {
         assertEquals("PDF isn't a supported mimetype", 1, metrics.unsupported);
 
         service = aiComponent.getEnrichmentService("logging");
-        service.enrich(blobTextStream);
+        service.enrich(blobTextFromDoc);
     }
 
     @Test
@@ -103,11 +103,11 @@ public class TestAIComponent {
                                                 .collect(Collectors.toSet())
                 ), Collections.emptyMap());
         ComputationContext testContext = new ComputationContextImpl(meta);
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setId("xderftgt");
-        blobTextStream.setRepositoryName("test");
-        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
-        Record record = toRecord("k", blobTextStream);
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
+        blobTextFromDoc.setId("xderftgt");
+        blobTextFromDoc.setRepositoryName("test");
+        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        Record record = toRecord("k", blobTextFromDoc);
 
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test");

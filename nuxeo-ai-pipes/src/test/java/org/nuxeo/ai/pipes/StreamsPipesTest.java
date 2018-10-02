@@ -37,6 +37,7 @@ import javax.inject.Inject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -51,7 +52,6 @@ import org.nuxeo.lib.stream.log.LogRecord;
 import org.nuxeo.lib.stream.log.LogTailer;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -92,7 +92,7 @@ public class StreamsPipesTest {
         try (LogTailer<Record> tailer = manager.createTailer("group", "pipe.text.out")) {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(1));
             assertNotNull(record);
-            BlobTextStream andBack = fromRecord(record.message(), BlobTextStream.class);
+            BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
             theTestDoc = session.getDocument(new IdRef(andBack.getId()));
         }
 
@@ -103,7 +103,7 @@ public class StreamsPipesTest {
             session.saveDocument(theTestDoc);
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
-            BlobTextStream dirtyDoc = fromRecord(record.message(), BlobTextStream.class);
+            BlobTextFromDocument dirtyDoc = fromRecord(record.message(), BlobTextFromDocument.class);
             assertEquals("Dirty Document", dirtyDoc.getProperties().get("dc:title"));
         }
     }
@@ -124,7 +124,7 @@ public class StreamsPipesTest {
             txFeature.nextTransaction();
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record.message());
-            BlobTextStream andBack = fromRecord(record.message(), BlobTextStream.class);
+            BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
             assertEquals("My text", andBack.getProperties().get(BINARY_TEXT_SYS_PROP));
         }
 
@@ -140,7 +140,7 @@ public class StreamsPipesTest {
             txFeature.nextTransaction();
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
-            BlobTextStream andBack = fromRecord(record.message(), BlobTextStream.class);
+            BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
             assertEquals("My custom text", andBack.getProperties().get(BINARY_TEXT_SYS_PROP));
             record = tailer.read(Duration.ofSeconds(5));
             assertNull("The second record should be ignored because its inside the window", record);

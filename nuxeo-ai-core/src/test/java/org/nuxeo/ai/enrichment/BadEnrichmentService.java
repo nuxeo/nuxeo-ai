@@ -21,7 +21,7 @@ package org.nuxeo.ai.enrichment;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 public class BadEnrichmentService extends AbstractEnrichmentService {
 
@@ -30,7 +30,7 @@ public class BadEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return Collections.emptyList();
     }
 }

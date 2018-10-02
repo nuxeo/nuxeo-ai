@@ -28,11 +28,10 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * A POJO representation of BlobTextStream.avsc used as a record data in a stream.
- * <p>
- * The main subject of this class is usually either a blob or a piece of text (not a Nuxeo Document).
+ * A POJO representation used to transfer data in a stream.
+ * The main subject of this class is usually either a blob or a piece of text taken from a Nuxeo Document.
  */
-public class BlobTextStream implements Partitionable {
+public class BlobTextFromDocument implements Partitionable {
 
     private final Map<String, String> properties = new HashMap<>();
 
@@ -48,10 +47,10 @@ public class BlobTextStream implements Partitionable {
 
     private Set<String> facets;
 
-    public BlobTextStream() {
+    public BlobTextFromDocument() {
     }
 
-    public BlobTextStream(String id, String repositoryName, String parentId, String primaryType, Set<String> facets) {
+    public BlobTextFromDocument(String id, String repositoryName, String parentId, String primaryType, Set<String> facets) {
         this.id = id;
         this.repositoryName = repositoryName;
         this.parentId = parentId;
@@ -59,7 +58,7 @@ public class BlobTextStream implements Partitionable {
         this.facets = facets;
     }
 
-    public BlobTextStream(DocumentModel doc) {
+    public BlobTextFromDocument(DocumentModel doc) {
         this.id = doc.getId();
         this.repositoryName = doc.getRepositoryName();
         this.parentId = doc.getParentRef().toString();
@@ -131,7 +130,7 @@ public class BlobTextStream implements Partitionable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        BlobTextStream that = (BlobTextStream) o;
+        BlobTextFromDocument that = (BlobTextFromDocument) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(repositoryName, that.repositoryName) &&
                 Objects.equals(parentId, that.parentId) &&

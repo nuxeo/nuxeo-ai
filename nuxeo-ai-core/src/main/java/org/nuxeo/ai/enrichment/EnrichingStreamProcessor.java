@@ -28,7 +28,7 @@ import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.registerMetrics
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -118,13 +118,13 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             if (log.isDebugEnabled()) {
                 log.debug("Processing record " + record);
             }
-            BlobTextStream blobTextStream = fromRecord(record, BlobTextStream.class);
-            Callable<Collection<EnrichmentMetadata>> callable = getService(blobTextStream);
+            BlobTextFromDocument blobTextFromDoc = fromRecord(record, BlobTextFromDocument.class);
+            Callable<Collection<EnrichmentMetadata>> callable = getService(blobTextFromDoc);
 
             if (callable != null) {
                 metrics.called();
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextStream.getId()));
+                    log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextFromDoc.getId()));
                 }
                 try {
                     Collection<EnrichmentMetadata> result = callService(record, callable);
@@ -140,7 +140,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             } else {
                 metrics.unsupported();
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextStream
+                    log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextFromDoc
                             .getId()));
                 }
             }
@@ -173,15 +173,15 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         /**
-         * Try to get a reference to an enrichment service if the BlobTextStream meets the requirements,
+         * Try to get a reference to an enrichment service if the BlobTextFromDocument meets the requirements,
          * otherwise return null,
          */
-        protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextStream blobTextStream) {
-            if (!blobTextStream.getBlobs().isEmpty() && enrichmentSupport != null) {
-                for (ManagedBlob blob : blobTextStream.getBlobs().values()) {
+        protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextFromDocument blobTextFromDoc) {
+            if (!blobTextFromDoc.getBlobs().isEmpty() && enrichmentSupport != null) {
+                for (ManagedBlob blob : blobTextFromDoc.getBlobs().values()) {
                     if (enrichmentSupport.supportsMimeType(blob.getMimeType()) &&
                             enrichmentSupport.supportsSize(blob.getLength())) {
-                        return () -> service.enrich(blobTextStream);
+                        return () -> service.enrich(blobTextFromDoc);
                     } else {
                         log.info(String.format("%s does not support a blob with these characteristics %s %s",
                                                metadata.name(), blob.getMimeType(), blob.getLength()
@@ -190,7 +190,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     }
                 }
             }
-            return () -> service.enrich(blobTextStream);
+            return () -> service.enrich(blobTextFromDoc);
         }
 
         @Override

@@ -20,8 +20,8 @@ package org.nuxeo.ai.enrichment;
 
 import java.util.Collection;
 
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -46,7 +46,7 @@ public interface EnrichmentService {
     /**
      * The main method for the service to implement.  Enriching the blob or text and returning a result.
      */
-    Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream);
+    Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc);
 
     /**
      * The retry policy for the service

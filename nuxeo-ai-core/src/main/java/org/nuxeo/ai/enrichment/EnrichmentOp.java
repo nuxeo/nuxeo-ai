@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.core.Constants;
@@ -40,7 +41,6 @@ import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 import org.nuxeo.ai.pipes.events.DocEventToStream;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  *
@@ -107,8 +107,8 @@ public class EnrichmentOp {
             DocEventToStream docEventToStream = new DocEventToStream(blobProperties, textProperties, null);
 
             docs.forEach(documentModel -> {
-                Collection<BlobTextStream> blobTextStreams = docEventToStream.docSerialize(documentModel);
-                blobTextStreams.forEach(b -> {
+                Collection<BlobTextFromDocument> blobTexts = docEventToStream.docSerialize(documentModel);
+                blobTexts.forEach(b -> {
                     Collection<EnrichmentMetadata> result = null;
                     try {
                         result = service.enrich(b);
