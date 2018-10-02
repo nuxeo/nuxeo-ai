@@ -40,7 +40,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
  * An enrichment service that calls a Rest api.
@@ -66,9 +66,9 @@ public abstract class RestEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
 
-        return client.call(builder -> prepareRequest(builder, blobTextStream),
+        return client.call(builder -> prepareRequest(builder, blobTextFromDoc),
                            response -> {
                                int statusCode = response.getStatusLine().getStatusCode();
                                if (statusCode < 200 || statusCode >= 300) {
@@ -77,7 +77,7 @@ public abstract class RestEnrichmentService extends AbstractEnrichmentService {
                                                           statusCode));
                                    return Collections.emptyList();
                                } else {
-                                   return handleResponse(response, blobTextStream);
+                                   return handleResponse(response, blobTextFromDoc);
                                }
                            }
         );
@@ -87,12 +87,12 @@ public abstract class RestEnrichmentService extends AbstractEnrichmentService {
     /**
      * Prepare the request prior to calling
      */
-    public abstract HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextStream blobTextStream);
+    public abstract HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextFromDocument blobTextFromDoc);
 
     /**
      * Handle the response and return the result
      */
-    public abstract Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextStream blobTextStream);
+    public abstract Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc);
 
     /**
      * Set a string as a Json body parameter on the request

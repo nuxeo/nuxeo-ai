@@ -43,7 +43,7 @@ import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -63,9 +63,9 @@ public class TestRestEnrichment {
         assertNotNull(aiComponent);
         EnrichmentService service = aiComponent.getEnrichmentService("rest1");
 
-        BlobTextStream blobTextStream = new BlobTextStream("docId", "default", "parent", "File", null);
-        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
+        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertEquals(1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
         assertNotNull(metadata.getRawKey());
@@ -78,7 +78,7 @@ public class TestRestEnrichment {
         assertNotNull(jsonTree);
 
         service = aiComponent.getEnrichmentService("rest2");
-        results = service.enrich(blobTextStream);
+        results = service.enrich(blobTextFromDoc);
         assertEquals("Called unsuccessfully so the error must be handled and an empty result returned",
                      0, results.size());
 

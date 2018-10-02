@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
 import org.nuxeo.ecm.core.api.Blob;
@@ -39,7 +40,6 @@ import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -79,10 +79,10 @@ public class TensorTest {
         List<Record> records = new ArrayList<>();
 
         for (int i = 0; i < numberOfRecords; ++i) {
-            BlobTextStream blobTextStream = new BlobTextStream("ixi" + i, "test", "aaf", "Picture", null);
-            blobTextStream.addProperty("dc:title", "my text " + i);
-            blobTextStream.getProperties().put("ecm:primaryType", "Picture");
-            records.add(toRecord(test_key, blobTextStream));
+            BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("ixi" + i, "test", "aaf", "Picture", null);
+            blobTextFromDoc.addProperty("dc:title", "my text " + i);
+            blobTextFromDoc.getProperties().put("ecm:primaryType", "Picture");
+            records.add(toRecord(test_key, blobTextFromDoc));
         }
 
         writer.write(records);
@@ -125,9 +125,9 @@ public class TensorTest {
         List<Record> records = new ArrayList<>();
 
         for (int i = 0; i < numberOfRecords; ++i) {
-            BlobTextStream blobTextStream = blobTestImage(blobManager);
-            blobTextStream.getProperties().put("ecm:primaryType", "Picture");
-            records.add(toRecord(test_key, blobTextStream));
+            BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
+            blobTextFromDoc.getProperties().put("ecm:primaryType", "Picture");
+            records.add(toRecord(test_key, blobTextFromDoc));
         }
 
         writer.write(records);

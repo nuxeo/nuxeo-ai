@@ -40,9 +40,9 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -50,7 +50,6 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.functions.PropertiesToStream;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
@@ -86,7 +85,7 @@ public class RecordsTest {
         recs = (List<Record>) func.apply(getTestEvent(session));
         assertEquals(1, recs.size());
 
-        BlobTextStream andBack = fromRecord(recs.get(0), BlobTextStream.class);
+        BlobTextFromDocument andBack = fromRecord(recs.get(0), BlobTextFromDocument.class);
         assertNotNull(andBack);
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());

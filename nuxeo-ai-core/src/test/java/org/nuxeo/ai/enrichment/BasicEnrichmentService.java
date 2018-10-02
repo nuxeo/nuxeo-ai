@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 public class BasicEnrichmentService extends AbstractEnrichmentService {
 
@@ -46,11 +46,11 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return Collections.singletonList(
                         new EnrichmentMetadata.Builder("/classification/custom",
                                                        name,
-                                                       blobTextStream)
+                                                       blobTextFromDoc)
                                                        .withLabels(labels)
                                                        .withTags(tags)
                                                        .build());

@@ -21,6 +21,7 @@ package org.nuxeo.ai.enrichment;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -29,7 +30,6 @@ import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.SimpleFeature;
@@ -53,24 +53,24 @@ public class EnrichmentTestFeature extends SimpleFeature {
     }
 
     /**
-     * Create a BlobTextStream test object using the specified file blob.
+     * Create a BlobTextFromDocument test object using the specified file blob.
      */
-    public static BlobTextStream setupBlobForStream(BlobManager manager, String fileName, String mimeType) throws IOException {
+    public static BlobTextFromDocument setupBlobForStream(BlobManager manager, String fileName, String mimeType) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(manager.getClass().getResourceAsStream(fileName), mimeType);
         ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobProvider.writeBlob(blob),
                                                    blob.getDigest(), blob.getEncoding(), blob.getLength());
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setRepositoryName("test");
-        blobTextStream.setId(UUID.randomUUID().toString());
-        blobTextStream.addBlob(FILE_CONTENT, managedBlob);
-        return blobTextStream;
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
+        blobTextFromDoc.setRepositoryName("test");
+        blobTextFromDoc.setId(UUID.randomUUID().toString());
+        blobTextFromDoc.addBlob(FILE_CONTENT, managedBlob);
+        return blobTextFromDoc;
     }
 
     /**
-     * Create a BlobTextStream test object with a sample test image.
+     * Create a BlobTextFromDocument test object with a sample test image.
      */
-    public static BlobTextStream blobTestImage(BlobManager manager) throws IOException {
+    public static BlobTextFromDocument blobTestImage(BlobManager manager) throws IOException {
         return setupBlobForStream(manager, "/files/plane.jpg", "image/jpeg");
     }
 }

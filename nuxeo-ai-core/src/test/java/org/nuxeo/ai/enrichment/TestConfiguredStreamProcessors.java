@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -53,7 +54,6 @@ import org.nuxeo.lib.stream.log.LogOffset;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.stream.StreamService;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -92,10 +92,10 @@ public class TestConfiguredStreamProcessors {
         txFeature.nextTransaction();
 
         //Create metadata about the blob and document
-        BlobTextStream blobTextStream = new BlobTextStream();
-        blobTextStream.setId(docId);
-        blobTextStream.setRepositoryName(testDoc.getRepositoryName());
-        blobTextStream.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
+        blobTextFromDoc.setId(docId);
+        blobTextFromDoc.setRepositoryName(testDoc.getRepositoryName());
+        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
 
         //Check metrics, nothing produced
         String metricPrefix = "nuxeo.streams.enrichment.test_images$simpleTest$test_images.out.";
@@ -113,7 +113,7 @@ public class TestConfiguredStreamProcessors {
         LogAppender<Record> appender = manager.getAppender("test_images");
         LogLag lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
         assertEquals("There should be nothing waiting to be processed", 0, lag.lag());
-        LogOffset offset = appender.append("mykey", toRecord("k", blobTextStream));
+        LogOffset offset = appender.append("mykey", toRecord("k", blobTextFromDoc));
         waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
 
         //After waiting for the appender lets check the 1 record was read

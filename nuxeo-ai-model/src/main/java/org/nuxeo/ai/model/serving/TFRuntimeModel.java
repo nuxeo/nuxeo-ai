@@ -34,7 +34,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.model.ModelProperty;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -221,18 +221,18 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream bts) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
         Map<String, Serializable> inputProperties = new HashMap<>();
 
-        for (Map.Entry<String, ManagedBlob> blobEntry : bts.getBlobs().entrySet()) {
+        for (Map.Entry<String, ManagedBlob> blobEntry : blobtext.getBlobs().entrySet()) {
             inputProperties.put(blobEntry.getKey(), convertImageBlob(blobEntry.getValue()));
         }
-        inputProperties.putAll(bts.getProperties());
+        inputProperties.putAll(blobtext.getProperties());
         if (inputProperties.isEmpty()) {
-            log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), bts.getId()));
+            log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), blobtext.getId()));
             return emptyList();
         } else {
-            return Collections.singletonList(predict(inputProperties, bts.getRepositoryName(), bts.getId(), useLabels));
+            return Collections.singletonList(predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId(), useLabels));
         }
     }
 

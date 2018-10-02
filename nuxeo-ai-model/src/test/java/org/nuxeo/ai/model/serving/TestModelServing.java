@@ -22,7 +22,6 @@ package org.nuxeo.ai.model.serving;
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
 
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -48,7 +48,6 @@ import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -119,10 +118,10 @@ public class TestModelServing {
 
     @Test
     public void testEnrichment() throws IOException {
-        BlobTextStream blobTextStream = blobTestImage(manager);
+        BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> enriched = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> enriched = service.enrich(blobTextFromDoc);
         assertNotNull(enriched.iterator().next());
     }
 
@@ -131,9 +130,9 @@ public class TestModelServing {
         assertNotNull(aiComponent);
         EnrichmentService service = aiComponent.getEnrichmentService("failingModel");
 
-        BlobTextStream blobTextStream = blobTestImage(manager);
+        BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
         service = aiComponent.getEnrichmentService("xyz");
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
@@ -148,9 +147,9 @@ public class TestModelServing {
         assertNotNull(jsonTree);
         assertEquals("The custom model should return results", 1, jsonTree.get("results").size());
 
-        blobTextStream.getBlobs().clear();
-        blobTextStream.addProperty("dc:name", "Great product");
-        results = service.enrich(blobTextStream);
+        blobTextFromDoc.getBlobs().clear();
+        blobTextFromDoc.addProperty("dc:name", "Great product");
+        results = service.enrich(blobTextFromDoc);
         assertEquals("There must be 1 result", 1, results.size());
     }
 

@@ -21,7 +21,7 @@ package org.nuxeo.ai.enrichment;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -53,13 +53,13 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         if (++attempts <= numFailures) {
             throw exception;
         }
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder("test",
                                                name,
-                                               blobTextStream).build());
+                                               blobTextFromDoc).build());
     }
 }

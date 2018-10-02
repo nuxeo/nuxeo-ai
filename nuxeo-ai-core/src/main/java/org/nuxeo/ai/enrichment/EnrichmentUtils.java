@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.blob.BlobInfo;
@@ -65,19 +65,19 @@ public class EnrichmentUtils {
     }
 
     /**
-     * Gets the names of all properties used by the BlobTextStream.
+     * Gets the names of all properties used by the BlobTextFromDocument.
      */
-    public static Set<String> getPropertyNames(BlobTextStream blobTextStream) {
-        Set<String> inputProperties = new HashSet<>(blobTextStream.getBlobs().keySet());
-        inputProperties.addAll(blobTextStream.getProperties().keySet());
+    public static Set<String> getPropertyNames(BlobTextFromDocument blobTextFromDoc) {
+        Set<String> inputProperties = new HashSet<>(blobTextFromDoc.getBlobs().keySet());
+        inputProperties.addAll(blobTextFromDoc.getProperties().keySet());
         return inputProperties;
     }
 
     /**
-     * Gets the digests of any blobs used by the BlobTextStream.
+     * Gets the digests of any blobs used by the BlobTextFromDocument.
      */
-    public static Set<String> getDigests(BlobTextStream bts) {
-      return bts.getBlobs().values().stream().map(Blob::getDigest).filter(Objects::nonNull).collect(Collectors.toSet());
+    public static Set<String> getDigests(BlobTextFromDocument blobtext) {
+      return blobtext.getBlobs().values().stream().map(Blob::getDigest).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     /**

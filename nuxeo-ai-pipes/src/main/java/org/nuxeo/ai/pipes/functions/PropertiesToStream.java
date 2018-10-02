@@ -29,10 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.events.DocEventToStream;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  * A function that takes document properties and sends them to a stream using {@link DocEventToStream}.
@@ -79,7 +79,7 @@ public class PropertiesToStream extends PreFilterFunction<Event, Collection<Reco
      * Sets up the transformation function to be applied
      */
     protected Function<Event, Collection<Record>> setupTransformation() {
-        Function<Event, Collection<BlobTextStream>> func =
+        Function<Event, Collection<BlobTextFromDocument>> func =
                 new DocEventToStream(blobProperties, textProperties, customProperties);
         return func.andThen(items -> items.stream().map(i -> toRecord(i.getKey(), i)).collect(toList()));
     }

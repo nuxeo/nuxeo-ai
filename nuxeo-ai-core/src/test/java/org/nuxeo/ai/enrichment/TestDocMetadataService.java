@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.Blob;
@@ -153,13 +153,13 @@ public class TestDocMetadataService {
         testDoc = session.createDocument(testDoc);
         txFeature.nextTransaction();
 
-        BlobTextStream blobTextStream = new BlobTextStream(testDoc.getId(), testDoc.getRepositoryName(),
-                                                           testDoc.getParentRef().toString(), testDoc.getType(),
-                                                           testDoc.getFacets()
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(testDoc.getId(), testDoc.getRepositoryName(),
+                                                                        testDoc.getParentRef().toString(), testDoc.getType(),
+                                                                        testDoc.getFacets()
         );
-        blobTextStream.addProperty(TEST_PROPERTY, SOME_TEXT);
+        blobTextFromDoc.addProperty(TEST_PROPERTY, SOME_TEXT);
         EnrichmentService service = aiComponent.getEnrichmentService(SERVICE_NAME);
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextStream);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         TestCase.assertEquals(2, results.size());
         EnrichmentMetadata[] metaResults = results.toArray(new EnrichmentMetadata[0]);
         EnrichmentMetadata metadata = metaResults[0];

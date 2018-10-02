@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
@@ -174,13 +174,13 @@ public class EnrichmentMetadata extends AIMetadata {
 
         private List<Suggestion> suggestions;
 
-        public Builder(Instant created, String kind, String serviceName, BlobTextStream blobTextStream) {
-            super(created, kind, serviceName, blobTextStream.getRepositoryName(), blobTextStream.getId(),
-                  getDigests(blobTextStream), getPropertyNames(blobTextStream));
+        public Builder(Instant created, String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
+            super(created, kind, serviceName, blobTextFromDoc.getRepositoryName(), blobTextFromDoc.getId(),
+                  getDigests(blobTextFromDoc), getPropertyNames(blobTextFromDoc));
         }
 
-        public Builder(String kind, String serviceName, BlobTextStream blobTextStream) {
-            this(Instant.now(), kind, serviceName, blobTextStream);
+        public Builder(String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
+            this(Instant.now(), kind, serviceName, blobTextFromDoc);
         }
 
         @JsonCreator

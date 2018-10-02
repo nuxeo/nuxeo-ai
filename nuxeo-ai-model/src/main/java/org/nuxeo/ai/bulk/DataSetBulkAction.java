@@ -28,7 +28,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.bulk.BulkProcessor.STATUS_STREAM;
 
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
@@ -138,7 +138,7 @@ public class DataSetBulkAction extends AbstractBulkAction {
 
                 try {
                     DocumentModel doc = coreSession.getDocument(new IdRef(id));
-                    BlobTextStream subDoc = docSerialize(doc, customProperties);
+                    BlobTextFromDocument subDoc = docSerialize(doc, customProperties);
                     boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                     if (subDoc != null) {
                         getLog().debug(isTraining + " " + subDoc);
@@ -161,23 +161,23 @@ public class DataSetBulkAction extends AbstractBulkAction {
         }
 
         /**
-         * Serialize the properties to the BlobTextStream format.
+         * Serialize the properties to the BlobTextFromDocument format.
          */
-        protected BlobTextStream docSerialize(DocumentModel doc, List<String> propertiesList) {
-            BlobTextStream blobTextStream = new BlobTextStream(doc);
-            Map<String, String> properties = blobTextStream.getProperties();
+        protected BlobTextFromDocument docSerialize(DocumentModel doc, List<String> propertiesList) {
+            BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
+            Map<String, String> properties = blobTextFromDoc.getProperties();
 
             propertiesList.forEach(propName -> {
                 Serializable propVal = getPropertyValue(doc, propName);
                 if (propVal instanceof ManagedBlob) {
-                    blobTextStream.addBlob(propName, (ManagedBlob) propVal);
+                    blobTextFromDoc.addBlob(propName, (ManagedBlob) propVal);
                 } else if (propVal != null) {
                     properties.put(propName, propVal.toString());
                 }
             });
 
-            if (properties.size() + blobTextStream.getBlobs().size() == propertiesList.size()) {
-                return blobTextStream;
+            if (properties.size() + blobTextFromDoc.getBlobs().size() == propertiesList.size()) {
+                return blobTextFromDoc;
             } else {
                 getLog().debug(String.format("Document %s one of the following properties is null so skipping. %s",
                                              doc.getId(), propertiesList));

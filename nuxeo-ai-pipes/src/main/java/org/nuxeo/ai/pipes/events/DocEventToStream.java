@@ -23,7 +23,7 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
@@ -36,11 +36,11 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Take a document event and turn it into a stream BlobTextStream.
+ * Take a document event and turn it into a stream BlobTextFromDocument.
  * <p>
  * By default it looks for a blob "file:content" property
  */
-public class DocEventToStream implements Function<Event, Collection<BlobTextStream>> {
+public class DocEventToStream implements Function<Event, Collection<BlobTextFromDocument>> {
 
     public static final String BLOB_PROPERTIES = "blobProperties";
 
@@ -81,7 +81,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     }
 
     @Override
-    public Collection<BlobTextStream> apply(Event event) {
+    public Collection<BlobTextFromDocument> apply(Event event) {
         DocumentModel doc = toDoc(event);
         if (doc != null) {
             try {
@@ -95,51 +95,51 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextStre
     }
 
     /**
-     * Serialize the document properties as a Collection of BlobTextStream
+     * Serialize the document properties as a Collection of BlobTextFromDocument
      */
-    public Collection<BlobTextStream> docSerialize(DocumentModel doc) {
-        List<BlobTextStream> items = new ArrayList<>();
+    public Collection<BlobTextFromDocument> docSerialize(DocumentModel doc) {
+        List<BlobTextFromDocument> items = new ArrayList<>();
         blobProperties.forEach(propName -> {
             Blob blob = getPropertyValue(doc, propName, Blob.class);
             if (blob instanceof ManagedBlob) {
-                BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.addBlob(propName, (ManagedBlob) blob);
-                items.add(blobTextStream);
+                BlobTextFromDocument blobTextFromDoc = getBlobText(doc);
+                blobTextFromDoc.addBlob(propName, (ManagedBlob) blob);
+                items.add(blobTextFromDoc);
             }
         });
 
         textProperties.forEach(propName -> {
             String text = getPropertyValue(doc, propName, String.class);
             if (text != null) {
-                BlobTextStream blobTextStream = getBlobTextStream(doc);
-                blobTextStream.addProperty(propName, text);
-                items.add(blobTextStream);
+                BlobTextFromDocument blobTextFromDoc = getBlobText(doc);
+                blobTextFromDoc.addProperty(propName, text);
+                items.add(blobTextFromDoc);
             }
         });
 
         if (items.isEmpty() && !customProperties.isEmpty()) {
-            items.add(getBlobTextStream(doc));
+            items.add(getBlobText(doc));
         }
 
         return items;
     }
 
     /**
-     * Create a BlobTextStream based on the specified document
+     * Create a BlobTextFromDocument based on the specified document
      */
-    protected BlobTextStream getBlobTextStream(DocumentModel doc) {
-        BlobTextStream blobTextStream =
-                new BlobTextStream(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
+    protected BlobTextFromDocument getBlobText(DocumentModel doc) {
+        BlobTextFromDocument blobTextFromDoc =
+                new BlobTextFromDocument(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
                         .getType(), doc.getFacets());
 
         customProperties.forEach(propName -> {
             String propVal = getPropertyValue(doc, propName, String.class);
             if (propVal != null) {
-                blobTextStream.addProperty(propName, propVal);
+                blobTextFromDoc.addProperty(propName, propVal);
             }
         });
 
-        return blobTextStream;
+        return blobTextFromDoc;
     }
 
 }

@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.security.SecurityConstants;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 
 /**
  * Reverse a text field and add it to the raw response
@@ -34,8 +34,8 @@ import org.nuxeo.ai.pipes.types.BlobTextStream;
 public class TextReversingEnrichmentService extends AbstractEnrichmentService {
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextStream blobTextStream) {
-        String reversedText = StringUtils.reverse(blobTextStream.getProperties().values().iterator().next());
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+        String reversedText = StringUtils.reverse(blobTextFromDoc.getProperties().values().iterator().next());
         List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1))
                                                       .collect(Collectors.toList());
@@ -45,13 +45,13 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
         return Arrays.asList(
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
-                                               blobTextStream)
+                                               blobTextFromDoc)
                     .withLabels(labels)
                     .withRawKey(rawKey)
                     .withCreator(SecurityConstants.SYSTEM_USERNAME).build(),
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
-                                               blobTextStream)
+                                               blobTextFromDoc)
                     .withLabels(labels)
                     .withRawKey(rawKey)
                     .withDocumentProperties(Stream.of("dc:description").collect(Collectors.toSet()))

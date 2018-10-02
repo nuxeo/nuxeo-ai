@@ -25,7 +25,7 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import com.google.protobuf.ByteString;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.tensorflow.ext.TensorflowWriter;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -121,8 +121,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
 
                 for (Record record : list) {
                     try {
-                        BlobTextStream blobTextStream = fromRecord(record, BlobTextStream.class);
-                        Features allFeatures = writeFeatures(blobTextStream);
+                        BlobTextFromDocument blobText = fromRecord(record, BlobTextFromDocument.class);
+                        Features allFeatures = writeFeatures(blobText);
                         if (allFeatures.getFeatureCount() > 0) {
                             Example example = Example.newBuilder().setFeatures(allFeatures).build();
                             tensorflowWriter.write(example.toByteArray());
@@ -141,12 +141,12 @@ public class TFRecordWriter extends AbstractRecordWriter {
     /**
      * Write the features based on the supplied data
      */
-    protected Features writeFeatures(BlobTextStream blobTextStream) throws IOException {
+    protected Features writeFeatures(BlobTextFromDocument blobTextFromDoc) throws IOException {
         Features.Builder features = Features.newBuilder();
-        for (Map.Entry<String, ManagedBlob> blobEntry : blobTextStream.getBlobs().entrySet()) {
+        for (Map.Entry<String, ManagedBlob> blobEntry : blobTextFromDoc.getBlobs().entrySet()) {
             features.putFeature(blobEntry.getKey(), blobFeature(convertImageBlob(blobEntry.getValue())));
         }
-        blobTextStream.getProperties().forEach((k, v) -> features.putFeature(k, textFeature(v)));
+        blobTextFromDoc.getProperties().forEach((k, v) -> features.putFeature(k, textFeature(v)));
         return features.build();
     }
 

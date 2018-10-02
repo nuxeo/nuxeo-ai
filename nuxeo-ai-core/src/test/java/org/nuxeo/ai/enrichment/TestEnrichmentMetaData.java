@@ -32,8 +32,8 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
@@ -71,10 +71,10 @@ public class TestEnrichmentMetaData {
                                                            singletonList(new EnrichmentMetadata.Label("f" + l, 1)),
                                                            0.65f))
                       .collect(Collectors.toList());
-        BlobTextStream blobTextStream = new BlobTextStream("doc1", repositoryName, null, "File", null);
-        blobTextStream.addProperty("dc:title" ,"tbloby");
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
+        blobTextFromDoc.addProperty("dc:title" , "tbloby");
         EnrichmentMetadata metadata =
-                new EnrichmentMetadata.Builder("m1", "test", blobTextStream)
+                new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc)
                         .withLabels(labels)
                         .withTags(tags)
                         .withDigest("blobxx")

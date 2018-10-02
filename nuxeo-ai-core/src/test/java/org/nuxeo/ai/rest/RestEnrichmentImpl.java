@@ -31,7 +31,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
  * An implementation of a service that calls a rest api
@@ -48,14 +48,14 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
     }
 
     @Override
-    public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextStream blobTextStream) {
+    public HttpUriRequest prepareRequest(RequestBuilder builder, BlobTextFromDocument blobTextFromDoc) {
         builder.setHeader("nuxeo", "isGreat");
         setMultipart(builder, multipartEntityBuilder -> multipartEntityBuilder.addTextBody("test", "ai"));
         return builder.build();
     }
 
     @Override
-    public Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextStream blobTextStream) {
+    public Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc) {
         String content = getContent(response);
         String rawKey = saveJsonAsRawBlob(content);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
@@ -70,7 +70,7 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder(kind,
                                                name,
-                                               blobTextStream)
+                                               blobTextFromDoc)
                         .withLabels(labels)
                         .withRawKey(rawKey)
                         .build());
