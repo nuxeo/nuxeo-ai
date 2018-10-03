@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.imagequality.config" version="1.0">
+    <require>org.nuxeo.ai.services.AIComponent</require>
+
+  <!-- Define a sightengine enrichment service -->
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="ai.imagequality" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="uri">https://api.sightengine.com/1.0/check.json</option>
+      <option name="headers.default">false</option>
+      <option name="minConfidence">0.75</option>
+      <option name="nuxeo.ai.sightengine.apiKey">${nuxeo.ai.sightengine.apiKey}</option>
+      <option name="nuxeo.ai.sightengine.apiSecret">${nuxeo.ai.sightengine.apiSecret}</option>
+    </enrichment>
+  </extension>
+
+<#if "${nuxeo.ai.sightengine.all}" == "true">
+    <!-- Define an enrichment service that uses all the sightengine models -->
+    <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+        <enrichment name="ai.imagequality.all" kind="/classification/imageLabels"
+                    class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+          <mimeTypes>
+            <mimeType name="image/jpeg" normalized="true"/>
+            <mimeType name="image/png" normalized="true"/>
+          </mimeTypes>
+          <option name="uri">https://api.sightengine.com/1.0/check.json</option>
+          <option name="headers.default">false</option>
+          <option name="minConfidence">0.75</option>
+          <option name="models">nudity,wad,properties,face,type,celebrities,face-attributes,scam,text,offensive</option>
+          <option name="nuxeo.ai.sightengine.apiKey">${nuxeo.ai.sightengine.apiKey}</option>
+          <option name="nuxeo.ai.sightengine.apiSecret">${nuxeo.ai.sightengine.apiSecret}</option>
+        </enrichment>
+    </extension>
+
+    <!-- Define an stream processor that uses the enrichment service -->
+    <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+      <streamProcessor name="sightengineDefaultProcessor" defaultConcurrency="1" defaultPartitions="4"
+                       logConfig="${nuxeo.ai.stream.config.name}"
+                       class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+        <!-- The input stream to process -->
+        <option name="source">images</option>
+        <!-- The output stream to write out enrichment metadata -->
+        <option name="sink">enrichment.in</option>
+        <!-- The name matches the enrichment service name defined above -->
+        <option name="enrichmentServiceName">ai.imagequality.all</option>
+      </streamProcessor>
+    </extension>
+</#if>
+</component>

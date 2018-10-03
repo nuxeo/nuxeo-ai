@@ -22,7 +22,14 @@
     <module>nuxeo-ai-model</module>
     <module>nuxeo-ai-core-package</module>
   </modules>
-
+  <profiles>
+    <profile>
+      <id>addons</id>
+      <modules>
+        <module>addons</module>
+      </modules>
+    </profile>
+  </profiles>
   <repositories>
     <repository>
       <id>public</id>

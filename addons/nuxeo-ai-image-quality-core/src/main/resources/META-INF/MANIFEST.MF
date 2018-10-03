@@ -1,0 +1,9 @@
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Manifest-Version: 1.0
+Bundle-Vendor: org.nuxeo.ai
+Bundle-Version: 1.0.0
+Bundle-Name: nuxeo-ai-image-quality-core
+Bundle-ManifestVersion: 2
+Require-Bundle: org.nuxeo.ai.ai-core
+Bundle-SymbolicName: org.nuxeo.ai.nuxeo-ai-image-quality-core;singleton=true
