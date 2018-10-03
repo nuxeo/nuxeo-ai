@@ -1,0 +1,173 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/1.0/check.json"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "success",
+      "request": {
+        "id": "req_mock_3H41Pa02weKk2gWqHVlE6",
+        "timestamp": 1536060354.779,
+        "operations": 10
+      },
+      "weapon": 0.8365,
+      "alcohol": 0.9247,
+      "drugs": 0.756,
+      "scam": {
+        "prob":  0.82
+      },
+      "nudity": {
+        "raw": 0.12,
+        "safe": 0.98,
+        "partial": 0.751
+      },
+      "type": {
+        "photo": 0.83753,
+        "illustration": 0.96247
+      },
+      "face": {
+        "single": 0.16759,
+        "multiple": 0.06919
+      },
+      "faces": [
+        {
+          "x1": 0.5121,
+          "y1": 0.1879,
+          "x2": 0.6926,
+          "y2": 0.6265,
+          "features": {
+            "left_eye": {
+              "x": 0.6438,
+              "y": 0.3634
+            },
+            "right_eye": {
+              "x": 0.5578,
+              "y": 0.3714
+            },
+            "nose_tip": {
+              "x": 0.6047,
+              "y": 0.4801
+            },
+            "left_mouth_corner": {
+              "x": 0.6469,
+              "y": 0.5305
+            },
+            "right_mouth_corner": {
+              "x": 0.5719,
+              "y": 0.5332
+            }
+          },
+          "celebrity": [
+            {
+              "name": "Daniel Craig",
+              "prob": 0.99
+            },
+            {
+              "name": "Dean Wareham",
+              "prob": 0.06
+            },
+            {
+              "name": "Ben Daniels",
+              "prob": 0.06
+            },
+            {
+              "name": "Graham Fellows",
+              "prob": 0.05
+            }
+          ],
+          "attributes": {
+            "female": 0.96,
+            "male": 0.04,
+            "minor": 0.01,
+            "sunglasses": 0.89
+          }
+        }
+      ],
+      "sharpness": 0.979,
+      "brightness": 0.585,
+      "contrast": 0.668,
+      "colors": {
+        "dominant": {
+          "r": 100,
+          "g": 150,
+          "b": 213,
+          "hex": "#6496d5"
+        },
+        "accent": [{
+          "r": 18,
+          "g": 57,
+          "b": 127,
+          "hex": "#12397f"
+        }],
+        "other": [{
+          "r": 207,
+          "g": 213,
+          "b": 221,
+          "hex": "#cfd5dd"
+        },
+          {
+            "r": 72,
+            "g": 93,
+            "b": 108,
+            "hex": "#485d6c"
+          },
+          {
+            "r": 41,
+            "g": 90,
+            "b": 143,
+            "hex": "#295a8f"
+          },
+          {
+            "r": 169,
+            "g": 212,
+            "b": 198,
+            "hex": "#a9d4c6"
+          }
+        ]
+      },
+      "text": {
+        "has_artificial": 0.2,
+        "has_natural": 1,
+        "boxes": [{
+          "x1": 0.19571,
+          "y1": 0.48102,
+          "x2": 0.30517,
+          "y2": 0.59509,
+          "label": "text-natural",
+          "prob": 1
+        },
+          {
+            "x1": 0.65685,
+            "y1": 0.29055,
+            "x2": 0.86097,
+            "y2": 0.45083,
+            "label": "text-natural",
+            "prob": 0.765
+          }
+        ]
+      },
+      "offensive": {
+        "prob": 0.92529,
+        "boxes": [
+          {
+            "x1": 0,
+            "y1": 0,
+            "x2": 0.91699,
+            "y2": 0.72794,
+            "label": "confederate",
+            "prob": 0.92529
+          }
+        ]
+      },
+      "media": {
+        "id": "med_3H418rEyOJy3dSVVG9nc0",
+        "uri": "5db4792c6bbd3ef6fb93b680e0aa3012"
+      }
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

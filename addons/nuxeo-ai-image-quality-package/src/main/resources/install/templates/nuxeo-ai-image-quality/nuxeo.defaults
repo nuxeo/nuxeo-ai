@@ -1,0 +1,7 @@
+# Set list of templates to include, comma separated values.
+nuxeo.template.includes=common
+
+# org.nuxeo.ecm.instance.description=Nuxeo ECM customized with nuxeo-ai-image-quality
+nuxeo.ai.sightengine.apiKey=
+nuxeo.ai.sightengine.apiSecret=
+nuxeo.ai.sightengine.all=true

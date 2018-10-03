@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/1.0/check_fail.json"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "status": "success",
+      "request": {
+        "id": "req_mock_3H41Pa02weKk2gWqHVlE6",
+        "timestamp": 1536060354.779,
+        "operations": 10
+      },
+      "strangeValue": 0.3365,
+      "type": {
+        "photo": 0.83753,
+        "illustration": 0.16247
+      }
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

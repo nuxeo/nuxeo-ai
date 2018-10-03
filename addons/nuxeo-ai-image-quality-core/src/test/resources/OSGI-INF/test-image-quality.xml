@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.imagequality.test">
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="ai.imagequality.mock" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="uri">http://localhost:5078/1.0/check.json</option>
+      <option name="headers.default">false</option>
+      <option name="minConfidence">0.75</option>
+      <option name="models">nudity,wad,properties,face,type,celebrities,face-attributes,scam,text,offensive</option>
+      <option name="nuxeo.ai.sightengine.apiKey">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
+      <option name="nuxeo.ai.sightengine.apiSecret">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
+    </enrichment>
+
+    <enrichment name="ai.imagequality.mock.fail" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+      <option name="uri">http://localhost:5078/1.0/check_fail.json</option>
+      <option name="nuxeo.ai.sightengine.apiKey">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
+      <option name="nuxeo.ai.sightengine.apiSecret">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
+    </enrichment>
+
+    <enrichment name="ai.imagequality.bad" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+      <option name="uri">http://localhost:5078/1.0/check_fail.json</option>
+    </enrichment>
+
+    <enrichment name="ai.imagequality.real" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+      <option name="uri">https://api.sightengine.com/1.0/check.json</option>
+      <option name="headers.default">false</option>
+      <option name="minConfidence">0.75</option>
+      <option name="models">nudity,wad,properties,face,type,celebrities,face-attributes,scam,text,offensive</option>
+      <option name="nuxeo.ai.sightengine.apiKey">SET_THIS_SO_IT_WORKS</option>
+      <option name="nuxeo.ai.sightengine.apiSecret">SET_THIS_SO_IT_WORKS</option>
+    </enrichment>
+  </extension>
+  <!-- You need to set the nuxeo.ai.sightengine.apiKey and nuxeo.ai.sightengine.apiSecret, see realServiceTest() -->
+
+  <!--
+  <property name="nuxeo.ai.sightengine.apiKey">91413889</property>
+  <property name="nuxeo.ai.sightengine.apiSecret">6o8mVxQdZwZfWuRwTcjY</property> -->
+</component>
