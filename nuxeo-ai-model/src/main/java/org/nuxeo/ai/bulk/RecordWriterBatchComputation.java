@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
 
 import org.apache.commons.logging.Log;
@@ -30,41 +32,43 @@ import org.nuxeo.lib.stream.computation.ComputationPolicy;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
- * A batch computation that writes records using a RecordWriter
+ * Writes records using a RecordWriter
  */
 public class RecordWriterBatchComputation extends AbstractBatchComputation {
-
     private static final Log log = LogFactory.getLog(RecordWriterBatchComputation.class);
 
-    public RecordWriterBatchComputation(String name, int nbInputStreams, int nbOutputStreams, ComputationPolicy policy) {
-        super(name, nbInputStreams, nbOutputStreams, policy);
+    public RecordWriterBatchComputation(String name, ComputationPolicy policy) {
+        super(name, 1, 1, policy);
     }
 
     @Override
-    public void batchProcess(ComputationContext computationContext, String bulkId, List<Record> list) {
+    public void batchProcess(ComputationContext context, String inputStream, List<Record> records) {
+        Map<String, List<Record>> recordsByCommand = records.stream().collect(groupingBy(Record::getKey, toList()));
         RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(metadata.name());
         if (writer == null) {
             throw new NuxeoException("Unknown record write specified: " + metadata.name());
         }
-        try {
-            writer.write(list);
-            updateExportStatusProcessed(computationContext, currentInputStream, list.size());
-        } catch (IOException e) {
-            throw new NuxeoException(String.format("Failed to write the %s batch for %s.", metadata.name(), bulkId), e);
-        }
+        recordsByCommand.forEach((commandId, recordsOfCommand) -> {
+            try {
+                writer.write(recordsOfCommand);
+            } catch (IOException e) {
+                throw new NuxeoException(
+                        String.format("Failed to write the %s batch for %s.", metadata.name(), commandId), e);
+            }
+        });
+        recordsByCommand.forEach((commandId, recordsOfCommand) ->
+                                         updateExportStatusProcessed(context, commandId, recordsOfCommand.size()));
     }
 
     @Override
-    public void batchFailure(ComputationContext computationContext, String bulkId, List<Record> list) {
-        log.warn(String.format("Batch failure %s batch for %s.", metadata.name(), bulkId));
+    public void batchFailure(ComputationContext context, String inputStream, List<Record> records) {
+        log.warn(String.format("Batch failure %s batch of %s records with command ids: %s.", metadata.name(),
+                               records.size(), Arrays.toString(records.stream().map(Record::getKey).toArray())));
     }
 
-    @Override
-    public void processRecord(ComputationContext context, String inputStreamName, Record record) {
-        //Get the bulk command id from the record and use it as a key
-        super.processRecord(context, record.getKey(), record);
-    }
 }

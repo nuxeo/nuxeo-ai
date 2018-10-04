@@ -26,7 +26,11 @@ import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-import static org.nuxeo.ecm.core.bulk.BulkProcessor.STATUS_STREAM;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_3;
 
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -34,70 +38,100 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.ecm.core.bulk.actions.AbstractBulkAction;
-import org.nuxeo.ecm.core.bulk.actions.computation.AbstractBulkComputation;
+import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.ComputationPolicy;
 import org.nuxeo.lib.stream.computation.ComputationPolicyBuilder;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
+import org.nuxeo.runtime.stream.StreamProcessorTopology;
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Bulk export data from Nuxeo to TFRecord
- * Split the dataset in training and validation sets.
+ * Bulk export data from Nuxeo to TFRecord Split the dataset in training and validation sets.
  */
-public class DataSetBulkAction extends AbstractBulkAction {
+public class DataSetBulkAction implements StreamProcessorTopology {
 
-    public static final String TRAINING_ID = "o2";
+    public static final String TRAINING_STREAM = "exp-training";
 
-    public static final String TRAINING_COMPUTATION_NAME = "training";
+    public static final String TRAINING_COMPUTATION = "training";
 
-    public static final String VALIDATION_ID = "o3";
+    public static final String VALIDATION_STREAM = "exp-validation";
 
-    public static final String VALIDATION_COMPUTATION_NAME = "validation";
+    public static final String VALIDATION_COMPUTATION = "validation";
 
-    public static final String EXPORT_STATUS_STREAM = "DataSetExportBulkStatus";
+    public static final String EXPORT_STATUS_STREAM = "exp-status";
 
+    public static final String EXPORT_STATUS_COMPUTATION = "exp-status";
+
+    public static final String BATCH_SIZE_OPT = "batchSize";
+
+    public static final String BATCH_THRESHOLD_MS_OPT = "batchThresholdMs";
+
+    public static final int DEFAULT_BATCH_SIZE = 10;
+
+    public static final int DEFAULT_BATCH_THRESHOLD_MS = 200;
+
+    /**
+     * Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
+     * validation RecordWriterBatchComputation. DataSetExportStatusComputation listen for the end
+     */
     @Override
-    protected Topology.Builder addComputations(Topology.Builder builder, int size, int threshold, Map<String, String> options) {
-        int trainingBatchSize = getOptionAsInteger(options, TRAINING_COMPUTATION_NAME + "_" + BATCH_SIZE_OPT, DEFAULT_BATCH_SIZE);
-        int trainingBatchTime = getOptionAsInteger(options, TRAINING_COMPUTATION_NAME + "_" + BATCH_THRESHOLD_MS_OPT, DEFAULT_BATCH_THRESHOLD_MS);
-        int validationBatchSize = getOptionAsInteger(options, VALIDATION_COMPUTATION_NAME + "_" + BATCH_SIZE_OPT, DEFAULT_BATCH_SIZE);
-        int validationBatchTime = getOptionAsInteger(options, VALIDATION_COMPUTATION_NAME + "_" + BATCH_THRESHOLD_MS_OPT, DEFAULT_BATCH_THRESHOLD_MS);
+    public Topology getTopology(Map<String, String> options) {
+        int trainingBatchSize = getOptionAsInteger(options, TRAINING_COMPUTATION + "_" + BATCH_SIZE_OPT,
+                                                   DEFAULT_BATCH_SIZE);
+        int trainingBatchTime = getOptionAsInteger(options, TRAINING_COMPUTATION + "_" + BATCH_THRESHOLD_MS_OPT,
+                                                   DEFAULT_BATCH_THRESHOLD_MS);
+        int validationBatchSize = getOptionAsInteger(options, VALIDATION_COMPUTATION + "_" + BATCH_SIZE_OPT,
+                                                     DEFAULT_BATCH_SIZE);
+        int validationBatchTime = getOptionAsInteger(options, VALIDATION_COMPUTATION + "_" + BATCH_THRESHOLD_MS_OPT,
+                                                     DEFAULT_BATCH_THRESHOLD_MS);
 
-        ComputationPolicy trainingPolicy = new ComputationPolicyBuilder()
-                .batchPolicy(trainingBatchSize, Duration.ofMillis(trainingBatchTime))
-                .retryPolicy(ComputationPolicy.NO_RETRY)
-                .continueOnFailure(true)
-                .build();
-        ComputationPolicy validationPolicy = new ComputationPolicyBuilder()
-                .batchPolicy(validationBatchSize, Duration.ofMillis(validationBatchTime))
-                .retryPolicy(ComputationPolicy.NO_RETRY)
-                .continueOnFailure(true)
-                .build();
+        ComputationPolicy trainingPolicy =
+                new ComputationPolicyBuilder().batchPolicy(trainingBatchSize,
+                                                           Duration.ofMillis(trainingBatchTime))
+                                              .retryPolicy(ComputationPolicy.NO_RETRY)
+                                              .continueOnFailure(true)
+                                              .build();
+        ComputationPolicy validationPolicy =
+                new ComputationPolicyBuilder().batchPolicy(validationBatchSize,
+                                                           Duration.ofMillis(validationBatchTime))
+                                              .retryPolicy(ComputationPolicy.NO_RETRY)
+                                              .continueOnFailure(true)
+                                              .build();
 
-        // Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
-        // validation RecordWriterBatchComputation.
-        // The RecordWriterBatchComputation updates the counter action to indicate progress.
-        // DataSetExportStatusComputation listen for the end
-        return builder.addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME, size, threshold),
-                                      asList("i1:" + EXPORT_ACTION_NAME,
-                                             "o1:" + EXPORT_STATUS_STREAM,
-                                             TRAINING_ID + ":" + TRAINING_COMPUTATION_NAME,
-                                             VALIDATION_ID + ":" + VALIDATION_COMPUTATION_NAME))
-                      .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION_NAME, 1, 1, trainingPolicy),
-                                      asList("i1:" + TRAINING_COMPUTATION_NAME, "o1:" + EXPORT_STATUS_STREAM))
-                      .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION_NAME, 1, 1, validationPolicy),
-                                      asList("i1:" + VALIDATION_COMPUTATION_NAME, "o1:" + EXPORT_STATUS_STREAM))
-                      .addComputation(() -> new DataSetExportStatusComputation("end_training_validation",
-                                                                               new HashSet<>(asList(TRAINING_COMPUTATION_NAME, VALIDATION_COMPUTATION_NAME))),
-                                      asList("i1:" + EXPORT_STATUS_STREAM, "o1:" + STATUS_STREAM));
+        return Topology.builder()
+                       .addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME),
+                                       asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
+                                              OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
+                                              OUTPUT_2 + ":" + TRAINING_STREAM, //
+                                              OUTPUT_3 + ":" + VALIDATION_STREAM))
+
+                       .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION, trainingPolicy),
+                                       asList(INPUT_1 + ":" + TRAINING_STREAM, //
+                                              OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+
+                       .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION, validationPolicy),
+                                       asList(INPUT_1 + ":" + VALIDATION_STREAM, //
+                                              OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+
+                       .addComputation(
+                               () -> new DataSetExportStatusComputation(EXPORT_STATUS_COMPUTATION,
+                                                                        new HashSet<>(asList(TRAINING_COMPUTATION, VALIDATION_COMPUTATION))),
+                               asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
+                                      OUTPUT_1 + ":" + STATUS_STREAM))
+                       .build();
+    }
+
+    protected int getOptionAsInteger(Map<String, String> options, String option, int defaultValue) {
+        String value = options.get(option);
+        return value == null ? defaultValue : Integer.parseInt(value);
     }
 
     /**
@@ -107,43 +141,34 @@ public class DataSetBulkAction extends AbstractBulkAction {
 
         public static final int DEFAULT_SPLIT = 75;
 
-        ComputationContext context;
+        List<Record> training = new ArrayList<>();
 
-        public ExportingComputation(String name, int batchSize, int batchThresholdMs) {
-            super(name, batchSize, batchThresholdMs, 3);
-        }
+        List<Record> validation = new ArrayList<>();
 
-        @Override
-        public void init(ComputationContext context) {
-            super.init(context);
-            this.context = context;
-        }
+        int discarded;
 
-        @Override
-        public void processBatchHook(ComputationContext context) {
-            // The parent produces a counter, we don't want to do that.
+        public ExportingComputation(String name) {
+            super(name, 3);
         }
 
         @Override
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> properties) {
-            if (ids == null || ids.isEmpty()) {
-                return;
-            }
-
             List<String> customProperties = asList(split((String) properties.get(EXPORT_FEATURES_PARAM), ","));
             int percentSplit = Integer.parseInt((String) properties.getOrDefault(EXPORT_SPLIT_PARAM, DEFAULT_SPLIT));
             ThreadLocalRandom random = ThreadLocalRandom.current();
-            int discarded = 0;
             for (String id : ids) {
-
                 try {
                     DocumentModel doc = coreSession.getDocument(new IdRef(id));
                     BlobTextFromDocument subDoc = docSerialize(doc, customProperties);
                     boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                     if (subDoc != null) {
                         getLog().debug(isTraining + " " + subDoc);
-                        Record record = toRecord(currentCommandId, subDoc);
-                        context.produceRecord(isTraining ? TRAINING_ID : VALIDATION_ID, record);
+                        Record record = toRecord(command.getId(), subDoc);
+                        if (isTraining) {
+                            training.add(record);
+                        } else {
+                            validation.add(record);
+                        }
                     } else {
                         discarded++;
                     }
@@ -151,13 +176,21 @@ public class DataSetBulkAction extends AbstractBulkAction {
                     getLog().error("DocumentNotFoundException: " + id);
                     discarded++;
                 }
-
             }
-            if (discarded > 0) {
-                updateExportStatusProcessed(context, currentCommandId, discarded);
-            }
-            context.askForCheckpoint();
             getLog().debug("There  were Ids " + ids.size());
+        }
+
+        @Override
+        public void endBucket(ComputationContext context, int bucketSize) {
+            if (discarded > 0) {
+                updateExportStatusProcessed(context, command.getId(), discarded);
+                discarded = 0;
+            }
+            training.forEach(record -> context.produceRecord(OUTPUT_2, record));
+            training.clear();
+            validation.forEach(record -> context.produceRecord(OUTPUT_3, record));
+            validation.clear();
+            context.askForCheckpoint();
         }
 
         /**

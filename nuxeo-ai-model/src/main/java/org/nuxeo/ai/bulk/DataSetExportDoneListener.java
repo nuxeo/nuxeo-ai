@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION_NAME;
+import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_BLOB_REF;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_DATA;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_ID;
@@ -76,6 +76,6 @@ public class DataSetExportDoneListener implements EventListener {
     }
 
     protected boolean isTraining(String actionData) {
-        return TRAINING_COMPUTATION_NAME.equals(actionData);
+        return TRAINING_COMPUTATION.equals(actionData);
     }
 }

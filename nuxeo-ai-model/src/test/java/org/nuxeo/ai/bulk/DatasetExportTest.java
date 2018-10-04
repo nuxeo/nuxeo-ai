@@ -22,8 +22,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.bulk.CollectingDataSetDoneListener.makeKey;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION_NAME;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.VALIDATION_COMPUTATION_NAME;
+import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
+import static org.nuxeo.ai.bulk.DataSetBulkAction.VALIDATION_COMPUTATION;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.DATASET_EXPORT_DONE_EVENT;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportService;
+import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -45,7 +46,6 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -123,8 +123,8 @@ public class DatasetExportTest {
         // the async listener to make sure its reliable.
         Thread.sleep(100L);
         assertEquals(2, collector.size());
-        int trainingCount = countBlobRecords(commandId, TRAINING_COMPUTATION_NAME, collector);
-        int validationCount = countBlobRecords(commandId, VALIDATION_COMPUTATION_NAME, collector);
+        int trainingCount = countBlobRecords(commandId, TRAINING_COMPUTATION, collector);
+        int validationCount = countBlobRecords(commandId, VALIDATION_COMPUTATION, collector);
         assertTrue(trainingCount > validationCount);
         // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
         assertEquals(450, trainingCount + validationCount);

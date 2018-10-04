@@ -19,14 +19,11 @@
 package org.nuxeo.ai.bulk;
 
 import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
-import static org.nuxeo.ecm.core.bulk.BulkComponent.BULK_KV_STORE_NAME;
-import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.COMMAND_SUFFIX;
-import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_SUFFIX;
-import static org.nuxeo.ecm.core.bulk.actions.computation.AbstractBulkComputation.updateStatusProcessed;
+import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatusProcessed;
 
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.bulk.BulkCodecs;
+import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.Event;
@@ -38,8 +35,6 @@ import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.codec.CodecService;
-import org.nuxeo.runtime.kv.KeyValueService;
-import org.nuxeo.runtime.kv.KeyValueStore;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,14 +71,14 @@ public class DataSetExportStatusComputation extends AbstractComputation {
 
     public static void updateExportStatusProcessed(ComputationContext context, String commandId, long processed) {
         ExportBulkProcessed exportStatus = new ExportBulkProcessed(commandId, processed);
-        context.produceRecord("o1", commandId, getExportStatusCodec().encode(exportStatus));
+        context.produceRecord(OUTPUT_1, commandId, getExportStatusCodec().encode(exportStatus));
     }
 
     @Override
     public void processRecord(ComputationContext context, String inputStreamName, Record record) {
-        KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(BULK_KV_STORE_NAME);
         ExportBulkProcessed exportStatus = getExportStatusCodec().decode(record.getData());
-        if (isEndOfBatch(kvStore, exportStatus)) {
+        BulkService service = Framework.getService(BulkService.class);
+        if (isEndOfBatch(exportStatus)) {
             for (String name : writerNames) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
                 if (writer == null) {
@@ -94,10 +89,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                         Optional<String> blob = writer.complete(exportStatus.getCommandId());
                         blob.ifPresent(blobRef -> {
 
-                            BulkCommand command = BulkCodecs.getCommandCodec()
-                                                            .decode(kvStore.get(exportStatus
-                                                                                        .getCommandId() + COMMAND_SUFFIX));
-                            //Raise an event
+                            BulkCommand command = service.getCommand(exportStatus.getCommandId());
+                            // Raise an event
                             EventContextImpl eCtx = new EventContextImpl();
                             eCtx.setProperty(ACTION_ID, exportStatus.getCommandId());
                             eCtx.setProperty(ACTION_DATA, name);
@@ -108,8 +101,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                             Framework.getService(EventProducer.class).fireEvent(event);
                         });
                     } catch (IOException e) {
-                        throw new NuxeoException(String.format("Unable to complete action %s", exportStatus
-                                .getCommandId()), e);
+                        throw new NuxeoException(
+                                String.format("Unable to complete action %s", exportStatus.getCommandId()), e);
                     }
                 }
             }
@@ -132,9 +125,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         }
     }
 
-    protected boolean isEndOfBatch(KeyValueStore kvStore, ExportBulkProcessed exportStatus) {
-        BulkStatus status = BulkCodecs.getStatusCodec()
-                                      .decode(kvStore.get(exportStatus.getCommandId() + STATUS_SUFFIX));
+    protected boolean isEndOfBatch(ExportBulkProcessed exportStatus) {
+        BulkStatus status = Framework.getService(BulkService.class).getStatus(exportStatus.getCommandId());
         Long processed = getCount(exportStatus.getCommandId());
         if (processed == null) {
             processed = 0L;

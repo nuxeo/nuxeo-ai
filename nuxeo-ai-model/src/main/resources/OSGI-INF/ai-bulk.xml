@@ -2,15 +2,12 @@
 <component name="org.nuxeo.ai.bulk.services" version="1.0">
 
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
-    <action name="bulkDatasetExport"/>
+    <action name="bulkDatasetExport" bucketSize="100" batchSize="20" />
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
                      defaultConcurrency="1" defaultPartitions="1">
-      <option name="batchSize">30</option>
-      <option name="batchThresholdMs">2000</option>
-
       <option name="training_batchSize">200</option>
       <option name="training_batchThresholdMs">5000</option>
       <option name="validation_batchSize">100</option>
