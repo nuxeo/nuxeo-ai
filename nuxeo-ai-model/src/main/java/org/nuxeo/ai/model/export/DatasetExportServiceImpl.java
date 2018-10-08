@@ -30,6 +30,14 @@ import static org.nuxeo.ai.model.ModelProperty.TYPE_PROP;
 import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
 import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -42,13 +50,6 @@ import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Exports data
@@ -80,13 +81,11 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
-        BulkCommand bulkCommand = new BulkCommand().withRepository(session.getRepositoryName())
-                                                   .withUsername(session.getPrincipal().getName())
-                                                   .withQuery(nxql)
-                                                   .withAction(EXPORT_ACTION_NAME)
-                                                   .withParam(EXPORT_FEATURES_PARAM,
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, nxql).repository(session.getRepositoryName())
+                                                   .user(session.getPrincipal().getName())
+                                                   .param(EXPORT_FEATURES_PARAM,
                                                               String.join(",", featuresList))
-                                                   .withParam(EXPORT_SPLIT_PARAM, String.valueOf(split));
+                                                   .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
         String bulkId = Framework.getService(BulkService.class).submit(bulkCommand);
         corpus.setPropertyValue(CORPUS_JOBID, bulkId);
         session.saveDocument(corpus);

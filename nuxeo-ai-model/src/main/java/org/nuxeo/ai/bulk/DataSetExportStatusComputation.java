@@ -132,6 +132,6 @@ public class DataSetExportStatusComputation extends AbstractComputation {
             processed = 0L;
             counters.put(exportStatus.getCommandId(), processed);
         }
-        return processed + exportStatus.getProcessed() >= status.getCount();
+        return processed + exportStatus.getProcessed() >= status.getTotal();
     }
 }
