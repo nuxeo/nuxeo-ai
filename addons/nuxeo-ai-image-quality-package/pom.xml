@@ -8,7 +8,7 @@
 
   <artifactId>nuxeo-ai-image-quality-package</artifactId>
   <packaging>zip</packaging>
-  <name>Nuxeo ai image quality package - Nuxeo ai image quality</name>
+  <name>Nuxeo AI image quality package</name>
 
   <dependencies>
     <!-- Base distribution(s) for the MP -->

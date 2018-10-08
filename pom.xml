@@ -24,7 +24,7 @@
   </modules>
   <profiles>
     <profile>
-      <id>addons</id>
+      <id>qa</id>
       <modules>
         <module>addons</module>
       </modules>
