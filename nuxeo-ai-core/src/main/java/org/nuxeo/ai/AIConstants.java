@@ -42,9 +42,6 @@ public class AIConstants {
     public static final String EXPORT_FEATURES_PARAM = "features";
     public static final String EXPORT_SPLIT_PARAM = "split";
 
-    public static final String IMAGE_TYPE = "img";
-    public static final String TEXT_TYPE = "txt";
-
     private AIConstants() {
         // just Constants
     }

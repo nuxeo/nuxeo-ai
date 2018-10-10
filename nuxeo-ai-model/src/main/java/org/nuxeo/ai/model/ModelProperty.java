@@ -28,10 +28,6 @@ import java.util.Objects;
 @XObject("property")
 public class ModelProperty {
 
-    public static final String NAME_PROP = "name";
-
-    public static final String TYPE_PROP = "type";
-
     @XNode("@name")
     protected String name;
 

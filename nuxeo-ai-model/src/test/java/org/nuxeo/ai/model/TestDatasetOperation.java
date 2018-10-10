@@ -22,15 +22,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.AIConstants.IMAGE_TYPE;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_INPUTS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_OUTPUTS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_QUERY;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_SPLIT;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
-import static org.nuxeo.ai.model.ModelProperty.NAME_PROP;
-import static org.nuxeo.ai.model.ModelProperty.TYPE_PROP;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,9 +58,9 @@ import java.util.Map;
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
-public class TestDatasetExport {
+public class TestDatasetOperation {
 
-    public static final String TEST_QUERY = "SELECT * from document";
+    public static final String TEST_QUERY = "SELECT * from document WHERE dc:title IS NOT NULL";
 
     @Inject
     protected CoreSession session;
@@ -94,7 +94,7 @@ public class TestDatasetExport {
 
     protected DocumentModel getCorpusDoc(String returned) {
         txFeature.nextTransaction();
-        List<DocumentModel> docs = session.query(String.format("select * from %s WHERE %s = '%s'",
+        List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
                                                                CORPUS_TYPE,
                                                                CORPUS_JOBID,
                                                                returned));
@@ -109,11 +109,10 @@ public class TestDatasetExport {
         Map<String, Object> params = new HashMap<>();
         String inputs = "dc:title,file:content";
         String unknownProp = "dc:on_no_you_dont";
-        int split = 600;
         params.put("query", "");
         params.put("inputs", inputs);
         params.put("outputs", "dc:description");
-        params.put("split", split);
+        params.put("split", 75);
         OperationChain chain = new OperationChain("testChain2");
         chain.add(DatasetExportOperation.ID).from(params);
         String returned = null;
@@ -126,6 +125,7 @@ public class TestDatasetExport {
 
         try {
             OperationChain chain3 = new OperationChain("testChain3");
+            params.put("query", "SELECT * FROM DOCUMENT");
             params.remove("split");
             chain3.add(DatasetExportOperation.ID).from(params);
             automationService.run(ctx, chain3);
@@ -135,8 +135,19 @@ public class TestDatasetExport {
         }
 
         try {
-            OperationChain chainBad = new OperationChain("testChainb");
+            OperationChain chainBadSplit = new OperationChain("testChainbad");
             params.put("query", TEST_QUERY);
+            params.put("split", 600);
+            chainBadSplit.add(DatasetExportOperation.ID).from(params);
+            automationService.run(ctx, chainBadSplit);
+            fail();
+        } catch (OperationException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+        }
+
+        try {
+            OperationChain chainBad = new OperationChain("testChainb");
+            params.put("split", 60);
             params.put("inputs", unknownProp);
             chainBad.add(DatasetExportOperation.ID).from(params);
             automationService.run(ctx, chainBad);

@@ -18,9 +18,7 @@
  */
 package org.nuxeo.ai.pipes.functions;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Calendar;
+import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
@@ -30,13 +28,31 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.io.avro.AvroConstants;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.QName;
+import org.nuxeo.runtime.api.Framework;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Utilities to work with document properties
- *
  */
 public class PropertyUtils {
+
+    public static final String NAME_PROP = "name";
+
+    public static final String TYPE_PROP = "type";
+
+    public static final String IMAGE_TYPE = "img";
+
+    public static final String TEXT_TYPE = "txt";
 
     private static final Log log = LogFactory.getLog(PropertyUtils.class);
 
@@ -139,6 +155,28 @@ public class PropertyUtils {
             return null;
         }
 
+    }
+
+    /**
+     * For the given property, find out if it exists and determine if its text or content
+     */
+    public static Map<String, String> getPropertyWithType(String prop) {
+        Field field = Framework.getService(SchemaManager.class).getField(prop);
+        if (field == null) {
+            throw new PropertyNotFoundException(prop + " does not exist.");
+        }
+        Map<String, String> feature = new HashMap<>();
+        feature.put(NAME_PROP, prop);
+        feature.put(TYPE_PROP, isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE);
+        return feature;
+    }
+
+
+    /**
+     * For a given Collection of property names, return a list of features with the property name and type.
+     */
+    public static List<Map<String, String>> propsToTypedList(Collection<String> properties) {
+        return properties.stream().map(PropertyUtils::getPropertyWithType).collect(Collectors.toList());
     }
 
     /**

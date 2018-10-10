@@ -6,6 +6,7 @@
 
   <service>
     <provide interface="org.nuxeo.ai.model.export.DatasetExportService"/>
+    <provide interface="org.nuxeo.ai.model.export.DatasetStatsService"/>
   </service>
 
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">

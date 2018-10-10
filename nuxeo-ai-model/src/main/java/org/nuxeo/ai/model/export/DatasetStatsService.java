@@ -22,20 +22,10 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import java.util.Collection;
 
 /**
- * For a given dataset provides exporting capabilities.
+ * For a given dataset provides statistics.
  */
-public interface DatasetExportService {
+public interface DatasetStatsService {
 
-    /**
-     * Export the dataset matched by the nxql query and property names.
-     * Splits the dataset into 2 random groups based on the percentage split value.
-     * @param session core session
-     * @param nxql a valid query to use as a filter
-     * @param inputProperties list of document property names
-     * @param outputProperties list of document property names
-     * @param split a number between 1 and 100.
-     * @return a bulk command id reference
-     */
-    String export(CoreSession session, String nxql,
-                  Collection<String> inputProperties, Collection<String> outputProperties, int split);
+    Collection<Statistic> getStatistics(CoreSession session, String nxql,
+                                        Collection<String> inputProperties, Collection<String> outputProperties);
 }
