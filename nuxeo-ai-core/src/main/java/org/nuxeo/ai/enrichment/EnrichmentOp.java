@@ -49,7 +49,7 @@ import org.nuxeo.ai.pipes.events.DocEventToStream;
         description = "Calls an enrichment service on the provided document(s)")
 public class EnrichmentOp {
 
-    public static final String ID = "Document.AIEnrichment";
+    public static final String ID = "AI.Enrichment";
     private static final Log log = LogFactory.getLog(EnrichmentOp.class);
 
     @Context
