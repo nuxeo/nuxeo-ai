@@ -31,7 +31,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 @Operation(id = DatasetExportOperation.ID, category = Constants.CAT_SERVICES, label = "Bulk export a dataset", description = "Run a bulk export on a set of documents expressed by a NXQL query.")
 public class DatasetExportOperation {
 
-    public static final String ID = "Bulk.DatasetExport";
+    public static final String ID = "AI.DatasetExport";
 
     @Context
     protected DatasetExportService service;

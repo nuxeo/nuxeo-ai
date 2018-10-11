@@ -32,7 +32,7 @@ import java.io.IOException;
 @Operation(id = DatasetStatsOperation.ID, category = Constants.CAT_SERVICES, label = "Statistics on a dataset", description = "Return statistics on a set of documents expressed by a NXQL query.")
 public class DatasetStatsOperation {
 
-    public static final String ID = "Bulk.DatasetStats";
+    public static final String ID = "AI.DatasetStats";
 
     @Context
     protected DatasetStatsService service;

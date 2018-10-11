@@ -42,7 +42,7 @@ import org.nuxeo.ecm.core.api.DocumentRef;
         description = "Calls intelligent services on the provided document and returns suggested metadata.")
 public class SuggestionOp {
 
-    public static final String ID = "Document.AISuggestion";
+    public static final String ID = "AI.Suggestion";
 
     public static final String EMPTY_JSON_LIST = "[]";
 
