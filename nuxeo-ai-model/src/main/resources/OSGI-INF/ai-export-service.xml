@@ -11,5 +11,6 @@
 
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
     <operation class="org.nuxeo.ai.model.export.DatasetExportOperation"/>
+    <operation class="org.nuxeo.ai.model.export.DatasetStatsOperation"/>
   </extension>
 </component>

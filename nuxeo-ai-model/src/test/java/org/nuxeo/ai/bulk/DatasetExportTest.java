@@ -30,19 +30,25 @@ import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportService;
+import org.nuxeo.ai.model.export.DatasetStatsOperation;
 import org.nuxeo.ai.model.export.DatasetStatsService;
 import org.nuxeo.ai.model.export.Statistic;
 import org.nuxeo.ai.pipes.services.PipelineService;
+import org.nuxeo.ecm.automation.AutomationService;
+import org.nuxeo.ecm.automation.OperationChain;
+import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -96,6 +102,9 @@ public class DatasetExportTest {
 
     @Inject
     protected PipelineService pipesService;
+
+    @Inject
+    protected AutomationService automationService;
 
     @Inject
     protected WorkManager workManager;
@@ -201,6 +210,32 @@ public class DatasetExportTest {
                                          .filter(a -> "file:content.digest".equals(a.getField())).findFirst().get();
         assertEquals(50, missingContent.getNumericValue().intValue());
 
+    }
+
+    @Test
+    public void testStatsOperation() throws Exception {
+        DocumentModel testRoot = setupTestData();
+        waitForCompletion();
+
+        //Now test the operation
+        OperationContext ctx = new OperationContext(session);
+        Map<String, Object> params = new HashMap<>();
+        params.put("query", "SELECT * from document WHERE dc:title = 'i dont exist'");
+        params.put("inputs", "dc:title,file:content");
+        params.put("outputs", "dc:description");
+        OperationChain chain = new OperationChain("testChainStatsEmpty");
+        chain.add(DatasetStatsOperation.ID).from(params);
+        Blob jsonBlob = (Blob) automationService.run(ctx, chain);
+        JsonNode jsonTree = MAPPER.readTree(jsonBlob.getString());
+        assertEquals(0, jsonTree.size());
+
+        params.put("query", String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId()));
+        chain = new OperationChain("testChainStats");
+        chain.add(DatasetStatsOperation.ID).from(params);
+        jsonBlob = (Blob) automationService.run(ctx, chain);
+        jsonTree = MAPPER.readTree(jsonBlob.getString());
+        assertEquals("There should be 3 aggregates * 2 text fields + 2 agg content field + 2 totals = 10",
+                     10, jsonTree.size());
     }
 
     protected int countBlobRecords(String commandId, String actionData, Map<String, String> collector) throws IOException {
