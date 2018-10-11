@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 import com.amazonaws.services.comprehend.model.SentimentScore;
 import com.amazonaws.services.comprehend.model.SentimentType;
@@ -67,8 +67,8 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService {
                 }
             }
             return enriched;
-        } catch (AmazonClientException e) {
-            throw new NuxeoException(e);
+        } catch (AmazonServiceException e) {
+            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
         }
     }
 

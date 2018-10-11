@@ -22,14 +22,13 @@ import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.DetectTextResult;
 import com.amazonaws.services.rekognition.model.TextDetection;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import java.util.ArrayList;
@@ -84,19 +83,18 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService {
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
 
-
         List<EnrichmentMetadata> enriched = new ArrayList<>();
         try {
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectTextResult result = Framework.getService(RekognitionService.class)
-                                                    .detectText(blob.getValue());
+                                                   .detectText(blob.getValue());
                 if (result != null && !result.getTextDetections().isEmpty()) {
                     enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
                 }
             }
             return enriched;
-        } catch (AmazonClientException e) {
-            throw new NuxeoException(e);
+        } catch (AmazonServiceException e) {
+            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
         }
     }
 

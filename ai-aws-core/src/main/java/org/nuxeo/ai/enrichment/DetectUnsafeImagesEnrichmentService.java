@@ -21,13 +21,12 @@ package org.nuxeo.ai.enrichment;
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
 import com.amazonaws.services.rekognition.model.ModerationLabel;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import java.util.ArrayList;
@@ -86,8 +85,8 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
                 }
             }
             return enriched;
-        } catch (AmazonClientException e) {
-            throw new NuxeoException(e);
+        } catch (AmazonServiceException e) {
+            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
         }
     }
 

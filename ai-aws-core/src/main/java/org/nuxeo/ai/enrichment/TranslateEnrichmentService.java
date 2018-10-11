@@ -21,7 +21,7 @@ package org.nuxeo.ai.enrichment;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.translate.model.TranslateTextResult;
 import org.apache.commons.lang.StringUtils;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -88,8 +88,8 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService {
                     suggestions.add(processSuggestion(textEntry.getKey(), result));
                     raw.add(processRaw(textEntry.getValue(), result));
                 }
-            } catch (AmazonClientException e) {
-                throw new NuxeoException(e);
+            } catch (AmazonServiceException e) {
+                throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
             }
         }
 
