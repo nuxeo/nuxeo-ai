@@ -18,11 +18,12 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.util.Collection;
-
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
+import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
@@ -53,7 +54,20 @@ public interface EnrichmentService {
      */
     @SuppressWarnings("unchecked")
     default RetryPolicy getRetryPolicy() {
-        return new RetryPolicy().abortOn(NuxeoException.class);
+        return new RetryPolicy()
+                .abortOn(NuxeoException.class, FatalEnrichmentError.class)
+                .withMaxRetries(2)
+                .withBackoff(3, 36, TimeUnit.SECONDS);
     }
 
+    /**
+     * The circuit breaker for the service
+     */
+    default CircuitBreaker getCircuitBreaker() {
+        return new CircuitBreaker()
+                .withFailureThreshold(4, 5)
+                .withDelay(2, TimeUnit.MINUTES)
+                .withSuccessThreshold(1)
+                .withTimeout(60, TimeUnit.SECONDS);
+    }
 }

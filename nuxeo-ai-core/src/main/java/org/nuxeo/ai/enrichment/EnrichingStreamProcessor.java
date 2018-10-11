@@ -47,6 +47,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import net.jodah.failsafe.CircuitBreaker;
+import net.jodah.failsafe.CircuitBreakerOpenException;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 
@@ -96,6 +98,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected RetryPolicy retryPolicy;
 
+        protected CircuitBreaker circuitBreaker;
+
         public EnrichmentComputation(int outputStreams, String name, EnrichmentService service, EnrichmentMetrics metrics) {
             super(name, 1, outputStreams);
             this.service = service;
@@ -111,6 +115,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         public void init(ComputationContext context) {
             log.debug(String.format("Starting enrichment computation for %s", metadata.name()));
             this.retryPolicy = service.getRetryPolicy();
+            this.circuitBreaker = service.getCircuitBreaker();
         }
 
         @Override
@@ -126,16 +131,24 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextFromDoc.getId()));
                 }
+                Collection<EnrichmentMetadata> result = null;
                 try {
-                    Collection<EnrichmentMetadata> result = callService(record, callable);
-                    if (result != null) {
-                        List<Record> results = result.stream()
-                                                     .map(meta -> toRecord(meta.context.documentRef, meta))
-                                                     .collect(Collectors.toList());
-                        writeToStreams(context, results);
-                    }
-                } catch (Exception e) {
-                    throw new NuxeoException(e);
+                    result = callService(record, callable);
+                } catch (CircuitBreakerOpenException cboe) {
+                    // The circuit break is open, throw NuxeoException so it doesn't continue processing.
+                    throw new NuxeoException(
+                            String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
+                                          service.getName()));
+                } catch (FatalEnrichmentError fee) {
+                    //Fatal error so throw it to stop processing
+                    throw fee;
+                } catch (RuntimeException e) {
+                    // The error is logged by onFailedAttempt so just move on to the next record.
+                }
+                if (result != null) {
+                    List<Record> results = result.stream().map(meta -> toRecord(meta.context.documentRef, meta))
+                                                 .collect(Collectors.toList());
+                    writeToStreams(context, results);
                 }
             } else {
                 metrics.unsupported();
@@ -158,10 +171,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                    log.debug("Enrichment result is " + r);
                                }
                            })
-                           .onFailure(failure -> log.error("Enrichment failed for record: " + record, failure))
                            .onFailedAttempt(failure -> {
                                metrics.error();
-                               log.warn("Enrichment attempt error for record: " + record, failure);
+                               log.warn(String.format("Enrichment error (%s) for record: %s ",
+                                                      service.getName(), record), failure);
                            })
                            .onRetry(c -> {
                                metrics.retry();
@@ -169,6 +182,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                    log.debug("Retrying record " + record);
                                }
                            })
+                           .with(circuitBreaker)
                            .get(callable);
         }
 
@@ -179,6 +193,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextFromDocument blobTextFromDoc) {
             if (!blobTextFromDoc.getBlobs().isEmpty() && enrichmentSupport != null) {
                 for (ManagedBlob blob : blobTextFromDoc.getBlobs().values()) {
+                    // Only checks if the first blob matches
                     if (enrichmentSupport.supportsMimeType(blob.getMimeType()) &&
                             enrichmentSupport.supportsSize(blob.getLength())) {
                         return () -> service.enrich(blobTextFromDoc);

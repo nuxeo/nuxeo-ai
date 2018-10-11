@@ -19,6 +19,8 @@
 package org.nuxeo.ai.enrichment;
 
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
@@ -46,8 +48,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import java.util.Collections;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Tests the overall AIComponent
@@ -61,7 +61,7 @@ public class TestAIComponent {
     protected AIComponent aiComponent;
 
     @Test
-    public void TestBasicComponent() {
+    public void testBasicComponent() {
         assertNotNull(aiComponent);
         assertEquals(5, aiComponent.getEnrichmentServices().size());
         EnrichmentService service = aiComponent.getEnrichmentService("e1");
@@ -87,28 +87,10 @@ public class TestAIComponent {
     }
 
     @Test
-    public void TestEnrichingStreamProcessor() {
+    public void testEnrichingStreamProcessor() {
 
-        ComputationMetadataMapping meta = new ComputationMetadataMapping(
-                new ComputationMetadata("myName",
-                                        IntStream
-                                                .range(1, 1 + 1)
-                                                .boxed()
-                                                .map(i -> "i" + i)
-                                                .collect(Collectors.toSet()),
-                                        IntStream
-                                                .range(1, 1 + 1)
-                                                .boxed()
-                                                .map(i -> "o" + i)
-                                                .collect(Collectors.toSet())
-                ), Collections.emptyMap());
-        ComputationContext testContext = new ComputationContextImpl(meta);
-        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
-        blobTextFromDoc.setId("xderftgt");
-        blobTextFromDoc.setRepositoryName("test");
-        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
-        Record record = toRecord("k", blobTextFromDoc);
-
+        ComputationContext testContext = setupComputationContext();
+        Record record = setupTestRecord();
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test");
         EnrichingStreamProcessor.EnrichmentComputation computation =
@@ -138,13 +120,7 @@ public class TestAIComponent {
                                                                          new ErroringEnrichmentService(new NoSuchElementException(), 1, 0),
                                                                          metrics);
         computation.init(testContext);
-        try {
-            computation.processRecord(testContext, null, record);
-            fail(); // Should not get here
-        } catch (NuxeoException e) {
-            assertEquals(NoSuchElementException.class, e.getCause().getClass());
-        }
-
+        computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.retries);
         assertEquals(1, metrics.called);
         assertEquals(0, metrics.success);
@@ -163,9 +139,84 @@ public class TestAIComponent {
         assertEquals(1, metrics.success);
     }
 
+
+    @Test
+    public void testCircuitBreakerAndRetries() {
+
+        ComputationContext testContext = setupComputationContext();
+        Record record = setupTestRecord();
+
+        EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testErrors");
+        EnrichingStreamProcessor.EnrichmentComputation computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste1",
+                                                                                                                        new ErroringEnrichmentService(new NoSuchElementException(), 2, 1),
+                                                                                                                        metrics);
+        computation.init(testContext);
+        computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
+
+        assertEquals(1, metrics.retries);
+        assertEquals(2, metrics.errors);
+        assertEquals(6, metrics.called);
+        assertEquals(5, metrics.success);
+
+        metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testCirc");
+        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste2",
+                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 4, 2),
+                                                                         metrics);
+        computation.init(testContext);
+        computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
+        try {
+            computation.processRecord(testContext, null, record);
+            fail();
+        } catch (NuxeoException e) {
+            assertTrue(e.getMessage().contains("Stream circuit breaker"));
+        }
+        assertEquals(3, metrics.retries);
+        assertEquals(4, metrics.errors);
+        assertEquals(3, metrics.called);
+        assertEquals(1, metrics.success);
+
+
+        metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testError");
+        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste3",
+                                                                         new ErroringEnrichmentService(new FatalEnrichmentError("Fatal"), 1, 1),
+                                                                         metrics);
+        computation.init(testContext);
+        try {
+            computation.processRecord(testContext, null, record);
+            fail();
+        } catch (NuxeoException e) {
+            assertTrue(e.getMessage().contains("Fatal"));
+        }
+        assertEquals(0, metrics.retries);
+        assertEquals(1, metrics.errors);
+        assertEquals(1, metrics.called);
+        assertEquals(0, metrics.success);
+    }
+
+
+    protected Record setupTestRecord() {
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
+        blobTextFromDoc.setId("xderftgt");
+        blobTextFromDoc.setRepositoryName("test");
+        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        return toRecord("k", blobTextFromDoc);
+    }
+
+    protected ComputationContext setupComputationContext() {
+        ComputationMetadataMapping meta = new ComputationMetadataMapping(
+                new ComputationMetadata("myName", singleton("i1"), singleton("o1")), emptyMap());
+        return new ComputationContextImpl(meta);
+    }
+
     @Test
     @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/bad-enrichment-test.xml"})
-    public void TestBadConfig() {
+    public void testBadConfig() {
         assertNotNull(aiComponent);
         try {
             aiComponent.getEnrichmentService("b1");
