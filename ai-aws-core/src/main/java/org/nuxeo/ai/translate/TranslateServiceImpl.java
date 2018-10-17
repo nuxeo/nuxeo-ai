@@ -18,15 +18,14 @@
  */
 package org.nuxeo.ai.translate;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.aws.credentials.NuxeoCredentialsProviderChain;
-import org.nuxeo.aws.credentials.NuxeoRegionProviderChain;
-
 import com.amazonaws.services.translate.AmazonTranslate;
 import com.amazonaws.services.translate.AmazonTranslateClientBuilder;
 import com.amazonaws.services.translate.model.TranslateTextRequest;
 import com.amazonaws.services.translate.model.TranslateTextResult;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
+import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
 
 /**
  * Calls AWS translate
@@ -37,22 +36,21 @@ public class TranslateServiceImpl implements TranslateService {
 
     protected volatile AmazonTranslate client;
 
-    /**
-     * Get the AmazonTranslate client
-     */
     protected AmazonTranslate getClient() {
-        if (client == null) {
+        AmazonTranslate localClient = client;
+        if (localClient == null) {
             synchronized (this) {
-                if (client == null) {
+                localClient = client;
+                if (localClient == null) {
                     AmazonTranslateClientBuilder builder =
                             AmazonTranslateClientBuilder.standard()
-                                                        .withCredentials(NuxeoCredentialsProviderChain.getInstance())
-                                                        .withRegion(NuxeoRegionProviderChain.getInstance().getRegion());
-                    client = builder.build();
+                                                        .withCredentials(NuxeoAWSCredentialsProvider.getInstance())
+                                                        .withRegion(NuxeoAWSRegionProvider.getInstance().getRegion());
+                    client = localClient = builder.build();
                 }
             }
         }
-        return client;
+        return localClient;
     }
 
     @Override

@@ -18,20 +18,9 @@
  */
 package org.nuxeo.ai.rekognition;
 
-import java.util.function.BiFunction;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobProvider;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.ecm.core.storage.sql.RekognitionHelperWithS3;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.ComponentContext;
-import org.nuxeo.runtime.model.DefaultComponent;
-
 import com.amazonaws.AmazonWebServiceResult;
 import com.amazonaws.services.rekognition.AmazonRekognition;
+import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
 import com.amazonaws.services.rekognition.model.Attribute;
 import com.amazonaws.services.rekognition.model.DetectFacesRequest;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;
@@ -44,6 +33,18 @@ import com.amazonaws.services.rekognition.model.DetectTextResult;
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.RecognizeCelebritiesRequest;
 import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.core.storage.sql.RekognitionHelperWithS3;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
+import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
+import java.util.function.BiFunction;
 
 /**
  * Implementation of RekognitionService
@@ -63,6 +64,8 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         }
         USE_S3_STORAGE = hasS3BinaryManager;
     }
+
+    protected volatile AmazonRekognition client;
 
     protected RekognitionHelper rekognitionHelper;
 
@@ -114,10 +117,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
      */
     protected <T extends AmazonWebServiceResult> T detectWithClient(ManagedBlob blob, BiFunction<AmazonRekognition, Image, T> func) {
         BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
-        AmazonRekognition client = rekognitionHelper.getClient(blobProvider);
         Image image = rekognitionHelper.getImage(blobProvider, blob.getKey());
-        if (image != null && client != null) {
-            T result = func.apply(client, image);
+        if (image != null) {
+            T result = func.apply(getClient(), image);
             if (log.isDebugEnabled()) {
                 log.debug("Result of call to AWS " + result);
             }
@@ -133,4 +135,20 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
                 new RekognitionHelperWithS3(new DefaultRekognitionHelper()) : new DefaultRekognitionHelper();
     }
 
+    protected AmazonRekognition getClient() {
+        AmazonRekognition localClient = client;
+        if (localClient == null) {
+            synchronized (this) {
+                localClient = client;
+                if (localClient == null) {
+                    AmazonRekognitionClientBuilder builder =
+                            AmazonRekognitionClientBuilder.standard()
+                                                          .withCredentials(NuxeoAWSCredentialsProvider.getInstance())
+                                                          .withRegion(NuxeoAWSRegionProvider.getInstance().getRegion());
+                    client = localClient = builder.build();
+                }
+            }
+        }
+        return localClient;
+    }
 }

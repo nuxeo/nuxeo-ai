@@ -28,11 +28,6 @@ import com.amazonaws.services.rekognition.model.Image;
  */
 public interface RekognitionHelper {
 
-    /**
-     * Gets AmazonRekognition instance
-     */
-    AmazonRekognition getClient(BlobProvider blobProvider);
-
     /*
      * Gets an image reference
      */

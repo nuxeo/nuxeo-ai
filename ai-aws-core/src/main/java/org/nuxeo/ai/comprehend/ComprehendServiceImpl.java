@@ -18,15 +18,14 @@
  */
 package org.nuxeo.ai.comprehend;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.aws.credentials.NuxeoCredentialsProviderChain;
-import org.nuxeo.aws.credentials.NuxeoRegionProviderChain;
-
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
 import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
+import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
 
 /**
  * Calls AWS Comprehend apis
@@ -41,19 +40,20 @@ public class ComprehendServiceImpl implements ComprehendService {
      * Get the AmazonComprehend client
      */
     protected AmazonComprehend getClient() {
-        if (client == null) {
+        AmazonComprehend localClient = client;
+        if (localClient == null) {
             synchronized (this) {
-                if (client == null) {
+                localClient = client;
+                if (localClient == null) {
                     AmazonComprehendClientBuilder builder =
                             AmazonComprehendClientBuilder.standard()
-                                                         .withCredentials(NuxeoCredentialsProviderChain.getInstance())
-                                                         .withRegion(NuxeoRegionProviderChain.getInstance()
-                                                                                             .getRegion());
-                    client = builder.build();
+                                                         .withCredentials(NuxeoAWSCredentialsProvider.getInstance())
+                                                         .withRegion(NuxeoAWSRegionProvider.getInstance().getRegion());
+                    client = localClient = builder.build();
                 }
             }
         }
-        return client;
+        return localClient;
     }
 
     @Override

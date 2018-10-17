@@ -18,14 +18,10 @@
  */
 package org.nuxeo.ecm.core.storage.sql;
 
-import org.nuxeo.ai.rekognition.RekognitionHelper;
-import org.nuxeo.ecm.core.blob.BlobProvider;
-
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.services.rekognition.AmazonRekognition;
-import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.S3Object;
+import org.nuxeo.ai.rekognition.RekognitionHelper;
+import org.nuxeo.ecm.core.blob.BlobProvider;
 
 /**
  * A Rekognition Helper which takes advantage of the S3BinaryManager
@@ -43,24 +39,6 @@ public class RekognitionHelperWithS3 implements RekognitionHelper {
      */
     public S3Object getS3Object(S3BinaryManager s3BinaryManager, String key) {
         return new S3Object().withName(key).withBucket(s3BinaryManager.bucketName);
-    }
-
-    /**
-     * Configures a client based on the provided details
-     */
-    protected AmazonRekognition getClient(AWSCredentialsProvider credentialsProvider, String region) {
-        return AmazonRekognitionClientBuilder.standard()
-                                             .withCredentials(credentialsProvider)
-                                             .withRegion(region).build();
-    }
-
-    @Override
-    public AmazonRekognition getClient(BlobProvider blobProvider) {
-        if (blobProvider instanceof S3BinaryManager) {
-            S3BinaryManager s3BinaryManager = (S3BinaryManager) blobProvider;
-            return getClient(s3BinaryManager.awsCredentialsProvider, s3BinaryManager.amazonS3.getRegionName());
-        }
-        return fallBackHelper.getClient(blobProvider);
     }
 
     @Override

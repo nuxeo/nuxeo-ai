@@ -18,20 +18,14 @@
  */
 package org.nuxeo.ai.rekognition;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
+import com.amazonaws.services.rekognition.model.Image;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.aws.credentials.NuxeoCredentialsProviderChain;
-import org.nuxeo.aws.credentials.NuxeoRegionProviderChain;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.blob.BlobInfo;
 import org.nuxeo.ecm.core.blob.BlobProvider;
-
-import com.amazonaws.services.rekognition.AmazonRekognition;
-import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
-import com.amazonaws.services.rekognition.model.Image;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * The default RekognitionHelper
@@ -39,32 +33,6 @@ import com.amazonaws.services.rekognition.model.Image;
 public class DefaultRekognitionHelper implements RekognitionHelper {
 
     private static final Log log = LogFactory.getLog(DefaultRekognitionHelper.class);
-
-    protected volatile AmazonRekognition client;
-
-    @Override
-    public AmazonRekognition getClient(BlobProvider blobProvider) {
-        return getClient();
-    }
-
-    /**
-     * Gets the client
-     */
-    protected AmazonRekognition getClient() {
-        if (client == null) {
-            synchronized (this) {
-                if (client == null) {
-                    AmazonRekognitionClientBuilder builder =
-                            AmazonRekognitionClientBuilder.standard()
-                                                          .withCredentials(NuxeoCredentialsProviderChain.getInstance())
-                                                          .withRegion(NuxeoRegionProviderChain.getInstance()
-                                                                                              .getRegion());
-                    client = builder.build();
-                }
-            }
-        }
-        return client;
-    }
 
     @Override
     public Image getImage(BlobProvider blobProvider, String key) {
