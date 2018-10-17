@@ -147,7 +147,7 @@ limitations under the License.
 
         _isSuggestionChosen(properties, suggestion) {
           if (properties && suggestion) {
-            return this.get(this._parsePropertyPath()) === this.idFunction(suggestion.name) ? 'chosen' : '';
+            return JSON.stringify(this.get(this._parsePropertyPath())) === JSON.stringify(this.idFunction(suggestion.name)) ? 'chosen' : '';
           }
           return false;
         }
