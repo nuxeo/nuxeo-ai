@@ -36,14 +36,12 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
-import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
 import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
@@ -67,8 +65,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final PathRef PARENT_PATH = new PathRef("/" + CORPUS_TYPE);
 
-    public static final Properties EMPTY_PROPS = new Properties();
-
     public static final String NUXEO_FOLDER = "Folder";
 
     public static final String STATS_TOTAL = "total";
@@ -77,11 +73,12 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String DEFAULT_NUM_BUCKETS = "20";
 
+    protected static final Properties EMPTY_PROPS = new Properties();
+
     /**
      * Make an Aggregate using AggregateFactory.
      */
-    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
-                                                                                            Properties properties) {
+    protected static AggregateEsBase makeAggregate(String type, String field, Properties properties) {
         AggregateDescriptor descriptor = new AggregateDescriptor();
         descriptor.setId(aggKey(field, type));
         descriptor.setDocumentField(field);
@@ -183,6 +180,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Get the stats for the smaller dataset of valid values.
      */
+    @SuppressWarnings("unchecked")
     protected void getValidStats(List<Map<String, String>> featuresWithType,
                                  long total, List<Statistic> stats, NxQueryBuilder qb) {
         for (Map<String, String> prop : featuresWithType) {
@@ -196,6 +194,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                     break;
                 case IMAGE_TYPE:
                     qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
+                    break;
                 default:
                     // Only 2 types at the moment, we would need numeric type in the future.
             }
@@ -210,6 +209,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Gets the overall stats for the dataset, before considering if the fields are valid.
      */
+    @SuppressWarnings("unchecked")
     protected Long getOverallStats(List<Map<String, String>> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
 
         for (Map<String, String> prop : featuresWithType) {
@@ -220,6 +220,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                     break;
                 case IMAGE_TYPE:
                     qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
+                    break;
                 default:
                     // Only 2 types at the moment, we would need numeric type in the future.
             }

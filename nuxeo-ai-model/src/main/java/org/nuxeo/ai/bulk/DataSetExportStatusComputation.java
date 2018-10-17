@@ -119,10 +119,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
     }
 
     protected void updateDelta(String commandId, long processed) {
-        Long currentCount = counters.get(commandId);
-        if (currentCount != null) {
-            counters.put(commandId, processed + currentCount);
-        }
+        counters.computeIfPresent(commandId, (s, aLong) -> processed + aLong);
     }
 
     protected boolean isEndOfBatch(ExportBulkProcessed exportStatus) {

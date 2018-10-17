@@ -68,7 +68,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
     public static final String EXPORT_STATUS_STREAM = "exp-status";
 
-    public static final String EXPORT_STATUS_COMPUTATION = "exp-status";
+    public static final String EXPORT_STATUS_COMPUTATION = "exp-status-comp";
 
     public static final String BATCH_SIZE_OPT = "batchSize";
 
