@@ -21,6 +21,7 @@ package org.nuxeo.ai.pipes.functions;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
+import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.SYSTEM_PROPERTY_VALUE;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -28,24 +29,19 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.EventContext;
 import org.nuxeo.ecm.core.event.EventListener;
-import org.nuxeo.ecm.core.work.AbstractWork;
-import org.nuxeo.ecm.core.work.api.WorkManager;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * Listens to the "binaryTextUpdated" event and schedules an async post-commit worker to create
- * a BlobTextFromDocument containing the binary text.
+ * Listens to the "binaryTextUpdated" event and adds a BlobTextFromDocument containing the binary text to a stream.
  * It uses a windowing approach to only emit an event if it hasn't been emitted for {timeout} seconds.
- * If the window size is less than zero then the work is scheduled anyway.
+ * If the window size is less than zero then writing to the stream is immediate.
  */
 public class BinaryTextListener implements EventListener {
 
@@ -74,101 +70,40 @@ public class BinaryTextListener implements EventListener {
         Boolean hasText = (Boolean) event.getContext().getProperty(binaryProperty);
 
         if (doc != null && hasText != null && hasText) {
-
             if (useWindow) {
-                KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(BINARY_TEXT_STREAM_KV);
+                KeyValueStore kvStore = Framework.getService(KeyValueService.class)
+                                                 .getKeyValueStore(BINARY_TEXT_STREAM_KV);
                 byte[] existing = kvStore.get(doc.getId());
                 if (existing == null) {
-                    scheduleWork(doc);
+                    handleBinaryText(doc, event.getContext());
                     kvStore.put(doc.getId(), "", timeout);
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Work IS ALREADY SCHEDULED for " + doc.getId());
+                        log.debug("Skipping because there is already an event for " + doc.getId());
                     }
                 }
             } else {
-                scheduleWork(doc);
+                handleBinaryText(doc, event.getContext());
             }
-
         }
     }
 
     /**
-     * Schedules text work on this document.
+     * Handles the binary text
      */
-    protected void scheduleWork(DocumentModel doc) {
+    protected void handleBinaryText(DocumentModel doc, EventContext context) {
         if (log.isDebugEnabled()) {
-            log.debug("Scheduling text to stream work for doc " + doc.getId());
+            log.debug("Handling new binary text for doc " + doc.getId());
         }
-        Framework.getService(WorkManager.class)
-                 .schedule(new TextToStreamWork(binaryProperty, consumerName, doc.getRepositoryName(), doc.getId()), true);
-    }
-
-    /**
-     * Sends binary text to a Record consuming stream.
-     */
-    public static class TextToStreamWork extends AbstractWork {
-
-        private static final Log log = LogFactory.getLog(TextToStreamWork.class);
-
-        private static final long serialVersionUID = 164995918890660173L;
-
-        protected final String binaryProperty;
-
-        protected final String consumerName;
-
-        public TextToStreamWork(String binaryProperty, String consumerName, String repositoryName, String docId) {
-            super();
-            this.binaryProperty = binaryProperty;
-            this.consumerName = consumerName;
-            setDocument(repositoryName, docId);
-        }
-
-        @Override
-        public void work() {
-            openSystemSession();
-
-            IdRef docRef = new IdRef(docId);
-            if (!session.exists(docRef)) {
-                // doc is gone
-                return;
+        Consumer<Record> consumer = Framework.getService(PipelineService.class).getConsumer(consumerName);
+        if (consumer != null) {
+            String text = (String) context.getProperty(SYSTEM_PROPERTY_VALUE);
+            if (StringUtils.isNotBlank(text)) {
+                BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
+                blobTextFromDoc.addProperty(binaryProperty, text);
+                consumer.accept(toRecord(blobTextFromDoc.getKey(), blobTextFromDoc));
             }
-            DocumentModel doc = session.getDocument(docRef);
-            Map<String, String> binText = doc.getBinaryFulltext();
-            BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
-            binText.values().forEach(text -> {
-                if (StringUtils.isNotBlank(text)) {
-                    blobTextFromDoc.addProperty(binaryProperty, text);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Writing record for " + blobTextFromDoc.getId());
-                    }
-                    Consumer<Record> consumer = Framework.getService(PipelineService.class).getConsumer(consumerName);
-                    if (consumer != null) {
-                        consumer.accept(toRecord(blobTextFromDoc.getKey(), blobTextFromDoc));
-                    }
-
-                }
-            });
-        }
-
-        @Override
-        public String getTitle() {
-            return "TextToStreamWork";
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) { return true; }
-            if (o == null || getClass() != o.getClass()) { return false; }
-            if (!super.equals(o)) { return false; }
-            TextToStreamWork that = (TextToStreamWork) o;
-            return Objects.equals(binaryProperty, that.binaryProperty) &&
-                    Objects.equals(consumerName, that.consumerName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), binaryProperty, consumerName);
         }
     }
+
 }
