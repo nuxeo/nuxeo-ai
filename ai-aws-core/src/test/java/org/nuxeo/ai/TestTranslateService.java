@@ -20,27 +20,22 @@ package org.nuxeo.ai;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.Collection;
-
-import javax.inject.Inject;
-
+import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.services.AIComponent;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
+import javax.inject.Inject;
+import java.util.Collection;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -58,8 +53,8 @@ public class TestTranslateService {
         try {
             assertTranslation("aws.translate.pt_fr", "hoje faz bom tempo", "");
             fail();
-        } catch (NuxeoException e) {
-            assertTrue(e.getCause() instanceof UnsupportedLanguagePairException);
+        } catch (UnsupportedLanguagePairException e) {
+            assertNotNull(e);
         }
     }
 

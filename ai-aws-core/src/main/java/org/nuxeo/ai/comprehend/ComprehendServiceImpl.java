@@ -26,15 +26,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
 import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
  * Calls AWS Comprehend apis
  */
-public class ComprehendServiceImpl implements ComprehendService {
+public class ComprehendServiceImpl extends DefaultComponent implements ComprehendService {
 
     private static final Log log = LogFactory.getLog(ComprehendServiceImpl.class);
 
     protected volatile AmazonComprehend client;
+
+    @Override
+    public void stop(ComponentContext context) throws InterruptedException {
+        super.stop(context);
+        client = null;
+    }
 
     /**
      * Get the AmazonComprehend client

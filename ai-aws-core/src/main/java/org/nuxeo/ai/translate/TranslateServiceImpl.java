@@ -26,15 +26,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
 import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
  * Calls AWS translate
  */
-public class TranslateServiceImpl implements TranslateService {
+public class TranslateServiceImpl extends DefaultComponent implements TranslateService {
 
     private static final Log log = LogFactory.getLog(TranslateServiceImpl.class);
 
     protected volatile AmazonTranslate client;
+
+    @Override
+    public void stop(ComponentContext context) throws InterruptedException {
+        super.stop(context);
+        client = null;
+    }
 
     protected AmazonTranslate getClient() {
         AmazonTranslate localClient = client;

@@ -135,6 +135,12 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
                 new RekognitionHelperWithS3(new DefaultRekognitionHelper()) : new DefaultRekognitionHelper();
     }
 
+    @Override
+    public void stop(ComponentContext context) throws InterruptedException {
+        super.stop(context);
+        client = null;
+    }
+
     protected AmazonRekognition getClient() {
         AmazonRekognition localClient = client;
         if (localClient == null) {
