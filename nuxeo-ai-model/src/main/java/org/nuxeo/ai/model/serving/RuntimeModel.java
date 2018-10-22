@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.model.AIModel;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
@@ -35,7 +35,7 @@ public interface RuntimeModel extends AIModel {
     /**
      * Predict a result for the supplied document
      */
-    EnrichmentMetadata predict(DocumentModel doc);
+    SuggestionMetadata predict(DocumentModel doc);
 }
 
 

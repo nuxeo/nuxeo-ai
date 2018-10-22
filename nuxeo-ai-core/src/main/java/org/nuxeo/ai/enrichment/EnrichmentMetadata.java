@@ -30,8 +30,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
+import org.nuxeo.ai.metadata.Suggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -111,58 +111,6 @@ public class EnrichmentMetadata extends AIMetadata {
                 .append("kind", kind)
                 .append("rawKey", rawKey)
                 .toString();
-    }
-
-    /**
-     * A suggestion, made up of a property name and one or more labels
-     */
-    public static class Suggestion implements Serializable {
-
-        private static final long serialVersionUID = 7549317566844895574L;
-
-        protected final String property;
-
-        protected final List<Label> values;
-
-        @JsonCreator
-        public Suggestion(@JsonProperty("property") String property, @JsonProperty("values") List<Label> values) {
-            this.property = property;
-            this.values = values != null ? unmodifiableList(values) : emptyList();
-        }
-
-        public String getProperty() {
-            return property;
-        }
-
-        public List<Label> getValues() {
-            return values;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            Suggestion that = (Suggestion) o;
-            return Objects.equals(property, that.property) &&
-                    Objects.equals(values, that.values);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(property, values);
-        }
-
-        @Override
-        public String toString() {
-            return new ToStringBuilder(this)
-                    .append("property", property)
-                    .append("values", values)
-                    .toString();
-        }
     }
 
     public static class Builder extends AbstractMetaDataBuilder {

@@ -24,6 +24,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -33,6 +35,8 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
@@ -47,7 +51,6 @@ import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -112,8 +115,12 @@ public class TestModelServing {
         txFeature.nextTransaction();
 
         testDoc.setPropertyValue("file:content", (Serializable) createTestBlob(manager));
-        List<EnrichmentMetadata> predicated = modelServingService.predict(testDoc);
-        assertEquals(1, predicated.size());
+        List<SuggestionMetadata> suggestions = modelServingService.predict(testDoc);
+        assertEquals(2, suggestions.size());
+
+        //Test serialize results
+        SuggestionMetadata andBackAgain = fromRecord(toRecord("t", suggestions.get(0)), SuggestionMetadata.class);
+        assertEquals(suggestions.get(0), andBackAgain);
     }
 
     @Test
@@ -122,7 +129,15 @@ public class TestModelServing {
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
         assertNotNull(service);
         Collection<EnrichmentMetadata> enriched = service.enrich(blobTextFromDoc);
-        assertNotNull(enriched.iterator().next());
+        EnrichmentMetadata metadata = enriched.iterator().next();
+        assertEquals(2, metadata.getLabels().size());
+
+        service = aiComponent.getEnrichmentService("customSuggest");
+        assertNotNull(service);
+        enriched = service.enrich(blobTextFromDoc);
+        metadata = enriched.iterator().next();
+        assertEquals(2, metadata.getSuggestions().size());
+
     }
 
     @Test
@@ -136,7 +151,7 @@ public class TestModelServing {
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
-        assertEquals(2, metadata.getSuggestions().size());
+        assertEquals(2, metadata.getLabels().size());
         assertNotNull(metadata.getRawKey());
 
         TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore("testTransient");

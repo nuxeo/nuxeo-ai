@@ -33,6 +33,8 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.Suggestion;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rest.RestClient;
@@ -95,15 +97,14 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     }
 
     @Override
-    public EnrichmentMetadata predict(DocumentModel doc) {
-        return predict(getProperties(doc), doc.getRepositoryName(), doc.getId(), true);
+    public SuggestionMetadata predict(DocumentModel doc) {
+        return predict(getProperties(doc));
     }
 
     /**
      * For the supplied input values try to predict a result or return null
      */
-    public EnrichmentMetadata predict(Map<String, Serializable> inputValues, String repositoryName, String docRef,
-                                      boolean isSuggestion) {
+    public SuggestionMetadata predict(Map<String, Serializable> inputValues) {
         return client.call(builder -> prepareRequest(VERB_PREDICT, builder, inputValues),
                            response -> {
                                int statusCode = response.getStatusLine().getStatusCode();
@@ -112,7 +113,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                                                           getName(), statusCode));
                                    return null;
                                } else {
-                                   EnrichmentMetadata meta = handlePredict(response, repositoryName, docRef, isSuggestion);
+                                   SuggestionMetadata meta = handlePredict(response);
                                    if (log.isDebugEnabled()) {
                                        log.debug("Prediction is " + MAPPER.writeValueAsString(meta));
                                    }
@@ -123,30 +124,19 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     }
 
     /**
-     * Handle the response from Tensorflow serving and return normalized EnrichmentMetadata.
+     * Handle the response from Tensorflow serving and return normalized SuggestionMetadata.
      */
-    protected EnrichmentMetadata handlePredict(HttpResponse response, String repositoryName, String docRef,
-                                               boolean isSuggestion) {
+    protected SuggestionMetadata handlePredict(HttpResponse response) {
         String content = client.getContent(response);
-        EnrichmentMetadata.Builder builder =
-                new EnrichmentMetadata.Builder(Instant.now(), getKind(), getId(),
-                                               new AIMetadata.Context(repositoryName, docRef, null, inputNames));
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
-            if (isSuggestion) {
-                List<EnrichmentMetadata.Suggestion> suggestions = new ArrayList<>();
-                labelledResults.forEach((output, labels) ->
-                                                suggestions.add(new EnrichmentMetadata.Suggestion(output, labels)));
-                builder.withSuggestions(suggestions);
-            } else {
-                if (labelledResults.size() != 1) {
-                    log.error("Multiple outputs is currently unsupported.  The output name will be lost.");
-                }
-                labelledResults.forEach((output, labels) -> builder.withLabels(labels));
-            }
+            SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(getKind(), getId());
+            List<Suggestion> suggestions = new ArrayList<>();
+            labelledResults.forEach((output, labels) ->
+                                            suggestions.add(new Suggestion(output, labels)));
+            builder.withSuggestions(suggestions);
             return builder.withRawKey(saveJsonAsRawBlob(content)).build();
         }
-
         return null;
     }
 
@@ -230,10 +220,32 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         inputProperties.putAll(blobtext.getProperties());
         if (inputProperties.isEmpty()) {
             log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), blobtext.getId()));
-            return emptyList();
         } else {
-            return Collections.singletonList(predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId(), useLabels));
+            SuggestionMetadata suggestions = predict(inputProperties);
+            if (!suggestions.getSuggestions().isEmpty()) {
+                EnrichmentMetadata.Builder builder =
+                        new EnrichmentMetadata.Builder(Instant.now(), getKind(), getId(),
+                                                       new AIMetadata.Context(
+                                                               blobtext.getRepositoryName(), blobtext.getId(),
+                                                               null, inputNames));
+                builder.withRawKey(suggestions.getRawKey());
+                if (useLabels) {
+                    if (suggestions.getSuggestions().size() != 1) {
+                        log.error("Multiple outputs is currently unsupported.  The output name will be lost.");
+                    }
+                    List<AIMetadata.Label> vals = suggestions.getSuggestions().stream()
+                                                             .map(Suggestion::getValues)
+                                                             .flatMap(Collection::stream)
+                                                             .collect(Collectors.toList());
+                    builder.withLabels(vals);
+                } else {
+                    builder.withSuggestions(suggestions.getSuggestions());
+                }
+                return Collections.singletonList(builder.build());
+
+            }
         }
+        return emptyList();
     }
 
     @Override

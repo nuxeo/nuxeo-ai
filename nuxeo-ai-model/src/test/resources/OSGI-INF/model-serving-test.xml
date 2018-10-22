@@ -36,6 +36,23 @@
   </extension>
 
   <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="customSuggest">
+      <filter primaryType="File"/>
+      <config name="uri">http://localhost:5089/v1/models/super_testing/</config>
+      <config name="transientStore">testTransient</config>
+      <config name="useLabels">false</config>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
+      <info name="modelName">dnn</info>
+      <info name="modelVersion">1</info>
+    </model>
+  </extension>
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
     <model id="failingModel">
       <filter primaryType="Note"/>
       <config name="uri">http://localhost:5089/v1/models/fail_testing/</config>

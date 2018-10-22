@@ -18,13 +18,12 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.model.AIModel;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
-
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.model.AIModel;
-import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
  * Serves runtime AI models
@@ -55,5 +54,5 @@ public interface ModelServingService {
      * For each running model, evaluate if the supplied document passes the predicate test for a model, if so
      * call the model and return the results.
      */
-    List<EnrichmentMetadata> predict(DocumentModel documentModel);
+    List<SuggestionMetadata> predict(DocumentModel documentModel);
 }

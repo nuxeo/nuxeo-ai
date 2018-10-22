@@ -20,11 +20,10 @@ package org.nuxeo.ai.metadata;
 
 import static java.util.Collections.emptySet;
 
+import org.apache.commons.lang3.StringUtils;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * A builder for AIMetadata
@@ -113,11 +112,19 @@ public abstract class AbstractMetaDataBuilder {
         return this;
     }
 
+    protected void buildContext() {
+        if (StringUtils.isBlank(documentRef) || StringUtils.isBlank(repositoryName)) {
+            throw new IllegalArgumentException("Invalid repo metadata has been given. " + this.toString());
+        }
+
+        if (context == null) {
+            context = new AIMetadata.Context(repositoryName, documentRef, digests, inputProperties);
+        }
+    }
+
     public <T extends AIMetadata> T build() {
         if (StringUtils.isBlank(serviceName)
                 || StringUtils.isBlank(kind)
-                || StringUtils.isBlank(documentRef)
-                || StringUtils.isBlank(repositoryName)
                 || created == null) {
             throw new IllegalArgumentException("Invalid metadata has been given. " + this.toString());
         }
@@ -125,9 +132,8 @@ public abstract class AbstractMetaDataBuilder {
         if (inputProperties == null) {
             inputProperties = emptySet();
         }
-        if (context == null) {
-            context = new AIMetadata.Context(repositoryName, documentRef, digests, inputProperties);
-        }
+
+        buildContext();
         return build(this);
     }
 

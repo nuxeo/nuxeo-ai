@@ -20,10 +20,7 @@ package org.nuxeo.ai.model.serving;
 
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -34,6 +31,8 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Suggests metadata for the specified document.
@@ -58,7 +57,7 @@ public class SuggestionOp {
     @OperationMethod
     public Blob run(DocumentModel doc) throws IOException {
 
-        List<EnrichmentMetadata> suggestions;
+        List<SuggestionMetadata> suggestions;
         if (doc == null || (suggestions = modelServingService.predict(doc)) == null || suggestions.isEmpty()) {
             return Blobs.createJSONBlob(EMPTY_JSON_LIST);
         }
