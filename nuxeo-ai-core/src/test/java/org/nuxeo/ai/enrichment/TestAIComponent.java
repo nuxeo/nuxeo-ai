@@ -46,7 +46,6 @@ import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import java.util.Collections;
 import java.util.NoSuchElementException;
 
 /**

@@ -20,12 +20,7 @@ package org.nuxeo.ai.services;
 
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.PICTURE_RESIZE_CONVERTER;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -36,6 +31,9 @@ import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentSupport;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.convert.api.ConversionService;
+import org.nuxeo.ecm.core.convert.api.ConverterCheckResult;
+import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
@@ -46,6 +44,11 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides one or more services using AI
@@ -92,6 +95,13 @@ public class AIComponent extends DefaultComponent {
                 descriptor -> descriptor.getNames().forEach(n -> writers.put(n, descriptor.getWriter(n))));
         if (log.isDebugEnabled()) {
             log.debug("AIComponent has started.");
+        }
+
+        try {
+            ConverterCheckResult pictureResize = Framework.getService(ConversionService.class)
+                                                          .isConverterAvailable(PICTURE_RESIZE_CONVERTER);
+        } catch (ConverterNotRegistered e) {
+            log.warn(PICTURE_RESIZE_CONVERTER + " converter is not registered.  You will not be able to export images.");
         }
     }
 
@@ -159,6 +169,7 @@ public class AIComponent extends DefaultComponent {
 
     /**
      * Add an enrichment service
+     *
      * @param serviceName the name of the service
      */
     public void addEnrichmentService(String serviceName, EnrichmentService service) {
