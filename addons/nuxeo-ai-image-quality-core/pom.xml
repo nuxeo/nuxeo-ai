@@ -12,20 +12,13 @@
   <description>Nuxeo AI image quality integration</description>
   <properties>
     <wiremock.version>2.18.0</wiremock.version>
-    <jetty-server.version>9.2.24.v20180105</jetty-server.version>
   </properties>
   <dependencies>
     <!-- Wiremock dependencies -->
     <dependency>
       <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock</artifactId>
+      <artifactId>wiremock-standalone</artifactId>
       <version>${wiremock.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-server</artifactId>
-      <version>${jetty-server.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
