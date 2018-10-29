@@ -32,6 +32,8 @@ import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_3;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -141,6 +143,8 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
         public static final int DEFAULT_SPLIT = 75;
 
+        private static final Log log = LogFactory.getLog(ExportingComputation.class);
+
         List<Record> training = new ArrayList<>();
 
         List<Record> validation = new ArrayList<>();
@@ -162,7 +166,9 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                     BlobTextFromDocument subDoc = docSerialize(doc, customProperties);
                     boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                     if (subDoc != null) {
-                        getLog().debug(isTraining + " " + subDoc);
+                        if (log.isDebugEnabled()) {
+                            log.debug(isTraining + " " + subDoc);
+                        }
                         Record record = toRecord(command.getId(), subDoc);
                         if (isTraining) {
                             training.add(record);
@@ -173,11 +179,14 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                         discarded++;
                     }
                 } catch (DocumentNotFoundException e) {
-                    getLog().error("DocumentNotFoundException: " + id);
+                    log.error("DocumentNotFoundException: " + id);
                     discarded++;
                 }
             }
-            getLog().debug("There  were Ids " + ids.size());
+            if (log.isDebugEnabled()) {
+                log.debug("There  were Ids " + ids.size());
+            }
+
         }
 
         @Override
@@ -212,8 +221,10 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             if (properties.size() + blobTextFromDoc.getBlobs().size() == propertiesList.size()) {
                 return blobTextFromDoc;
             } else {
-                getLog().debug(String.format("Document %s one of the following properties is null so skipping. %s",
-                                             doc.getId(), propertiesList));
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Document %s one of the following properties is null so skipping. %s",
+                                            doc.getId(), propertiesList));
+                }
                 return null;
             }
 
