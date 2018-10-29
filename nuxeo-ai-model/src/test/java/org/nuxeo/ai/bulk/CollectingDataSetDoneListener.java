@@ -36,7 +36,8 @@ public class CollectingDataSetDoneListener extends DataSetExportDoneListener {
     }
 
     @Override
-    protected void handleDataSetExportDone(String actionId, String actionData, String blobRef, String repository, String user) {
+    protected void handleDataSetExportDone(String actionId, String actionData, String blobRef, String providerRef,
+                                           String repository, String user) {
         collector.put(makeKey(actionId, actionData), blobRef);
     }
 }

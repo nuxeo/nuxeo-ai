@@ -21,8 +21,12 @@ package org.nuxeo.ai.bulk;
 import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
 import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatusProcessed;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
@@ -52,9 +56,13 @@ public class DataSetExportStatusComputation extends AbstractComputation {
 
     public static final String ACTION_DATA = "ACTION_DATA";
 
+    public static final String ACTION_BLOB_PROVIDER = "ACTION_BLOB_PROVIDER";
+
     public static final String ACTION_BLOB_REF = "ACTION_BLOB_REF";
 
     public static final String ACTION_USERNAME = "ACTION_USER";
+
+    private static final Log log = LogFactory.getLog(DataSetExportStatusComputation.class);
 
     protected final Set<String> writerNames;
 
@@ -86,19 +94,33 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                 }
                 if (writer.exists(exportStatus.getCommandId())) {
                     try {
-                        Optional<String> blob = writer.complete(exportStatus.getCommandId());
-                        blob.ifPresent(blobRef -> {
+                        Optional<Blob> blob = writer.complete(exportStatus.getCommandId());
+                        blob.ifPresent(theBlob -> {
 
                             BulkCommand command = service.getCommand(exportStatus.getCommandId());
-                            // Raise an event
-                            EventContextImpl eCtx = new EventContextImpl();
-                            eCtx.setProperty(ACTION_ID, exportStatus.getCommandId());
-                            eCtx.setProperty(ACTION_DATA, name);
-                            eCtx.setProperty(ACTION_BLOB_REF, blobRef);
-                            eCtx.setProperty(ACTION_USERNAME, command.getUsername());
-                            eCtx.setRepositoryName(command.getRepository());
-                            Event event = eCtx.newEvent(DATASET_EXPORT_DONE_EVENT);
-                            Framework.getService(EventProducer.class).fireEvent(event);
+                            if (command != null) {
+                                // Raise an event
+                                EventContextImpl eCtx = new EventContextImpl();
+                                eCtx.setProperty(ACTION_ID, exportStatus.getCommandId());
+                                eCtx.setProperty(ACTION_DATA, name);
+                                if (theBlob instanceof ManagedBlob) {
+                                    ManagedBlob managedBlob = (ManagedBlob) theBlob;
+                                    eCtx.setProperty(ACTION_BLOB_PROVIDER, managedBlob.getProviderId());
+                                    eCtx.setProperty(ACTION_BLOB_REF, managedBlob.getKey());
+                                } else {
+                                    eCtx.setProperty(ACTION_BLOB_REF, theBlob.getDigest());
+                                }
+                                eCtx.setProperty(ACTION_USERNAME, command.getUsername());
+                                eCtx.setRepositoryName(command.getRepository());
+                                Event event = eCtx.newEvent(DATASET_EXPORT_DONE_EVENT);
+                                Framework.getService(EventProducer.class).fireEvent(event);
+                            } else {
+                                log.error(String.format(
+                                        "The bulk command with id %s is missing.  Unable to raise an %s event for %s %s.",
+                                        exportStatus.getCommandId(), DATASET_EXPORT_DONE_EVENT, name, theBlob
+                                                .getDigest()));
+                            }
+
                         });
                     } catch (IOException e) {
                         throw new NuxeoException(

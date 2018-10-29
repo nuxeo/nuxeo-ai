@@ -106,7 +106,12 @@ public class EnrichmentUtils {
         BlobInfo blobInfo = new BlobInfo();
         blobInfo.key = key;
         try {
-            return provider.readBlob(blobInfo);
+            Blob gotBlob = provider.readBlob(blobInfo);
+            if (gotBlob != null && gotBlob.getLength() > 0) {
+                return gotBlob;
+            } else {
+                log.warn(String.format("Missing file for %s %s", provider.getClass().getSimpleName(), key));
+            }
         } catch (IOException e) {
             log.error(String.format("Failed to read blob %s", key), e);
         }

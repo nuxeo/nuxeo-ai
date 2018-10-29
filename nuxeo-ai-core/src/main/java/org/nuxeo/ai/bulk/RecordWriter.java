@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.lib.stream.computation.Record;
 
 /**
@@ -32,7 +33,7 @@ public interface RecordWriter {
     /**
      * Finish writing to the file, save it and return an optional reference.
      */
-    Optional<String> complete(String id) throws IOException;
+    Optional<Blob> complete(String id) throws IOException;
 
     /**
      * Write the records using this writer.  It is assumed that the implementation writes to a file.

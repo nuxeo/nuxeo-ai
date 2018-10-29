@@ -29,7 +29,6 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
@@ -87,13 +86,11 @@ public class TensorTest {
 
         writer.write(records);
         assertTrue(writer.exists(test_key));
-        Optional<String> blobWritten = writer.complete(test_key);
-        assertTrue(blobWritten.isPresent());
-        Blob blob = EnrichmentUtils.getBlobFromProvider(blobProvider, blobWritten.get());
-
-        assertTrue(blob.getLength() > 0);
+        Optional<Blob> blob = writer.complete(test_key);
+        assertTrue(blob.isPresent());
+        assertTrue(blob.get().getLength() > 0);
         // System.out.println("File: " + blob.getFile().getAbsolutePath());
-        assertEquals(numberOfRecords, countNumberOfExamples(blob, 2));
+        assertEquals(numberOfRecords, countNumberOfExamples(blob.get(), 2));
     }
 
     /**
@@ -132,9 +129,9 @@ public class TensorTest {
 
         writer.write(records);
         assertTrue(writer.exists(test_key));
-        Optional<String> blobWritten = writer.complete(test_key);
+        Optional<Blob> blobWritten = writer.complete(test_key);
         assertTrue(blobWritten.isPresent());
-        Blob blob = EnrichmentUtils.getBlobFromProvider(blobProvider, blobWritten.get());
+        Blob blob = blobWritten.get();
         // System.out.println("File: " + blob.getFile().getAbsolutePath());
         DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
         TFRecordReader tfRecordReader = new TFRecordReader(input, true);

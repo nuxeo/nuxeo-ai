@@ -19,18 +19,20 @@
 package org.nuxeo.ai.bulk;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import org.nuxeo.ai.pipes.streams.Initializable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -72,23 +74,32 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
     }
 
     @Override
-    public Optional<String> complete(String id) throws IOException {
+    public Optional<Blob> complete(String id) throws IOException {
         KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(RECORD_STREAM_KV);
         String filename = kvStore.getString(makeKey(id, name));
         if (filename != null && isNotBlank(blobProviderName)) {
             File file = new File(filename);
-            Blob theBlob = Blobs.createBlob(file);
-            return Optional
-                    .of(Framework.getService(BlobManager.class).getBlobProvider(blobProviderName).writeBlob(theBlob));
-        } else {
-            return Optional.empty();
+            if (file.exists() && file.length() > 0) {
+                Blob theBlob = Blobs.createBlob(file);
+                BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blobProviderName);
+                String blobRef = provider.writeBlob(theBlob);
+                Blob managedBlob = getBlobFromProvider(provider, blobRef);
+                if (managedBlob != null) {
+                    return Optional.of(managedBlob);
+                }
+            }
         }
+        return Optional.empty();
     }
 
     @Override
     public boolean exists(String id) {
         KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(RECORD_STREAM_KV);
         return kvStore.getString(makeKey(id, name)) != null;
+    }
+
+    public String getBlobProviderName() {
+        return blobProviderName;
     }
 
     /**

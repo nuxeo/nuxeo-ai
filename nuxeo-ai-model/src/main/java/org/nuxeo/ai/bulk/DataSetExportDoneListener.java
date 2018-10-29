@@ -19,6 +19,7 @@
 package org.nuxeo.ai.bulk;
 
 import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
+import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_BLOB_PROVIDER;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_BLOB_REF;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_DATA;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.ACTION_ID;
@@ -28,6 +29,8 @@ import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -42,6 +45,8 @@ import java.util.List;
  */
 public class DataSetExportDoneListener implements EventListener {
 
+    private static final Log log = LogFactory.getLog(DataSetExportDoneListener.class);
+
     @Override
     public void handleEvent(Event event) {
         EventContext ctx = event.getContext();
@@ -51,13 +56,15 @@ public class DataSetExportDoneListener implements EventListener {
 
         String actionId = (String) ctx.getProperty(ACTION_ID);
         String actionData = (String) ctx.getProperty(ACTION_DATA);
-        String blobRef = (String) ctx.getProperty(ACTION_BLOB_REF);
         String repository = ctx.getRepositoryName();
         String user = (String) ctx.getProperty(ACTION_USERNAME);
-        handleDataSetExportDone(actionId, actionData, blobRef, repository, user);
+        String blobRef = (String) ctx.getProperty(ACTION_BLOB_REF);
+        String providerRef = (String) ctx.getProperty(ACTION_BLOB_PROVIDER);
+        handleDataSetExportDone(actionId, actionData, blobRef, providerRef, repository, user);
     }
 
-    protected void handleDataSetExportDone(String actionId, String actionData, String blobRef, String repository, String user) {
+    protected void handleDataSetExportDone(String actionId, String actionData, String blobRef, String providerRef,
+                                           String repository, String user) {
         TransactionHelper.runInTransaction(
                 () -> {
                     try (CloseableCoreSession session = CoreInstance.openCoreSession(repository, user)) {
@@ -67,7 +74,8 @@ public class DataSetExportDoneListener implements EventListener {
                                                                                actionId));
                         //Update corpus document
                         for (DocumentModel doc : docs) {
-                            doc.setPropertyValue(isTraining(actionData) ? CORPUS_TRAINING_DATA : CORPUS_EVALUATION_DATA, blobRef);
+                            boolean isTraining = isTraining(actionData);
+                            doc.setPropertyValue(isTraining ? CORPUS_TRAINING_DATA : CORPUS_EVALUATION_DATA, blobRef);
                             session.saveDocument(doc);
                         }
                     }

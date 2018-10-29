@@ -144,7 +144,10 @@ public class TFRecordWriter extends AbstractRecordWriter {
     protected Features writeFeatures(BlobTextFromDocument blobTextFromDoc) throws IOException {
         Features.Builder features = Features.newBuilder();
         for (Map.Entry<String, ManagedBlob> blobEntry : blobTextFromDoc.getBlobs().entrySet()) {
-            features.putFeature(blobEntry.getKey(), blobFeature(convertImageBlob(blobEntry.getValue())));
+            Blob blob = convertImageBlob(blobEntry.getValue());
+            if (blob != null) {
+                features.putFeature(blobEntry.getKey(), blobFeature(blob));
+            }
         }
         blobTextFromDoc.getProperties().forEach((k, v) -> features.putFeature(k, textFeature(v)));
         return features.build();
@@ -155,8 +158,10 @@ public class TFRecordWriter extends AbstractRecordWriter {
      */
     protected Blob convertImageBlob(ManagedBlob sourceBlob) {
         if (sourceBlob != null) {
-            return EnrichmentUtils
-                    .convertImageBlob(getBlobFromProvider(sourceBlob), imageWidth, imageHeight, imageDepth, imageFormat);
+            Blob source = getBlobFromProvider(sourceBlob);
+            if (source != null) {
+                return EnrichmentUtils.convertImageBlob(source, imageWidth, imageHeight, imageDepth, imageFormat);
+            }
         }
         return null;
     }
