@@ -23,25 +23,6 @@ package org.nuxeo.ai.model;
  */
 public class AiDocumentTypeConstants {
 
-    // model type constants
-    public static final String MODEL_NAME = "ai_model:name";
-
-    public static final String MODEL_ACCURACY = "ai_model:result_accuracy";
-
-    public static final String MODEL_JOB_NAME = "ai_model:job_name";
-
-    public static final String MODEL_TRAINING_INFORMATION = "ai_model:training_information";
-
-    public static final String MODEL_TRAINING_ENGINE = "ai_model:training_engine";
-
-    public static final String MODEL_INPUTS = "ai_model:inputs";
-
-    public static final String MODEL_OUTPUTS = "ai_model:outputs";
-
-    public static final String MODEL_TRAINING_DATA = "ai_model:training_data";
-
-    public static final String MODEL_EVALUATION_DATA = "ai_model:evaluation_data";
-
     // corpus type constants
     public static final String CORPUS_TYPE = "AI_Corpus";
 
