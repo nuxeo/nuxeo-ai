@@ -51,7 +51,7 @@ public class TestTranslateService {
         assertTranslation("aws.translate.en_pt", "I am very happy", "Estou muito feliz.");
         assertTranslation("aws.translate.en_fr", "I am very happy", "Je suis très heureux.");
         try {
-            assertTranslation("aws.translate.pt_fr", "hoje faz bom tempo", "");
+            assertTranslation("aws.translate.pt_unknown", "hoje faz bom tempo", "");
             fail();
         } catch (UnsupportedLanguagePairException e) {
             assertNotNull(e);

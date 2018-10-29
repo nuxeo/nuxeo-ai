@@ -3,10 +3,10 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
 
-    <enrichment name="aws.translate.pt_fr" kind="/classification/sentiment"
+    <enrichment name="aws.translate.pt_unknown" kind="/classification/sentiment"
                 class="org.nuxeo.ai.enrichment.TranslateEnrichmentService">
       <option name="sourceLanguage">pt</option>
-      <option name="targetLanguage">fr</option>
+      <option name="targetLanguage">nope</option>
     </enrichment>
 
   </extension>
