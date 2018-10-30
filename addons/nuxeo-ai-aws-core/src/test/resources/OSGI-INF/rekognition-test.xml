@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.enrichment.rekognition.config.test" version="1.0">
+
+  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
+    <logConfig name="test_enrichment">
+      <option name="retention">3h</option>
+    </logConfig>
+  </extension>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true" />
+        <mimeType name="image/png" normalized="true" />
+      </mimeTypes>
+      <option name="minConfidence">55</option>
+    </enrichment>
+  </extension>
+
+</component>
