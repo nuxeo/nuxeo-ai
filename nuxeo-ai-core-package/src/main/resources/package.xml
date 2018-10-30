@@ -1,8 +1,8 @@
 <!-- See documentation at http://doc.nuxeo.com/x/HgIz -->
 <package type="addon" name="nuxeo-ai-core" version="@VERSION@">
-  <title>Nuxeo Ai core</title>
+  <title>Nuxeo AI Core</title>
   <description>
-    <p>Put here an HTML description of your Nuxeo Package.</p>
+    <p>Provides Core AI functionality for Nuxeo.  Includes enrichment, custom model support and event stream enhancements.</p>
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>
