@@ -28,6 +28,7 @@ import java.util.Collection;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.AWS;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -56,7 +57,7 @@ public class TestComprehendService {
 
     @Test
     public void testSentiment() {
-
+        AWS.assumeCredentials();
         EnrichmentService service = aiComponent.getEnrichmentService("aws.textSentiment");
         assertNotNull(service);
         DetectSentimentResult results = Framework.getService(ComprehendService.class)
@@ -81,7 +82,7 @@ public class TestComprehendService {
 
     @Test
     public void testGetLabel() throws IOException {
-
+        AWS.assumeCredentials();
         EnrichmentService service = aiComponent.getEnrichmentService("aws.textSentiment");
         SentimentEnrichmentService sentimentService = (SentimentEnrichmentService) service;
         try {
