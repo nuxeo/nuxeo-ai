@@ -23,8 +23,9 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.translate.model.TranslateTextResult;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.Suggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.translate.TranslateService;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -76,7 +77,7 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService {
      */
     protected EnrichmentMetadata translate(BlobTextFromDocument blobTextFromDoc) throws IOException {
 
-        List<EnrichmentMetadata.Suggestion> suggestions = new ArrayList<>();
+        List<Suggestion> suggestions = new ArrayList<>();
         List<String> raw = new ArrayList<>();
 
         for (Map.Entry<String, String> textEntry : blobTextFromDoc.getProperties().entrySet()) {
@@ -117,8 +118,8 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService {
     /**
      * Processes the result of the call to AWS returning a Suggestion
      */
-    protected EnrichmentMetadata.Suggestion processSuggestion(String propName, TranslateTextResult result) {
-        return new EnrichmentMetadata.Suggestion(propName, Collections
+    protected Suggestion processSuggestion(String propName, TranslateTextResult result) {
+        return new Suggestion(propName, Collections
                 .singletonList(new AIMetadata.Label(result.getTranslatedText(), CONFIDENCE)));
     }
 }

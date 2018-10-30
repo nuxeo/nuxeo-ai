@@ -17,6 +17,8 @@
   <modules>
     <module>nuxeo-ai-image-quality-core</module>
     <module>nuxeo-ai-image-quality-package</module>
+    <module>nuxeo-ai-aws-core</module>
+    <module>nuxeo-ai-aws-package</module>
   </modules>
   <dependencies>
     <dependency>
