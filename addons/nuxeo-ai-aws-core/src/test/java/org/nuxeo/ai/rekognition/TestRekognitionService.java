@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.AWS;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -63,7 +64,7 @@ public class TestRekognitionService {
 
     @Test
     public void testLabelsService() throws IOException {
-
+        AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("plane.jpg");
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.imageLabels");
@@ -82,6 +83,7 @@ public class TestRekognitionService {
 
     @Test
     public void testFaceDetectionService() throws IOException {
+        AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.faceDetection");
         assertNotNull(service);
@@ -93,6 +95,7 @@ public class TestRekognitionService {
 
     @Test
     public void testCelebrityDetectionService() throws IOException {
+        AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.celebrityDetection");
         assertNotNull(service);
@@ -110,7 +113,7 @@ public class TestRekognitionService {
 
     @Test
     public void testUnsafeImagesService() throws IOException {
-
+        AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.unsafeImages");
         assertNotNull(service);
@@ -125,7 +128,7 @@ public class TestRekognitionService {
 
     @Test
     public void testTextDetectionService() throws IOException {
-
+        AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("plane.jpg");
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.textDetection");

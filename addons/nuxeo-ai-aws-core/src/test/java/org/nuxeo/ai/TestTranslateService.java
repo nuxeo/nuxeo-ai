@@ -47,6 +47,9 @@ public class TestTranslateService {
 
     @Test
     public void testTranslate() {
+
+        AWS.assumeCredentials();
+
         assertTranslation("aws.translate.en_es", "I am very disappointed", "Estoy muy decepcionado.");
         assertTranslation("aws.translate.en_pt", "I am very happy", "Estou muito feliz.");
         assertTranslation("aws.translate.en_fr", "I am very happy", "Je suis très heureux.");
