@@ -168,7 +168,7 @@ public class FunctionStreamProcessor {
         protected long produced = 0;
 
         public FunctionMetrics(String name) {
-            super("nuxeo", "streams", "func", name);
+            super("nuxeo", "ai", "streams", "func", name);
             this.putGauge(() -> called, "called");
             this.putGauge(() -> errors, "errors");
             this.putGauge(() -> produced, "produced");

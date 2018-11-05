@@ -98,7 +98,7 @@ public class TestConfiguredStreamProcessors {
         blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
 
         //Check metrics, nothing produced
-        String metricPrefix = "nuxeo.streams.enrichment.test_images$simpleTest$test_images.out.";
+        String metricPrefix = "nuxeo.ai.enrichment.test_images$simpleTest$test_images.out.";
         MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
         Map<String, Gauge> gauges = registry.getGauges().entrySet().stream()
                                             .filter(e -> e.getKey().startsWith(metricPrefix))
