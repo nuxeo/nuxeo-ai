@@ -244,7 +244,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected long produced = 0;
 
         public EnrichmentMetrics(String name) {
-            super("nuxeo", "streams", "enrichment", name);
+            super("nuxeo", "ai", "enrichment", name);
             this.putGauge(() -> called, "called");
             this.putGauge(() -> success, "success");
             this.putGauge(() -> retries, "retries");
