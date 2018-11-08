@@ -71,44 +71,44 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     @Override
     public DetectLabelsResult detectLabels(ManagedBlob blob, int maxResults, float minConfidence) {
-        return detectWithClient(blob, (client, image) -> {
+        return detectWithClient(blob, (rekognitionClient, image) -> {
             DetectLabelsRequest detectLabelsRequest = new DetectLabelsRequest()
                     .withMaxLabels(maxResults)
                     .withMinConfidence(minConfidence)
                     .withImage(image);
-            return client.detectLabels(detectLabelsRequest);
+            return rekognitionClient.detectLabels(detectLabelsRequest);
         });
     }
 
     @Override
     public DetectTextResult detectText(ManagedBlob blob) {
-        return detectWithClient(blob, (client, image) -> {
+        return detectWithClient(blob, (rekognitionClient, image) -> {
             DetectTextRequest request = new DetectTextRequest().withImage(image);
-            return client.detectText(request);
+            return rekognitionClient.detectText(request);
         });
     }
 
     @Override
     public DetectFacesResult detectFaces(ManagedBlob blob, Attribute... attributes) {
-        return detectWithClient(blob, (client, image) -> {
+        return detectWithClient(blob, (rekognitionClient, image) -> {
             DetectFacesRequest request = new DetectFacesRequest().withImage(image).withAttributes(attributes);
-            return client.detectFaces(request);
+            return rekognitionClient.detectFaces(request);
         });
     }
 
     @Override
     public RecognizeCelebritiesResult detectCelebrityFaces(ManagedBlob blob) {
-        return detectWithClient(blob, (client, image) -> {
+        return detectWithClient(blob, (rekognitionClient, image) -> {
             RecognizeCelebritiesRequest request = new RecognizeCelebritiesRequest().withImage(image);
-            return client.recognizeCelebrities(request);
+            return rekognitionClient.recognizeCelebrities(request);
         });
     }
 
     @Override
     public DetectModerationLabelsResult detectUnsafeImages(ManagedBlob blob) {
-        return detectWithClient(blob, (client, image) -> {
+        return detectWithClient(blob, (rekognitionClient, image) -> {
             DetectModerationLabelsRequest request = new DetectModerationLabelsRequest().withImage(image);
-            return client.detectModerationLabels(request);
+            return rekognitionClient.detectModerationLabels(request);
         });
     }
 

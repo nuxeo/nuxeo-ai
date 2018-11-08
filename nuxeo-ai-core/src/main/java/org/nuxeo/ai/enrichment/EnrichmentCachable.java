@@ -16,18 +16,26 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.rekognition;
+package org.nuxeo.ai.enrichment;
 
-import org.nuxeo.ecm.core.blob.BlobProvider;
-import com.amazonaws.services.rekognition.model.Image;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
- * Provides useful rekognition
+ * Indicates the EnrichmentService is cachable
+ *
+ * @see EnrichmentService
  */
-public interface RekognitionHelper {
+public interface EnrichmentCachable {
 
-    /*
-     * Gets an image reference
+    /**
+     * Gets a String to use as a cache key
      */
-    Image getImage(BlobProvider blobProvider, String blobKey);
+    String getCacheKey(BlobTextFromDocument blobTextFromDoc);
+
+    /**
+     * How long an entry should live in the cache, in seconds.
+     */
+    default int getTimeToLive() {
+        return 60 * 60; //1 hour
+    }
 }
