@@ -5,7 +5,16 @@
            xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
            xmlns:ref="http://www.nuxeo.org/ecm/schemas/core/external-references/"
            targetNamespace="http://www.nuxeo.org/ai/model/schemas/ai_corpus">
-
+  <xs:complexType name="content">
+    <xs:sequence>
+      <xs:element name="encoding" type="xs:string"/>
+      <xs:element name="mime-type" type="xs:string"/>
+      <xs:element name="data" type="xs:base64Binary"/>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="length" type="xs:long"/>
+      <xs:element name="digest" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
   <xs:element name="query" type="xs:string"/>
   <xs:element name="job_id" type="xs:string"/>
   <xs:element name="split" type="xs:integer"/>
@@ -28,8 +37,8 @@
   </xs:complexType>
   <xs:element name="inputs" type="nxs:ai_corpus_featureListType"/>
   <xs:element name="outputs" type="nxs:ai_corpus_featureListType"/>
-  <xs:element name="training_data" type="xs:string"/>
-  <xs:element name="evaluation_data" type="xs:string"/>
+  <xs:element name="training_data" type="nxs:content"/>
+  <xs:element name="evaluation_data" type="nxs:content"/>
   <xs:complexType name="ai_corpus_features_histogramListType">
     <xs:sequence>
       <xs:element name="item" type="nxs:ai_corpus_features_histogramType" minOccurs="0" maxOccurs="unbounded"/>

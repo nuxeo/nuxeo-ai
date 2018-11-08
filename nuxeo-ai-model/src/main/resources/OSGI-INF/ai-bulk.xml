@@ -2,7 +2,7 @@
 <component name="org.nuxeo.ai.bulk.services" version="1.0">
 
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
-    <action name="bulkDatasetExport" bucketSize="100" batchSize="20" />
+    <action name="bulkDatasetExport" bucketSize="100" batchSize="20"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
@@ -11,12 +11,5 @@
       <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true" />
       <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true" />
     </streamProcessor>
-  </extension>
-
-  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
-    <listener name="dataSetExportDoneListener" async="true" postCommit="true"
-              class="org.nuxeo.ai.bulk.DataSetExportDoneListener">
-      <event>DATASET_EXPORT_DONE_EVENT</event>
-    </listener>
   </extension>
 </component>

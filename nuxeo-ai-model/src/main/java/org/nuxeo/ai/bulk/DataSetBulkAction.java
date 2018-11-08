@@ -19,6 +19,7 @@
 package org.nuxeo.ai.bulk;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 import static org.nuxeo.ai.AIConstants.EXPORT_FEATURES_PARAM;
@@ -26,6 +27,7 @@ import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.DONE_STREAM;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
@@ -70,6 +72,8 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
     public static final String EXPORT_STATUS_COMPUTATION = "exp-status-comp";
 
+    public static final String EXPORT_UPLOAD_COMPUTATION = "exp-upload-comp";
+
     /**
      * Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
      * validation RecordWriterBatchComputation. DataSetExportStatusComputation listen for the end
@@ -96,6 +100,9 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                                                                         new HashSet<>(asList(TRAINING_COMPUTATION, VALIDATION_COMPUTATION))),
                                asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
                                       OUTPUT_1 + ":" + STATUS_STREAM))
+
+                       .addComputation(() -> new DataSetUploadComputation(EXPORT_UPLOAD_COMPUTATION),
+                                       singletonList(INPUT_1 + ":" + DONE_STREAM))
                        .build();
     }
 

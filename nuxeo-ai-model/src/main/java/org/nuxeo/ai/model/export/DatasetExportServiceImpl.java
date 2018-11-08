@@ -36,6 +36,8 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -75,6 +77,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     protected static final Properties EMPTY_PROPS = new Properties();
 
+    private static final Log log = LogFactory.getLog(DatasetExportServiceImpl.class);
+
     /**
      * Make an Aggregate using AggregateFactory.
      */
@@ -103,12 +107,13 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         List<Map<String, String>> inputs = propsToTypedList(inputProperties);
         List<Map<String, String>> outputs = propsToTypedList(outputProperties);
-
+        List<Map<String, String>> featuresWithType = new ArrayList<>(inputs);
+        featuresWithType.addAll(outputs);
         DocumentModel corpus = createCorpus(session, nxql, inputs, outputs, split);
 
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, nxql)
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNxql(nxql, featuresWithType))
                 .repository(session.getRepositoryName())
                 .user(session.getPrincipal().getName())
                 .param(EXPORT_FEATURES_PARAM, String.join(",", featuresList))
@@ -146,6 +151,20 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         return session.createDocument(doc);
     }
 
+    @Override
+    public DocumentModel getCorpusDocument(CoreSession session, String id) {
+        List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
+                                                               CORPUS_TYPE,
+                                                               CORPUS_JOBID,
+                                                               id));
+        if (docs.size() == 1) {
+            return docs.get(0);
+        } else {
+            log.warn(String.format("Corpus document error, there should only be 1 document for %s", id));
+        }
+        return null;
+    }
+
     /**
      * Create the root folder if it doesn't exist
      */
@@ -172,7 +191,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         if (total < 1) {
             return emptyList();
         }
-        qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
+        qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresWithType)).limit(0);
         getValidStats(featuresWithType, total, stats, qb);
         return stats;
     }
@@ -186,17 +205,16 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
-                case TEXT_TYPE:
+                case IMAGE_TYPE:
+         //           qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
+                    break;
+                default:
+                    // Only 2 types at the moment, we would need numeric type in the future.
+                    // TEXT_TYPE
                     Properties termProps = new Properties();
                     termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_BUCKETS);
                     qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
                     qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
-                    break;
-                case IMAGE_TYPE:
-                    qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
-                    break;
-                default:
-                    // Only 2 types at the moment, we would need numeric type in the future.
             }
         }
 
@@ -233,12 +251,21 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     protected String contentProperty(String propName) {
-        return propName + ".digest";
+        return propName + "/length";
     }
 
-    protected String notNullNxql(String nxql, List<String> featuresList) {
+    protected String notNullNxql(String nxql, List<Map<String, String>> featuresWithType) {
         StringBuilder buffy = new StringBuilder(nxql);
-        featuresList.forEach(f -> buffy.append(" AND ").append(f).append(" IS NOT NULL"));
+        for (Map<String, String> prop : featuresWithType) {
+            String propName = prop.get(NAME_PROP);
+            switch (prop.get(TYPE_PROP)) {
+                case IMAGE_TYPE:
+                    buffy.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
+                    break;
+                default:
+                    buffy.append(" AND ").append(propName).append(" IS NOT NULL");
+            }
+        }
         return buffy.toString();
     }
 }
