@@ -22,6 +22,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.streams.Initializable;
@@ -33,10 +37,6 @@ import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Writes Record to a File
@@ -80,9 +80,8 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
         if (filename != null && isNotBlank(blobProviderName)) {
             File file = new File(filename);
             if (file.exists() && file.length() > 0) {
-                Blob theBlob = Blobs.createBlob(file);
                 BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blobProviderName);
-                String blobRef = provider.writeBlob(theBlob);
+                String blobRef = provider.writeBlob(createBlob(file));
                 Blob managedBlob = getBlobFromProvider(provider, blobRef);
                 if (managedBlob != null) {
                     return Optional.of(managedBlob);
@@ -90,6 +89,13 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Create a blob using the File, can be overridden by subclasses.
+     */
+    protected Blob createBlob(File file) throws IOException {
+        return Blobs.createBlob(file);
     }
 
     @Override

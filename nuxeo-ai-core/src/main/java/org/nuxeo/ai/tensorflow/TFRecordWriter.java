@@ -22,12 +22,20 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
-import com.google.protobuf.ByteString;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.tensorflow.ext.TensorflowWriter;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
@@ -37,19 +45,14 @@ import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import com.google.protobuf.ByteString;
 
 /**
  * Write TFRecords
  */
 public class TFRecordWriter extends AbstractRecordWriter {
+
+    public static final String TFRECORD_MIME_TYPE = "application/x-tensorflow-record";
 
     protected int imageWidth;
 
@@ -151,6 +154,11 @@ public class TFRecordWriter extends AbstractRecordWriter {
         }
         blobTextFromDoc.getProperties().forEach((k, v) -> features.putFeature(k, textFeature(v)));
         return features.build();
+    }
+
+    @Override
+    protected Blob createBlob(File file) throws IOException {
+        return Blobs.createBlob(file, TFRECORD_MIME_TYPE);
     }
 
     /**

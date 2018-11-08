@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.cloud.NuxeoClient.test" version="1.0">
+
+  <extension target="org.nuxeo.ai.cloud.NuxeoClient" point="config">
+    <config id="mockServer" url="http://localhost:5089">
+      <authentication token="20344556"/>
+    </config>
+  </extension>
+</component>

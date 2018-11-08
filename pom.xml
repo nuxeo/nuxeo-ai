@@ -14,7 +14,7 @@
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
   <properties>
-    <tensorflow.version>1.10.0</tensorflow.version>
+    <tensorflow.version>1.11.0</tensorflow.version>
   </properties>
   <modules>
     <module>nuxeo-ai-pipes</module>
