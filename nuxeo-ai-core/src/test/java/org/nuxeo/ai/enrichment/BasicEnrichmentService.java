@@ -18,19 +18,21 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
-public class BasicEnrichmentService extends AbstractEnrichmentService {
+public class BasicEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
 
     protected List<EnrichmentMetadata.Label> labels = new ArrayList<>();
+
     protected List<EnrichmentMetadata.Tag> tags = new ArrayList<>();
 
     @Override
@@ -41,19 +43,24 @@ public class BasicEnrichmentService extends AbstractEnrichmentService {
             String[] theLabels = labelsList.split(",");
             labels = Arrays.stream(theLabels).map(l -> new EnrichmentMetadata.Label(l, 0.8f))
                            .collect(Collectors.toList());
-            tags = Collections.singletonList(new EnrichmentMetadata.Tag(name, "/classification/custom", null, null, labels,0.75f));
+            tags = Collections
+                    .singletonList(new EnrichmentMetadata.Tag(name, "/classification/custom", null, null, labels, 0.75f));
         }
     }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return Collections.singletonList(
-                        new EnrichmentMetadata.Builder("/classification/custom",
-                                                       name,
-                                                       blobTextFromDoc)
-                                                       .withLabels(labels)
-                                                       .withTags(tags)
-                                                       .build());
+                new EnrichmentMetadata.Builder("/classification/custom",
+                                               name,
+                                               blobTextFromDoc)
+                        .withLabels(labels)
+                        .withTags(tags)
+                        .build());
+    }
 
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingBlobDigests(blobTextFromDoc, "basic");
     }
 }

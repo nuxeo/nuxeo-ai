@@ -19,6 +19,7 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import com.amazonaws.AmazonServiceException;
@@ -42,7 +43,7 @@ import net.jodah.failsafe.RetryPolicy;
 /**
  * Finds items in an image and labels them
  */
-public class LabelsEnrichmentService extends AbstractEnrichmentService {
+public class LabelsEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 
@@ -114,4 +115,8 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService {
                                                  .build());
     }
 
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
+    }
 }

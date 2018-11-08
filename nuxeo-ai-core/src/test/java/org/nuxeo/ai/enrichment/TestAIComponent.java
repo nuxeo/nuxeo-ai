@@ -30,7 +30,8 @@ import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 
-import com.google.inject.Inject;
+import java.util.NoSuchElementException;
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -46,8 +47,6 @@ import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import java.util.Collections;
-import java.util.NoSuchElementException;
 
 /**
  * Tests the overall AIComponent
@@ -74,7 +73,7 @@ public class TestAIComponent {
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
         EnrichingStreamProcessor.EnrichmentComputation computation
-                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", service, metrics);
+                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", service, metrics, false);
 
         computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.errors);
@@ -96,7 +95,7 @@ public class TestAIComponent {
         EnrichingStreamProcessor.EnrichmentComputation computation =
                 new EnrichingStreamProcessor.EnrichmentComputation(1, "test",
                                                                    new ErroringEnrichmentService(new NoSuchElementException(), 3, 3),
-                                                                   metrics);
+                                                                   metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
@@ -107,7 +106,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test2");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test2",
                                                                          new ErroringEnrichmentService(new NoSuchElementException(), 0, 0),
-                                                                         metrics);
+                                                                         metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
@@ -118,7 +117,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test3");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test3",
                                                                          new ErroringEnrichmentService(new NoSuchElementException(), 1, 0),
-                                                                         metrics);
+                                                                         metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.retries);
@@ -129,7 +128,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test4");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test4",
                                                                          new ErroringEnrichmentService(new NoSuchElementException(), 1, 1),
-                                                                         metrics);
+                                                                         metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
@@ -149,7 +148,7 @@ public class TestAIComponent {
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testErrors");
         EnrichingStreamProcessor.EnrichmentComputation computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste1",
                                                                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 2, 1),
-                                                                                                                        metrics);
+                                                                                                                        metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         computation.processRecord(testContext, null, record);
@@ -166,7 +165,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testCirc");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste2",
                                                                          new ErroringEnrichmentService(new NoSuchElementException(), 4, 2),
-                                                                         metrics);
+                                                                         metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         computation.processRecord(testContext, null, record);
@@ -185,7 +184,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testError");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste3",
                                                                          new ErroringEnrichmentService(new FatalEnrichmentError("Fatal"), 1, 1),
-                                                                         metrics);
+                                                                         metrics, false);
         computation.init(testContext);
         try {
             computation.processRecord(testContext, null, record);

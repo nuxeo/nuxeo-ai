@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingProperties;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
@@ -39,7 +40,7 @@ import java.util.Map;
 /**
  * An enrichment service using AWS Translate.
  */
-public class TranslateEnrichmentService extends AbstractEnrichmentService {
+public class TranslateEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
 
     public static final String SOURCE_LANGUAGE_CODE = "sourceLanguage";
 
@@ -100,6 +101,11 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService {
         }
 
         return builder.withSuggestions(suggestions).build();
+    }
+
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingProperties(blobTextFromDoc, name);
     }
 
     /**

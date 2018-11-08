@@ -21,25 +21,38 @@ package org.nuxeo.ai.enrichment;
 import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
+@Features({EnrichmentTestFeature.class, PlatformFeature.class})
 public class TestEnrichmentMetaData {
 
     final String repositoryName = "default";
+
+    @Inject
+    protected BlobManager blobManager;
 
     @Test
     public void testBuilder() {
@@ -72,7 +85,7 @@ public class TestEnrichmentMetaData {
                                                            0.65f))
                       .collect(Collectors.toList());
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
-        blobTextFromDoc.addProperty("dc:title" , "tbloby");
+        blobTextFromDoc.addProperty("dc:title", "tbloby");
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc)
                         .withLabels(labels)
@@ -88,5 +101,18 @@ public class TestEnrichmentMetaData {
         assertEquals(metadata, metadataBackAgain);
         assertNotNull(metadataBackAgain.toString());
 
+    }
+
+    @Test
+    public void testCacheKeys() throws IOException {
+        BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
+        assertNull(EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
+        blobTextFromDoc.getBlobs().get(FILE_CONTENT).setDigest("47XX");
+        assertEquals("testin47XX", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
+        ManagedBlob blob = blobTextFromDoc.getBlobs().get(FILE_CONTENT);
+        blobTextFromDoc.addBlob("TEST_AGAIN", new BlobMetaImpl(
+                blob.getProviderId(), blob.getMimeType(),
+                blob.getKey(), "58YY", blob.getEncoding(), blob.getLength()));
+        assertEquals("testin47XX_58YY", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
     }
 }
