@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.cloud.NuxeoClient" version="1.0">
+  <implementation class="org.nuxeo.ai.cloud.NuxeoCloudClient"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.cloud.CloudClient"/>
+  </service>
+
+  <extension-point name="config">
+    <documentation>
+    </documentation>
+    <object class="org.nuxeo.ai.cloud.CloudConfigDescriptor"/>
+  </extension-point>
+</component>

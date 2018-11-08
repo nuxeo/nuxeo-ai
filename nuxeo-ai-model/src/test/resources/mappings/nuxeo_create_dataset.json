@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/ai/mockServer"
+  },
+  "response": {
+    "status": 201,
+    "jsonBody": {"just":"ignored"},
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
