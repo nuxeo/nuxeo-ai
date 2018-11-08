@@ -19,6 +19,7 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
@@ -42,7 +43,7 @@ import java.util.stream.Collectors;
 /**
  * Detects faces in an image.
  */
-public class DetectFacesEnrichmentService extends AbstractEnrichmentService {
+public class DetectFacesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
 
     public static final String ATTRIBUTES_OPTION = "attribute";
 
@@ -184,4 +185,10 @@ public class DetectFacesEnrichmentService extends AbstractEnrichmentService {
 
         return labels;
     }
+
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
+    }
+
 }

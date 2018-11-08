@@ -19,6 +19,7 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
@@ -44,7 +45,7 @@ import java.util.stream.Stream;
 /**
  * Detects celebrity faces in an image
  */
-public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentService {
+public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
@@ -127,5 +128,10 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
             );
         }
         return null;
+    }
+
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
     }
 }

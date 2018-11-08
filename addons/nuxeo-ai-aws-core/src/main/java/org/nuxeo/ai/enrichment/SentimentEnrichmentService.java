@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingProperties;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import com.amazonaws.AmazonServiceException;
@@ -40,7 +41,7 @@ import net.jodah.failsafe.RetryPolicy;
 /**
  * An enrichment service for sentiment analysis
  */
-public class SentimentEnrichmentService extends AbstractEnrichmentService {
+public class SentimentEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
 
     public static final String LANGUAGE_CODE = "language";
 
@@ -133,4 +134,10 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService {
         return super.getRetryPolicy()
                     .abortOn(throwable -> throwable.getMessage().contains("is not authorized to perform"));
     }
+
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingProperties(blobTextFromDoc, name);
+    }
+
 }

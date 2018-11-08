@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public class EnrichmentHelper {
 
-    public static final Set<String> FATAL_ERRORS = new HashSet<>(Arrays.asList(
+    protected static final Set<String> FATAL_ERRORS = new HashSet<>(Arrays.asList(
             UnrecognizedClientException.class.getSimpleName(),
             AccessDeniedException.class.getSimpleName()));
 
