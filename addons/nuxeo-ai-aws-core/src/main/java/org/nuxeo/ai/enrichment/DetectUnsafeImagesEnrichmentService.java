@@ -19,6 +19,7 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import com.amazonaws.AmazonServiceException;
@@ -42,7 +43,7 @@ import net.jodah.failsafe.RetryPolicy;
 /**
  * Detect unsafe content in images.
  */
-public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentService {
+public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable  {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 
@@ -65,14 +66,7 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
         minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
-    }
-
-    @Override
-
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
 
         List<EnrichmentMetadata> enriched = new ArrayList<>();
@@ -88,6 +82,12 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
         } catch (AmazonServiceException e) {
             throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(SdkClientException.class);
     }
 
     /**
@@ -111,4 +111,8 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
                                                  .build());
     }
 
+    @Override
+    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
+        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
+    }
 }

@@ -59,6 +59,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
     public static final String ENRICHER_NAME = "enrichmentServiceName";
 
+    public static final String USE_CACHE = "cache";
+
     private static final Log log = LogFactory.getLog(EnrichingStreamProcessor.class);
 
     @Override
@@ -67,6 +69,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
         String enricher = options.get(ENRICHER_NAME);
+        boolean shouldCache = Boolean.parseBoolean(options.getOrDefault(USE_CACHE, "true"));
         AIComponent aiComponent = Framework.getService(AIComponent.class);
         EnrichmentService enrichmentService = aiComponent.getEnrichmentService(enricher);
         if (enrichmentService == null) {
@@ -76,13 +79,13 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         String computationName = buildName(enricher, streamIn, streamOut);
         EnrichmentMetrics metrics = registerMetrics(new EnrichmentMetrics(computationName), computationName);
         return Topology.builder()
-                       .addComputation(addComputation(computationName, enrichmentService, streams, metrics), streams)
+                       .addComputation(addComputation(computationName, enrichmentService, streams, metrics, shouldCache), streams)
                        .build();
     }
 
     public Supplier<Computation> addComputation(String name, EnrichmentService service,
-                                                List<String> streams, EnrichmentMetrics metrics) {
-        return () -> new EnrichmentComputation(streams.size() - 1, name, service, metrics);
+                                                List<String> streams, EnrichmentMetrics metrics, boolean useCache) {
+        return () -> new EnrichmentComputation(streams.size() - 1, name, service, metrics, useCache);
     }
 
     /**
@@ -92,6 +95,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected final EnrichmentMetrics metrics;
 
+        protected final boolean useCache;
+
         private final EnrichmentService service;
 
         private final EnrichmentSupport enrichmentSupport;
@@ -100,7 +105,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected CircuitBreaker circuitBreaker;
 
-        public EnrichmentComputation(int outputStreams, String name, EnrichmentService service, EnrichmentMetrics metrics) {
+        public EnrichmentComputation(int outputStreams, String name, EnrichmentService service,
+                                     EnrichmentMetrics metrics, boolean useCache) {
             super(name, 1, outputStreams);
             this.service = service;
             if (service instanceof EnrichmentSupport) {
@@ -109,6 +115,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 this.enrichmentSupport = null;
             }
             this.metrics = metrics;
+            this.useCache = useCache;
         }
 
         @Override
@@ -146,6 +153,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     // The error is logged by onFailedAttempt so just move on to the next record.
                 }
                 if (result != null) {
+                    if (useCache && service instanceof EnrichmentCachable) {
+                        EnrichmentCachable cachingService = (EnrichmentCachable) service;
+                        EnrichmentUtils.cachePut(cachingService.getCacheKey(blobTextFromDoc), result,
+                                                 cachingService.getTimeToLive());
+                    }
                     List<Record> results = result.stream().map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
                     writeToStreams(context, results);
@@ -191,6 +203,14 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * otherwise return null,
          */
         protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextFromDocument blobTextFromDoc) {
+            if (useCache && service instanceof EnrichmentCachable) {
+                String cacheKey = ((EnrichmentCachable) service).getCacheKey(blobTextFromDoc);
+                Collection<EnrichmentMetadata> metadata = EnrichmentUtils.cacheGet(cacheKey);
+                if (!metadata.isEmpty()) {
+                    metrics.cacheHit();
+                    return () -> EnrichmentUtils.copyEnrichmentMetadata(metadata, blobTextFromDoc);
+                }
+            }
             if (!blobTextFromDoc.getBlobs().isEmpty() && enrichmentSupport != null) {
                 for (ManagedBlob blob : blobTextFromDoc.getBlobs().values()) {
                     // Only checks if the first blob matches
@@ -243,6 +263,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected long produced = 0;
 
+        protected long cacheHit = 0;
+
         public EnrichmentMetrics(String name) {
             super("nuxeo", "ai", "enrichment", name);
             this.putGauge(() -> called, "called");
@@ -251,6 +273,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             this.putGauge(() -> errors, "errors");
             this.putGauge(() -> produced, "produced");
             this.putGauge(() -> unsupported, "unsupported");
+            this.putGauge(() -> cacheHit, "cacheHit");
         }
 
         /**
@@ -293,6 +316,13 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          */
         public void produced() {
             produced++;
+        }
+
+        /**
+         * Increment cacheHit
+         */
+        public void cacheHit() {
+            cacheHit++;
         }
     }
 }

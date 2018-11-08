@@ -18,8 +18,13 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
@@ -32,16 +37,21 @@ import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueService;
+import org.nuxeo.runtime.kv.KeyValueStore;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Helper methods for enrichment services
@@ -57,6 +67,12 @@ public class EnrichmentUtils {
     public static final String DEFAULT_CONVERSATION_FORMAT = "jpg";
 
     public static final String PICTURE_RESIZE_CONVERTER = "pictureResize";
+
+    public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
+
+    protected static final TypeReference<List<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE =
+            new TypeReference<List<EnrichmentMetadata>>() {
+            };
 
     private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
 
@@ -77,7 +93,36 @@ public class EnrichmentUtils {
      * Gets the digests of any blobs used by the BlobTextFromDocument.
      */
     public static Set<String> getDigests(BlobTextFromDocument blobtext) {
-      return blobtext.getBlobs().values().stream().map(Blob::getDigest).filter(Objects::nonNull).collect(Collectors.toSet());
+        return blobtext.getBlobs().values().stream().map(Blob::getDigest).filter(Objects::nonNull)
+                       .collect(Collectors.toSet());
+    }
+
+    /**
+     * Creates a key based on a concatenation of the digests of any blobs used by the BlobTextFromDocument.
+     */
+    public static String makeKeyUsingBlobDigests(BlobTextFromDocument blobTextFromDoc, String prefix) {
+        return makeKeyUsingStream(getDigests(blobTextFromDoc).stream(), prefix);
+    }
+
+    /**
+     * Creates a key based on a concatenation of the property value hash codes used by the BlobTextFromDocument.
+     */
+    public static String makeKeyUsingProperties(BlobTextFromDocument blobTextFromDoc, String prefix) {
+        return makeKeyUsingStream(blobTextFromDoc.getProperties().values()
+                                                 .stream()
+                                                 .map(s -> String.valueOf(s.hashCode())), prefix);
+    }
+
+    /**
+     * Creates a key based on a concatenation of stream of strings.
+     */
+    public static String makeKeyUsingStream(Stream<String> stream, String prefix) {
+        String key = stream.collect(Collectors.joining("_", prefix, ""));
+        if (!prefix.equals(key)) {
+            return key;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -125,6 +170,60 @@ public class EnrichmentUtils {
         parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, conversionFormat);
         return Framework.getService(ConversionService.class).convert(PICTURE_RESIZE_CONVERTER, bh, parameters)
                         .getBlob();
+    }
+
+    /**
+     * Get an entry from the enrichment cache
+     */
+    public static Collection<EnrichmentMetadata> cacheGet(String cacheKey) {
+        if (isNotBlank(cacheKey)) {
+            KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(ENRICHMENT_CACHE_KV);
+            byte[] result = kvStore.get(cacheKey);
+            if (result != null) {
+                try {
+                    return JacksonUtil.MAPPER.readValue(result, ENRICHMENT_LIST_TYPE);
+                } catch (IOException e) {
+                    log.warn(String.format("Failed to read metadata from cache for key %s", cacheKey), e);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Put an entry in the enrichment cache, specify the TTL in seconds.
+     */
+    public static void cachePut(String cacheKey, Collection<EnrichmentMetadata> metadata, long ttl) {
+        if (isNotBlank(cacheKey)) {
+            KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(ENRICHMENT_CACHE_KV);
+            try {
+                byte[] result = JacksonUtil.MAPPER.writeValueAsBytes(metadata);
+                if (result != null) {
+                    kvStore.put(cacheKey, result, ttl);
+                }
+            } catch (JsonProcessingException e) {
+                log.warn(String.format("Failed to serialize metadata to cache for key %s", cacheKey), e);
+            }
+        }
+    }
+
+    /**
+     * Copy all the supplied metadata but using the BlobTextFromDocument as the context.
+     */
+    public static Collection<EnrichmentMetadata> copyEnrichmentMetadata(Collection<EnrichmentMetadata> metadata,
+                                                                        BlobTextFromDocument blobTextFromDoc) {
+        return metadata
+                .stream()
+                .<EnrichmentMetadata>map(meta ->
+                                                 new EnrichmentMetadata.Builder(meta.created, meta.kind,
+                                                                                meta.serviceName, blobTextFromDoc)
+                                                         .withLabels(meta.getLabels())
+                                                         .withTags(meta.getTags())
+                                                         .withSuggestions(meta.getSuggestions())
+                                                         .withRawKey(meta.rawKey)
+                                                         .withDocumentProperties(meta.context.inputProperties)
+                                                         .withCreator(meta.creator).build())
+                .collect(Collectors.toList());
     }
 
     /**
