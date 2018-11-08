@@ -21,13 +21,11 @@ package org.nuxeo.ai.bulk;
 import static java.util.stream.Collectors.groupingBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.bulk.CollectingDataSetDoneListener.makeKey;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.VALIDATION_COMPUTATION;
-import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.DATASET_EXPORT_DONE_EVENT;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
@@ -45,7 +43,6 @@ import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.model.export.DatasetStatsOperation;
 import org.nuxeo.ai.model.export.DatasetStatsService;
 import org.nuxeo.ai.model.export.Statistic;
-import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -54,7 +51,6 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
@@ -69,7 +65,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import javax.inject.Inject;
-import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Arrays;
@@ -101,9 +96,6 @@ public class DatasetExportTest {
     protected EventService eventService;
 
     @Inject
-    protected PipelineService pipesService;
-
-    @Inject
     protected AutomationService automationService;
 
     @Inject
@@ -117,29 +109,27 @@ public class DatasetExportTest {
 
         DocumentModel testRoot = setupTestData();
 
-        Map<String, String> collector = new HashMap<>();
-        pipesService.addEventListener(DATASET_EXPORT_DONE_EVENT, true, new CollectingDataSetDoneListener(collector));
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
         String commandId = Framework.getService(DatasetExportService.class)
                                     .export(session, nxql,
                                             Arrays.asList("dc:title", "file:content"),
                                             Arrays.asList("dc:description"), 60);
+        txFeature.nextTransaction();
         assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
 
         BulkStatus status = service.getStatus(commandId);
         assertNotNull(status);
         assertEquals(COMPLETED, status.getState());
-        assertEquals(500, status.getProcessed());
-
-        eventService.waitForAsyncCompletion();
-        // We wait for the eventService to complete but still it sometimes fails, so I added a little extra time for
-        // the async listener to make sure its reliable.
-        Thread.sleep(100L);
-        assertEquals(2, collector.size());
-        int trainingCount = countBlobRecords(commandId, TRAINING_COMPUTATION, collector);
-        int validationCount = countBlobRecords(commandId, VALIDATION_COMPUTATION, collector);
-        assertTrue(trainingCount > validationCount);
         // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
+        assertEquals(450, status.getProcessed());
+
+        DocumentModel doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, "nonsense");
+        assertNull(doc);
+        doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, commandId);
+        assertNotNull(doc);
+        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_TRAINING_DATA), 3);
+        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_EVALUATION_DATA), 3);
+        assertTrue(trainingCount > validationCount);
         assertEquals(450, trainingCount + validationCount);
     }
 
@@ -188,8 +178,8 @@ public class DatasetExportTest {
                                                     .getStatistics(session, nxql,
                                                                    Arrays.asList("dc:title", "file:content"),
                                                                    Arrays.asList("dc:description", "dc:language"));
-        assertEquals("There should be 3 aggregates * 3 text fields + 2 agg content field + 2 totals = 13",
-                     13, statistics.size());
+        assertEquals("There should be 3 aggregates * 3 text fields + 1 agg content field + 2 totals = 12",
+                     12, statistics.size());
         Map<String, List<Statistic>> byType = statistics.stream().collect(groupingBy(Statistic::getType));
         Map<String, List<Statistic>> byField = statistics.stream().collect(groupingBy(Statistic::getField));
         assertEquals("There should be 3 aggregates + 2 total = 5", 5, byType.size());
@@ -207,7 +197,7 @@ public class DatasetExportTest {
                                       .filter(a -> "dc:language".equals(a.getField())).findFirst().get();
         assertEquals(250, missingLang.getNumericValue().intValue());
         Statistic missingContent = byType.get(AGG_MISSING).stream()
-                                         .filter(a -> "file:content.digest".equals(a.getField())).findFirst().get();
+                                         .filter(a -> "file:content.length".equals(a.getField())).findFirst().get();
         assertEquals(50, missingContent.getNumericValue().intValue());
 
     }
@@ -234,14 +224,7 @@ public class DatasetExportTest {
         chain.add(DatasetStatsOperation.ID).from(params);
         jsonBlob = (Blob) automationService.run(ctx, chain);
         jsonTree = MAPPER.readTree(jsonBlob.getString());
-        assertEquals("There should be 3 aggregates * 2 text fields + 2 agg content field + 2 totals = 10",
-                     10, jsonTree.size());
-    }
-
-    protected int countBlobRecords(String commandId, String actionData, Map<String, String> collector) throws IOException {
-        String blobRef = collector.get(makeKey(commandId, actionData));
-        Blob blob = getBlobFromProvider(Framework.getService(BlobManager.class).getBlobProvider("test"), blobRef);
-        assertNotNull(blob);
-        return countNumberOfExamples(blob, 3);
+        assertEquals("There should be 3 aggregates * 2 text fields + 1 agg content field + 2 totals = 9",
+                     9, jsonTree.size());
     }
 }
