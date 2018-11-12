@@ -22,19 +22,19 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.lib.stream.computation.AbstractBatchComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
-import org.nuxeo.lib.stream.computation.ComputationPolicy;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Writes records using a RecordWriter
@@ -42,8 +42,8 @@ import java.util.Map;
 public class RecordWriterBatchComputation extends AbstractBatchComputation {
     private static final Log log = LogFactory.getLog(RecordWriterBatchComputation.class);
 
-    public RecordWriterBatchComputation(String name, ComputationPolicy policy) {
-        super(name, 1, 1, policy);
+    public RecordWriterBatchComputation(String name) {
+        super(name, 1, 1);
     }
 
     @Override
