@@ -32,6 +32,13 @@ import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_3;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -42,18 +49,9 @@ import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
-import org.nuxeo.lib.stream.computation.ComputationPolicy;
-import org.nuxeo.lib.stream.computation.ComputationPolicyBuilder;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Bulk export data from Nuxeo to TFRecord Split the dataset in training and validation sets.
@@ -72,42 +70,12 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
     public static final String EXPORT_STATUS_COMPUTATION = "exp-status-comp";
 
-    public static final String BATCH_SIZE_OPT = "batchSize";
-
-    public static final String BATCH_THRESHOLD_MS_OPT = "batchThresholdMs";
-
-    public static final int DEFAULT_BATCH_SIZE = 10;
-
-    public static final int DEFAULT_BATCH_THRESHOLD_MS = 200;
-
     /**
      * Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
      * validation RecordWriterBatchComputation. DataSetExportStatusComputation listen for the end
      */
     @Override
     public Topology getTopology(Map<String, String> options) {
-        int trainingBatchSize = getOptionAsInteger(options, TRAINING_COMPUTATION + "_" + BATCH_SIZE_OPT,
-                                                   DEFAULT_BATCH_SIZE);
-        int trainingBatchTime = getOptionAsInteger(options, TRAINING_COMPUTATION + "_" + BATCH_THRESHOLD_MS_OPT,
-                                                   DEFAULT_BATCH_THRESHOLD_MS);
-        int validationBatchSize = getOptionAsInteger(options, VALIDATION_COMPUTATION + "_" + BATCH_SIZE_OPT,
-                                                     DEFAULT_BATCH_SIZE);
-        int validationBatchTime = getOptionAsInteger(options, VALIDATION_COMPUTATION + "_" + BATCH_THRESHOLD_MS_OPT,
-                                                     DEFAULT_BATCH_THRESHOLD_MS);
-
-        ComputationPolicy trainingPolicy =
-                new ComputationPolicyBuilder().batchPolicy(trainingBatchSize,
-                                                           Duration.ofMillis(trainingBatchTime))
-                                              .retryPolicy(ComputationPolicy.NO_RETRY)
-                                              .continueOnFailure(true)
-                                              .build();
-        ComputationPolicy validationPolicy =
-                new ComputationPolicyBuilder().batchPolicy(validationBatchSize,
-                                                           Duration.ofMillis(validationBatchTime))
-                                              .retryPolicy(ComputationPolicy.NO_RETRY)
-                                              .continueOnFailure(true)
-                                              .build();
-
         return Topology.builder()
                        .addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME),
                                        asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
@@ -115,11 +83,11 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                                               OUTPUT_2 + ":" + TRAINING_STREAM, //
                                               OUTPUT_3 + ":" + VALIDATION_STREAM))
 
-                       .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION, trainingPolicy),
+                       .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION),
                                        asList(INPUT_1 + ":" + TRAINING_STREAM, //
                                               OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
 
-                       .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION, validationPolicy),
+                       .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION),
                                        asList(INPUT_1 + ":" + VALIDATION_STREAM, //
                                               OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
 
@@ -129,11 +97,6 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                                asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
                                       OUTPUT_1 + ":" + STATUS_STREAM))
                        .build();
-    }
-
-    protected int getOptionAsInteger(Map<String, String> options, String option, int defaultValue) {
-        String value = options.get(option);
-        return value == null ? defaultValue : Integer.parseInt(value);
     }
 
     /**
