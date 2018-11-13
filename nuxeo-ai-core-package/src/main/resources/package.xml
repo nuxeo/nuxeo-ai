@@ -20,13 +20,13 @@
     <platform>server-@DISTRIB_VERSION@-HF*</platform>
   </platforms>
   <!-- Dependencies on other packages -->
-  <!-- <dependencies> -->
+  <dependencies>
   <!-- <package>another-package:1.0.0:1.0.0</package> -->
   <!-- If you require JSF UI package:  -->
   <!-- <package>nuxeo-jsf-ui</package> -->
   <!-- If you require WEB UI package:  -->
-  <!-- <package>nuxeo-web-ui</package> -->
-  <!-- </dependencies> -->
+    <package>nuxeo-web-ui</package>
+  </dependencies>
   <!-- Conflicts with other packages -->
   <!-- <conflicts> -->
   <!-- <package>a-conflicting-package:1.0.0:1.0.0</package> -->
@@ -38,5 +38,5 @@
   <license>Apache License, Version 2.0</license>
   <license-url>http://www.apache.org/licenses/LICENSE-2.0</license-url>
   <!-- Visibility: PRIVATE | MARKETPLACE | DEV | PUBLIC -->
-  <visibility>DEV</visibility>
+  <visibility>MARKETPLACE</visibility>
 </package>
