@@ -1,9 +1,9 @@
 ## Edit this file to customize your configuration ##
-#ai-aws.target=
+#nuxeo-ai-aws.target=
 
 # Set list of templates to include, comma separated values.
 nuxeo.template.includes=common
 
-# org.nuxeo.ecm.instance.description=Nuxeo ECM customized with ai-aws
+# org.nuxeo.ecm.instance.description=Nuxeo ECM customized with nuxeo-ai-aws
 nuxeo.enrichment.aws.images=false
 nuxeo.enrichment.aws.text=false
