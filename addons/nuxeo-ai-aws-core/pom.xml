@@ -18,6 +18,7 @@
       <groupId>org.nuxeo.runtime</groupId>
       <artifactId>nuxeo-runtime-aws</artifactId>
       <version>${nuxeo.distribution.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
