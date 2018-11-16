@@ -9,10 +9,10 @@ Currently provides the following enrichment services:
   * aws.faceDetection - Calls AWS Rekognition to detect faces in images
   * aws.celebrityDetection - Calls AWS Rekognition to detect celebrity faces in images
   * aws.translate.* - Calls AWS Translate to translate text
-  
+
 #### Credentials
-Credentials are discovered using `nuxeo-runtime-aws`. 
-The chain searches for credentials in order: Nuxeo's AWSConfigurationService, environment variables, system properties, profile credentials, EC2Container credentials. 
+Credentials are discovered using `nuxeo-runtime-aws`.
+The chain searches for credentials in order: Nuxeo's AWSConfigurationService, environment variables, system properties, profile credentials, EC2Container credentials.
 
 If you choose to use nuxeo.conf then the properties are:
 ```
@@ -22,30 +22,51 @@ nuxeo.aws.region=your_AWS_REGION
 ```
 
 If you are only using images and an S3 BinaryManager is already being used then it re-uses the image data to pass a reference instead of uploading the binary again.  
+## Installation
+#### Quick start
+1. Install the nuxeo-ai-aws package. `./bin/nuxeoctl mp-install nuxeo-ai-aws`
 
-#### Useful log config:
-```xml
-  <appender name="STREAMS" class="org.apache.log4j.FileAppender">
-    <errorHandler class="org.apache.log4j.helpers.OnlyOnceErrorHandler" />
-    <param name="File" value="${nuxeo.log.dir}/streams.log" />
-    <param name="Append" value="false" />
-    <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t][%c] %m%n" />
-    </layout>
-  </appender>
-  <category name="org.nuxeo.ai">
-    <priority value="DEBUG" />
-    <appender-ref ref="STREAMS" />
-  </category>
-  <category name="org.nuxeo.lib.stream">
-    <priority value="DEBUG" />
-    <appender-ref ref="STREAMS" />
-  </category>
-  <category name="org.nuxeo.runtime.stream">
-    <priority value="DEBUG" />
-    <appender-ref ref="STREAMS" />
-  </category>
+2. Add the following parameters to `nuxeo.conf`.
 ```
+nuxeo.ai.images.enabled=true
+nuxeo.ai.text.enabled=true
+nuxeo.enrichment.aws.images=true
+nuxeo.enrichment.aws.text=true
+nuxeo.enrichment.save.tags=true
+nuxeo.enrichment.save.facets=true
+nuxeo.enrichment.raiseEvent=true
+```
+3. Set your AWS credentials [AWS credentials](#credentials).
+3. Start Nuxeo and upload an image.
+4. Wait 10 seconds then look at the document tags and document json `enrichment:items` facet
+### Configuration Parameters
+You can set these in your `nuxeo.conf`.
+<div class="table-scroll">
+<table class="hover">
+<tbody>
+<tr>
+<th width="250" colspan="1">Parameter</th>
+<th colspan="1">Description</th>
+<th width="250" colspan="1">Default value</th>
+<th width="150" colspan="1">Since</th>
+</tr>
+<tr>
+<tr>
+<td colspan="1">`nuxeo.ai.images.enabled`</td>
+<td colspan="1">Run AWS enrichiment services on images.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.text.enabled`</td>
+<td colspan="1">Run AWS enrichiment services on text.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+
 # License
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
