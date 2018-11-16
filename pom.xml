@@ -22,15 +22,8 @@
     <module>nuxeo-ai-model</module>
     <module>nuxeo-ai-web-ui</module>
     <module>nuxeo-ai-core-package</module>
+    <module>addons</module>
   </modules>
-  <profiles>
-    <profile>
-      <id>qa</id>
-      <modules>
-        <module>addons</module>
-      </modules>
-    </profile>
-  </profiles>
   <repositories>
     <repository>
       <id>public</id>
