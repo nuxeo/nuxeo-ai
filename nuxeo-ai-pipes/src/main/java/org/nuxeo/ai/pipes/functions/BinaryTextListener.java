@@ -22,6 +22,7 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 
+import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,9 +38,6 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * Listens to the "binaryTextUpdated" event and schedules an async post-commit worker to create
@@ -66,6 +64,11 @@ public class BinaryTextListener implements EventListener {
         this.consumerName = consumerName;
         this.timeout = windowSizeSeconds;
         this.useWindow = timeout > 0;
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Creating a BinaryTextListener for %s property to a %s stream, " +
+                                            "window size is %s (in seconds)",
+                                    binaryProperty, consumerName, windowSizeSeconds));
+        }
     }
 
     @Override
