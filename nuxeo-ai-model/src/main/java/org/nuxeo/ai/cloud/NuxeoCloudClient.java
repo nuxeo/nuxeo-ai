@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jetbrains.annotations.NotNull;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.client.NuxeoClient;
@@ -100,6 +99,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         client = builder.connect();
         id = descriptor.getId();
         url = descriptor.url; //The client doesn't seem to export the URL to use
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Nuxeo Cloud Client %s is configured for %s ", id, url));
+        }
     }
 
     /**
