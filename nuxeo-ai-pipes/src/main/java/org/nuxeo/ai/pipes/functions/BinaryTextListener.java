@@ -23,6 +23,7 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.SYSTEM_PROPERTY_VALUE;
 
+import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,7 +37,6 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-import java.util.function.Consumer;
 
 /**
  * Listens to the "binaryTextUpdated" event and adds a BlobTextFromDocument containing the binary text to a stream.
@@ -62,6 +62,11 @@ public class BinaryTextListener implements EventListener {
         this.consumerName = consumerName;
         this.timeout = windowSizeSeconds;
         this.useWindow = timeout > 0;
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Creating a BinaryTextListener for %s property to a %s stream, " +
+                                            "window size is %s (in seconds)",
+                                    binaryProperty, consumerName, windowSizeSeconds));
+        }
     }
 
     @Override
@@ -92,13 +97,13 @@ public class BinaryTextListener implements EventListener {
      * Handles the binary text
      */
     protected void handleBinaryText(DocumentModel doc, EventContext context) {
-        if (log.isDebugEnabled()) {
-            log.debug("Handling new binary text for doc " + doc.getId());
-        }
         Consumer<Record> consumer = Framework.getService(PipelineService.class).getConsumer(consumerName);
         if (consumer != null) {
             String text = (String) context.getProperty(SYSTEM_PROPERTY_VALUE);
             if (StringUtils.isNotBlank(text)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Handling new binary text for doc " + doc.getId());
+                }
                 BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
                 blobTextFromDoc.addProperty(binaryProperty, text);
                 consumer.accept(toRecord(blobTextFromDoc.getKey(), blobTextFromDoc));
