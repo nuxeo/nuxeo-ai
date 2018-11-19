@@ -22,6 +22,11 @@ import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.PICTURE_RESIZE_CONVERTER;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,11 +49,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Provides one or more services using AI
@@ -94,6 +94,7 @@ public class AIComponent extends DefaultComponent {
         recordWriterDescriptors.forEach(
                 descriptor -> descriptor.getNames().forEach(n -> writers.put(n, descriptor.getWriter(n))));
         if (log.isDebugEnabled()) {
+            writers.entrySet().forEach(e -> log.debug("Adding a record writer: " + e.toString()));
             log.debug("AIComponent has started.");
         }
 
@@ -174,6 +175,9 @@ public class AIComponent extends DefaultComponent {
      */
     public void addEnrichmentService(String serviceName, EnrichmentService service) {
         enrichmentServices.put(serviceName, service);
+        if (log.isDebugEnabled()) {
+            log.debug("Adding enrichment service " + serviceName);
+        }
     }
 
     /**

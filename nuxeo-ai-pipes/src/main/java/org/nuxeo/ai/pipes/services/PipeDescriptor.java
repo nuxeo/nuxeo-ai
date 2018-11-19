@@ -25,16 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-
 import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.common.xmap.annotation.XNode;
-import org.nuxeo.common.xmap.annotation.XNodeList;
-import org.nuxeo.common.xmap.annotation.XNodeMap;
-import org.nuxeo.common.xmap.annotation.XObject;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.stream.LogConfigDescriptor;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.pipes.filters.DirtyPropertyFilter;
 import org.nuxeo.ai.pipes.filters.DocumentEventFilter;
 import org.nuxeo.ai.pipes.filters.Filter;
@@ -43,6 +35,14 @@ import org.nuxeo.ai.pipes.filters.Filter.EventFilter;
 import org.nuxeo.ai.pipes.functions.PreFilterFunction;
 import org.nuxeo.ai.pipes.functions.PropertiesToStream;
 import org.nuxeo.ai.pipes.streams.Initializable;
+import org.nuxeo.common.xmap.annotation.XNode;
+import org.nuxeo.common.xmap.annotation.XNodeList;
+import org.nuxeo.common.xmap.annotation.XNodeMap;
+import org.nuxeo.common.xmap.annotation.XObject;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.runtime.stream.LogConfigDescriptor;
 
 @XObject("pipe")
 public class PipeDescriptor {
@@ -51,15 +51,19 @@ public class PipeDescriptor {
 
     @XNode("@id")
     public String id;
+
     @XNode("@enabled")
     protected boolean enabled = true;
+
     @XNode("@async")
     protected Boolean isAsync = true;
 
     @XNode("supplier")
     protected Supplier supplier;
+
     @XNode("consumer")
     protected Consumer consumer;
+
     @XNode("transformer")
     protected TransformingFunction transformer;
 
@@ -186,6 +190,11 @@ public class PipeDescriptor {
 
         @XNodeList(value = "filter", type = ArrayList.class, componentType = PipeFilter.class)
         public List<PipeFilter> filters = new ArrayList<>(0);
+
+        @Override
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this);
+        }
     }
 
     @XObject("filter")
@@ -193,8 +202,14 @@ public class PipeDescriptor {
 
         @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
         public Map<String, String> options = new HashMap<>();
+
         @XNode("@class")
         protected Class<? extends EventFilter> clazz;
+
+        @Override
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this);
+        }
     }
 
     @XObject("consumer")
