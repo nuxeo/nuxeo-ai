@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,6 +50,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
 public class AIComponent extends DefaultComponent {
 
     public static final String ENRICHMENT_XP = "enrichment";
+
     private static final Log log = LogFactory.getLog(AIComponent.class);
 
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
@@ -140,11 +140,15 @@ public class AIComponent extends DefaultComponent {
 
     /**
      * Add an enrichment service
+     *
      * @param serviceName the name of the service
      * @return service, the implementation of EnrichmentService
      */
     public void addEnrichmentService(String serviceName, EnrichmentService service) {
         enrichmentServices.put(serviceName, service);
+        if (log.isDebugEnabled()) {
+            log.debug("Adding enrichment service " + serviceName);
+        }
     }
 
     /**
