@@ -20,6 +20,7 @@ package org.nuxeo.ai;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
@@ -50,9 +51,9 @@ public class TestTranslateService {
 
         AWS.assumeCredentials();
 
-        assertTranslation("aws.translate.en_es", "I am very disappointed", "Estoy muy decepcionado.");
+        assertTranslation("aws.translate.en_es", "I am very disappointed", "Estoy muy decepcionado");
         assertTranslation("aws.translate.en_pt", "I am very happy", "Estou muito feliz.");
-        assertTranslation("aws.translate.en_fr", "I am very happy", "Je suis très heureux.");
+        assertTranslation("aws.translate.en_fr", "I am very happy", "Je suis très heureux");
         try {
             assertTranslation("aws.translate.pt_unknown", "hoje faz bom tempo", "");
             fail();
@@ -73,6 +74,6 @@ public class TestTranslateService {
         EnrichmentMetadata result = metadataCollection.iterator().next();
         assertEquals(0, result.getLabels().size());
         assertEquals(1, result.getSuggestions().size());
-        assertEquals(translatedText, result.getSuggestions().get(0).getValues().get(0).getName());
+        assertTrue(result.getSuggestions().get(0).getValues().get(0).getName().contains(translatedText));
     }
 }
