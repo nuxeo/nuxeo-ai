@@ -84,12 +84,12 @@ public class TestRekognitionService {
     @Test
     public void testFaceDetectionService() throws IOException {
         AWS.assumeCredentials();
-        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
         EnrichmentService service = aiComponent.getEnrichmentService("aws.faceDetection");
         assertNotNull(service);
         List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        assertTrue(metadataCollection.get(0).getTags().size() >= 3);
+        assertTrue(metadataCollection.get(0).getTags().size() >= 1);
         assertTrue(metadataCollection.get(0).getTags().get(0).features.size() >= 2);
     }
 
