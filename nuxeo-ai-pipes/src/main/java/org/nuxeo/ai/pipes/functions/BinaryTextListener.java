@@ -38,6 +38,8 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Listens to the "binaryTextUpdated" event and schedules an async post-commit worker to create
