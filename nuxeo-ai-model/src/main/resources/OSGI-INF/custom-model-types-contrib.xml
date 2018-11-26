@@ -26,7 +26,7 @@
     </doctype>
   </extension>
   <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
-    <directory name="InputOutputDataType" extends="template-vocabulary">
+    <directory name="aidatatypes" extends="template-vocabulary">
       <dataFile>data/vocabularies/InputOutputDataType.csv</dataFile>
     </directory>
   </extension>
