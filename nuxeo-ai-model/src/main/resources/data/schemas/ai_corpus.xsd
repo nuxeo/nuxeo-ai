@@ -30,7 +30,7 @@
       <xs:element name="type" nillable="false" nxsv:nillable="false">
         <xs:simpleType>
           <xs:restriction base="xs:string" ref:resolver="directoryResolver"
-                          ref:directory="InputOutputDataType"/>
+                          ref:directory="aidatatypes"/>
         </xs:simpleType>
       </xs:element>
     </xs:sequence>
