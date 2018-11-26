@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  */
 public class ModelServingServiceImpl extends DefaultComponent implements ModelServingService {
 
-    public static final String AI_INPUT_OUTPUT_TYPES_DIRECTORY = "InputOutputDataType";
+    public static final String AI_DATATYPES = "aidatatypes";
 
     private static final String MODELS_AP = "models";
 
@@ -81,7 +81,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
         if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
             throw new IllegalArgumentException(String.format("The input types %s for service %s must be defined in the %s vocabulary",
-                                                             descriptor.getInputs(), descriptor.id, AI_INPUT_OUTPUT_TYPES_DIRECTORY));
+                                                             descriptor.getInputs(), descriptor.id, AI_DATATYPES));
         }
 
         RuntimeModel model = descriptor.getModel();
@@ -145,7 +145,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                     (DirectoryEntryResolver) Framework.getService(ObjectResolverService.class)
                                                       .getResolver(DirectoryEntryResolver.NAME,
                                                                    singletonMap(DirectoryEntryResolver.PARAM_DIRECTORY,
-                                                                                AI_INPUT_OUTPUT_TYPES_DIRECTORY));
+                                                                                AI_DATATYPES));
         }
         return inputTypesResolver;
     }

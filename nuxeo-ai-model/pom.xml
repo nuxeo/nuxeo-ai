@@ -72,13 +72,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.ai</groupId>
-      <artifactId>nuxeo-ai-core</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.nuxeo.elasticsearch</groupId>
       <artifactId>nuxeo-elasticsearch-core</artifactId>
       <version>${nuxeo.distribution.version}</version>
