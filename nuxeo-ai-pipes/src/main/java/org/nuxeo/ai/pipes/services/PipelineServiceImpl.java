@@ -19,6 +19,7 @@
 package org.nuxeo.ai.pipes.services;
 
 import static org.nuxeo.ai.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.RECORD_CODEC;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,9 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
+import org.nuxeo.ai.pipes.events.DirtyEventListener;
+import org.nuxeo.ai.pipes.events.DynamicEventListenerDescriptor;
+import org.nuxeo.ai.pipes.events.EventConsumer;
+import org.nuxeo.ai.pipes.functions.BinaryTextListener;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.EventService;
@@ -38,6 +43,7 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.codec.CodecService;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.model.ComponentContext;
@@ -45,12 +51,6 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
 import org.nuxeo.runtime.stream.StreamService;
-import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
-import org.nuxeo.ai.pipes.events.DirtyEventListener;
-import org.nuxeo.ai.pipes.events.DynamicEventListenerDescriptor;
-import org.nuxeo.ai.pipes.events.EventConsumer;
-import org.nuxeo.ai.pipes.functions.BinaryTextListener;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 
@@ -200,7 +200,10 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     protected LogAppenderConsumer addLogConsumer(String logName, int size) {
         LogManager manager = Framework.getService(StreamService.class).getLogManager(pipeConfigName);
         manager.createIfNotExists(logName, size);
-        CloseableLogAppender<Record> appender = (CloseableLogAppender) manager.getAppender(logName);
+        CloseableLogAppender<Record> appender =
+                (CloseableLogAppender) manager.getAppender(logName,
+                                                           Framework.getService(CodecService.class)
+                                                                    .getCodec(RECORD_CODEC, Record.class));
         LogAppenderConsumer consumer = new LogAppenderConsumer(appender);
         logAppenderConsumers.put(logName, consumer);
         return consumer;
