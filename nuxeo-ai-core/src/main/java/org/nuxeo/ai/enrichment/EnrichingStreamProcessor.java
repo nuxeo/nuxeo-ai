@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.STREAM_IN;
@@ -26,6 +27,11 @@ import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.registerMetrics;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -33,19 +39,12 @@ import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
-import org.nuxeo.lib.stream.computation.Computation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.CircuitBreakerOpenException;
@@ -68,24 +67,17 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         String streamIn = options.get(STREAM_IN);
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
-        String enricher = options.get(ENRICHER_NAME);
         boolean shouldCache = Boolean.parseBoolean(options.getOrDefault(USE_CACHE, "true"));
-        AIComponent aiComponent = Framework.getService(AIComponent.class);
-        EnrichmentService enrichmentService = aiComponent.getEnrichmentService(enricher);
-        if (enrichmentService == null) {
-            log.error(String.format("Invalid enricher name %s", enricher));
-            throw new IllegalArgumentException("Unknown enrichment service " + enricher);
+        String enricherName = options.get(ENRICHER_NAME);
+        if (isBlank(enricherName)) {
+            throw new IllegalArgumentException("Please specify valid config for " + ENRICHER_NAME);
         }
-        String computationName = buildName(enricher, streamIn, streamOut);
+        String computationName = buildName(enricherName, streamIn, streamOut);
         EnrichmentMetrics metrics = registerMetrics(new EnrichmentMetrics(computationName), computationName);
         return Topology.builder()
-                       .addComputation(addComputation(computationName, enrichmentService, streams, metrics, shouldCache), streams)
+                       .addComputation(() -> new EnrichmentComputation(streams.size() - 1, computationName,
+                                                                       enricherName, metrics, shouldCache), streams)
                        .build();
-    }
-
-    public Supplier<Computation> addComputation(String name, EnrichmentService service,
-                                                List<String> streams, EnrichmentMetrics metrics, boolean useCache) {
-        return () -> new EnrichmentComputation(streams.size() - 1, name, service, metrics, useCache);
     }
 
     /**
@@ -97,23 +89,20 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected final boolean useCache;
 
-        private final EnrichmentService service;
+        protected final String enricherName;
 
-        private final EnrichmentSupport enrichmentSupport;
+        protected EnrichmentService service;
+
+        protected EnrichmentSupport enrichmentSupport;
 
         protected RetryPolicy retryPolicy;
 
         protected CircuitBreaker circuitBreaker;
 
-        public EnrichmentComputation(int outputStreams, String name, EnrichmentService service,
+        public EnrichmentComputation(int outputStreams, String computationName, String enricherName,
                                      EnrichmentMetrics metrics, boolean useCache) {
-            super(name, 1, outputStreams);
-            this.service = service;
-            if (service instanceof EnrichmentSupport) {
-                this.enrichmentSupport = (EnrichmentSupport) service;
-            } else {
-                this.enrichmentSupport = null;
-            }
+            super(computationName, 1, outputStreams);
+            this.enricherName = enricherName;
             this.metrics = metrics;
             this.useCache = useCache;
         }
@@ -121,6 +110,18 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         @Override
         public void init(ComputationContext context) {
             log.debug(String.format("Starting enrichment computation for %s", metadata.name()));
+            EnrichmentService enrichmentService =
+                    Framework.getService(AIComponent.class).getEnrichmentService(enricherName);
+            if (enrichmentService == null) {
+                log.error(String.format("Invalid enricher name %s", enricherName));
+                throw new IllegalArgumentException("Unknown enrichment service " + enricherName);
+            }
+            this.service = enrichmentService;
+            if (service instanceof EnrichmentSupport) {
+                this.enrichmentSupport = (EnrichmentSupport) service;
+            } else {
+                this.enrichmentSupport = null;
+            }
             this.retryPolicy = service.getRetryPolicy();
             this.circuitBreaker = service.getCircuitBreaker();
         }
@@ -136,7 +137,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             if (callable != null) {
                 metrics.called();
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Calling %s for doc %s", service.getName(), blobTextFromDoc.getId()));
+                    log.debug(String.format("Calling %s for doc %s", enricherName, blobTextFromDoc.getId()));
                 }
                 Collection<EnrichmentMetadata> result = null;
                 try {
@@ -145,7 +146,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     // The circuit break is open, throw NuxeoException so it doesn't continue processing.
                     throw new NuxeoException(
                             String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
-                                          service.getName()));
+                                          enricherName));
                 } catch (FatalEnrichmentError fee) {
                     //Fatal error so throw it to stop processing
                     throw fee;
@@ -165,7 +166,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             } else {
                 metrics.unsupported();
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Unsupported call to %s for doc %s", service.getName(), blobTextFromDoc
+                    log.debug(String.format("Unsupported call to %s for doc %s", enricherName, blobTextFromDoc
                             .getId()));
                 }
             }
@@ -186,7 +187,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                            .onFailedAttempt(failure -> {
                                metrics.error();
                                log.warn(String.format("Enrichment error (%s) for record: %s ",
-                                                      service.getName(), record), failure);
+                                                      enricherName, record), failure);
                            })
                            .onRetry(c -> {
                                metrics.retry();

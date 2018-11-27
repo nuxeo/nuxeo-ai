@@ -30,7 +30,6 @@ import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 
-import java.util.NoSuchElementException;
 import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,8 +72,8 @@ public class TestAIComponent {
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
         EnrichingStreamProcessor.EnrichmentComputation computation
-                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", service, metrics, false);
-
+                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", "e1", metrics, false);
+        computation.init(testContext);
         computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.errors);
         assertEquals(0, metrics.called);
@@ -86,6 +85,7 @@ public class TestAIComponent {
     }
 
     @Test
+    @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/erroring-enrichment-test.xml"})
     public void testEnrichingStreamProcessor() {
 
         ComputationContext testContext = setupComputationContext();
@@ -93,8 +93,7 @@ public class TestAIComponent {
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test");
         EnrichingStreamProcessor.EnrichmentComputation computation =
-                new EnrichingStreamProcessor.EnrichmentComputation(1, "test",
-                                                                   new ErroringEnrichmentService(new NoSuchElementException(), 3, 3),
+                new EnrichingStreamProcessor.EnrichmentComputation(1, "test", "error1",
                                                                    metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
@@ -104,8 +103,7 @@ public class TestAIComponent {
         assertEquals(1, metrics.success);
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test2");
-        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test2",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 0, 0),
+        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test2", "error2",
                                                                          metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
@@ -115,8 +113,7 @@ public class TestAIComponent {
         assertEquals(1, metrics.success);
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test3");
-        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test3",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 1, 0),
+        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test3", "error3",
                                                                          metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
@@ -126,8 +123,7 @@ public class TestAIComponent {
         assertEquals(1, metrics.errors);
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test4");
-        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test4",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 1, 1),
+        computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test4", "error4",
                                                                          metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
@@ -140,6 +136,7 @@ public class TestAIComponent {
 
 
     @Test
+    @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/erroring-enrichment-test.xml"})
     public void testCircuitBreakerAndRetries() {
 
         ComputationContext testContext = setupComputationContext();
@@ -147,7 +144,7 @@ public class TestAIComponent {
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testErrors");
         EnrichingStreamProcessor.EnrichmentComputation computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste1",
-                                                                                                                        new ErroringEnrichmentService(new NoSuchElementException(), 2, 1),
+                                                                                                                        "circ1",
                                                                                                                         metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
@@ -164,7 +161,7 @@ public class TestAIComponent {
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testCirc");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste2",
-                                                                         new ErroringEnrichmentService(new NoSuchElementException(), 4, 2),
+                                                                         "circ2",
                                                                          metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
@@ -183,14 +180,14 @@ public class TestAIComponent {
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testError");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste3",
-                                                                         new ErroringEnrichmentService(new FatalEnrichmentError("Fatal"), 1, 1),
+                                                                         "circ3",
                                                                          metrics, false);
         computation.init(testContext);
         try {
             computation.processRecord(testContext, null, record);
             fail();
         } catch (NuxeoException e) {
-            assertTrue(e.getMessage().contains("Fatal"));
+            assertEquals("FatalEnrichmentError", e.getClass().getSimpleName());
         }
         assertEquals(0, metrics.retries);
         assertEquals(1, metrics.errors);
@@ -261,6 +258,17 @@ public class TestAIComponent {
         assertNotNull(service);
 
         assertNull(aiComponent.getEnrichmentService("IDONTEXIST"));
+
+        EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("badMetrics");
+        EnrichingStreamProcessor.EnrichmentComputation computation
+                = new EnrichingStreamProcessor.EnrichmentComputation(1, "b1", "IDONTEXIST", metrics, false);
+        try {
+            computation.init(null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Unknown enrichment service IDONTEXIST"));
+        }
+
     }
 
 }
