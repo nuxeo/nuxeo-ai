@@ -18,10 +18,11 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
-
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.NuxeoException;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -31,8 +32,11 @@ import net.jodah.failsafe.RetryPolicy;
 public class ErroringEnrichmentService extends AbstractEnrichmentService {
 
     private RuntimeException exception;
+
     private int numFailures = 1;
+
     private int numRetries = 0;
+
     private int attempts = 0;
 
     public ErroringEnrichmentService() {
@@ -45,6 +49,23 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
         this.numRetries = numRetries;
         this.maxSize = EnrichmentDescriptor.DEFAULT_MAX_SIZE;
         this.name = "EnRich1";
+    }
+
+    @Override
+    public void init(EnrichmentDescriptor descriptor) {
+        super.init(descriptor);
+        this.numFailures = Integer.parseInt(descriptor.options.get("failures"));
+        this.numRetries = Integer.parseInt(descriptor.options.get("retries"));
+        try {
+            String exceptionClass = descriptor.options.get("exception");
+            exception = (RuntimeException)
+                    Class.forName(exceptionClass).getDeclaredConstructor(String.class)
+                         .newInstance(String.format("Deliberate Enrichment error for %s, retries %s. failures %s.",
+                                                    descriptor.name, numFailures, numRetries));
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException
+                | ClassNotFoundException | NoSuchMethodException e) {
+            throw new NuxeoException("Failed to configure ErroringEnrichmentService", e);
+        }
     }
 
     @Override
