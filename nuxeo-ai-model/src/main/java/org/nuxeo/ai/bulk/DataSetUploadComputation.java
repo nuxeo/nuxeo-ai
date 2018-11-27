@@ -54,7 +54,7 @@ public class DataSetUploadComputation extends AbstractComputation {
         BulkStatus status = BulkCodecs.getStatusCodec().decode(record.getData());
         if (EXPORT_ACTION_NAME.equals(status.getAction())
                 && BulkStatus.State.COMPLETED.equals(status.getState())) {
-            BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getCommandId());
+            BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
             if (cmd != null) {
                 TransactionHelper.runInTransaction(
                         () -> {
@@ -76,8 +76,7 @@ public class DataSetUploadComputation extends AbstractComputation {
                 );
             } else {
                 log.warn(String.format(
-                        "The bulk command with id %s is missing.  Unable to upload a dataset.",
-                        status.getCommandId()));
+                        "The bulk command with id %s is missing.  Unable to upload a dataset.", status.getId()));
             }
 
         }
