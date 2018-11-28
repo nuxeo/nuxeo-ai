@@ -50,6 +50,7 @@ import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
@@ -160,7 +161,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
         }
 
         @Override
-        public void endBucket(ComputationContext context, int bucketSize) {
+        public void endBucket(ComputationContext context, BulkStatus delta) {
             if (discarded > 0) {
                 updateExportStatusProcessed(context, command.getId(), discarded);
                 discarded = 0;

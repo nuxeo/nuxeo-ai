@@ -23,7 +23,7 @@ import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
-import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatusProcessed;
+import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatus;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -114,7 +114,9 @@ public class DataSetExportStatusComputation extends AbstractComputation {
             counters.remove(exportStatus.getCommandId());
         }
         updateDelta(exportStatus.getCommandId(), exportStatus.getProcessed());
-        updateStatusProcessed(context, exportStatus.getCommandId(), exportStatus.getProcessed());
+        BulkStatus status = BulkStatus.deltaOf(exportStatus.getCommandId());
+        status.setProcessed(exportStatus.getProcessed());
+        updateStatus(context, status);
         context.askForCheckpoint();
     }
 
