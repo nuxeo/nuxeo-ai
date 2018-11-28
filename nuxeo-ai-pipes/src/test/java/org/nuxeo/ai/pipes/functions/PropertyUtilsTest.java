@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.nuxeo.ai.pipes.events.EventPipesTest.TEST_MIME_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
@@ -49,8 +50,6 @@ import com.google.inject.Inject;
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
 public class PropertyUtilsTest {
-
-    public static final String FILE_CONTENT = "file:content";
 
     @Inject
     protected CoreSession session;

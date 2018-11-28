@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.pipes.events;
 
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 
@@ -48,7 +49,7 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextFrom
 
     public static final String CUSTOM_PROPERTIES = "customProperties";
 
-    protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList("file:content");
+    protected static final List<String> DEFAULT_BLOB_PROPERTIES = Collections.singletonList(FILE_CONTENT);
 
     private static final Log log = LogFactory.getLog(DocEventToStream.class);
 

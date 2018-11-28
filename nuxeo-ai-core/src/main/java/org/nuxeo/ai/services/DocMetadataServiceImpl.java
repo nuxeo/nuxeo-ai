@@ -155,6 +155,9 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             if (StringUtils.isNotBlank(metadata.getCreator())) {
                 anEntry.put(AI_CREATOR_PROPERTY, metadata.getCreator());
             }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, labels));
+            }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("No labels for %s so not saving any enrichment data",
