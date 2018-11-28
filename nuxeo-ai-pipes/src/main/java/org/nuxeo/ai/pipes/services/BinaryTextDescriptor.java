@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.pipes.services;
 
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.BINARYTEXT_UPDATED;
 
@@ -32,6 +33,9 @@ public class BinaryTextDescriptor {
 
     @XNode("@propertyName")
     public String propertyName = BINARY_TEXT_SYS_PROP;
+
+    @XNode("@inputPropertyName")
+    public String inputPropertyName = FILE_CONTENT;
 
     /**
      * Size in Seconds

@@ -100,7 +100,8 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         this.configs.forEach((key, value) -> addPipe(value));
         this.textConfigs.forEach(d ->
                                  d.consumer.streams.forEach(s ->
-                                     addBinaryTextListener(d.eventName, s.name, s.size, d.propertyName, d.windowSize)
+                                     addBinaryTextListener(d.eventName, s.name, s.size,
+                                                           d.propertyName, d.inputPropertyName, d.windowSize)
                                  )
         );
     }
@@ -157,9 +158,10 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
      * Adds a listener for binary text and send the result to the specified log
      */
     @Override
-    public void addBinaryTextListener(String eventName, String logName, int partitions, String propertyName, int windowSizeSeconds) {
+    public void addBinaryTextListener(String eventName, String logName, int partitions, String propertyName,
+                                      String inputProperty, int windowSizeSeconds) {
         addLogConsumer(logName, partitions);
-        BinaryTextListener textListener = new BinaryTextListener(logName, propertyName, windowSizeSeconds);
+        BinaryTextListener textListener = new BinaryTextListener(logName, propertyName, inputProperty, windowSizeSeconds);
         addEventListener(eventName, false, textListener);
     }
 
