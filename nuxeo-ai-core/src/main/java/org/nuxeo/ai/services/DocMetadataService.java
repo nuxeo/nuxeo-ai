@@ -18,7 +18,10 @@
  */
 package org.nuxeo.ai.services;
 
+import java.util.List;
+import java.util.Set;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
@@ -31,4 +34,9 @@ public interface DocMetadataService {
      * Saves the enrichment metadata on a document and returns the DocumentModel.
      */
     DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata);
+
+    /**
+     * Produce a list of labels from the provided tags
+     */
+    Set<String> getTagLabels(List<AIMetadata.Tag> tags);
 }

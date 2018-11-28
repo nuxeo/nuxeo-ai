@@ -139,9 +139,9 @@ public class TestConfiguredStreamProcessors {
         assertEquals("The event listener must have set the title",
                      "George Paul", title);
 
-        //Confirm 2 tags were added
+        //Confirm 5 tags were added
         Set<String> tags = tagService.getTags(session, docId);
-        assertEquals(2, tags.size());
+        assertEquals(5, tags.size());
     }
 
     protected Map<String, Gauge> getMetrics(String metricPrefix) {
