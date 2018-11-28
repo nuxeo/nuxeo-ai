@@ -46,6 +46,8 @@ import java.util.stream.Collectors;
  */
 public class PropertyUtils {
 
+    public static final String FILE_CONTENT = "file:content";
+    
     public static final String NAME_PROP = "name";
 
     public static final String TYPE_PROP = "type";

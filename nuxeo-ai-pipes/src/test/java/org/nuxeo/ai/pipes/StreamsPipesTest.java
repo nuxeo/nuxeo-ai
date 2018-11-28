@@ -22,6 +22,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ai.pipes.PipesTestConfigFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
@@ -125,7 +126,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record.message());
             BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
-            assertEquals("My text", andBack.getProperties().get(BINARY_TEXT_SYS_PROP));
+            assertEquals("My text", andBack.getProperties().get(FILE_CONTENT));
         }
 
         //Create text twice but the second is ignore because its in the "window size"
@@ -141,7 +142,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
             BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
-            assertEquals("My custom text", andBack.getProperties().get(BINARY_TEXT_SYS_PROP));
+            assertEquals("My custom text", andBack.getProperties().get(FILE_CONTENT));
             record = tailer.read(Duration.ofSeconds(5));
             assertNull("The second record should be ignored because its inside the window", record);
 
