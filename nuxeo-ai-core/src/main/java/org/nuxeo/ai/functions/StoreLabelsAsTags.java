@@ -18,7 +18,9 @@
  */
 package org.nuxeo.ai.functions;
 
+import java.util.Set;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.runtime.api.Framework;
@@ -36,6 +38,8 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
                 TagService tagService = Framework.getService(TagService.class);
                 metadata.getLabels()
                         .forEach(l -> tagService.tag(session, metadata.context.documentRef, l.getName()));
+                Set<String> tags = Framework.getService(DocMetadataService.class).getTagLabels(metadata.getTags());
+                tags.forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
             })
         );
     }
