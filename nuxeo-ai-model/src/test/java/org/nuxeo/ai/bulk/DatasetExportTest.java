@@ -81,7 +81,7 @@ import java.util.concurrent.TimeUnit;
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class DatasetExportTest {
 
-    public static final String TEST_MIME_TYPE = "text/plain";
+    public static final String TEST_MIME_TYPE = "image/jpeg";
 
     @Inject
     public BulkService service;
