@@ -12,6 +12,7 @@
       <schema name="common"/>
       <schema name="uid"/>
       <facet name="HiddenInNavigation"/>
+      <facet name="HiddenInCreation"/>
       <facet name="Commentable"/>
     </doctype>
     <doctype name="Folder" append="true">
