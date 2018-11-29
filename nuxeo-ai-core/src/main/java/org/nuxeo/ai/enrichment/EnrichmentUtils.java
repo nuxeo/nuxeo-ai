@@ -141,15 +141,17 @@ public class EnrichmentUtils {
      */
     public static Blob getBlobFromProvider(ManagedBlob managedBlob) {
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(managedBlob.getProviderId());
-        return getBlobFromProvider(provider, managedBlob.getKey());
+        return getBlobFromProvider(provider, managedBlob.getKey(), managedBlob.getLength(), managedBlob.getMimeType());
     }
 
     /**
      * Looks up the blob by key
      */
-    public static Blob getBlobFromProvider(BlobProvider provider, String key) {
+    public static Blob getBlobFromProvider(BlobProvider provider, String key, Long length, String mimeType) {
         BlobInfo blobInfo = new BlobInfo();
         blobInfo.key = key;
+        blobInfo.length = length;
+        blobInfo.mimeType = mimeType;
         try {
             Blob gotBlob = provider.readBlob(blobInfo);
             if (gotBlob != null && gotBlob.getLength() > 0) {
