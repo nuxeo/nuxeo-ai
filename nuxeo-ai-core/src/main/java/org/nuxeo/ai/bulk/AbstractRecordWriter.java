@@ -81,8 +81,9 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
             File file = new File(filename);
             if (file.exists() && file.length() > 0) {
                 BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blobProviderName);
-                String blobRef = provider.writeBlob(createBlob(file));
-                Blob managedBlob = getBlobFromProvider(provider, blobRef);
+                Blob created = createBlob(file);
+                String blobRef = provider.writeBlob(created);
+                Blob managedBlob = getBlobFromProvider(provider, blobRef, created.getLength(), created.getMimeType());
                 if (managedBlob != null) {
                     return Optional.of(managedBlob);
                 }
