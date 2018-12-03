@@ -3,12 +3,7 @@ An implementation of an enrichment service that uses [Sightengine](https://sight
 
 ## Installation
 #### Quick start
-1. Either build locally (`mvn install`) or download the package from [https://maven.nuxeo.org](https://maven.nuxeo.org/nexus/#nexus-search;gav~~org.nuxeo.ai)
-and install using the command line, e.g.
-```
-./bin/nuxeoctl mp-install PATH_TO_DOWNLOAD/nuxeo-ai-core-1.0.zip
-./bin/nuxeoctl mp-install YOUR_PATH/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-1.0-SNAPSHOT.zip
-```
+1. Install the nuxeo-ai-image-quality package. `./bin/nuxeoctl mp-install nuxeo-ai-image-quality`
 
 2. Add the following parameters to `nuxeo.conf`.
 ```

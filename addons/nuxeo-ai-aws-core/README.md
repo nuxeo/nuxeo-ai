@@ -18,6 +18,7 @@ If you choose to use nuxeo.conf then the properties are:
 ```
 nuxeo.aws.accessKeyId=your_AWS_ACCESS_KEY_ID
 nuxeo.aws.secretKey=your_AWS_SECRET_ACCESS_KEY
+nuxeo.aws.sessionToken=your_AWS_SESSION_TOKEN
 nuxeo.aws.region=your_AWS_REGION
 ```
 
