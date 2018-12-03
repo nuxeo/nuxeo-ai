@@ -1,23 +1,21 @@
 # Nuxeo AI Core
 Core functionality for using AI with the Nuxeo Platform.
 
-This modules provides 3 packages:
+This repository provides 3 packages:
   * nuxeo-ai-core - Contains the core interfaces and AI component
-  * nuxeo-ai-pipes - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
-  * nuxeo-ai-model - Adds support for custom machine learning models
+  * nuxeo-ai-image-quality - Enrichment services that uses [Sightengine](https://sightengine.com/).
+  * nuxeo-ai-aws - Enrichment services that use Amazon Web Services.
+
 ## Installation
 #### Version Support
 
 | Ai-core Version | Nuxeo Version
 | --- | --- |
 | 1.0.X| 9.10 |
-| 2.0.X| 10.2 |
+| 2.0.X| 10.3 |
 
-Download the package from [https://maven.nuxeo.org](https://maven.nuxeo.org/nexus/#nexus-search;gav~org.nuxeo.ai).
-Install using the command line, e.g.
-```
-./bin/nuxeoctl mp-install PATH_TO_DOWNLOAD/nuxeo-ai-core-1.0.zip
-```
+1. Install the nuxeo-ai-core package. `./bin/nuxeoctl mp-install nuxeo-ai-core`
+
 #### Indexing and Search
 It is recommended that the Elasticsearch mappings are updated to allow a full text search on enrichment labels.
  The following code will add this mapping to a server running locally.
@@ -27,6 +25,24 @@ curl -X PUT \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
   -d '{
+    "dynamic_templates": [
+  {
+    "no_enriched_raw_template": {
+      "path_match": "enrichment:items.raw.*",
+      "mapping": {
+        "index": false
+      }
+    }
+  },
+  {
+    "no_enriched_norms_template": {
+      "path_match": "enrichment:items.normalized.*",
+      "mapping": {
+        "index": false
+      }
+    }
+  }
+],
   "properties": {
     "enrichment:items": {
       "properties": {
@@ -42,6 +58,18 @@ curl -X PUT \
               "type": "text"
             }
           }
+        },
+        "service": {
+          "type": "keyword",
+          "ignore_above": 256
+        },
+        "inputProperties": {
+          "type": "keyword",
+          "ignore_above": 256
+        },
+        "kind": {
+          "type": "keyword",
+          "ignore_above": 256
         }
       }
     }
@@ -119,6 +147,11 @@ You can set these in your `nuxeo.conf`.
 
 
 ## Nuxeo AI Core
+Nuxeo AI Core provides 3 Java modules:
+  * nuxeo-ai-core - Contains the core interfaces and AI component
+  * nuxeo-ai-pipes - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
+  * nuxeo-ai-model - Adds support for custom machine learning models
+
 ### Features
  * Provides an `AIComponent` to register services.  eg. An enrichment service.
  * Interfaces and helper classes for building services.
@@ -174,7 +207,7 @@ Transforming an input Event into an output stream is done using a function speci
 
 ##### Functions
 Actions on streams or events are based on the standard Java `Function<T, R>` interface.  To send an event to a stream you would need to implement the `Function<Event, Record>` interface. `Record` is the type used for items in a nuxeo-stream.
-For examples, look at `DocumentPipeFunction` and its helper class `DocEventToStream`.
+For examples, look at `PropertiesToStream` and its helper class `DocEventToStream`.
 
 These is also a `FilterFunction` that first tests a `Predicate` before applying the function.  Predicates can be built with the help of the `Predicates` class.
  To create a predicate for _only document events with documents which are not system documents or proxies and aren't "Folderish"_ you would use this predicate: `docEvent(notSystem().and(d -> !d.hasFacet("Folderish"))`.
@@ -214,27 +247,34 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 stream processors matches the number of partitions you have, eg. 4.
 
 #### Useful log config:
+Edit `$NUXEO_HOME/lib/log4j2.xml`, in the `<Appenders>` section, add a `AI-FILE` appender:
 ```xml
-  <appender name="STREAMS" class="org.apache.log4j.FileAppender">
-    <errorHandler class="org.apache.log4j.helpers.OnlyOnceErrorHandler" />
-    <param name="File" value="${nuxeo.log.dir}/streams.log" />
-    <param name="Append" value="false" />
-    <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t][%c] %m%n" />
-    </layout>
-  </appender>
-  <category name="org.nuxeo.ai">
-    <priority value="DEBUG" />
-    <appender-ref ref="STREAMS" />
-  </category>
-  <category name="org.nuxeo.lib.stream">
-    <priority value="DEBUG" />
-    <appender-ref ref="STREAMS" />
-  </category>
-  <category name="org.nuxeo.runtime.stream">
-    <priority value="DEBUG" />
-    <appender-ref ref="STREAMS" />
-  </category>
+<File name="AI-FILE" fileName="${sys:nuxeo.log.dir}/nuxeo-ai.log" append="true">
+  <PatternLayout pattern="%d{ISO8601} %-5p [%t] [%c] %m%n" />
+</File>
+```
+Then in the `<Loggers>` section, add a logger pointing to the `AI-FILE` appender:
+```xml
+<Logger name="org.nuxeo.ai" level="debug">
+  <AppenderRef ref="AI-FILE" />
+</Logger>
+```
+
+#### Useful stream commands:
+
+[Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream) is either implemented with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).  To watch the progress of messages in the stream you can use:
+```
+$NUXEO_HOME/bin/stream.sh --help
+```
+For example, to see the last 8 messages in the "images" stream, for chronicle you would use the first command below (passing in `--chronicle nxserver/data/stream/pipes`) and for Kafka you would use the second command below (passing in just `-k`).
+```
+./bin/stream.sh tail -n 8 --chronicle nxserver/data/stream/pipes -l images --codec avro
+./bin/stream.sh tail -n 8 -k -l images --data-size 2000 --codec avro
+```
+Similarly, to view the consumer lag on the "images" stream, for chronicle use the first command, and the second for kafka.  The response format is Markdown.
+```
+./bin/stream.sh lag --chronicle nxserver/data/stream/pipes -l images --verbose
+./bin/stream.sh lag -k -l images --verbose
 ```
 
 # License
