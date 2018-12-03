@@ -53,13 +53,13 @@ You can set these in your `nuxeo.conf`.
 </tr>
 <tr>
 <tr>
-<td colspan="1">`nuxeo.ai.images.enabled`</td>
+<td colspan="1">`nuxeo.enrichment.aws.images`</td>
 <td colspan="1">Run AWS enrichiment services on images.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.text.enabled`</td>
+<td colspan="1">`nuxeo.enrichment.aws.text`</td>
 <td colspan="1">Run AWS enrichiment services on text.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
