@@ -130,7 +130,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         String content = client.getContent(response);
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
-            SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(getKind(), getId());
+            SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(getKind(), getId(), inputNames);
             List<Suggestion> suggestions = new ArrayList<>();
             labelledResults.forEach((output, labels) ->
                                             suggestions.add(new Suggestion(output, labels)));

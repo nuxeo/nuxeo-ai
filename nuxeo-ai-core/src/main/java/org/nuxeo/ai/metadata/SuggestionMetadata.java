@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A normalized view of the suggestion data.
@@ -64,15 +65,16 @@ public class SuggestionMetadata extends AIMetadata {
 
         private List<Suggestion> suggestions;
 
-        public Builder(String kind, String serviceName) {
-            this(Instant.now(), kind, serviceName);
+        public Builder(String kind, String serviceName, Set<String> inputProperties) {
+            super(Instant.now(), kind, serviceName, null, null, null, inputProperties);
         }
 
         @JsonCreator
         public Builder(@JsonProperty("created") Instant created,
                        @JsonProperty("kind") String kind,
-                       @JsonProperty("serviceName") String serviceName) {
-            super(created, kind, serviceName, null, null, null, null);
+                       @JsonProperty("serviceName") String serviceName,
+                       @JsonProperty("context") AIMetadata.Context context) {
+            super(created, kind, serviceName, context);
         }
 
         public SuggestionMetadata.Builder withSuggestions(List<Suggestion> suggestions) {
@@ -82,7 +84,9 @@ public class SuggestionMetadata extends AIMetadata {
 
         @Override
         protected void buildContext() {
-            // Nothing to do as the context isn't used
+            if (context == null) {
+                context = new AIMetadata.Context(repositoryName, documentRef, digests, inputProperties);
+            }
         }
 
         @SuppressWarnings("unchecked")
