@@ -19,7 +19,6 @@
 package org.nuxeo.ai.model.serving;
 
 import org.nuxeo.ai.metadata.SuggestionMetadata;
-import org.nuxeo.ai.model.AIModel;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import java.util.Collection;
 import java.util.List;
@@ -36,9 +35,9 @@ public interface ModelServingService {
     void addModel(ModelDescriptor descriptor);
 
     /**
-     * List current runtime models
+     * List current configured models
      */
-    Collection<AIModel> listModels();
+    Collection<ModelDescriptor> listModels();
 
     /**
      * Get a RuntimeModel by Id

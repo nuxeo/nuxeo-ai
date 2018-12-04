@@ -24,7 +24,6 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.metadata.SuggestionMetadata;
-import org.nuxeo.ai.model.AIModel;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.ai.services.AIComponent;
@@ -35,7 +34,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -101,8 +99,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
-    public Collection<AIModel> listModels() {
-        return new ArrayList<>(models.values());
+    public Collection<ModelDescriptor> listModels() {
+        return configs.values();
     }
 
     @Override
