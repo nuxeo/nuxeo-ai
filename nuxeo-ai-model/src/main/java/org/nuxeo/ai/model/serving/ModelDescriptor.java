@@ -18,16 +18,18 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Definition of an AI model at runtime
@@ -44,6 +46,7 @@ public class ModelDescriptor {
      * Endpoint configuration, used only on initialization. e.g. URI
      */
     @XNodeMap(value = "config", key = "@name", type = HashMap.class, componentType = String.class)
+    @JsonIgnore
     public Map<String, String> configuration = new HashMap<>();
 
     /**
@@ -62,6 +65,7 @@ public class ModelDescriptor {
     protected OutputProperties outputProperties;
 
     @XNode("@class")
+    @JsonIgnore
     protected Class<? extends RuntimeModel> clazz;
 
     public Set<ModelProperty> getInputs() {
@@ -75,6 +79,7 @@ public class ModelDescriptor {
     /**
      * Get a runtime model
      */
+    @JsonIgnore
     public RuntimeModel getModel() {
         try {
             if (clazz == null) {
@@ -92,6 +97,7 @@ public class ModelDescriptor {
     public static class ModelPredicate {
 
         @XNode("@primaryType")
+        @JsonProperty
         String primaryType;
     }
 
