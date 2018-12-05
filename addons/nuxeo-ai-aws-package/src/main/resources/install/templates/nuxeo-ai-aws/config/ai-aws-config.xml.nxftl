@@ -10,6 +10,7 @@
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentServiceName">aws.imageLabels</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
 
@@ -20,6 +21,7 @@
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentServiceName">aws.textDetection</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
 
@@ -30,6 +32,7 @@
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentServiceName">aws.faceDetection</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
 
@@ -40,6 +43,7 @@
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentServiceName">aws.celebrityDetection</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
 
@@ -50,6 +54,7 @@
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentServiceName">aws.unsafeImages</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
 </#if>
@@ -62,6 +67,7 @@
       <option name="source">text</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentServiceName">aws.textSentiment</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
 </#if>
