@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.filters.PrimaryTypeFilter;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.event.Event;
@@ -141,7 +142,25 @@ public class FunctionsTest {
         assertNull("Its not a picture event", func.apply(event));
         func.filter = docEvent(d -> true);
         Collection<Record> applied = func.apply(event);
-        assertTrue("It is a document with a creator", applied.size() == 1);
+        assertEquals("It is a document with a creator", 1, applied.size());
+
+        // Test PrimaryTypeFilter
+        PrimaryTypeFilter typeFilter = new PrimaryTypeFilter();
+        typeFilter.init(Collections.singletonMap("isType", "Picture"));
+        func.filter = docEvent(typeFilter);
+        func.init(Collections.singletonMap("textProperties", "dc:creator"));
+        assertNull("Its not a picture", func.apply(event));
+        typeFilter.init(Collections.singletonMap("isType", "File"));
+        func.filter = docEvent(typeFilter);
+        applied = func.apply(event);
+        assertEquals("It is a document with a creator", 1, applied.size());
+        typeFilter.init(Collections.singletonMap("excludedTypes", "Picture"));
+        func.filter = docEvent(typeFilter);
+        applied = func.apply(event);
+        assertEquals("It is a document with a creator", 1, applied.size());
+        typeFilter.init(Collections.singletonMap("excludedTypes", "File"));
+        func.filter = docEvent(typeFilter);
+        assertNull("Its a File", func.apply(event));
     }
 
     @Test
