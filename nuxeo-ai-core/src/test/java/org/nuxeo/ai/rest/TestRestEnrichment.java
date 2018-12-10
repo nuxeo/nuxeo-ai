@@ -29,25 +29,22 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.ai.pipes.services.JacksonUtil;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(FeaturesRunner.class)
@@ -93,4 +90,32 @@ public class TestRestEnrichment {
         assertTrue(RestClient.isLive(options, prefix));
     }
 
+    @Test
+    public void testRestHeaders() {
+        Map<String, String> options = new HashMap<>();
+        String prefix = "testing.";
+        options.put(prefix + "uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
+        options.put(prefix + "header.xyz", "myhead");
+        options.put(prefix + "header.123", "small head");
+        options.put(prefix + "header.546", "big head");
+        RestClient client = new RestClient(options, prefix, null);
+        assertEquals("myhead", client.headers.stream()
+                                             .filter(h -> "xyz".equals(h.getName())).findFirst().get().getValue());
+        assertEquals("small head", client.headers.stream()
+                                                 .filter(h -> "123".equals(h.getName())).findFirst().get().getValue());
+
+        options.clear();
+        options.put(prefix + "uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
+        client = new RestClient(options, prefix, null);
+        assertEquals("No config so we just have the default headers",
+                     client.getDefaultHeaders().size(), client.headers.size());
+
+        options.clear();
+        options.put("uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
+        options.put("header.X-Authentication-Token", "3456");
+        client = new RestClient(options, null);
+        assertEquals("3456", client.headers.stream()
+                                           .filter(h -> "X-Authentication-Token".equals(h.getName())).findFirst().get()
+                                           .getValue());
+    }
 }
