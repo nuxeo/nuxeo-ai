@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.rest;
 
+import static org.apache.commons.lang3.StringUtils.removeStart;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -100,6 +102,7 @@ public class RestClient implements AutoCloseable {
         if (Boolean.parseBoolean(options.getOrDefault(optionPrefix + OPTION_DEFAULT_HEADERS, "true"))) {
             headers.addAll(getDefaultHeaders());
         }
+        headers.addAll(getHeaderOptions(options, optionPrefix));
         HttpClientBuilder clientBuilder = HttpClientBuilder.create();
         client = clientBuilderFunc != null ? clientBuilderFunc.apply(clientBuilder) : clientBuilder.build();
     }
@@ -125,6 +128,15 @@ public class RestClient implements AutoCloseable {
             log.info("Error on rest client ", e);
         }
         return false;
+    }
+
+    protected List<Header> getHeaderOptions(Map<String, String> options, String optionPrefix) {
+        String headerPrefix = optionPrefix + "header.";
+        return options.entrySet()
+                      .stream()
+                      .filter(e -> e.getKey().startsWith(headerPrefix))
+                      .map(e -> new BasicHeader(removeStart(e.getKey(), headerPrefix), e.getValue()))
+                      .collect(Collectors.toList());
     }
 
     /**
