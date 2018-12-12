@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.client.NuxeoClient;
@@ -65,7 +65,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             "  }\n" +
             "}";
 
-    private static final Log log = LogFactory.getLog(NuxeoCloudClient.class);
+    private static final Logger log = LogManager.getLogger(NuxeoCloudClient.class);
 
     protected String id;
 
@@ -99,9 +99,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         client = builder.connect();
         id = descriptor.getId();
         url = descriptor.url; //The client doesn't seem to export the URL to use
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Nuxeo Cloud Client %s is configured for %s ", id, url));
-        }
+        log.debug("Nuxeo Cloud Client {} is configured for {} ", id, url);
     }
 
     /**
@@ -166,7 +164,12 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query,
                                            split, fieldsAsJson, batchId, batchId);
 
+            log.debug("Uploading to cloud project: {}, payload {}", id, payload);
+
             response = getClient().post(url + "/api/v1/ai/" + id, payload);
+
+            log.debug("Upload to cloud project: {}, finished.", id);
+
             if (!response.isSuccessful()) {
                 log.error("Failed to upload the corpus dataset. " + response.toString());
             }

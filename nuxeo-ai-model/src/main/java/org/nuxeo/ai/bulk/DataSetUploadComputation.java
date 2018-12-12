@@ -20,8 +20,8 @@ package org.nuxeo.ai.bulk;
 
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
@@ -42,7 +42,7 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
  */
 public class DataSetUploadComputation extends AbstractComputation {
 
-    private static final Log log = LogFactory.getLog(DataSetUploadComputation.class);
+    private static final Logger log = LogManager.getLogger(DataSetUploadComputation.class);
 
     public DataSetUploadComputation(String name) {
         super(name, 1, 0);
@@ -65,18 +65,20 @@ public class DataSetUploadComputation extends AbstractComputation {
                                 if (document != null) {
                                     CloudClient client = Framework.getService(CloudClient.class);
                                     if (client.isAvailable()) {
+                                        log.info("Uploading dataset to cloud for command {}", cmd.getId());
                                         client.uploadDataset(document);
+                                        log.info("Upload of dataset to cloud for command {} done.", cmd.getId());
                                     } else {
-                                        log.warn(String.format("Upload to cloud not possible for doc %s and client %s",
-                                                               document.getId(), client.isAvailable()));
+                                        log.warn("Upload to cloud not possible for export command {}," +
+                                                         " corpus doc {} and client {}",
+                                                 cmd.getId(), document.getId(), client.isAvailable());
                                     }
                                 }
                             }
                         }
                 );
             } else {
-                log.warn(String.format(
-                        "The bulk command with id %s is missing.  Unable to upload a dataset.", status.getId()));
+                log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", status.getId());
             }
 
         }
