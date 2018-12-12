@@ -64,7 +64,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
     }
 
     public static String makeKey(String commandId, String name) {
-        return commandId + name;
+        return commandId + "_" + name;
     }
 
     @Override

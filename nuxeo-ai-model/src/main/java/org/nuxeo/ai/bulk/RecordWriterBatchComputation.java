@@ -23,10 +23,8 @@ import static java.util.stream.Collectors.toList;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.services.AIComponent;
@@ -67,8 +65,9 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
     @Override
     public void batchFailure(ComputationContext context, String inputStream, List<Record> records) {
-        log.warn(String.format("Batch failure \"%s\" batch of %s records with command ids: %s.", metadata.name(),
-                               records.size(), Arrays.toString(records.stream().map(Record::getKey).toArray())));
+        String commandId = records.isEmpty() ? "" : records.get(0).getKey();
+        log.warn(String.format("Batch failure \"%s\" batch of %s records with command id: %s.",
+                               metadata.name(), records.size(), commandId));
     }
 
 }

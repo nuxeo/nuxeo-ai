@@ -110,7 +110,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                                int statusCode = response.getStatusLine().getStatusCode();
                                if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
                                    log.warn(String.format("Unsuccessful call to custom model (%s), status is %d",
-                                                          getName(), statusCode));
+                                                          getId(), statusCode));
                                    return null;
                                } else {
                                    SuggestionMetadata meta = handlePredict(response);
