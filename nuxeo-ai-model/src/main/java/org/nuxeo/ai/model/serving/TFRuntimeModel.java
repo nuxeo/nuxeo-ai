@@ -222,7 +222,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
             log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), blobtext.getId()));
         } else {
             SuggestionMetadata suggestions = predict(inputProperties);
-            if (!suggestions.getSuggestions().isEmpty()) {
+            if (suggestions != null && !suggestions.getSuggestions().isEmpty()) {
                 EnrichmentMetadata.Builder builder =
                         new EnrichmentMetadata.Builder(Instant.now(), getKind(), getId(),
                                                        new AIMetadata.Context(
