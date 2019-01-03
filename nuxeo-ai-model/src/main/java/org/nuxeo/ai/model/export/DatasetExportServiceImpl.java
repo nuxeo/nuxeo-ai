@@ -35,12 +35,23 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
@@ -52,13 +63,6 @@ import org.nuxeo.elasticsearch.api.EsResult;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
  * Exports data
@@ -105,11 +109,17 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             throw new IllegalArgumentException("Dataset split value is a percentage between 1 and 100");
         }
 
+        Blob statsBlob;
+        try {
+            statsBlob = Blobs.createJSONBlobFromValue(getStatistics(session, nxql, inputProperties, outputProperties));
+        } catch (IOException e) {
+            throw new NuxeoException("Unable to process stats blob", e);
+        }
         List<Map<String, String>> inputs = propsToTypedList(inputProperties);
         List<Map<String, String>> outputs = propsToTypedList(outputProperties);
         List<Map<String, String>> featuresWithType = new ArrayList<>(inputs);
         featuresWithType.addAll(outputs);
-        DocumentModel corpus = createCorpus(session, nxql, inputs, outputs, split);
+        DocumentModel corpus = createCorpus(session, nxql, inputs, outputs, split, statsBlob);
 
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
@@ -142,12 +152,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Create a corpus document for the data export.
      */
     public DocumentModel createCorpus(CoreSession session, String query,
-                                      List<Map<String, String>> inputs, List<Map<String, String>> outputs, int split) {
+                                      List<Map<String, String>> inputs, List<Map<String, String>> outputs, int split,
+                                      Blob statsBlob) {
         DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", CORPUS_TYPE);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY, query);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_SPLIT, split);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_INPUTS, (Serializable) inputs);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS, (Serializable) outputs);
+        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_STATS, (Serializable) statsBlob);
         return session.createDocument(doc);
     }
 

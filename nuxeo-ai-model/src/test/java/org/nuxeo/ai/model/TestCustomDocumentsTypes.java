@@ -24,8 +24,10 @@ import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -64,6 +66,7 @@ public class TestCustomDocumentsTypes {
         Long split = 66L;
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_TRAINING_DATA, (Serializable) managedBlob);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_EVALUATION_DATA, (Serializable) managedBlob);
+        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_STATS, (Serializable) Blobs.createJSONBlob("{}"));
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_JOBID, jobId);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_SPLIT, split);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY, query);
@@ -77,19 +80,6 @@ public class TestCustomDocumentsTypes {
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_INPUTS, (Serializable) Collections.singletonList(newInput));
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS, (Serializable) Collections.singletonList(newInput));
 
-        List<Map<String, Object>> inputsHistData = new ArrayList<>(1);
-        Map<String, Object> firstFieldLabel = new HashMap<>();
-        firstFieldLabel.put("field", "question");
-        firstFieldLabel.put("label", "B1");
-        firstFieldLabel.put("count", 20L);
-        inputsHistData.add(firstFieldLabel);
-        Map<String, Object> secondFieldLabel = new HashMap<>();
-        secondFieldLabel.put("field", "question");
-        secondFieldLabel.put("label", "B2");
-        secondFieldLabel.put("count", 40L);
-        inputsHistData.add(secondFieldLabel);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_FEATURES_HISTOGRAM, (Serializable) inputsHistData);
-
         doc = session.saveDocument(doc);
 
         // First, check simple elements
@@ -97,6 +87,8 @@ public class TestCustomDocumentsTypes {
         assertEquals(managedBlob.getLength(), trainingData.getLength());
         Blob evalData = (Blob) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_EVALUATION_DATA);
         assertEquals(managedBlob.getLength(), evalData.getLength());
+        Blob statData = (Blob) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_STATS);
+        assertEquals(JSONBlob.APPLICATION_JSON, statData.getMimeType());
         String returnString = (String) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_JOBID);
         assertEquals(jobId, returnString);
         returnString = (String) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY);
@@ -113,12 +105,6 @@ public class TestCustomDocumentsTypes {
         dataFeatures =
                 (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS);
         assertFeatures(dataFeatures);
-
-        List<Map<String, Object>> inputHistDataRes =
-                (List<Map<String, Object>>) doc.getPropertyValue(AiDocumentTypeConstants.CORPUS_FEATURES_HISTOGRAM);
-        assertEquals(2, inputHistDataRes.size());
-        assertEquals(inputHistDataRes.get(0), firstFieldLabel);
-        assertEquals(inputHistDataRes.get(1), secondFieldLabel);
     }
 
     protected void assertFeatures(List<Map<String, Object>> dataFeatures) {

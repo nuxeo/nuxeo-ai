@@ -19,7 +19,7 @@
 package org.nuxeo.ai.model;
 
 /**
- * Simple class to store constantes related to AI Document Types: Ai_Model and Ai_Corpus
+ * Simple class to store constants related to AI Document Types: Ai_Model and Ai_Corpus
  */
 public class AiDocumentTypeConstants {
 
@@ -42,7 +42,7 @@ public class AiDocumentTypeConstants {
 
     public static final String CORPUS_EVALUATION_DATA = "ai_corpus:evaluation_data";
 
-    public static final String CORPUS_FEATURES_HISTOGRAM = "ai_corpus:features_histogram";
+    public static final String CORPUS_STATS = "ai_corpus:statistics";
 
     private AiDocumentTypeConstants() {
         // just Constants
