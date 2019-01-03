@@ -39,17 +39,5 @@
   <xs:element name="outputs" type="nxs:ai_corpus_featureListType"/>
   <xs:element name="training_data" type="nxs:content"/>
   <xs:element name="evaluation_data" type="nxs:content"/>
-  <xs:complexType name="ai_corpus_features_histogramListType">
-    <xs:sequence>
-      <xs:element name="item" type="nxs:ai_corpus_features_histogramType" minOccurs="0" maxOccurs="unbounded"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:complexType name="ai_corpus_features_histogramType">
-    <xs:sequence>
-      <xs:element name="field" type="xs:string"/>
-      <xs:element name="label" type="xs:string"/>
-      <xs:element name="count" type="xs:integer"/>
-    </xs:sequence>
-  </xs:complexType>
-  <xs:element name="features_histogram" type="nxs:ai_corpus_features_histogramListType"/>
+  <xs:element name="statistics" type="nxs:content"/>
 </xs:schema>

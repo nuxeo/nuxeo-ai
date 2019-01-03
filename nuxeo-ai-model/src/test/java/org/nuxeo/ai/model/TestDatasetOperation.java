@@ -44,6 +44,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -54,10 +55,11 @@ import java.util.List;
 import java.util.Map;
 
 @RunWith(FeaturesRunner.class)
-@Features({AutomationFeature.class, CoreBulkFeature.class})
+@Features({AutomationFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
+@Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class TestDatasetOperation {
 
     public static final String TEST_QUERY = "SELECT * from document WHERE dc:title IS NOT NULL";
@@ -165,7 +167,7 @@ public class TestDatasetOperation {
         Map<String, Object> params = new HashMap<>();
         params.put("query", TEST_QUERY);
         params.put("inputs", "dc:title,file:content");
-        params.put("outputs", "file:content,dc:nature,dc:created");
+        params.put("outputs", "dc:nature,dc:created");
         OperationChain chain = new OperationChain("testChain1");
         chain.add(DatasetExportOperation.ID).from(params);
         String returned = (String) automationService.run(ctx, chain);
@@ -182,8 +184,6 @@ public class TestDatasetOperation {
 
         @SuppressWarnings("unchecked")
         List<Map> outputs = (List<Map>) doc.getPropertyValue(CORPUS_OUTPUTS);
-        assertEquals(3, outputs.size());
-        assertTrue(outputs.stream().anyMatch(
-                p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
+        assertEquals(2, outputs.size());
     }
 }

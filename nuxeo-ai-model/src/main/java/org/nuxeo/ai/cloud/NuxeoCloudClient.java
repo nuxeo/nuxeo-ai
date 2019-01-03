@@ -21,6 +21,7 @@ package org.nuxeo.ai.cloud;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_STATS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
 
@@ -61,7 +62,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             "    \"ai_corpus:split\": \"%s\",\n" +
             "    \"ai_corpus:fields\": %s,\n" +
             "    \"ai_corpus:training_data\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"0\" },\n" +
-            "    \"ai_corpus:evaluation_data\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"1\" }\n" +
+            "    \"ai_corpus:evaluation_data\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"1\" },\n" +
+            "    \"ai_corpus:statistics\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"2\" }\n" +
             "  }\n" +
             "}";
 
@@ -124,6 +126,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
             Blob trainingData = (Blob) corpusDoc.getPropertyValue(CORPUS_TRAINING_DATA);
             Blob evalData = (Blob) corpusDoc.getPropertyValue(CORPUS_EVALUATION_DATA);
+            Blob statsData = (Blob) corpusDoc.getPropertyValue(CORPUS_STATS);
             if (trainingData != null) {
                 batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
                                                  TFRECORD_MIME_TYPE, trainingData.getLength());
@@ -131,6 +134,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             if (evalData != null) {
                 batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getFilename(),
                                                  TFRECORD_MIME_TYPE, evalData.getLength());
+            }
+            if (statsData != null) {
+                batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
+                                                 statsData.getMimeType(), statsData.getLength());
             }
             createDataset(corpusDoc, batchUpload.getBatchId());
         }
@@ -162,7 +169,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             fields.addAll(outputs);
             String fieldsAsJson = JacksonUtil.MAPPER.writeValueAsString(fields);
             String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query,
-                                           split, fieldsAsJson, batchId, batchId);
+                                           split, fieldsAsJson, batchId, batchId, batchId);
 
             log.debug("Uploading to cloud project: {}, payload {}", id, payload);
 
