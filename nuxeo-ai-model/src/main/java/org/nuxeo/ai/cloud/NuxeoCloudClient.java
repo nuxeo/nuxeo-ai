@@ -21,6 +21,7 @@ package org.nuxeo.ai.cloud;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_STATS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
@@ -123,23 +124,30 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     @Override
     public void uploadDataset(DocumentModel corpusDoc) {
         if (corpusDoc != null) {
-            BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
+            String jobId = (String) corpusDoc.getPropertyValue(CORPUS_JOBID);
             Blob trainingData = (Blob) corpusDoc.getPropertyValue(CORPUS_TRAINING_DATA);
             Blob evalData = (Blob) corpusDoc.getPropertyValue(CORPUS_EVALUATION_DATA);
             Blob statsData = (Blob) corpusDoc.getPropertyValue(CORPUS_STATS);
-            if (trainingData != null) {
+
+            if (trainingData == null) {
+                log.error("Job: {} has no training data.", jobId);
+            }
+            if (evalData == null) {
+                log.error("Job: {} has no evaluation data.", jobId);
+            }
+            if (statsData == null) {
+                log.error("Job: {} has no statistics data.", jobId);
+            }
+            if (trainingData != null && evalData != null && statsData != null) {
+                BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
                 batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
                                                  TFRECORD_MIME_TYPE, trainingData.getLength());
-            }
-            if (evalData != null) {
                 batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getFilename(),
                                                  TFRECORD_MIME_TYPE, evalData.getLength());
-            }
-            if (statsData != null) {
                 batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
                                                  statsData.getMimeType(), statsData.getLength());
+                createDataset(corpusDoc, batchUpload.getBatchId());
             }
-            createDataset(corpusDoc, batchUpload.getBatchId());
         }
     }
 

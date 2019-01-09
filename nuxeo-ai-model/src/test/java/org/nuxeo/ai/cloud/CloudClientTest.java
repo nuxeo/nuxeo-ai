@@ -69,12 +69,8 @@ public class CloudClientTest {
     public void testClient() {
 
         assertFalse(client.isAvailable());
-        try {
-            client.uploadDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE));
-            fail();
-        } catch (IllegalArgumentException e) {
-            // Success
-        }
+        // Doesn't do anything because its not configured.
+        client.uploadDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE));
 
         try {
             ((NuxeoCloudClient) client).configureClient(new CloudConfigDescriptor());

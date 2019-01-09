@@ -97,6 +97,9 @@ public class TensorTest {
      * Count the number of tensorflow record example records.
      */
     public static int countNumberOfExamples(Blob blob, int numOfFeatures) throws IOException {
+        if (blob == null) {
+            return 0;
+        }
         DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
         TFRecordReader tfRecordReader = new TFRecordReader(input, true);
         byte[] exampleData;
