@@ -156,6 +156,7 @@ public class DatasetExportTest {
             doc.setPropertyValue("dc:description", "desc" + i % 4);
             if (i % 2 == 0) {
                 doc.setPropertyValue("dc:language", "en" + i);
+                doc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
             }
             if (i % 10 != 0) {
                 Blob blob = Blobs.createBlob("My text" + i, TEST_MIME_TYPE);
@@ -166,6 +167,36 @@ public class DatasetExportTest {
 
         txFeature.nextTransaction();
         return testRoot;
+    }
+
+    @Test
+    public void testBulkExportSubjects() throws Exception {
+
+        DocumentModel testRoot = setupTestData();
+        waitForCompletion();
+
+        String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
+        String commandId = Framework.getService(DatasetExportService.class)
+                                    .export(session, nxql,
+                                            Arrays.asList("dc:title"),
+                                            Arrays.asList("dc:subjects"), 80);
+        txFeature.nextTransaction();
+        assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
+
+        BulkStatus status = service.getStatus(commandId);
+        assertNotNull(status);
+        assertEquals(COMPLETED, status.getState());
+        // All 500 records are processed, even the 50 records that have null subjects
+        assertEquals(500, status.getProcessed());
+
+        DocumentModel doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, "nonsense");
+        assertNull(doc);
+        doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, commandId);
+        assertNotNull(doc);
+        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_TRAINING_DATA), -1);
+        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_EVALUATION_DATA), -1);
+        assertTrue(trainingCount > validationCount);
+        assertEquals(500, trainingCount + validationCount);
     }
 
     @SuppressWarnings("ConstantConditions")

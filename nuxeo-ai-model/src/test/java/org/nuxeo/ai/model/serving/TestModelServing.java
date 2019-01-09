@@ -109,6 +109,7 @@ public class TestModelServing {
         //Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Special Doc", "File");
         testDoc.setPropertyValue("dc:title", "My document title");
+        testDoc.setPropertyValue("dc:subjects", (Serializable) Arrays.asList("sciences", "art/cinema"));
         testDoc = session.createDocument(testDoc);
         String docId = testDoc.getId();
         session.saveDocument(testDoc);

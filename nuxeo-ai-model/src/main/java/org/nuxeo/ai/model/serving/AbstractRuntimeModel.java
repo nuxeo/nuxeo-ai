@@ -19,6 +19,7 @@
 package org.nuxeo.ai.model.serving;
 
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
@@ -34,6 +35,7 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -138,6 +140,10 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
             switch (input.getType()) {
                 case IMAGE_TYPE:
                     props.put(input.getName(), convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class)));
+                    break;
+                case CATEGORY_TYPE:
+                    Object[] categories = getPropertyValue(doc, input.getName(), Object[].class);
+                    props.put(input.getName(), categories);
                     break;
                 default:
                     // default to text String

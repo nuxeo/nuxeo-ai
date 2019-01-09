@@ -43,6 +43,7 @@
       <config name="useLabels">false</config>
       <inputProperties>
         <property name="dc:title" type="txt"/>
+        <property name="dc:subjects" type="cat"/>
       </inputProperties>
       <outputProperties>
         <property name="dc:description" type="txt"/>

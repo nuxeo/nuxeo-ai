@@ -24,6 +24,7 @@ import static org.nuxeo.ai.AIConstants.EXPORT_FEATURES_PARAM;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
@@ -273,6 +274,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             switch (prop.get(TYPE_PROP)) {
                 case IMAGE_TYPE:
                     buffy.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
+                    break;
+                case CATEGORY_TYPE:
+                    // Don't add additional validation for the category type, it can be null.
                     break;
                 default:
                     buffy.append(" AND ").append(propName).append(" IS NOT NULL");

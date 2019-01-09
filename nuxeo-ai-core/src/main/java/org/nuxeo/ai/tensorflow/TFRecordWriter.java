@@ -20,6 +20,7 @@ package org.nuxeo.ai.tensorflow;
 
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
 import java.io.BufferedOutputStream;
@@ -153,7 +154,10 @@ public class TFRecordWriter extends AbstractRecordWriter {
                 features.putFeature(blobEntry.getKey(), blobFeature(blob));
             }
         }
-        blobTextFromDoc.getProperties().forEach((k, v) -> features.putFeature(k, textFeature(v)));
+        blobTextFromDoc.getProperties().forEach((k, v) -> {
+            String[] values = v.split(LIST_DELIMITER_PATTERN);
+            features.putFeature(k, textFeature(values));
+        });
         return features.build();
     }
 
