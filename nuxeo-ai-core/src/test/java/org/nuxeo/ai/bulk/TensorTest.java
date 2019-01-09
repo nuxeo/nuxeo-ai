@@ -103,7 +103,9 @@ public class TensorTest {
         int countExamples = 0;
         while ((exampleData = tfRecordReader.read()) != null) {
             Example example = Example.parseFrom(exampleData);
-            assertEquals(numOfFeatures, example.getFeatures().getFeatureCount());
+            if (numOfFeatures > 0) {
+                assertEquals(numOfFeatures, example.getFeatures().getFeatureCount());
+            }
             countExamples++;
         }
         return countExamples;

@@ -20,26 +20,31 @@ package org.nuxeo.ai.pipes.functions;
 
 import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentRef;
-import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
-import org.nuxeo.ecm.core.io.avro.AvroConstants;
-import org.nuxeo.ecm.core.schema.SchemaManager;
-import org.nuxeo.ecm.core.schema.types.Field;
-import org.nuxeo.ecm.core.schema.types.QName;
-import org.nuxeo.runtime.api.Framework;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentRef;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.core.io.avro.AvroConstants;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Field;
+import org.nuxeo.ecm.core.schema.types.QName;
+import org.nuxeo.runtime.api.Framework;
 
 /**
  * Utilities to work with document properties
@@ -47,7 +52,11 @@ import java.util.stream.Collectors;
 public class PropertyUtils {
 
     public static final String FILE_CONTENT = "file:content";
-    
+
+    public static final String LIST_DELIMITER = " | ";
+
+    public static final String LIST_DELIMITER_PATTERN = Pattern.quote(LIST_DELIMITER);
+
     public static final String NAME_PROP = "name";
 
     public static final String TYPE_PROP = "type";
@@ -55,6 +64,8 @@ public class PropertyUtils {
     public static final String IMAGE_TYPE = "img";
 
     public static final String TEXT_TYPE = "txt";
+
+    public static final String CATEGORY_TYPE = "cat";
 
     private static final Log log = LogFactory.getLog(PropertyUtils.class);
 
@@ -77,7 +88,7 @@ public class PropertyUtils {
                 return (T) ((Calendar) propVal).toInstant().toString();
             } else if (propVal.getClass().isArray() &&
                     propVal.getClass().getComponentType().isAssignableFrom(String.class)) {
-                throw new UnsupportedOperationException("Multi-value properties are currently not supported.");
+                return (T) serializeArray(propVal);
             } else if (type.isAssignableFrom(String.class)) {
                 return (T) propVal.toString();
             } else {
@@ -169,7 +180,11 @@ public class PropertyUtils {
         }
         Map<String, String> feature = new HashMap<>();
         feature.put(NAME_PROP, prop);
-        feature.put(TYPE_PROP, isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE);
+        String type = isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE;
+        if (field.getType().isListType()) {
+            type = CATEGORY_TYPE;
+        }
+        feature.put(TYPE_PROP, type);
         return feature;
     }
 
@@ -186,5 +201,49 @@ public class PropertyUtils {
      */
     public static boolean notNull(DocumentModel doc, String propertyName) {
         return getPropertyValue(doc, propertyName) != null;
+    }
+
+    /**
+     * Convert a document to BlobTextFromDocument with only a sub-set of the properties.
+     */
+    public static BlobTextFromDocument docSerialize(DocumentModel doc, List<String> propertiesList) {
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
+        Map<String, String> properties = blobTextFromDoc.getProperties();
+
+        propertiesList.forEach(propName -> {
+            Serializable propVal = getPropertyValue(doc, propName);
+            if (propVal instanceof ManagedBlob) {
+                blobTextFromDoc.addBlob(propName, (ManagedBlob) propVal);
+            } else if (propVal != null) {
+                if (propVal.getClass().isArray()) {
+                    properties.put(propName, serializeArray(propVal));
+                } else {
+                    properties.put(propName, propVal.toString());
+                }
+            }
+
+        });
+
+        if (log.isDebugEnabled() && properties.size() + blobTextFromDoc.getBlobs().size() != propertiesList.size()) {
+            log.debug(String.format("Document %s one of the following properties is null. %s",
+                                    doc.getId(), propertiesList));
+        }
+
+        return blobTextFromDoc;
+    }
+
+    /**
+     * Turn an array into a list.
+     */
+    protected static String serializeArray(Serializable propVal) {
+        StringBuilder valueBuilder = new StringBuilder();
+        int length = Array.getLength(propVal);
+        for (int i = 0; i < length; i++) {
+            valueBuilder.append(Array.get(propVal, i));
+            if (i != length - 1) {
+                valueBuilder.append(LIST_DELIMITER);
+            }
+        }
+        return valueBuilder.toString();
     }
 }

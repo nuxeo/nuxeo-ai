@@ -25,7 +25,6 @@ import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 import static org.nuxeo.ai.AIConstants.EXPORT_FEATURES_PARAM;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
 import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.DONE_STREAM;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
@@ -40,15 +39,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -134,7 +132,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             for (String id : ids) {
                 try {
                     DocumentModel doc = coreSession.getDocument(new IdRef(id));
-                    BlobTextFromDocument subDoc = docSerialize(doc, customProperties);
+                    BlobTextFromDocument subDoc = PropertyUtils.docSerialize(doc, customProperties);
                     boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                     if (subDoc != null) {
                         if (log.isDebugEnabled()) {
@@ -171,34 +169,6 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             validation.forEach(record -> context.produceRecord(OUTPUT_3, record));
             validation.clear();
             context.askForCheckpoint();
-        }
-
-        /**
-         * Serialize the properties to the BlobTextFromDocument format.
-         */
-        protected BlobTextFromDocument docSerialize(DocumentModel doc, List<String> propertiesList) {
-            BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
-            Map<String, String> properties = blobTextFromDoc.getProperties();
-
-            propertiesList.forEach(propName -> {
-                Serializable propVal = getPropertyValue(doc, propName);
-                if (propVal instanceof ManagedBlob) {
-                    blobTextFromDoc.addBlob(propName, (ManagedBlob) propVal);
-                } else if (propVal != null) {
-                    properties.put(propName, propVal.toString());
-                }
-            });
-
-            if (properties.size() + blobTextFromDoc.getBlobs().size() == propertiesList.size()) {
-                return blobTextFromDoc;
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Document %s one of the following properties is null so skipping. %s",
-                                            doc.getId(), propertiesList));
-                }
-                return null;
-            }
-
         }
 
     }

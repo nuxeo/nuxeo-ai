@@ -116,13 +116,13 @@ public class PropertyUtilsTest {
         assertFalse(notNull(doc, "ecm:nope"));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testMultivalue() {
         DocumentModel doc = session.createDocumentModel("/", "Multi", "File");
         List<String> subjects = Arrays.asList("birds", "flowers");
         doc.setPropertyValue("dc:subjects", (Serializable) subjects);
         doc = session.createDocument(doc);
-        stringProp(doc, "dc:subjects");
+        assertEquals("birds | flowers", stringProp(doc, "dc:subjects"));
     }
 
     @Test(expected = UnsupportedOperationException.class)
