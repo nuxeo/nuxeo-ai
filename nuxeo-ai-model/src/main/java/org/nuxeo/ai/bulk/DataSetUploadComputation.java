@@ -65,7 +65,8 @@ public class DataSetUploadComputation extends AbstractComputation {
                                 if (document != null) {
                                     CloudClient client = Framework.getService(CloudClient.class);
                                     if (client.isAvailable()) {
-                                        log.info("Uploading dataset to cloud for command {}", cmd.getId());
+                                        log.info("Uploading dataset to cloud for command {}," +
+                                                         " corpus doc {}", cmd.getId(), document.getId());
                                         client.uploadDataset(document);
                                         log.info("Upload of dataset to cloud for command {} done.", cmd.getId());
                                     } else {
