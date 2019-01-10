@@ -15,11 +15,19 @@
 
   </extension>
 
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl" point="converter">
+    <converter name="superSpecialConverter" class="org.nuxeo.ai.enrichment.PassThroughConverter">
+      <sourceMimeType>image/jpeg</sourceMimeType>
+      <destinationMimeType>image/jpeg</destinationMimeType>
+    </converter>
+  </extension>
+
   <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
     <model id="xyz">
       <filter primaryType="File"/>
       <config name="uri">http://localhost:5089/v1/models/super_testing/</config>
       <config name="transientStore">testTransient</config>
+      <config name="conversionService">superSpecialConverter</config>
       <config name="liveness.uri">http://localhost:5089/health</config>
       <config name="liveness.methodName">GET</config>
       <inputProperties>

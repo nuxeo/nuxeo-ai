@@ -20,7 +20,6 @@ package org.nuxeo.ai.services;
 
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.PICTURE_RESIZE_CONVERTER;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -98,12 +97,6 @@ public class AIComponent extends DefaultComponent {
             log.debug("AIComponent has started.");
         }
 
-        try {
-            ConverterCheckResult pictureResize = Framework.getService(ConversionService.class)
-                                                          .isConverterAvailable(PICTURE_RESIZE_CONVERTER);
-        } catch (ConverterNotRegistered e) {
-            log.warn(PICTURE_RESIZE_CONVERTER + " converter is not registered.  You will not be able to export images.");
-        }
     }
 
     /**
