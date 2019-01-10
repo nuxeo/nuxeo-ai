@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.tensorflow;
 
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
@@ -40,8 +42,11 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.core.convert.api.ConversionService;
+import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.runtime.api.Framework;
 import org.tensorflow.example.BytesList;
 import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
@@ -55,6 +60,8 @@ import com.google.protobuf.ByteString;
 public class TFRecordWriter extends AbstractRecordWriter {
 
     public static final String TFRECORD_MIME_TYPE = "application/x-tensorflow-record";
+
+    protected String conversionService;
 
     protected int imageWidth;
 
@@ -106,6 +113,12 @@ public class TFRecordWriter extends AbstractRecordWriter {
     @Override
     public void init(Map<String, String> options) {
         super.init(options);
+        this.conversionService = options.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);
+        try {
+            Framework.getService(ConversionService.class).isConverterAvailable(conversionService);
+        } catch (ConverterNotRegistered e) {
+            log.warn(conversionService + " converter is not registered.  You will not be able to export images.");
+        }
         this.imageWidth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_WIDTH, EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
         this.imageHeight = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
         this.imageDepth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
@@ -173,7 +186,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
         if (sourceBlob != null) {
             Blob source = getBlobFromProvider(sourceBlob);
             if (source != null) {
-                return EnrichmentUtils.convertImageBlob(source, imageWidth, imageHeight, imageDepth, imageFormat);
+                return EnrichmentUtils
+                        .convertImageBlob(conversionService, source, imageWidth, imageHeight, imageDepth, imageFormat);
             }
         }
         return null;

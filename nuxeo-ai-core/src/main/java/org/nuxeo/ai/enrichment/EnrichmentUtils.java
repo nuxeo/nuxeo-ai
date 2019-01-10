@@ -66,7 +66,9 @@ public class EnrichmentUtils {
 
     public static final String DEFAULT_CONVERSATION_FORMAT = "jpg";
 
-    public static final String PICTURE_RESIZE_CONVERTER = "pictureResize";
+    public static final String CONVERSION_SERVICE = "conversionService";
+
+    public static final String DEFAULT_CONVERTER = "pictureResize";
 
     public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
 
@@ -168,15 +170,14 @@ public class EnrichmentUtils {
     /**
      * Convert the provided image blob.
      */
-    public static Blob convertImageBlob(Blob blob, int width, int height, int depth, String conversionFormat) {
+    public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth, String conversionFormat) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, width);
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_HEIGHT, height);
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_DEPTH, depth);
         parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, conversionFormat);
-        return Framework.getService(ConversionService.class).convert(PICTURE_RESIZE_CONVERTER, bh, parameters)
-                        .getBlob();
+        return Framework.getService(ConversionService.class).convert(service, bh, parameters).getBlob();
     }
 
     /**

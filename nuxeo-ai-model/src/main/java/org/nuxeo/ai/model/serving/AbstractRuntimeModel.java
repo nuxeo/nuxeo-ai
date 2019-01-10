@@ -18,12 +18,18 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,12 +39,11 @@ import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.convert.api.ConversionService;
+import org.nuxeo.ecm.core.convert.api.ConverterCheckResult;
+import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
-import java.io.Serializable;
-import java.lang.reflect.Array;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import org.nuxeo.runtime.api.Framework;
 
 /**
  * An abstract implementation of a Runtime Model
@@ -63,6 +68,8 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
 
     protected String transientStore;
 
+    protected String conversionService;
+
     protected int imageWidth;
 
     protected int imageHeight;
@@ -79,6 +86,12 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         this.info = descriptor.info;
         Map<String, String> config = descriptor.configuration;
         this.minConfidence = Float.parseFloat(config.getOrDefault("minConfidence", DEFAULT_CONFIDENCE));
+        this.conversionService = config.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);
+        try {
+            Framework.getService(ConversionService.class).isConverterAvailable(conversionService);
+        } catch (ConverterNotRegistered e) {
+            log.warn(conversionService + " converter is not registered.  You will not be able to convert images.");
+        }
         this.imageWidth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_WIDTH, EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
         this.imageHeight = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
         this.imageDepth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
@@ -158,7 +171,8 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
      */
     protected Serializable convertImageBlob(Blob sourceBlob) {
         if (sourceBlob != null) {
-            Blob blob = EnrichmentUtils.convertImageBlob(sourceBlob, imageWidth, imageHeight, imageDepth, imageFormat);
+            Blob blob = EnrichmentUtils
+                    .convertImageBlob(conversionService, sourceBlob, imageWidth, imageHeight, imageDepth, imageFormat);
             return base64EncodeBlob(blob);
         }
         return null;
