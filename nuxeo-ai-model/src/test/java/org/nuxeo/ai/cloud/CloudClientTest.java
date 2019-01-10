@@ -113,10 +113,7 @@ public class CloudClientTest {
     @Test
     public void testTitle() {
         NuxeoCloudClient nuxClient = (NuxeoCloudClient) client;
-        String query = "SELECT * FROM Document WHERE ecm:primaryType = 'Note'";
-        assertEquals("34/56 xyz", nuxClient.makeTitle(null, 34, 56, "xyz"));
-        assertEquals("34/57 xyz", nuxClient.makeTitle("  ", 34, 57, "xyz"));
-        assertEquals("35/57 xyz", nuxClient.makeTitle("  whatever ", 35, 57, "xyz"));
-        assertEquals("ecm:primaryType = 'Note' 34/56 xyz", nuxClient.makeTitle(query, 34, 56, "xyz"));
+        assertEquals("2 features, 34 Training, 56 Evaluation, Export id xyz", nuxClient.makeTitle(34, 56, "xyz", 2));
+        assertEquals("0 features, 100 Training, 206 Evaluation, Export id xyzx", nuxClient.makeTitle(100, 206, "xyzx", 0));
     }
 }

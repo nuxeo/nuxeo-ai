@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.cloud;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
@@ -163,7 +162,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             trainingCount = Math.round(docCount * Double.valueOf("0." + split));
             evalCount = Math.round(docCount * Double.valueOf("0." + (100 - split)));
         }
-        String title = makeTitle(query, trainingCount, evalCount, jobId);
         Response response = null;
 
         try {
@@ -175,6 +173,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                     (List<Map<String, Object>>) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS);
             List<Map<String, Object>> fields = new ArrayList<>(inputs);
             fields.addAll(outputs);
+            String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
             String fieldsAsJson = JacksonUtil.MAPPER.writeValueAsString(fields);
             String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query,
                                            split, fieldsAsJson, batchId, batchId, batchId);
@@ -200,13 +199,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     /**
      * Generate a title for the dataset.
      */
-    protected String makeTitle(String query, long trainingCount, long evalCount, String suffix) {
-        String toReturn = trainingCount + "/" + evalCount + " " + suffix;
-        final int wherePos = (isBlank(query) ? "" : query.toLowerCase()).indexOf("where");
-        if (wherePos == -1) {
-            return toReturn;
-        } else {
-            return query.substring(wherePos + 5).trim() + " " + toReturn;
-        }
+    protected String makeTitle(long trainingCount, long evalCount, String suffix, int numberOfFields) {
+        return String.format("%s features, %s Training, %s Evaluation, Export id %s", numberOfFields, trainingCount, evalCount, suffix);
     }
 }
