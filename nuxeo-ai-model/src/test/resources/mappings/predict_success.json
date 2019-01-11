@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/v1/models/super_testing/predict"
+    "url": "/api/v1/ai/mockTestProject/model/mockTestModel/testing/predict"
   },
   "response": {
     "status": 200,

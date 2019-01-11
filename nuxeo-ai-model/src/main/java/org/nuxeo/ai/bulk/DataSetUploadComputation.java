@@ -67,8 +67,9 @@ public class DataSetUploadComputation extends AbstractComputation {
                                     if (client.isAvailable()) {
                                         log.info("Uploading dataset to cloud for command {}," +
                                                          " corpus doc {}", cmd.getId(), document.getId());
-                                        client.uploadDataset(document);
-                                        log.info("Upload of dataset to cloud for command {} done.", cmd.getId());
+                                        boolean success = client.uploadedDataset(document);
+                                        log.info("Upload of dataset to cloud for command {} {}.", cmd.getId(),
+                                                 success ? "successful" : "failed");
                                     } else {
                                         log.warn("Upload to cloud not possible for export command {}," +
                                                          " corpus doc {} and client {}",
