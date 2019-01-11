@@ -20,6 +20,7 @@ package org.nuxeo.ai.cloud;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
@@ -70,7 +71,7 @@ public class CloudClientTest {
 
         assertFalse(client.isAvailable());
         // Doesn't do anything because its not configured.
-        client.uploadDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE));
+        assertFalse(client.uploadedDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE)));
 
         try {
             ((NuxeoCloudClient) client).configureClient(new CloudConfigDescriptor());
@@ -103,17 +104,20 @@ public class CloudClientTest {
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY, query);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_TRAINING_DATA, (Serializable) managedBlob);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_EVALUATION_DATA, (Serializable) managedBlob);
+        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_STATS, (Serializable) managedBlob);
         Long documentsCountValue = 1000L;
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT, documentsCountValue);
         doc = session.createDocument(doc);
         txFeature.nextTransaction();
-        client.uploadDataset(doc);
+        assertTrue(client.uploadedDataset(doc));
     }
 
     @Test
     public void testTitle() {
         NuxeoCloudClient nuxClient = (NuxeoCloudClient) client;
-        assertEquals("2 features, 34 Training, 56 Evaluation, Export id xyz", nuxClient.makeTitle(34, 56, "xyz", 2));
-        assertEquals("0 features, 100 Training, 206 Evaluation, Export id xyzx", nuxClient.makeTitle(100, 206, "xyzx", 0));
+        assertEquals("2 features, 34 Training, 56 Evaluation, Export id xyz", nuxClient
+                .makeTitle(34, 56, "xyz", 2));
+        assertEquals("0 features, 100 Training, 206 Evaluation, Export id xyzx", nuxClient
+                .makeTitle(100, 206, "xyzx", 0));
     }
 }

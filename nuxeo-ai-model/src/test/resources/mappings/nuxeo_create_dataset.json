@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/api/v1/ai/mockServer"
+    "url": "/api/v1/ai/mockTestProject"
   },
   "response": {
     "status": 201,

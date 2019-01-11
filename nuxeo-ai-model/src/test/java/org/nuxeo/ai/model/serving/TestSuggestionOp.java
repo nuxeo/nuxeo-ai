@@ -70,6 +70,7 @@ public class TestSuggestionOp {
     protected BlobManager manager;
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldCall() throws OperationException, IOException {
 
         String title = "My document suggestion";

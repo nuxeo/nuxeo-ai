@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
@@ -84,6 +85,9 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         this.inputs = descriptor.getInputs();
         this.outputs = descriptor.getOutputs();
         this.info = descriptor.info;
+        if (isBlank(getName())) {
+            throw new IllegalArgumentException(MODEL_NAME + " is a mandatory info parameter");
+        }
         Map<String, String> config = descriptor.configuration;
         this.minConfidence = Float.parseFloat(config.getOrDefault("minConfidence", DEFAULT_CONFIDENCE));
         this.conversionService = config.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);

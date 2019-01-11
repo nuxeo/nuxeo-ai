@@ -18,12 +18,14 @@
  */
 package org.nuxeo.ai.cloud;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_STATS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
+import static org.nuxeo.client.ConstantsV1.API_PATH;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,9 +69,11 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             "  }\n" +
             "}";
 
+    public static final String API_V1_AI = API_PATH + "ai/";
+
     private static final Logger log = LogManager.getLogger(NuxeoCloudClient.class);
 
-    protected String id;
+    protected String projectId;
 
     protected String url;
 
@@ -98,10 +102,13 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         } else {
             throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
         }
-        client = builder.connect();
-        id = descriptor.getId();
+        projectId = descriptor.projectId;
         url = descriptor.url; //The client doesn't seem to export the URL to use
-        log.debug("Nuxeo Cloud Client {} is configured for {} ", id, url);
+        if (isBlank(url) || isBlank(projectId)) {
+            throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
+        }
+        client = builder.connect();
+        log.debug("Nuxeo Cloud Client {} is configured for {}.", projectId, url);
     }
 
     /**
@@ -121,7 +128,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public void uploadDataset(DocumentModel corpusDoc) {
+    public boolean uploadedDataset(DocumentModel corpusDoc) {
         if (corpusDoc != null) {
             String jobId = (String) corpusDoc.getPropertyValue(CORPUS_JOBID);
             Blob trainingData = (Blob) corpusDoc.getPropertyValue(CORPUS_TRAINING_DATA);
@@ -145,12 +152,13 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                  TFRECORD_MIME_TYPE, evalData.getLength());
                 batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
                                                  statsData.getMimeType(), statsData.getLength());
-                createDataset(corpusDoc, batchUpload.getBatchId());
+                return createDataset(corpusDoc, batchUpload.getBatchId());
             }
         }
+        return false;
     }
 
-    protected void createDataset(DocumentModel corpusDoc, String batchId) {
+    protected boolean createDataset(DocumentModel corpusDoc, String batchId) {
         String jobId = (String) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_JOBID);
         String query = (String) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY);
         Long docCount = (Long) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT);
@@ -178,15 +186,16 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query,
                                            split, fieldsAsJson, batchId, batchId, batchId);
 
-            log.debug("Uploading to cloud project: {}, payload {}", id, payload);
+            log.debug("Uploading to cloud project: {}, payload {}", projectId, payload);
 
-            response = getClient().post(url + "/api/v1/ai/" + id, payload);
+            response = getClient().post(getBaseUrl(), payload);
 
-            log.debug("Upload to cloud project: {}, finished.", id);
+            log.debug("Upload to cloud project: {}, finished.", projectId);
 
             if (!response.isSuccessful()) {
                 log.error("Failed to upload the corpus dataset. " + response.toString());
             }
+            return response.isSuccessful();
         } catch (IOException e) {
             log.error("Failed to process corpus dataset. ", e);
         } finally {
@@ -194,12 +203,36 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 response.body().close();
             }
         }
+        return false;
+    }
+
+    @Override
+    public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
+        try {
+            Response response = getClient().post(getBaseUrl() + postUrl, jsonBody);
+            if (response != null && handler != null) {
+                if (response.isSuccessful()) {
+                    return handler.handleResponse(response);
+                } else {
+                    log.warn(String.format("Unsuccessful call to (%s), status is %d", postUrl, response.code()));
+                }
+            }
+        } catch (IOException e) {
+            log.info(String.format("Unsuccessful call to api %s", postUrl), e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return url + API_V1_AI + projectId;
     }
 
     /**
      * Generate a title for the dataset.
      */
     protected String makeTitle(long trainingCount, long evalCount, String suffix, int numberOfFields) {
-        return String.format("%s features, %s Training, %s Evaluation, Export id %s", numberOfFields, trainingCount, evalCount, suffix);
+        return String.format("%s features, %s Training, %s Evaluation, Export id %s",
+                             numberOfFields, trainingCount, evalCount, suffix);
     }
 }

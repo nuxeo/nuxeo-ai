@@ -19,6 +19,8 @@
 package org.nuxeo.ai.model.serving;
 
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
@@ -32,12 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.entity.EntityBuilder;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
+import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -45,11 +42,11 @@ import org.nuxeo.ai.metadata.Suggestion;
 import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -71,6 +68,8 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     public static final String USE_LABELS = "useLabels";
 
+    public static final String MODEL_LABEL = "modelLabel";
+
     public static final String JSON_RESULTS = "results";
 
     public static final String JSON_OUTPUTS = "output_names";
@@ -79,21 +78,26 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     public static final String JSON_PROBABILITIES = "_prob";
 
-    protected RestClient client;
-
     protected Set<String> inputNames;
 
     protected String kind;
+
+    protected String modelPath = "";
 
     protected boolean useLabels;  //Indicates if enrichment should use suggestion or labels
 
     @Override
     public void init(ModelDescriptor descriptor) {
         super.init(descriptor);
-        client = new RestClient(descriptor.configuration, "", null);
         useLabels = Boolean.parseBoolean(descriptor.configuration.getOrDefault(USE_LABELS, Boolean.TRUE.toString()));
         kind = descriptor.configuration.getOrDefault(KIND_CONFIG, PREDICTION_CUSTOM);
         inputNames = inputs.stream().map(ModelProperty::getName).collect(Collectors.toSet());
+        String modelLabel = descriptor.info.get(MODEL_LABEL);
+        if (isBlank(modelLabel)) {
+            log.debug("No " + MODEL_LABEL + " has been specified for model " + descriptor.id);
+        } else {
+            modelPath =  modelLabel + "/";
+        }
     }
 
     @Override
@@ -105,29 +109,29 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
      * For the supplied input values try to predict a result or return null
      */
     public SuggestionMetadata predict(Map<String, Serializable> inputValues) {
-        return client.call(builder -> prepareRequest(VERB_PREDICT, builder, inputValues),
-                           response -> {
-                               int statusCode = response.getStatusLine().getStatusCode();
-                               if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
-                                   log.warn(String.format("Unsuccessful call to custom model (%s), status is %d",
-                                                          getId(), statusCode));
-                                   return null;
-                               } else {
-                                   SuggestionMetadata meta = handlePredict(response);
-                                   if (log.isDebugEnabled()) {
-                                       log.debug("Prediction is " + MAPPER.writeValueAsString(meta));
+        CloudClient client = Framework.getService(CloudClient.class);
+        if (client.isAvailable()) {
+            String json = prepareRequest(inputValues);
+            if (isNotBlank(json)) {
+                return client.post(buildUri(), json,
+                                   response -> {
+                                       SuggestionMetadata meta = handlePredict(response.body().string());
+                                       if (log.isDebugEnabled()) {
+                                           log.debug(getName()+  " prediction is " + MAPPER.writeValueAsString(meta));
+                                       }
+                                       return meta;
                                    }
-                                   return meta;
-                               }
-                           }
-        );
+                );
+            }
+        }
+
+        return null;
     }
 
     /**
      * Handle the response from Tensorflow serving and return normalized SuggestionMetadata.
      */
-    protected SuggestionMetadata handlePredict(HttpResponse response) {
-        String content = client.getContent(response);
+    protected SuggestionMetadata handlePredict(String content) {
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
             SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(getKind(), getId(), inputNames);
@@ -178,31 +182,20 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     /**
      * Prepares the http request to send to Tensorflow serving
      */
-    protected HttpUriRequest prepareRequest(String verb, RequestBuilder builder, Map<String, Serializable> inputs) {
-        builder.setUri(buildUri(verb, builder.getUri().toString()));
-
+    protected String prepareRequest(Map<String, Serializable> inputs) {
         try {
-            String json = MAPPER.writeValueAsString(new TensorInstances(inputs));
-            builder.setEntity(EntityBuilder.create().setText(json).build());
+            return MAPPER.writeValueAsString(new TensorInstances(inputs));
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize model inputs", e);
             throw new NuxeoException("Unable to make a valid json request", e);
         }
-
-        return builder.build();
     }
 
     /**
      * Builds the uri.
      */
-    protected String buildUri(String verb, String baseUri) {
-        return baseUri + verb;
-    }
-
-    @Override
-    public String getName() {
-        String version = getVersion();
-        return super.getName() + (StringUtils.isNotBlank(version) ? "_" + getVersion() : "");
+    protected String buildUri() {
+        return String.format("/model/%s/", getName()) + modelPath + VERB_PREDICT;
     }
 
     @Override
