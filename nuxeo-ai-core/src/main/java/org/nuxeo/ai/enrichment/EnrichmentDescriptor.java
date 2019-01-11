@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.nuxeo.ecm.core.transientstore.TransientStorageComponent.DEFAULT_STORE_NAME;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +48,7 @@ public class EnrichmentDescriptor {
     protected Class<? extends EnrichmentService> service;
 
     @XNode("@transientStore")
-    protected String transientStoreName;
+    protected String transientStoreName = DEFAULT_STORE_NAME;
 
     @XNode("@maxSize")
     protected long maxSize = DEFAULT_MAX_SIZE;
