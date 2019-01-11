@@ -31,6 +31,9 @@ public class CloudConfigDescriptor implements Descriptor {
     @XNode("@url")
     protected String url = "http://localhost:8080/nuxeo";
 
+    @XNode("@projectId")
+    protected String projectId;
+
     @XNode("authentication")
     protected Authentication authentication;
 

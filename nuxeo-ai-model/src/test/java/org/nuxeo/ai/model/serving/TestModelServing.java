@@ -95,7 +95,7 @@ public class TestModelServing {
     public void testServiceConfig() {
         assertNotNull(modelServingService);
         TFRuntimeModel model = (TFRuntimeModel) modelServingService.getModel("xyz");
-        assertEquals("dnn", model.getInfo().get(MODEL_NAME));
+        assertEquals("mockTestModel", model.getInfo().get(MODEL_NAME));
         assertEquals("1", model.getVersion());
         assertTrue("Model inputs must be set correctly",
                    model.inputNames.containsAll(Arrays.asList("dc:title", "file:content")));
@@ -105,6 +105,7 @@ public class TestModelServing {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testPredict() throws IOException {
         //Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Special Doc", "File");
@@ -125,6 +126,7 @@ public class TestModelServing {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testEnrichment() throws IOException {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
@@ -142,6 +144,7 @@ public class TestModelServing {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testCustomModelEnrichment() throws IOException {
         assertNotNull(aiComponent);
         EnrichmentService service = aiComponent.getEnrichmentService("failingModel");

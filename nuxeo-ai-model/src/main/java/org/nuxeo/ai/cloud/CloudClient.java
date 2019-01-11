@@ -18,7 +18,10 @@
  */
 package org.nuxeo.ai.cloud;
 
+import java.io.IOException;
 import org.nuxeo.ecm.core.api.DocumentModel;
+
+import okhttp3.Response;
 
 /**
  * A client that connects to Nuxeo Cloud AI
@@ -33,5 +36,22 @@ public interface CloudClient {
     /**
      * Upload the blobs to the cloud, using data from the corpus document.
      */
-    void uploadDataset(DocumentModel corpusDoc);
+    boolean uploadedDataset(DocumentModel corpusDoc);
+
+    /*
+     * Make a http POST request to the cloud using the provided parameters.
+     */
+    <T> T post(String url, String jsonBody, ResponseHandler<T> handler);
+
+    /**
+     * The base url for all calls to the cloud including the project id.
+     */
+    String getBaseUrl();
+
+    /**
+     * A callback to handle a response from a call to the cloud.
+     */
+    interface ResponseHandler<T> {
+        T handleResponse(Response response) throws IOException;
+    }
 }
