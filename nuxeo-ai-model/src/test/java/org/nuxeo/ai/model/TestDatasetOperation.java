@@ -34,6 +34,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.model.export.DatasetUploadOperation;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
@@ -185,5 +186,18 @@ public class TestDatasetOperation {
         @SuppressWarnings("unchecked")
         List<Map> outputs = (List<Map>) doc.getPropertyValue(CORPUS_OUTPUTS);
         assertEquals(2, outputs.size());
+
+        ctx = new OperationContext(session);
+        ctx.setInput(doc);
+        chain = new OperationChain("uploadAgainChain1");
+        chain.add(DatasetUploadOperation.ID);
+        automationService.run(ctx, chain);
+
+        params.clear();
+        params.put("document", doc);
+        ctx = new OperationContext(session);
+        chain = new OperationChain("uploadAgainChain2");
+        chain.add(DatasetUploadOperation.ID).from(params);
+        automationService.run(ctx, chain);
     }
 }
