@@ -93,7 +93,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     protected void configureClient(CloudConfigDescriptor descriptor) {
-        NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url);
+        NuxeoClient.Builder builder = new NuxeoClient.Builder()
+                .url(descriptor.url)
+                .readTimeout(descriptor.readTimeout)
+                .connectTimeout(descriptor.connectTimeout);
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
             builder.authentication(new TokenAuthInterceptor(auth.token));
