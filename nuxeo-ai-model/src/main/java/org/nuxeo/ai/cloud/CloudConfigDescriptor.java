@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.cloud;
 
+import java.time.Duration;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.runtime.model.Descriptor;
@@ -32,10 +33,10 @@ public class CloudConfigDescriptor implements Descriptor {
     protected String url = "http://localhost:8080/nuxeo";
 
     @XNode("@readTimeout")
-    protected int readTimeout = 60 * 8; // Default to 8 minutes.
+    protected Duration readTimeout = Duration.ofMinutes(8);  // Default 8 minutes
 
     @XNode("@connectTimeout")
-    protected int connectTimeout = 15; // Default to 15 seconds.
+    protected Duration connectTimeout = Duration.ofSeconds(15);  // Default 15 seconds
 
     @XNode("@projectId")
     protected String projectId;
