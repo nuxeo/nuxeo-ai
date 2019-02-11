@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
@@ -131,19 +132,22 @@ public class TFRecordWriter extends AbstractRecordWriter {
         if (list != null && !list.isEmpty()) {
 
             File file = getFile(list.get(0).getKey());
-
+            int written = 0;
+            int skipped = 0;
             try (BufferedOutputStream buffy = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
                  DataOutputStream dataOutputStream = new DataOutputStream(buffy)) {
 
                 TensorflowWriter tensorflowWriter = new TensorflowWriter(dataOutputStream);
-
                 for (Record record : list) {
                     try {
                         BlobTextFromDocument blobText = fromRecord(record, BlobTextFromDocument.class);
-                        Features allFeatures = writeFeatures(blobText);
-                        if (allFeatures.getFeatureCount() > 0) {
-                            Example example = Example.newBuilder().setFeatures(allFeatures).build();
+                        Optional<Features> allFeatures = writeFeatures(blobText);
+                        if (allFeatures.isPresent() && allFeatures.get().getFeatureCount() > 0) {
+                            Example example = Example.newBuilder().setFeatures(allFeatures.get()).build();
                             tensorflowWriter.write(example.toByteArray());
+                            written++;
+                        } else {
+                            skipped++;
                         }
                     } catch (NuxeoException nux) {
                         log.warn(String.format("Failed to process record %s ", record.getWatermark()), nux);
@@ -151,7 +155,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
                 }
             }
             if (log.isDebugEnabled()) {
-                log.debug(String.format("%s writer has %d records", name, list.size()));
+                log.debug(String.format("%s writer had %d records, %d were written, %d were skipped.",
+                                        name, list.size(), written, skipped));
             }
         }
     }
@@ -159,19 +164,21 @@ public class TFRecordWriter extends AbstractRecordWriter {
     /**
      * Write the features based on the supplied data
      */
-    protected Features writeFeatures(BlobTextFromDocument blobTextFromDoc) throws IOException {
+    protected Optional<Features> writeFeatures(BlobTextFromDocument blobTextFromDoc) throws IOException {
         Features.Builder features = Features.newBuilder();
         for (Map.Entry<String, ManagedBlob> blobEntry : blobTextFromDoc.getBlobs().entrySet()) {
             Blob blob = convertImageBlob(blobEntry.getValue());
             if (blob != null) {
                 features.putFeature(blobEntry.getKey(), blobFeature(blob));
+            } else {
+                return Optional.empty();
             }
         }
         blobTextFromDoc.getProperties().forEach((k, v) -> {
             String[] values = v.split(LIST_DELIMITER_PATTERN);
             features.putFeature(k, textFeature(values));
         });
-        return features.build();
+        return Optional.of(features.build());
     }
 
     @Override

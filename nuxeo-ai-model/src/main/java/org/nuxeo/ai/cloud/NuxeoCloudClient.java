@@ -37,6 +37,7 @@ import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.client.NuxeoClient;
 import org.nuxeo.client.objects.upload.BatchUpload;
+import org.nuxeo.client.spi.NuxeoClientException;
 import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -148,14 +149,18 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 log.error("Job: {} has no statistics data.", jobId);
             }
             if (trainingData != null && evalData != null && statsData != null) {
-                BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
-                batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
-                                                 TFRECORD_MIME_TYPE, trainingData.getLength());
-                batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getFilename(),
-                                                 TFRECORD_MIME_TYPE, evalData.getLength());
-                batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
-                                                 statsData.getMimeType(), statsData.getLength());
-                return createDataset(corpusDoc, batchUpload.getBatchId());
+                try {
+                    BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
+                    batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
+                                                     TFRECORD_MIME_TYPE, trainingData.getLength());
+                    batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getFilename(),
+                                                     TFRECORD_MIME_TYPE, evalData.getLength());
+                    batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
+                                                     statsData.getMimeType(), statsData.getLength());
+                    return createDataset(corpusDoc, batchUpload.getBatchId());
+                } catch (NuxeoClientException e) {
+                    log.error("Failed to upload dataset. ", e);
+                }
             }
         }
         return false;
