@@ -39,8 +39,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -112,7 +112,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
         public static final int DEFAULT_SPLIT = 75;
 
-        private static final Log log = LogFactory.getLog(ExportingComputation.class);
+        private static final Logger log = LogManager.getLogger(ExportingComputation.class);
 
         List<Record> training = new ArrayList<>();
 
@@ -135,8 +135,8 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                     BlobTextFromDocument subDoc = PropertyUtils.docSerialize(doc, customProperties);
                     boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                     if (subDoc != null) {
-                        if (log.isDebugEnabled()) {
-                            log.debug(isTraining + " " + subDoc);
+                        if (log.isTraceEnabled()) {
+                            log.trace((isTraining ? "training " : "validate ") + subDoc);
                         }
                         Record record = toRecord(command.getId(), subDoc);
                         if (isTraining) {
@@ -152,10 +152,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                     discarded++;
                 }
             }
-            if (log.isDebugEnabled()) {
-                log.debug("There  were Ids " + ids.size());
-            }
-
+            log.debug("{} ids to export.", ids.size());
         }
 
         @Override

@@ -86,7 +86,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         BulkService service = Framework.getService(BulkService.class);
         if (isEndOfBatch(exportStatus)) {
             BulkCommand command = service.getCommand(exportStatus.getCommandId());
-            log.debug("Ending batch for {} " + exportStatus.getCommandId());
+            log.debug("Ending batch for {}", exportStatus.getCommandId());
             for (String name : writerNames) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
                 if (writer == null) {
@@ -110,7 +110,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                                 String.format("Unable to complete action %s", exportStatus.getCommandId()), e);
                     }
                 } else {
-                    log.debug("No writer file exists for {} {}" + exportStatus.getCommandId(), name);
+                    log.debug("No writer file exists for {} {}", exportStatus.getCommandId(), name);
                 }
             }
             // Clear counter
