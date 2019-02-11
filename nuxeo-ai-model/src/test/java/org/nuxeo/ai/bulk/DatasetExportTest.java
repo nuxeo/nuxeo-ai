@@ -65,6 +65,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Arrays;
@@ -81,7 +82,7 @@ import java.util.concurrent.TimeUnit;
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class DatasetExportTest {
 
-    public static final String TEST_MIME_TYPE = "image/jpeg";
+    public static final String TEST_MIME_TYPE = "image/png";
 
     @Inject
     public BulkService service;
@@ -130,7 +131,7 @@ public class DatasetExportTest {
         int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_TRAINING_DATA), 3);
         int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_EVALUATION_DATA), 3);
         assertTrue(trainingCount > validationCount);
-        assertEquals(450, trainingCount + validationCount);
+        assertEquals("We should have disguarded 50 bad blobs.", 400, trainingCount + validationCount);
     }
 
     /**
@@ -143,12 +144,17 @@ public class DatasetExportTest {
     }
 
     @NotNull
-    protected DocumentModel setupTestData() {
+    protected DocumentModel setupTestData() throws IOException {
         DocumentModel testRoot = session.createDocumentModel("/", "bulkexporttest", "Folder");
         testRoot = session.createDocument(testRoot);
         session.saveDocument(testRoot);
 
+        Blob goodBlob = Blobs.createBlob(session.getClass().getResourceAsStream("/files/plane.jpg") , "image/jpeg");
+        assertNotNull(goodBlob);
+
         DocumentModel test = session.getDocument(testRoot.getRef());
+        int goodBlobs = 0;
+        int badBlobs = 0;
 
         for (int i = 0; i < 500; ++i) {
             DocumentModel doc = session.createDocumentModel(test.getPathAsString(), "doc" + i, "File");
@@ -159,7 +165,8 @@ public class DatasetExportTest {
                 doc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
             }
             if (i % 10 != 0) {
-                Blob blob = Blobs.createBlob("My text" + i, TEST_MIME_TYPE);
+                // 50 bad blobs, 400 good ones
+                Blob blob = i % 5 == 0 ? Blobs.createBlob("My text" + i, TEST_MIME_TYPE) : goodBlob;
                 doc.setPropertyValue("file:content", (Serializable) blob);
             }
             session.createDocument(doc);
