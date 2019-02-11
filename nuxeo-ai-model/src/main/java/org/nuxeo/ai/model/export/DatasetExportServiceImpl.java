@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -102,7 +103,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     @Override
     public String export(CoreSession session, String nxql,
-                         Collection<String> inputProperties, Collection<String> outputProperties, int split) {
+            Collection<String> inputProperties, Collection<String> outputProperties, int split) {
 
         validateParams(nxql, inputProperties, outputProperties);
 
@@ -124,9 +125,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNxql(nxql, featuresWithType))
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNxql(nxql, featuresWithType),
+                session.getPrincipal().getName())
                 .repository(session.getRepositoryName())
-                .user(session.getPrincipal().getName())
                 .param(EXPORT_FEATURES_PARAM, String.join(",", featuresList))
                 .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
         String bulkId = Framework.getService(BulkService.class).submit(bulkCommand);
@@ -153,8 +154,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Create a corpus document for the data export.
      */
     public DocumentModel createCorpus(CoreSession session, String query,
-                                      List<Map<String, String>> inputs, List<Map<String, String>> outputs, int split,
-                                      Blob statsBlob) {
+            List<Map<String, String>> inputs, List<Map<String, String>> outputs, int split,
+            Blob statsBlob) {
         DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", CORPUS_TYPE);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY, query);
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_SPLIT, split);
@@ -167,9 +168,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public DocumentModel getCorpusDocument(CoreSession session, String id) {
         List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
-                                                               CORPUS_TYPE,
-                                                               CORPUS_JOBID,
-                                                               id));
+                CORPUS_TYPE,
+                CORPUS_JOBID,
+                id));
         if (docs.size() == 1) {
             return docs.get(0);
         } else {
@@ -192,7 +193,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     @Override
     public Collection<Statistic> getStatistics(CoreSession session, String nxql,
-                                               Collection<String> inputProperties, Collection<String> outputProperties) {
+            Collection<String> inputProperties, Collection<String> outputProperties) {
         validateParams(nxql, inputProperties, outputProperties);
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
@@ -214,27 +215,27 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      */
     @SuppressWarnings("unchecked")
     protected void getValidStats(List<Map<String, String>> featuresWithType,
-                                 long total, List<Statistic> stats, NxQueryBuilder qb) {
+            long total, List<Statistic> stats, NxQueryBuilder qb) {
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
-                case IMAGE_TYPE:
-         //           qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
-                    break;
-                default:
-                    // Only 2 types at the moment, we would need numeric type in the future.
-                    // TEXT_TYPE
-                    Properties termProps = new Properties();
-                    termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_BUCKETS);
-                    qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
-                    qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
+            case IMAGE_TYPE:
+                //           qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
+                break;
+            default:
+                // Only 2 types at the moment, we would need numeric type in the future.
+                // TEXT_TYPE
+                Properties termProps = new Properties();
+                termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_BUCKETS);
+                qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
+                qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
             }
         }
 
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
         stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
-                               esResult.getElasticsearchResponse().getHits().getTotalHits()));
+                esResult.getElasticsearchResponse().getHits().getTotalHits()));
     }
 
     /**
@@ -246,14 +247,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
-                case TEXT_TYPE:
-                    qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
-                    break;
-                case IMAGE_TYPE:
-                    qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
-                    break;
-                default:
-                    // Only 2 types at the moment, we would need numeric type in the future.
+            case TEXT_TYPE:
+                qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
+                break;
+            case IMAGE_TYPE:
+                qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
+                break;
+            default:
+                // Only 2 types at the moment, we would need numeric type in the future.
             }
         }
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
@@ -272,14 +273,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
-                case IMAGE_TYPE:
-                    buffy.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
-                    break;
-                case CATEGORY_TYPE:
-                    // Don't add additional validation for the category type, it can be null.
-                    break;
-                default:
-                    buffy.append(" AND ").append(propName).append(" IS NOT NULL");
+            case IMAGE_TYPE:
+                buffy.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
+                break;
+            case CATEGORY_TYPE:
+                // Don't add additional validation for the category type, it can be null.
+                break;
+            default:
+                buffy.append(" AND ").append(propName).append(" IS NOT NULL");
             }
         }
         return buffy.toString();
