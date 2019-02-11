@@ -4,10 +4,9 @@
   <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl" point="converter">
     <converter name="specialConverter" class="org.nuxeo.ai.enrichment.PassThroughConverter">
       <sourceMimeType>image/jpeg</sourceMimeType>
-      <destinationMimeType>image/jpeg</destinationMimeType>
+      <destinationMimeType>image/gif</destinationMimeType>
     </converter>
   </extension>
-
   <extension point="recordWriter" target="org.nuxeo.ai.services.AIComponent">
     <recordWriter class="org.nuxeo.ai.tensorflow.TFRecordWriter">
       <name>training</name>
