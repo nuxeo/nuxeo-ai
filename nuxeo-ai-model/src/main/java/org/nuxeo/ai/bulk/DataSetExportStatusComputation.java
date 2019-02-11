@@ -25,8 +25,14 @@ import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
 import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatus;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
@@ -44,19 +50,13 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.codec.CodecService;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * Listens for the end of the Dataset export and raises an event.
  */
 public class DataSetExportStatusComputation extends AbstractComputation {
 
-    private static final Log log = LogFactory.getLog(DataSetExportStatusComputation.class);
+    private static final Logger log = LogManager.getLogger(DataSetExportStatusComputation.class);
 
     protected final Set<String> writerNames;
 
@@ -86,6 +86,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         BulkService service = Framework.getService(BulkService.class);
         if (isEndOfBatch(exportStatus)) {
             BulkCommand command = service.getCommand(exportStatus.getCommandId());
+            log.debug("Ending batch for {} " + exportStatus.getCommandId());
             for (String name : writerNames) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
                 if (writer == null) {
@@ -108,6 +109,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                         throw new NuxeoException(
                                 String.format("Unable to complete action %s", exportStatus.getCommandId()), e);
                     }
+                } else {
+                    log.debug("No writer file exists for {} {}" + exportStatus.getCommandId(), name);
                 }
             }
             // Clear counter
@@ -161,6 +164,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
             processed = 0L;
             counters.put(exportStatus.getCommandId(), processed);
         }
+        log.debug("Checking end of batch for {}, count processed {}, export processed {} and total of {}",
+                  exportStatus.getCommandId(), processed, exportStatus.getProcessed(), status.getTotal());
         return processed + exportStatus.getProcessed() >= status.getTotal();
     }
 }
