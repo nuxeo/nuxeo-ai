@@ -32,6 +32,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.propsToTypedList;
 import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MIN_DOC_COUNT_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -78,7 +80,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String STATS_COUNT = "count";
 
-    public static final String DEFAULT_NUM_BUCKETS = "20";
+    public static final String DEFAULT_NUM_TERMS = "200";
+
+    public static final String DEFAULT_MIN_TERMS = "15";
 
     protected static final Properties EMPTY_PROPS = new Properties();
 
@@ -225,14 +229,18 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                     // Only 2 types at the moment, we would need numeric type in the future.
                     // TEXT_TYPE
                     Properties termProps = new Properties();
-                    termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_BUCKETS);
+                    termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
+                    termProps.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
                     qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
                     qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
             }
         }
 
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
+        stats.addAll(esResult.getAggregates().stream()
+                             .map(Statistic::from)
+                             .filter(Objects::nonNull)
+                             .collect(Collectors.toList()));
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
                                esResult.getElasticsearchResponse().getHits().getTotalHits()));
     }
@@ -246,6 +254,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
+                case CATEGORY_TYPE:
                 case TEXT_TYPE:
                     qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
                     break;
@@ -253,7 +262,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                     qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
                     break;
                 default:
-                    // Only 2 types at the moment, we would need numeric type in the future.
+                    // Only 3 types at the moment, we would need numeric type in the future.
             }
         }
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
