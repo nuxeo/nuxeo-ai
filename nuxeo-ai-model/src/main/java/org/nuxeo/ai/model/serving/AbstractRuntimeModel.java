@@ -22,13 +22,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -39,7 +34,6 @@ import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
@@ -148,31 +142,9 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
     }
 
     /**
-     * Get the properties from a document as a Map of xpath key, and string value.
-     */
-    public Map<String, Serializable> getProperties(DocumentModel doc) {
-        Map<String, Serializable> props = new HashMap<>(inputs.size());
-        for (ModelProperty input : inputs) {
-            switch (input.getType()) {
-                case IMAGE_TYPE:
-                    props.put(input.getName(), convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class)));
-                    break;
-                case CATEGORY_TYPE:
-                    Object[] categories = getPropertyValue(doc, input.getName(), Object[].class);
-                    props.put(input.getName(), categories);
-                    break;
-                default:
-                    // default to text String
-                    props.put(input.getName(), getPropertyValue(doc, input.getName(), String.class));
-            }
-        }
-        return props;
-    }
-
-    /**
      * Takes a reference to an image blob and turns it into a format supported by the model
      */
-    protected Serializable convertImageBlob(Blob sourceBlob) {
+    protected String convertImageBlob(Blob sourceBlob) {
         if (sourceBlob != null) {
             Blob blob = EnrichmentUtils
                     .convertImageBlob(conversionService, sourceBlob, imageWidth, imageHeight, imageDepth, imageFormat);

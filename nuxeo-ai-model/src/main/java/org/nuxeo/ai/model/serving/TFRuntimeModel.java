@@ -21,6 +21,12 @@ package org.nuxeo.ai.model.serving;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
@@ -96,19 +102,18 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         if (isBlank(modelLabel)) {
             log.debug("No " + MODEL_LABEL + " has been specified for model " + descriptor.id);
         } else {
-            modelPath =  modelLabel + "/";
+            modelPath = modelLabel + "/";
         }
-    }
-
-    @Override
-    public SuggestionMetadata predict(DocumentModel doc) {
-        return predict(getProperties(doc));
     }
 
     /**
      * For the supplied input values try to predict a result or return null
      */
-    public SuggestionMetadata predict(Map<String, Serializable> inputValues) {
+    public SuggestionMetadata predict(Map<String, Tensor> inputValues) {
+        if (inputValues.size() != inputs.size()) {
+            log.debug(getName() + " did not call prediction.  Properties provided were " + inputValues.keySet());
+            return null;
+        }
         CloudClient client = Framework.getService(CloudClient.class);
         if (client.isAvailable()) {
             String json = prepareRequest(inputValues);
@@ -117,7 +122,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                                    response -> {
                                        SuggestionMetadata meta = handlePredict(response.body().string());
                                        if (log.isDebugEnabled()) {
-                                           log.debug(getName()+  " prediction is " + MAPPER.writeValueAsString(meta));
+                                           log.debug(getName() + " prediction is " + MAPPER.writeValueAsString(meta));
                                        }
                                        return meta;
                                    }
@@ -182,7 +187,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     /**
      * Prepares the http request to send to Tensorflow serving
      */
-    protected String prepareRequest(Map<String, Serializable> inputs) {
+    protected String prepareRequest(Map<String, Tensor> inputs) {
         try {
             return MAPPER.writeValueAsString(new TensorInstances(inputs));
         } catch (JsonProcessingException e) {
@@ -204,13 +209,52 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     }
 
     @Override
+    public SuggestionMetadata predict(DocumentModel doc) {
+        Map<String, Tensor> props = new HashMap<>(inputs.size());
+        for (ModelProperty input : inputs) {
+            switch (input.getType()) {
+                case IMAGE_TYPE:
+                    props.put(input.getName(), Tensor.image(
+                            convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class))));
+                    break;
+                case CATEGORY_TYPE:
+                    String categories = getPropertyValue(doc, input.getName(), String.class);
+                    if (isNotEmpty(categories)) {
+                        props.put(input.getName(), Tensor.category(categories.split(LIST_DELIMITER_PATTERN)));
+                    }
+                    break;
+                default:
+                    // default to text String
+                    props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
+            }
+        }
+        return predict(props);
+    }
+
+
+    @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
-        Map<String, Serializable> inputProperties = new HashMap<>();
+        Map<String, Tensor> inputProperties = new HashMap<>();
 
         for (Map.Entry<String, ManagedBlob> blobEntry : blobtext.getBlobs().entrySet()) {
-            inputProperties.put(blobEntry.getKey(), convertImageBlob(blobEntry.getValue()));
+            inputProperties.put(blobEntry.getKey(), Tensor.image(convertImageBlob(blobEntry.getValue())));
         }
-        inputProperties.putAll(blobtext.getProperties());
+        for (ModelProperty input : inputs) {
+            String text = blobtext.getProperties().get(input.getName());
+            if (text != null) {
+                switch (input.getType()) {
+                    case CATEGORY_TYPE:
+                        inputProperties
+                                .put(input.getName(), Tensor.category(text.split(LIST_DELIMITER_PATTERN)));
+                        break;
+                    default:
+                        // default to text String
+                        inputProperties.put(input.getName(), Tensor.text(text));
+                }
+            }
+
+        }
+
         if (inputProperties.isEmpty()) {
             log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), blobtext.getId()));
         } else {
@@ -241,37 +285,48 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         return emptyList();
     }
 
-    @Override
-    protected Serializable convertImageBlob(Blob sourceBlob) {
-        Serializable converted = super.convertImageBlob(sourceBlob);
-        if (converted instanceof String) {
-            return new TensorImage((String) converted);
-        }
-        return null;
-    }
-
-
     /**
-     * A representation of Tensorflow instance parameters
+     * A JSON representation of Tensorflow instance parameters
      */
     protected static class TensorInstances {
-        public final List<Map<String, Serializable>> instances = new ArrayList<>();
+        public final List<Map<String, Tensor>> instances = new ArrayList<>();
 
-        public TensorInstances(Map<String, Serializable> inputs) {
+        public TensorInstances(Map<String, Tensor> inputs) {
             instances.add(inputs);
         }
     }
 
     /**
-     * A representation of a base 64 encoded image for serialization
+     * A JSON representation of Tensorflow instance parameter
      */
-    protected static class TensorImage implements Serializable {
+    protected static class Tensor implements Serializable {
         private static final long serialVersionUID = 2603715122387085509L;
+
+        public final String type;
 
         public final String b64;
 
-        public TensorImage(String b64) {
+        public final String text;
+
+        public final String[] categories;
+
+        protected Tensor(String type, String b64, String text, String[] categories) {
+            this.type = type;
             this.b64 = b64;
+            this.text = text;
+            this.categories = categories;
+        }
+
+        public static Tensor image(String b64) {
+            return new Tensor(IMAGE_TYPE, b64, null, null);
+        }
+
+        public static Tensor text(String text) {
+            return new Tensor(TEXT_TYPE, null, text, null);
+        }
+
+        public static Tensor category(String[] categories) {
+            return new Tensor(CATEGORY_TYPE, null, null, categories);
         }
     }
 }

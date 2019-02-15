@@ -136,7 +136,7 @@ public class PropertyUtils {
                     case AvroConstants.PRIMARY_TYPE:
                         return doc.getType();
                     case AvroConstants.MIXIN_TYPES:
-                        return String.join(",", doc.getFacets());
+                        return String.join(LIST_DELIMITER, doc.getFacets());
                     case AvroConstants.PARENT_ID:
                         DocumentRef parentRef = doc.getParentRef();
                         return parentRef != null ? parentRef.toString() : null;
