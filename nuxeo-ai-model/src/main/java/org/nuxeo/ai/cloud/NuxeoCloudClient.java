@@ -216,8 +216,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Override
     public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
+        Response response = null;
         try {
-            Response response = getClient().post(getBaseUrl() + postUrl, jsonBody);
+            response = getClient().post(getBaseUrl() + postUrl, jsonBody);
             if (response != null && handler != null) {
                 if (response.isSuccessful()) {
                     return handler.handleResponse(response);
@@ -227,6 +228,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
         } catch (IOException e) {
             log.info(String.format("Unsuccessful call to api %s", postUrl), e);
+        } finally {
+            if (response != null && response.body() != null) {
+                response.body().close();
+            }
         }
         return null;
     }
