@@ -81,8 +81,6 @@ public class PropertyUtilsTest {
         assertEquals("0.0", stringProp(doc, "ecm:versionLabel"));
         assertEquals(Boolean.FALSE, getPropertyValue(doc, "ecm:isProxy", Boolean.class));
         assertEquals("File", stringProp(doc, "ecm:primaryType"));
-        assertEquals("Versionable,Publishable,Commentable,HasRelatedText,Downloadable",
-                     stringProp(doc, "ecm:mixinType"));
         assertEquals("project", stringProp(doc, "ecm:currentLifeCycleState"));
         assertEquals("Administrator", stringProp(doc, "dc:creator"));
         Instant created = getPropertyValue(doc, "dc:created", Calendar.class).toInstant();
@@ -123,6 +121,8 @@ public class PropertyUtilsTest {
         doc.setPropertyValue("dc:subjects", (Serializable) subjects);
         doc = session.createDocument(doc);
         assertEquals("birds | flowers", stringProp(doc, "dc:subjects"));
+        assertEquals("Versionable | Publishable | Commentable | HasRelatedText | Downloadable",
+                     stringProp(doc, "ecm:mixinType"));
     }
 
     @Test(expected = UnsupportedOperationException.class)
