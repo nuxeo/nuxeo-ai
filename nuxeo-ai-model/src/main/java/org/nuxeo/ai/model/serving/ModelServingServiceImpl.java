@@ -21,7 +21,17 @@ package org.nuxeo.ai.model.serving;
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.model.ModelProperty;
@@ -34,14 +44,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -51,6 +53,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     public static final String AI_DATATYPES = "aidatatypes";
 
     private static final String MODELS_AP = "models";
+
+    private static final Logger log = LogManager.getLogger(ModelServingServiceImpl.class);
 
     protected final Map<String, ModelDescriptor> configs = new HashMap<>();
 
@@ -82,6 +86,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                                                              descriptor.getInputs(), descriptor.id, AI_DATATYPES));
         }
 
+        log.debug("Registering a custom model as {}, info is {}.", descriptor.id, descriptor.info);
         RuntimeModel model = descriptor.getModel();
         if (model instanceof EnrichmentService) {
             Framework.getService(AIComponent.class).addEnrichmentService(descriptor.id, (EnrichmentService) model);

@@ -132,6 +132,11 @@ public class TestModelServing {
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
         assertNotNull(service);
         Collection<EnrichmentMetadata> enriched = service.enrich(blobTextFromDoc);
+        assertTrue("We didn't specify all the params so it should not be enriched.", enriched.isEmpty());
+
+        blobTextFromDoc.addProperty("dc:title", "My test doc");
+        blobTextFromDoc.addProperty("ecm:mixinType", "Versionable | Downloadable");
+        enriched = service.enrich(blobTextFromDoc);
         EnrichmentMetadata metadata = enriched.iterator().next();
         assertEquals(2, metadata.getLabels().size());
 
@@ -147,10 +152,10 @@ public class TestModelServing {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testCustomModelEnrichment() throws IOException {
         assertNotNull(aiComponent);
-        EnrichmentService service = aiComponent.getEnrichmentService("failingModel");
-
         BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
-        service = aiComponent.getEnrichmentService("xyz");
+        blobTextFromDoc.addProperty("dc:title", "My Custom doc");
+        blobTextFromDoc.addProperty("ecm:mixinType", "Downloadable");
+        EnrichmentService service = aiComponent.getEnrichmentService("xyz");
         Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
@@ -165,11 +170,6 @@ public class TestModelServing {
         JsonNode jsonTree = JacksonUtil.MAPPER.readTree(raw);
         assertNotNull(jsonTree);
         assertEquals("The custom model should return results", 1, jsonTree.get("results").size());
-
-        blobTextFromDoc.getBlobs().clear();
-        blobTextFromDoc.addProperty("dc:name", "Great product");
-        results = service.enrich(blobTextFromDoc);
-        assertEquals("There must be 1 result", 1, results.size());
     }
 
     protected static ManagedBlob blob(Blob blob, String key) {
