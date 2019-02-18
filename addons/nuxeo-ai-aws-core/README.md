@@ -22,7 +22,23 @@ nuxeo.aws.sessionToken=your_AWS_SESSION_TOKEN
 nuxeo.aws.region=your_AWS_REGION
 ```
 
-If you are only using images and an S3 BinaryManager is already being used then it re-uses the image data to pass a reference instead of uploading the binary again.  
+##### Overriding the default region
+To specify that the AI AWS enrichment services use a different region from the `nuxeo-runtime-aws` config, you should add a contribution like this:
+```
+<extension target="org.nuxeo.runtime.aws.AWSConfigurationService" point="configuration">
+  <configuration id="nuxeo-ai-aws">
+    <region>MY_REGION</region>
+  </configuration>
+</extension>
+  
+<extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+  <property name="nuxeo.enrichment.aws.s3">false</property>
+</extension>
+```
+
+If you are only using images and an S3 BinaryManager is already being used then it re-uses the image data to pass a reference instead of uploading the binary again.
+The configuration above turns off S3 BinaryManager re-use because a different region is being used.
+
 ## Installation
 #### Quick start
 1. Install the nuxeo-ai-aws package. `./bin/nuxeoctl mp-install nuxeo-ai-aws`

@@ -21,20 +21,20 @@ package org.nuxeo.ai.enrichment;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingProperties;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
-import com.amazonaws.services.comprehend.model.SentimentScore;
-import com.amazonaws.services.comprehend.model.SentimentType;
-import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.comprehend.ComprehendService;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.comprehend.ComprehendService;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.services.comprehend.model.DetectSentimentResult;
+import com.amazonaws.services.comprehend.model.SentimentScore;
+import com.amazonaws.services.comprehend.model.SentimentType;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -57,9 +57,8 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService implem
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-
-        List<EnrichmentMetadata> enriched = new ArrayList<>();
-        try {
+        return AWSHelper.handlingExceptions(() -> {
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, String> prop : blobTextFromDoc.getProperties().entrySet()) {
                 DetectSentimentResult result = Framework.getService(ComprehendService.class)
                                                         .detectSentiment(prop.getValue(), languageCode);
@@ -68,9 +67,7 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService implem
                 }
             }
             return enriched;
-        } catch (AmazonServiceException e) {
-            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
-        }
+        });
     }
 
     /**

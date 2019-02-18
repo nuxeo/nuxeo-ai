@@ -23,15 +23,6 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.DetectTextResult;
-import com.amazonaws.services.rekognition.model.TextDetection;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +33,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.services.rekognition.model.BoundingBox;
+import com.amazonaws.services.rekognition.model.DetectTextResult;
+import com.amazonaws.services.rekognition.model.TextDetection;
 
 /**
  * Detects words and lines in an image.
@@ -83,9 +83,8 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService imple
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-
-        List<EnrichmentMetadata> enriched = new ArrayList<>();
-        try {
+        return AWSHelper.handlingExceptions(() -> {
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectTextResult result = Framework.getService(RekognitionService.class)
                                                    .detectText(blob.getValue());
@@ -94,9 +93,7 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService imple
                 }
             }
             return enriched;
-        } catch (AmazonServiceException e) {
-            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
-        }
+        });
     }
 
     /**

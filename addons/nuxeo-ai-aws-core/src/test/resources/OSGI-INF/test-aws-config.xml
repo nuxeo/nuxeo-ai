@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.test">
+
+  <extension target="org.nuxeo.runtime.aws.AWSConfigurationService" point="configuration">
+    <configuration id="nuxeo-ai-aws">
+      <accessKeyId>MY_XML_ACCESS_KEY_ID</accessKeyId>
+      <secretKey>MY_XML_SECRET_KEY</secretKey>
+      <sessionToken>MY_XML_SESSION_TOKEN</sessionToken>
+      <region>MY_REGION</region>
+    </configuration>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+    <property name="nuxeo.enrichment.aws.s3">false</property>
+  </extension>
+
+</component>
