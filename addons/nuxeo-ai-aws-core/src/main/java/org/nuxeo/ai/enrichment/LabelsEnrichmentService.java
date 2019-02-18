@@ -22,14 +22,6 @@ import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectLabelsResult;
-import com.amazonaws.services.rekognition.model.Label;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.DetectLabelsResult;
+import com.amazonaws.services.rekognition.model.Label;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -75,9 +75,8 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService implement
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-
-        List<EnrichmentMetadata> enriched = new ArrayList<>();
-        try {
+        return AWSHelper.handlingExceptions(() -> {
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectLabelsResult result = Framework.getService(RekognitionService.class)
                                                      .detectLabels(blob.getValue(), maxResults, minConfidence);
@@ -86,9 +85,7 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService implement
                 }
             }
             return enriched;
-        } catch (AmazonServiceException e) {
-            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
-        }
+        });
     }
 
     /**
