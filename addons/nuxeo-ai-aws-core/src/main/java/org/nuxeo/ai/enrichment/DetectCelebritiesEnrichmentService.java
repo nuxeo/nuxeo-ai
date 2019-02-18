@@ -23,16 +23,6 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.Celebrity;
-import com.amazonaws.services.rekognition.model.ComparedFace;
-import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +31,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.services.rekognition.model.BoundingBox;
+import com.amazonaws.services.rekognition.model.Celebrity;
+import com.amazonaws.services.rekognition.model.ComparedFace;
+import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
 
 /**
  * Detects celebrity faces in an image
@@ -59,9 +59,8 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-
-        List<EnrichmentMetadata> enriched = new ArrayList<>();
-        try {
+        return AWSHelper.handlingExceptions(() -> {
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 RecognizeCelebritiesResult result =
                         Framework.getService(RekognitionService.class).detectCelebrityFaces(blob.getValue());
@@ -71,9 +70,7 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
                 }
             }
             return enriched;
-        } catch (AmazonServiceException e) {
-            throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
-        }
+        });
     }
 
     /**

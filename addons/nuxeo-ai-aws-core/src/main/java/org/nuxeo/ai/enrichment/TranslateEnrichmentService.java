@@ -22,21 +22,22 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingProperties;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.translate.model.TranslateTextResult;
-import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.Suggestion;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.translate.TranslateService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.api.Framework;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.Suggestion;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.translate.TranslateService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.translate.model.TranslateTextResult;
 
 /**
  * An enrichment service using AWS Translate.
@@ -91,7 +92,7 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService implem
                     raw.add(processRaw(textEntry.getValue(), result));
                 }
             } catch (AmazonServiceException e) {
-                throw EnrichmentHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
+                throw AWSHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
             }
         }
 

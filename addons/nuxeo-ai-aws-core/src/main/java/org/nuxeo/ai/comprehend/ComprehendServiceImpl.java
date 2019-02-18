@@ -18,16 +18,15 @@
  */
 package org.nuxeo.ai.comprehend;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
 import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
-import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
-import org.nuxeo.runtime.model.ComponentContext;
-import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
  * Calls AWS Comprehend apis
@@ -55,8 +54,8 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
                 if (localClient == null) {
                     AmazonComprehendClientBuilder builder =
                             AmazonComprehendClientBuilder.standard()
-                                                         .withCredentials(NuxeoAWSCredentialsProvider.getInstance())
-                                                         .withRegion(NuxeoAWSRegionProvider.getInstance().getRegion());
+                                                         .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
+                                                         .withRegion(AWSHelper.getInstance().getRegion());
                     client = localClient = builder.build();
                 }
             }
