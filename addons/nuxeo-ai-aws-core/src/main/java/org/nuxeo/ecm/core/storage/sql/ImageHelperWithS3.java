@@ -18,20 +18,20 @@
  */
 package org.nuxeo.ecm.core.storage.sql;
 
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.S3Object;
-import org.nuxeo.ai.rekognition.RekognitionHelper;
-import org.nuxeo.ecm.core.blob.BlobProvider;
 
 /**
- * A Rekognition Helper which takes advantage of the S3BinaryManager
+ * A Helper which takes advantage of the S3BinaryManager
  */
-public class RekognitionHelperWithS3 implements RekognitionHelper {
+public class ImageHelperWithS3 {
 
-    protected RekognitionHelper fallBackHelper;
-
-    public RekognitionHelperWithS3(RekognitionHelper fallBackHelper) {
-        this.fallBackHelper = fallBackHelper;
+    public ImageHelperWithS3() {
     }
 
     /**
@@ -41,13 +41,20 @@ public class RekognitionHelperWithS3 implements RekognitionHelper {
         return new S3Object().withName(key).withBucket(s3BinaryManager.bucketName);
     }
 
-    @Override
-    public Image getImage(BlobProvider blobProvider, String blobKey) {
+    /**
+     * Gets the image from the S3BinaryManager as a reference to an S3 object
+     */
+    public Image getImage(ManagedBlob blob) {
+        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         if (blobProvider instanceof S3BinaryManager) {
             S3BinaryManager s3BinaryManager = (S3BinaryManager) blobProvider;
-            S3Object s3Object = getS3Object(s3BinaryManager, blobKey);
-            return new Image().withS3Object(s3Object);
+            S3Object s3Object = getS3Object(s3BinaryManager, blob.getKey());
+            if (s3Object != null) {
+                return new Image().withS3Object(s3Object);
+            }
+        } else {
+            return AWSHelper.getInstance().getImageAsBytes(blob);
         }
-        return fallBackHelper.getImage(blobProvider, blobKey);
+        return null;
     }
 }

@@ -18,16 +18,15 @@
  */
 package org.nuxeo.ai.translate;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
 import com.amazonaws.services.translate.AmazonTranslate;
 import com.amazonaws.services.translate.AmazonTranslateClientBuilder;
 import com.amazonaws.services.translate.model.TranslateTextRequest;
 import com.amazonaws.services.translate.model.TranslateTextResult;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
-import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
-import org.nuxeo.runtime.model.ComponentContext;
-import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
  * Calls AWS translate
@@ -52,8 +51,8 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
                 if (localClient == null) {
                     AmazonTranslateClientBuilder builder =
                             AmazonTranslateClientBuilder.standard()
-                                                        .withCredentials(NuxeoAWSCredentialsProvider.getInstance())
-                                                        .withRegion(NuxeoAWSRegionProvider.getInstance().getRegion());
+                                                        .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
+                                                        .withRegion(AWSHelper.getInstance().getRegion());
                     client = localClient = builder.build();
                 }
             }
