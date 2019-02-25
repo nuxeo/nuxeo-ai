@@ -36,6 +36,12 @@
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-web-ui</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.nuxeo.client</groupId>
+      <artifactId>nuxeo-java-client</artifactId>
+      <version>${nuxeo.java.client.version}</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <build>
