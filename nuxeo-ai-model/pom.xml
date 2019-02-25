@@ -26,6 +26,7 @@
       <groupId>org.nuxeo.client</groupId>
       <artifactId>nuxeo-java-client</artifactId>
       <version>${nuxeo.java.client.version}</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.elasticsearch</groupId>
