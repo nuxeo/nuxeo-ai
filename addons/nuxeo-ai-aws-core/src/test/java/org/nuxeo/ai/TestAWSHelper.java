@@ -42,6 +42,5 @@ public class TestAWSHelper {
                      AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSAccessKeyId());
         assertEquals("MY_XML_SECRET_KEY",
                      AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSSecretKey());
-        assertNull("The test configuration must make sure s3Helper is not used,", AWSHelper.getInstance().s3Helper);
     }
 }
