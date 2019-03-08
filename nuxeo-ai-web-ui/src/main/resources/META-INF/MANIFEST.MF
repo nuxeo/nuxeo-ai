@@ -1,9 +1,0 @@
-Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: .
-Manifest-Version: 1.0
-Bundle-Vendor: org.nuxeo.ai
-Bundle-Version: 1.0.0
-Bundle-Name: nuxeo-ai-web-ui
-Bundle-ManifestVersion: 2
-Bundle-SymbolicName: org.nuxeo.ai.nuxeo-ai-web-ui;singleton=true
-Nuxeo-Component: OSGI-INF/nuxeo-ai-core-webresources-contrib.xml

@@ -24,7 +24,6 @@
     <module>nuxeo-ai-pipes</module>
     <module>nuxeo-ai-core</module>
     <module>nuxeo-ai-model</module>
-    <module>nuxeo-ai-web-ui</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
   </modules>
@@ -106,11 +105,6 @@
         <artifactId>nuxeo-elasticsearch-core</artifactId>
         <classifier>tests</classifier>
         <version>${nuxeo.distribution.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.nuxeo.ai</groupId>
-        <artifactId>nuxeo-ai-web-ui</artifactId>
-        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
