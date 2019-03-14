@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.functions;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.CoreInstance;
@@ -30,13 +32,19 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
  */
 public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
 
+    private static final Logger log = LogManager.getLogger(SaveEnrichmentFunction.class);
+
     @Override
     public void accept(EnrichmentMetadata metadata) {
         TransactionHelper.runInTransaction(
                 () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
                     DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
                     DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
-                    session.saveDocument(doc);
+                    if (doc != null) {
+                        session.saveDocument(doc);
+                    } else {
+                        log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);
+                    }
                 })
         );
     }

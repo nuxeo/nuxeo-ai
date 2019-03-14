@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
@@ -137,6 +138,28 @@ public class EnrichmentUtils {
         String blobKey = UUID.randomUUID().toString();
         transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
         return blobKey;
+    }
+
+    /**
+     * Returns the raw String from the transient store for the provided metadata.
+     */
+    public static String getRawBlob(EnrichmentMetadata metadata) throws IOException {
+        try {
+            if (isNotBlank(metadata.getRawKey())) {
+                TransientStore transientStore = Framework.getService(AIComponent.class)
+                                                         .getTransientStoreForEnrichmentService(metadata.getServiceName());
+                List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
+                if (rawBlobs != null && rawBlobs.size() == 1) {
+                    return rawBlobs.get(0).getString();
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            log.debug("Unknown transient store. ", e);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Unknown raw blob for raw key " + metadata.getRawKey());
+        }
+        return "";
     }
 
     /**

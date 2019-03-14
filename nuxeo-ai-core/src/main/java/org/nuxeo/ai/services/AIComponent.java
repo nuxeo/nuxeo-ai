@@ -178,8 +178,7 @@ public class AIComponent extends DefaultComponent {
         if (descriptor != null) {
             return Framework.getService(TransientStoreService.class).getStore(descriptor.getTransientStoreName());
         }
-
-        throw new NuxeoException("Unknown enrichment service " + serviceName);
+        throw new IllegalArgumentException("Unknown enrichment service " + serviceName);
     }
 
     /**

@@ -105,6 +105,7 @@ public class TestDocMetadataService {
         Blob blob = (Blob) classification.get(ENRICHMENT_RAW_KEY_PROPERTY);
         assertNotNull(blob);
         assertEquals(textReversed, blob.getString());
+        assertEquals(textReversed, EnrichmentUtils.getRawBlob(metadata));
         blob = (Blob) classification.get(NORMALIZED_PROPERTY);
         assertEquals(metadata, JacksonUtil.MAPPER.readValue(blob.getString(), EnrichmentMetadata.class));
 

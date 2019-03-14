@@ -136,7 +136,7 @@ public class TestConfiguredStreamProcessors {
         assertEquals("The metaListening chain must have fired and set the description",
                      "I_AM_LISTENING", description);
         String title = (String) enrichedDoc.getPropertyValue("dc:title");
-        assertEquals("The event listener must have set the title",
+        assertEquals("metadataListener.groovy must have set the title",
                      "George Paul", title);
 
         //Confirm 5 tags were added
