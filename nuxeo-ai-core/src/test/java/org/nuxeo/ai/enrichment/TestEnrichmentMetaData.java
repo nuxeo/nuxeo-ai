@@ -22,6 +22,7 @@ import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -101,6 +103,17 @@ public class TestEnrichmentMetaData {
         assertEquals(metadata, metadataBackAgain);
         assertNotNull(metadataBackAgain.toString());
 
+    }
+
+    @Test
+    public void testRawJson() throws IOException {
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
+        EnrichmentMetadata metadata =
+                new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc)
+                        .withCreator("bob")
+                        .withRawKey("xyz")
+                        .build();
+        assertTrue(StringUtils.isEmpty(EnrichmentUtils.getRawBlob(metadata)));
     }
 
     @Test
