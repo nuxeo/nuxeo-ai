@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
@@ -140,6 +141,28 @@ public class EnrichmentUtils {
     }
 
     /**
+     * Returns the raw String from the transient store for the provided metadata.
+     */
+    public static String getRawBlob(EnrichmentMetadata metadata) throws IOException {
+        try {
+            if (isNotBlank(metadata.getRawKey())) {
+                TransientStore transientStore = Framework.getService(AIComponent.class)
+                                                         .getTransientStoreForEnrichmentService(metadata.getServiceName());
+                List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
+                if (rawBlobs != null && rawBlobs.size() == 1) {
+                    return rawBlobs.get(0).getString();
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            log.debug("Unknown transient store. ", e);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Unknown raw blob for raw key " + metadata.getRawKey());
+        }
+        return "";
+    }
+
+    /**
      * Looks up the blob provider for the ManagedBlob and retrieves the blob using its key.
      */
     public static Blob getBlobFromProvider(ManagedBlob managedBlob) {
@@ -181,7 +204,7 @@ public class EnrichmentUtils {
         try {
             return Framework.getService(ConversionService.class).convert(service, bh, parameters).getBlob();
         } catch (NuxeoException | NullPointerException exception) {
-            // Assume the underlying call has already logged the error, but handle it cleanly here.
+            log.warn("Unable to convert image blob.", exception);
             return null;
         }
     }
