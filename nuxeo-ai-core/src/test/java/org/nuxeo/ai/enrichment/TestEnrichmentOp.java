@@ -29,9 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
 import javax.inject.Inject;
-
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,11 +39,9 @@ import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
-import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -92,12 +88,7 @@ public class TestEnrichmentOp {
         String reversed = StringUtils.reverse(title);
         assertTrue(resultMetadata.isSingleLabel());
         assertEquals(reversed, resultMetadata.getLabels().get(0).getName());
-        TransientStore store = aiComponent.getTransientStoreForEnrichmentService(resultMetadata.getServiceName());
-        List<Blob> rawBlobs = store.getBlobs(resultMetadata.getRawKey());
-        assertNotNull(rawBlobs);
-        assertEquals("There must be 1 raw blob", 1, rawBlobs.size());
-        Blob blob = rawBlobs.get(0);
-        assertEquals(reversed, blob.getString());
+        assertEquals(reversed, EnrichmentUtils.getRawBlob(resultMetadata));
         assertNotNull(resultMetadata.context.documentRef);
         assertEquals(new HashSet<>(Arrays.asList("dc:title")), resultMetadata.context.inputProperties);
         assertTrue("reverse service sets the username so must be true", resultMetadata.isHuman());
