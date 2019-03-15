@@ -42,18 +42,19 @@
                      logConfig="test_enrichment"
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
       <option name="source">test_images.out</option>
+      <option name="eventName">myCustomMetadataCreated</option>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
     <listener name="testMetadataListener" script="script/metadataListener.groovy">
-      <event>enrichmentMetadataCreated</event>
+      <event>myCustomMetadataCreated</event>
     </listener>
   </extension>
 
   <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="event-handlers">
     <handler chainId="metaListening">
-      <event>enrichmentMetadataCreated</event>
+      <event>myCustomMetadataCreated</event>
       <filters>
         <doctype>File</doctype>
       </filters>

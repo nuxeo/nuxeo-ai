@@ -18,9 +18,11 @@
  */
 package org.nuxeo.ai.functions;
 
+import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
@@ -37,7 +39,7 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 /**
  * Raises an event when new enrichment data is added
  */
-public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer {
+public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer implements Initializable  {
 
     public static final String ENRICHMENT_CREATED = "enrichmentMetadataCreated";
 
@@ -46,6 +48,13 @@ public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer {
     public static final String CATEGORY = "category";
 
     private static final Log log = LogFactory.getLog(RaiseEnrichmentEvent.class);
+
+    protected String eventName;
+
+    @Override
+    public void init(Map<String, String> options) {
+        eventName = options.getOrDefault("eventName", ENRICHMENT_CREATED);
+    }
 
     @Override
     public void accept(EnrichmentMetadata metadata) {
@@ -65,7 +74,7 @@ public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer {
                 eCtx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
                 eCtx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
                 eCtx.setProperty(ENRICHMENT_METADATA, metadata);
-                Event event = eCtx.newEvent(ENRICHMENT_CREATED);
+                Event event = eCtx.newEvent(eventName);
                 Framework.getService(EventProducer.class).fireEvent(event);
             })
         );
