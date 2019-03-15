@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.test">
+
+  <extension target="org.nuxeo.runtime.aws.AWSConfigurationService" point="configuration">
+    <configuration id="nuxeo-ai-aws">
+      <region>eu-west-1</region>
+    </configuration>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+    <property name="nuxeo.enrichment.aws.s3">false</property>
+  </extension>
+
+  <extension point="processor" target="org.nuxeo.ai.textract.TextractService">
+    <textract id="counter" serviceName="testService" class="org.nuxeo.ai.textract.CountingTextractProcessor"/>
+    <textract id="debugger" serviceName="testService" class="org.nuxeo.ai.textract.DebuggingTextractProcessor">
+      <option name="minConfidence">65</option>
+    </textract>
+  </extension>
+
+</component>

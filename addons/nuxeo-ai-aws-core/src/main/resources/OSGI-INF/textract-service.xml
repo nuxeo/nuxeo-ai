@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.textract.TextractService" version="1.0">
+
+  <implementation class="org.nuxeo.ai.textract.TextractServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.textract.TextractService"/>
+  </service>
+
+  <extension-point name="processor">
+    <documentation>
+      Adds a Textract response processor
+    </documentation>
+    <object class="org.nuxeo.ai.textract.TextractProcessorDescriptor"/>
+  </extension-point>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.documentText" kind="/classification/imageText"
+                class="org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+    </enrichment>
+  </extension>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.documentAnalyze" kind="/classification/imageText"
+                class="org.nuxeo.ai.enrichment.AnalyzeDocumentEnrichmentService">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="features">FORMS,TABLES</option>
+    </enrichment>
+  </extension>
+</component>

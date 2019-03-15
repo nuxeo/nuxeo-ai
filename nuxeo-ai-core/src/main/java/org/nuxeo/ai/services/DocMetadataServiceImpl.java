@@ -65,16 +65,16 @@ import org.nuxeo.runtime.services.config.ConfigurationService;
  */
 public class DocMetadataServiceImpl extends DefaultComponent implements DocMetadataService {
 
-    private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
-
     public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
 
     public static final String ENRICHMENT_USING_FACETS = "nuxeo.enrichment.facets.inUse";
 
+    private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
+
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        if (Framework.getService(ConfigurationService.class).isBooleanPropertyTrue(ENRICHMENT_USING_FACETS)) {
+        if (Framework.getService(ConfigurationService.class).isBooleanTrue(ENRICHMENT_USING_FACETS)) {
             // Facets are being used so lets clean it up as well.
             Framework.getService(PipelineService.class)
                      .addEventListener(DIRTY_EVENT_NAME, false, new EnrichedPropertiesEventListener());
@@ -91,13 +91,13 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             log.info("Unable to save enrichment data for missing doc " + metadata.context.documentRef);
             return null;
         }
-        if (!doc.hasFacet(ENRICHMENT_FACET)) {
-            doc.addFacet(ENRICHMENT_FACET);
-        }
 
         Map<String, Object> anItem = createEnrichment(metadata);
 
         if (anItem != null) {
+            if (!doc.hasFacet(ENRICHMENT_FACET)) {
+                doc.addFacet(ENRICHMENT_FACET);
+            }
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> enrichmentList = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
             if (enrichmentList == null) {
@@ -127,46 +127,38 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
         if (!labels.isEmpty()) {
             anEntry.put(ENRICHMENT_LABELS_PROPERTY, labels);
-
-            Blob metaDataBlob;
-            Blob rawBlob = null;
-            try {
-                if (StringUtils.isNotEmpty(metadata.getRawKey())) {
-                    TransientStore transientStore = aiComponent
-                            .getTransientStoreForEnrichmentService(metadata.getServiceName());
-                    List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
-                    if (rawBlobs != null && rawBlobs.size() == 1) {
-                        rawBlob = rawBlobs.get(0);
-                    } else {
-                        log.warn(String.format("Unexpected transient store raw blob information for %s. " +
-                                                       "A single raw blob is expected.", metadata.getServiceName()));
-                    }
-                }
-                metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(metadata));
-            } catch (IOException e) {
-                throw new NuxeoException("Unable to process metadata blob", e);
-            }
-
-            anEntry.put(AI_SERVICE_PROPERTY, metadata.getServiceName());
-            anEntry.put(ENRICHMENT_KIND_PROPERTY, metadata.getKind());
-            anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, metadata.context.inputProperties);
-            anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlob);
-            anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
-            if (StringUtils.isNotBlank(metadata.getCreator())) {
-                anEntry.put(AI_CREATOR_PROPERTY, metadata.getCreator());
-            }
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, labels));
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("No labels for %s so not saving any enrichment data",
-                                        metadata.context.documentRef
-                ));
-            }
-            return null;
         }
 
+        Blob metaDataBlob;
+        Blob rawBlob = null;
+        try {
+            if (StringUtils.isNotEmpty(metadata.getRawKey())) {
+                TransientStore transientStore = aiComponent
+                        .getTransientStoreForEnrichmentService(metadata.getServiceName());
+                List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
+                if (rawBlobs != null && rawBlobs.size() == 1) {
+                    rawBlob = rawBlobs.get(0);
+                } else {
+                    log.warn(String.format("Unexpected transient store raw blob information for %s. " +
+                                                   "A single raw blob is expected.", metadata.getServiceName()));
+                }
+            }
+            metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(metadata));
+        } catch (IOException e) {
+            throw new NuxeoException("Unable to process metadata blob", e);
+        }
+
+        anEntry.put(AI_SERVICE_PROPERTY, metadata.getServiceName());
+        anEntry.put(ENRICHMENT_KIND_PROPERTY, metadata.getKind());
+        anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, metadata.context.inputProperties);
+        anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlob);
+        anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
+        if (StringUtils.isNotBlank(metadata.getCreator())) {
+            anEntry.put(AI_CREATOR_PROPERTY, metadata.getCreator());
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, labels));
+        }
         return anEntry;
     }
 
