@@ -23,18 +23,19 @@ import static java.util.Collections.unmodifiableList;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
 import org.nuxeo.ai.metadata.Suggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A normalized view of the result of an Enrichment Service.
@@ -125,6 +126,9 @@ public class EnrichmentMetadata extends AIMetadata {
         public Builder(Instant created, String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
             super(created, kind, serviceName, blobTextFromDoc.getRepositoryName(), blobTextFromDoc.getId(),
                   getDigests(blobTextFromDoc), getPropertyNames(blobTextFromDoc));
+            labels = new ArrayList<>();
+            tags = new ArrayList<>();
+            suggestions = new ArrayList<>();
         }
 
         public Builder(String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
@@ -139,19 +143,56 @@ public class EnrichmentMetadata extends AIMetadata {
             super(created, kind, serviceName, context);
         }
 
+        /**
+         * Set the metadata labels overwriting any existing ones.
+         */
         public Builder withLabels(List<Label> labels) {
             this.labels = labels;
             return this;
         }
 
+        /**
+         * Set the metadata suggestions overwriting any existing ones.
+         */
         public Builder withSuggestions(List<Suggestion> suggestions) {
             this.suggestions = suggestions;
             return this;
         }
 
+        /**
+         * Set the metadata tags overwriting any existing ones.
+         */
         public Builder withTags(List<Tag> tags) {
             this.tags = tags;
             return this;
+        }
+
+        /**
+         * Adds tags to the existing list of tags.
+         */
+        public void addTags(List<Tag> tags) {
+            this.tags.addAll(tags);
+        }
+
+        /**
+         * Adds tag to the existing list of tags.
+         */
+        public void addTag(Tag tag) {
+            this.tags.add(tag);
+        }
+
+        /**
+         * Adds labels to the existing list of labels.
+         */
+        public void addLabels(List<Label> labels) {
+            this.labels.addAll(labels);
+        }
+
+        /**
+         * Adds a label to the existing list of labels.
+         */
+        public void addLabel(Label label) {
+            this.labels.add(label);
         }
 
         @SuppressWarnings("unchecked")
