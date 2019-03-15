@@ -65,16 +65,16 @@ import org.nuxeo.runtime.services.config.ConfigurationService;
  */
 public class DocMetadataServiceImpl extends DefaultComponent implements DocMetadataService {
 
-    private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
-
     public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
 
     public static final String ENRICHMENT_USING_FACETS = "nuxeo.enrichment.facets.inUse";
 
+    private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
+
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        if (Framework.getService(ConfigurationService.class).isBooleanPropertyTrue(ENRICHMENT_USING_FACETS)) {
+        if (Framework.getService(ConfigurationService.class).isBooleanTrue(ENRICHMENT_USING_FACETS)) {
             // Facets are being used so lets clean it up as well.
             Framework.getService(PipelineService.class)
                      .addEventListener(DIRTY_EVENT_NAME, false, false, new EnrichedPropertiesEventListener());
