@@ -31,6 +31,5 @@ TransactionHelper.runInTransaction {
         def doc = session.getDocument(new IdRef(metadata.context.documentRef))
         doc.setPropertyValue("dc:title", metadata.labels.collect { it.name }.join(" "))
         session.saveDocument(doc)
-        println(doc.getPropertyValue("dc:title"))
     } as Consumer)
 }
