@@ -159,4 +159,39 @@
   </extension>
 </#if>
 
+<#if "${nuxeo.enrichment.aws.document.text}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textractTextProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.documentText</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
+<#if "${nuxeo.enrichment.aws.document.analyze}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textractDocProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.documentAnalyze</option>
+    </streamProcessor>
+  </extension>
+</#if>
+
+<#if "${nuxeo.enrichment.aws.document.analyze}" == "true" || "${nuxeo.enrichment.aws.document.text}" == "true">
+    <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+        <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
+                         logConfig="${nuxeo.ai.stream.config.name}"
+                         class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
+          <option name="source">enrichment.in</option>
+          <option name="eventName">textractMetadataCreated</option>
+        </streamProcessor>
+    </extension>
+</#if>
+
 </component>
