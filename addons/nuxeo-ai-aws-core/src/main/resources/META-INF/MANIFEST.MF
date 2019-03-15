@@ -9,4 +9,5 @@ Require-Bundle: org.nuxeo.ai.ai-core
 Bundle-SymbolicName: org.nuxeo.ai.aws.aws-core;singleton=true
 Nuxeo-Component: OSGI-INF/rekognition-service.xml,
  OSGI-INF/comprehend-service.xml,
+ OSGI-INF/textract-service.xml,
  OSGI-INF/translate-service.xml
