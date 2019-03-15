@@ -9,7 +9,9 @@ Currently provides the following enrichment services:
   * aws.faceDetection - Calls AWS Rekognition to detect faces in images
   * aws.celebrityDetection - Calls AWS Rekognition to detect celebrity faces in images
   * aws.translate.* - Calls AWS Translate to translate text
-
+  * aws.documentText - Calls AWS Textract to detect text in a document image
+  * aws.documentAnalyze - Calls AWS Textract to analyze text that's detected in a document image
+  
 #### Credentials
 Credentials are discovered using `nuxeo-runtime-aws`.
 The chain searches for credentials in order: Nuxeo's AWSConfigurationService, environment variables, system properties, profile credentials, EC2Container credentials.
@@ -53,9 +55,18 @@ nuxeo.enrichment.save.tags=true
 nuxeo.enrichment.save.facets=true
 nuxeo.enrichment.raiseEvent=true
 ```
+
+    For AWS Textract only, the correct parameters are:
+    ```
+    nuxeo.ai.images.enabled=true
+    nuxeo.enrichment.aws.document.text=true
+    nuxeo.enrichment.aws.document.analyze=false
+    nuxeo.enrichment.save.facets=true
+    ```
+
 3. Set your AWS credentials [AWS credentials](#credentials).
-3. Start Nuxeo and upload an image.
-4. Wait 10 seconds then look at the document tags and document json `enrichment:items` facet
+4. Start Nuxeo and upload an image.
+5. Wait 10 seconds then look at the document tags and document json `enrichment:items` facet
 ### Configuration Parameters
 You can set these in your `nuxeo.conf`.
 <div class="table-scroll">
@@ -79,6 +90,18 @@ You can set these in your `nuxeo.conf`.
 <td colspan="1">Run AWS enrichiment services on text.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.aws.document.text`</td>
+<td colspan="1">Run AWS Textract Detect Document Text API on document images.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 2.1.2</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.aws.document.analyze`</td>
+<td colspan="1">Run AWS Textract Analyze Document API on document images.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 2.1.2</td>
 </tr>
 </tbody>
 </table>
