@@ -18,12 +18,12 @@
  */
 package org.nuxeo.ai.pipes.services;
 
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.BINARYTEXT_UPDATED;
 
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 
 @XObject("text")
 public class BinaryTextDescriptor {
@@ -35,7 +35,7 @@ public class BinaryTextDescriptor {
     public String propertyName = BINARY_TEXT_SYS_PROP;
 
     @XNode("@inputPropertyName")
-    public String inputPropertyName = FILE_CONTENT;
+    public String inputPropertyName = NXQL.ECM_FULLTEXT;
 
     /**
      * Size in Seconds
