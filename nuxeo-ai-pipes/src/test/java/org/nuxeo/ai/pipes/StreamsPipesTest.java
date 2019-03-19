@@ -22,20 +22,17 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ai.pipes.PipesTestConfigFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
+import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -45,6 +42,7 @@ import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -126,7 +124,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record.message());
             BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
-            assertEquals("My text", andBack.getProperties().get(FILE_CONTENT));
+            assertEquals("My text", andBack.getProperties().get(NXQL.ECM_FULLTEXT));
         }
 
         //Create text twice but the second is ignore because its in the "window size"
@@ -142,7 +140,7 @@ public class StreamsPipesTest {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
             BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
-            assertEquals("My custom text", andBack.getProperties().get(FILE_CONTENT));
+            assertEquals("My custom text", andBack.getProperties().get(NXQL.ECM_FULLTEXT));
             record = tailer.read(Duration.ofSeconds(5));
             assertNull("The second record should be ignored because its inside the window", record);
 

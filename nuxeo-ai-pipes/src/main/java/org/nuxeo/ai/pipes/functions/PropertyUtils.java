@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.pipes.functions;
 
+import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
 import java.io.IOException;
@@ -28,19 +29,20 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
-import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.io.avro.AvroConstants;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.QName;
@@ -52,6 +54,10 @@ import org.nuxeo.runtime.api.Framework;
 public class PropertyUtils {
 
     public static final String FILE_CONTENT = "file:content";
+
+    public static final String FULL_TEXT = "fulltext";
+
+    public static final String BINARY_TEXT = "binarytext";
 
     public static final String LIST_DELIMITER = " | ";
 
@@ -67,7 +73,7 @@ public class PropertyUtils {
 
     public static final String CATEGORY_TYPE = "cat";
 
-    private static final Log log = LogFactory.getLog(PropertyUtils.class);
+    private static final Logger log = LogManager.getLogger(PropertyUtils.class);
 
     // utility class
     private PropertyUtils() {
@@ -160,6 +166,11 @@ public class PropertyUtils {
                         return doc.isLatestVersion();
                     case AvroConstants.IS_LATEST_MAJOR_VERSION:
                         return doc.isLatestMajorVersion();
+                    case FULL_TEXT:
+                    case BINARY_TEXT:
+                    case BINARY_TEXT_SYS_PROP:
+                        Map<String, String> bmap = doc.getBinaryFulltext();
+                        return bmap.get(BINARY_TEXT);
                 }
             }
             if (log.isDebugEnabled()) {
@@ -175,11 +186,18 @@ public class PropertyUtils {
      */
     public static Map<String, String> getPropertyWithType(String prop) {
         Field field = Framework.getService(SchemaManager.class).getField(prop);
-        if (field == null) {
-            throw new PropertyNotFoundException(prop + " does not exist.");
-        }
         Map<String, String> feature = new HashMap<>();
         feature.put(NAME_PROP, prop);
+        if (field == null) {
+            if (NXQL.ECM_FULLTEXT.equals(prop)) {
+                log.debug("Skipping {} because its not possible to get stats on it.", NXQL.ECM_FULLTEXT);
+                return null;
+            } else {
+                log.warn(prop + " does not exist as a type, defaulting to txt type.");
+                feature.put(TYPE_PROP, TEXT_TYPE);
+            }
+            return feature;
+        }
         String type = isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE;
         if (field.getType().isListType()) {
             type = CATEGORY_TYPE;
@@ -193,7 +211,10 @@ public class PropertyUtils {
      * For a given Collection of property names, return a list of features with the property name and type.
      */
     public static List<Map<String, String>> propsToTypedList(Collection<String> properties) {
-        return properties.stream().map(PropertyUtils::getPropertyWithType).collect(Collectors.toList());
+        return properties.stream()
+                         .map(PropertyUtils::getPropertyWithType)
+                         .filter(Objects::nonNull)
+                         .collect(Collectors.toList());
     }
 
     /**

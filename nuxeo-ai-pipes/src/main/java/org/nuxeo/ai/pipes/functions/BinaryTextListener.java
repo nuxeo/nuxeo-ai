@@ -19,7 +19,6 @@
 package org.nuxeo.ai.pipes.functions;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
@@ -33,6 +32,7 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
@@ -64,7 +64,7 @@ public class BinaryTextListener implements EventListener {
 
     public BinaryTextListener(String consumerName, String binaryProperty, String inputProperty, int windowSizeSeconds) {
         this.binaryProperty = isNotBlank(binaryProperty) ? binaryProperty : BINARY_TEXT_SYS_PROP;
-        this.inputProperty = isNotBlank(inputProperty) ? inputProperty : FILE_CONTENT;
+        this.inputProperty = isNotBlank(inputProperty) ? inputProperty : NXQL.ECM_FULLTEXT;
         this.consumerName = consumerName;
         this.timeout = windowSizeSeconds;
         this.useWindow = timeout > 0;
