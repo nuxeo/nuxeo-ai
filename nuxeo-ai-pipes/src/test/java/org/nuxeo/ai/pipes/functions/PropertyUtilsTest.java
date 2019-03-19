@@ -27,6 +27,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
+import static org.nuxeo.ecm.core.storage.FulltextExtractorWork.SYSPROP_FULLTEXT_BINARY;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -34,18 +35,19 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
-
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
-import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
@@ -53,6 +55,9 @@ public class PropertyUtilsTest {
 
     @Inject
     protected CoreSession session;
+
+    @Inject
+    protected CoreFeature coreFeature;
 
     protected static String stringProp(DocumentModel doc, String prop) {
         return getPropertyValue(doc, prop, String.class);
@@ -64,6 +69,9 @@ public class PropertyUtilsTest {
         doc.addFacet("Publishable");
         doc.addFacet("Versionable");
         doc = session.createDocument(doc);
+        session.setDocumentSystemProp(doc.getRef(), SYSPROP_FULLTEXT_BINARY, "My full text");
+        session.save();
+        coreFeature.getStorageConfiguration().sleepForFulltext();
 
         assertEquals(doc.getPathAsString(), stringProp(doc, "ecm:path"));
         assertEquals(doc.getId(), stringProp(doc, "ecm:uuid"));
@@ -86,7 +94,7 @@ public class PropertyUtilsTest {
         Instant created = getPropertyValue(doc, "dc:created", Calendar.class).toInstant();
         // This line tests that a date is returned as an ISO-8601 String.
         assertEquals(created, Instant.parse(stringProp(doc, "dc:created")));
-
+        assertEquals("My full text", stringProp(doc, NXQL.ECM_FULLTEXT));
         assertNull(stringProp(doc, "ecm:pos"));
         assertNull(stringProp(doc, "ecm:nope"));
 

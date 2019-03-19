@@ -106,7 +106,7 @@ public class TestDatasetOperation {
     }
 
     @Test
-    public void testBadCall() throws OperationException {
+    public void testBadCall() {
 
         OperationContext ctx = new OperationContext(session);
         Map<String, Object> params = new HashMap<>();
@@ -147,18 +147,6 @@ public class TestDatasetOperation {
         } catch (OperationException e) {
             assertEquals(IllegalArgumentException.class, e.getCause().getClass());
         }
-
-        try {
-            OperationChain chainBad = new OperationChain("testChainb");
-            params.put("split", 60);
-            params.put("inputs", unknownProp);
-            chainBad.add(DatasetExportOperation.ID).from(params);
-            automationService.run(ctx, chainBad);
-            fail();
-        } catch (PropertyNotFoundException e) {
-            assertTrue(e.getMessage().contains(unknownProp));
-        }
-
     }
 
     @Test
