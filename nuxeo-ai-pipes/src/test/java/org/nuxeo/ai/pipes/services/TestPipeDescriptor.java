@@ -49,7 +49,7 @@ public class TestPipeDescriptor {
         PipeDescriptor.Consumer logConsumer = new PipeDescriptor.Consumer();
         descriptor.consumer = logConsumer;
         validate(descriptor, false, false, true);
-        logConsumer.streams = Collections.singletonList(new LogConfigDescriptor.StreamDescriptor());
+        logConsumer.streams = Collections.singletonList(new LogConfigDescriptor.LogDescriptor());
         descriptor.consumer = logConsumer;
         descriptor.validate(); //now valid
     }

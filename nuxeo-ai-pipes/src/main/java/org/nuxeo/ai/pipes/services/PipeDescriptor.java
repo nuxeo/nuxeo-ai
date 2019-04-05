@@ -215,8 +215,8 @@ public class PipeDescriptor {
     @XObject("consumer")
     public static class Consumer {
 
-        @XNodeList(value = "stream", type = ArrayList.class, componentType = LogConfigDescriptor.StreamDescriptor.class)
-        public List<LogConfigDescriptor.StreamDescriptor> streams = new ArrayList<>(0);
+        @XNodeList(value = "stream", type = ArrayList.class, componentType = LogConfigDescriptor.LogDescriptor.class)
+        public List<LogConfigDescriptor.LogDescriptor> streams = new ArrayList<>(0);
 
     }
 
