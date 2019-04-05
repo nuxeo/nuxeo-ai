@@ -122,7 +122,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
      */
     protected List<Consumer<Record>> getConsumers(PipeDescriptor descriptor) {
         List<Consumer<Record>> consumers = new ArrayList<>();
-        List<LogConfigDescriptor.StreamDescriptor> streams = descriptor.consumer.streams;
+        List<LogConfigDescriptor.LogDescriptor> streams = descriptor.consumer.streams;
         streams.forEach(s -> consumers.add(addLogConsumer(s.name, s.size)));
         return consumers;
     }
