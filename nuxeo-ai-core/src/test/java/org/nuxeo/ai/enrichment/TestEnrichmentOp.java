@@ -74,8 +74,6 @@ public class TestEnrichmentOp {
         params.put("enrichmentName", "reverse");
         params.put("textProperties", "dc:title");
         params.put("outputVariable", "theresult");
-        params.put("outputProperty", "dc:description");
-        params.put("save", "true");
         ctx.setInput(testDoc);
         OperationChain chain = new OperationChain("testChain1");
         chain.add(EnrichmentOp.ID).from(params);
