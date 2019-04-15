@@ -21,11 +21,10 @@ package org.nuxeo.ai.enrichment;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.events.DocEventToStream;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -40,16 +39,16 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
-import org.nuxeo.ai.pipes.events.DocEventToStream;
 
 /**
- *
+ * Calls an enrichment service.
  */
 @Operation(id = EnrichmentOp.ID, category = Constants.CAT_DOCUMENT, label = "Directly call an enrichment service",
         description = "Calls an enrichment service on the provided document(s)")
 public class EnrichmentOp {
 
     public static final String ID = "AI.Enrichment";
+
     private static final Log log = LogFactory.getLog(EnrichmentOp.class);
 
     @Context
@@ -74,12 +73,6 @@ public class EnrichmentOp {
             + "The output variable is a list of EnrichmentMetadata objects. ")
     protected String outputVariable;
 
-    @Param(name = "outputProperty", description = "Name of a property to store the output result", required = false)
-    protected String outputProperty;
-
-    @Param(name = "save", description = "Should the document be saved?", required = false)
-    protected boolean save = false;
-
     @OperationMethod
     public DocumentModel run(DocumentModel doc) {
 
@@ -94,7 +87,7 @@ public class EnrichmentOp {
 
     @OperationMethod
     public DocumentModelList run(DocumentModelList docs) {
-        List<EnrichmentMetadata> results = new ArrayList<>();
+        List<AIMetadata> results = new ArrayList<>();
         if (!docs.isEmpty()) {
 
             EnrichmentService service = aiComponent.getEnrichmentService(enrichmentName);
@@ -115,38 +108,15 @@ public class EnrichmentOp {
                     } catch (NuxeoException e) {
                         log.warn(String.format("Call to enrichment service %s failed.", enrichmentName), e);
                     }
-                    withMetadata(documentModel, result, results);
+                    if (result != null) {
+                        results.addAll(result);
+                    }
                 });
             });
 
-            withResults(results);
+            ctx.put(outputVariable, results);
         }
         return docs;
     }
 
-    protected void withResults(List<EnrichmentMetadata> results) {
-        ctx.put(outputVariable, results);
-    }
-
-    protected void withMetadata(DocumentModel doc, Collection<EnrichmentMetadata> meta, List<EnrichmentMetadata> results) {
-        if (meta != null) {
-            results.addAll(meta);
-        }
-
-        if (StringUtils.isNotBlank(outputProperty) && meta != null) {
-            meta.forEach(metadata -> {
-                if (!metadata.getLabels().isEmpty()) {
-                    String labels = metadata.getLabels().stream()
-                                            .map(EnrichmentMetadata.Label::getName)
-                                            .sorted()
-                                            .collect(Collectors.joining(","));
-                    doc.setPropertyValue(outputProperty, labels);
-                }
-            });
-            if (save) {
-                session.saveDocument(doc);
-            }
-
-        }
-    }
 }
