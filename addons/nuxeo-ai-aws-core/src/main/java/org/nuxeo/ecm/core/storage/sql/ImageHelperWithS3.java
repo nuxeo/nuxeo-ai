@@ -38,7 +38,7 @@ public class ImageHelperWithS3 {
      * Gets the S3Object
      */
     public S3Object getS3Object(S3BinaryManager s3BinaryManager, String key) {
-        return new S3Object().withName(key).withBucket(s3BinaryManager.bucketName);
+        return new S3Object().withName(key).withBucket(s3BinaryManager.getBucketName());
     }
 
     /**
@@ -48,7 +48,7 @@ public class ImageHelperWithS3 {
         BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         if (blobProvider instanceof S3BinaryManager) {
             S3BinaryManager s3BinaryManager = (S3BinaryManager) blobProvider;
-            S3Object s3Object = getS3Object(s3BinaryManager, blob.getKey());
+            S3Object s3Object = getS3Object(s3BinaryManager, s3BinaryManager.getBucketPrefix() + blob.getKey());
             if (s3Object != null) {
                 return new Image().withS3Object(s3Object);
             }
