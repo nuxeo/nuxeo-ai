@@ -42,7 +42,7 @@ public class ImageHelperWithS3 {
                 new com.amazonaws.services.rekognition.model
                         .S3Object()
                         .withName(key)
-                        .withBucket(s3BinaryManager.bucketName));
+                        .withBucket(s3BinaryManager.getBucketName()));
         if (s3Object != null) {
             return new Image().withS3Object(s3Object);
         }
@@ -72,7 +72,7 @@ public class ImageHelperWithS3 {
         BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         if (blobProvider instanceof S3BinaryManager) {
             S3BinaryManager s3BinaryManager = (S3BinaryManager) blobProvider;
-            R s3Object = s3ObjectSupplier.apply(s3BinaryManager, blob.getKey());
+            R s3Object = s3ObjectSupplier.apply(s3BinaryManager, s3BinaryManager.getBucketPrefix() + blob.getKey());
             if (s3Object != null) {
                 return s3Object;
             }
