@@ -11,8 +11,11 @@ This repository provides 3 packages:
 
 | Ai-core Version | Nuxeo Version
 | --- | --- |
-| 1.0.X| 9.10 |
-| 2.0.X| 10.3 |
+| 2.0.1| 10.3  |
+| 2.1.0| 10.10 |
+| 2.1.1| 10.10-HF02 |
+| 2.1.2| 10.10-HF05, 11.1-SNAPSHOT |
+| 2.2.X| 11.1-SNAPSHOT |
 
 1. Install the nuxeo-ai-core package. `./bin/nuxeoctl mp-install nuxeo-ai-core`
 
