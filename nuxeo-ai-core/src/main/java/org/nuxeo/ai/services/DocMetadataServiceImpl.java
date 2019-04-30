@@ -77,7 +77,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         if (Framework.getService(ConfigurationService.class).isBooleanPropertyTrue(ENRICHMENT_USING_FACETS)) {
             // Facets are being used so lets clean it up as well.
             Framework.getService(PipelineService.class)
-                     .addEventListener(DIRTY_EVENT_NAME, false, new EnrichedPropertiesEventListener());
+                     .addEventListener(DIRTY_EVENT_NAME, false, false, new EnrichedPropertiesEventListener());
         }
     }
 
