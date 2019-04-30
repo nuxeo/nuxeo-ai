@@ -21,7 +21,6 @@ package org.nuxeo.ai.pipes.events;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
-
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
 
@@ -30,8 +29,8 @@ import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
  */
 public class DynamicEventListenerDescriptor extends EventListenerDescriptor {
 
-    public DynamicEventListenerDescriptor(String eventName, EventListener eventListener, boolean isAsync) {
-        this(eventName + "_" + UUID.randomUUID(), false, isAsync, eventName, eventListener);
+    public DynamicEventListenerDescriptor(String eventName, EventListener eventListener, boolean isAsync, boolean isPostCommit) {
+        this(eventName + "_" + UUID.randomUUID(), isPostCommit, isAsync, eventName, eventListener);
     }
 
     public DynamicEventListenerDescriptor(String name, boolean isPostCommit, boolean isAsync, String eventName, EventListener eventListener) {
@@ -39,7 +38,8 @@ public class DynamicEventListenerDescriptor extends EventListenerDescriptor {
         this.isPostCommit = isPostCommit;
         this.isAsync = isAsync;
         this.events = new HashSet<>(Collections.singletonList(eventName));
-        this.inLineListener = eventListener;
+        this.inLineListener = isPostCommit ? null : eventListener;
+        this.postCommitEventListener = isPostCommit ? new PostCommitEventListenerWrapper(eventListener) : null;
     }
 
     @Override

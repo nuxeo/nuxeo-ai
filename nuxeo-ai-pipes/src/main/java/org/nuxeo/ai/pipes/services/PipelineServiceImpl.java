@@ -140,7 +140,8 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Listening for %s event and sending it to %s", e, consumer.toString()));
                     }
-                    addEventPipe(e.name, descriptor.id, descriptor.getFunction(e), descriptor.isAsync, consumer);
+                    addEventPipe(e.name, descriptor.id, descriptor.getFunction(e),
+                                 descriptor.isAsync, descriptor.isPostCommit, consumer);
                 });
             });
         }
@@ -151,7 +152,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
      */
     protected void addDirtyCheckListener(String eventName, Map<String, String> options) {
         DirtyEventListener dirtyEventListener = new DirtyEventListener(options);
-        addEventListener(eventName, false, dirtyEventListener);
+        addEventListener(eventName, false, false, dirtyEventListener);
     }
 
     /**
@@ -162,7 +163,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
                                       String inputProperty, int windowSizeSeconds) {
         addLogConsumer(logName, partitions);
         BinaryTextListener textListener = new BinaryTextListener(logName, propertyName, inputProperty, windowSizeSeconds);
-        addEventListener(eventName, false, textListener);
+        addEventListener(eventName, false, false, textListener);
     }
 
     @Override
@@ -172,7 +173,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
 
     @Override
     public <R> void addEventPipe(String eventName, String supplierId,
-                                 Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer) {
+                                 Function<Event, Collection<R>> eventFunction, boolean isAsync, boolean isPostCommit, Consumer<R> consumer) {
         EventConsumer<R> eventConsumer = new EventConsumer<>(eventFunction, consumer);
         NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "ai", "streams", eventName, supplierId);
         try {
@@ -182,16 +183,16 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
             log.warn(String.format("Metrics are already registered for %s %s, do you have a duplicate definition?",
                                    eventName, supplierId));
         }
-        addEventListener(eventName, isAsync, eventConsumer);
+        addEventListener(eventName, isAsync, isPostCommit, eventConsumer);
     }
 
     /**
      * Add an <code>EventListener</code> using the <code>EventService</code>
      */
     @Override
-    public void addEventListener(String eventName, boolean isAsync, EventListener eventConsumer) {
+    public void addEventListener(String eventName, boolean isAsync, boolean isPostCommit, EventListener eventConsumer) {
         EventService eventService = Framework.getService(EventService.class);
-        EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer, isAsync);
+        EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer, isAsync, isPostCommit);
         listenerDescriptors.add(listenerDescriptor);
         eventService.addEventListener(listenerDescriptor);
     }
