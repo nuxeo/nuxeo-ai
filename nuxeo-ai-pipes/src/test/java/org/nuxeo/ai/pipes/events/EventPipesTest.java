@@ -25,11 +25,15 @@ import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
-import com.google.inject.Inject;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.PipesTestConfigFeature;
 import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
@@ -40,25 +44,28 @@ import org.nuxeo.ecm.core.api.DocumentModelFactory;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
+import org.nuxeo.ecm.core.event.impl.EventServiceImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes"})
+@Features({PipesTestConfigFeature.class, PlatformFeature.class})
+@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
+        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml"})
 public class EventPipesTest {
 
     public static final String TEST_MIME_TYPE = "text/plain";
+
+    @Inject
+    protected EventService eventService;
 
     @Inject
     CoreSession session;
@@ -145,4 +152,13 @@ public class EventPipesTest {
         BlobTextFromDocument andBackAgain = fromRecord(toRecord("k", firstResult), BlobTextFromDocument.class);
         assertEquals(firstResult, andBackAgain);
     }
+
+    @Test
+    public void testPostCommitEventRegistration() {
+        EventServiceImpl eventS = (EventServiceImpl) eventService;
+        assertTrue("We must add a PostCommit listener via config.",
+                   eventS.getEventListenerList().getAsyncPostCommitListeners().stream()
+                         .anyMatch(l -> l instanceof PostCommitEventListenerWrapper));
+    }
+
 }

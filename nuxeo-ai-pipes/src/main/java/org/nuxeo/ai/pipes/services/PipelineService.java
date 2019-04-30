@@ -63,16 +63,18 @@ public interface PipelineService {
      * @param pipelineId    A unique id for this pipeline, used as a description
      * @param eventFunction A function to apply for each event
      * @param isAsync       Is the event listener asynchronous
+     * @param isPostCommit  Is this a post commit listener
      * @param consumer      A consumer to consume the result
      */
     <R> void addEventPipe(String eventName, String pipelineId,
-                          Function<Event, Collection<R>> eventFunction, boolean isAsync, Consumer<R> consumer);
+                          Function<Event, Collection<R>> eventFunction, boolean isAsync, boolean isPostCommit, Consumer<R> consumer);
 
     /**
      * Add an event listener and consumer
      * @param eventName The name of the event to act on
      * @param isAsync Is the event listener asynchronous
+     * @param isPostCommit  Is this a post commit listener
      * @param eventConsumer A consumer to consume the result
      */
-    void addEventListener(String eventName, boolean isAsync, EventListener eventConsumer);
+    void addEventListener(String eventName, boolean isAsync, boolean isPostCommit, EventListener eventConsumer);
 }

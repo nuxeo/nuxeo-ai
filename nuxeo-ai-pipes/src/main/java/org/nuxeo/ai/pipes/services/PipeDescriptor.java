@@ -58,6 +58,9 @@ public class PipeDescriptor {
     @XNode("@async")
     protected Boolean isAsync = true;
 
+    @XNode("@postCommit")
+    protected Boolean isPostCommit = false;
+
     @XNode("supplier")
     protected Supplier supplier;
 
