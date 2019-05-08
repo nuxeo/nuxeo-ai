@@ -26,6 +26,7 @@
     <streamProcessor name="tagsProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
       <option name="source">test_images.out</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
@@ -34,6 +35,7 @@
                      logConfig="test_enrichment"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <option name="source">test_images.out</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
@@ -42,6 +44,7 @@
                      logConfig="test_enrichment"
                      class="org.nuxeo.ai.enrichment.CustomEnrichmentConsumer">
       <option name="source">test_images.out</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
@@ -51,6 +54,7 @@
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
       <option name="source">test_images.out</option>
       <option name="eventName">myCustomMetadataCreated</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
