@@ -70,6 +70,12 @@
             <option name="mimePattern">text.*</option>
             <option name="properties">file:content</option>
           </filter>
+          <filter class="org.nuxeo.ai.pipes.filters.DocumentPathFilter">
+            <option name="startsWith">/My</option>
+            <option name="endWith">Doc</option>
+            <option name="contains">My Doc</option>
+            <option name="pattern">.*</option>
+          </filter>
         </event>
       </supplier>
       <consumer>
