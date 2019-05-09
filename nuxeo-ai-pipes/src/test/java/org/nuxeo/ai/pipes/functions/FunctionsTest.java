@@ -33,6 +33,8 @@ import static org.nuxeo.ai.pipes.functions.Predicates.isPicture;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -40,6 +42,7 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.filters.DocumentPathFilter;
 import org.nuxeo.ai.pipes.filters.PrimaryTypeFilter;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -54,8 +57,6 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 import com.google.inject.Inject;
-
-import junit.framework.TestCase;
 
 @RunWith(FeaturesRunner.class)
 @Features({PlatformFeature.class})
@@ -145,6 +146,23 @@ public class FunctionsTest {
         func.filter = docEvent(d -> true);
         Collection<Record> applied = func.apply(event);
         assertEquals("It is a document with a creator", 1, applied.size());
+
+        DocumentPathFilter pathFilter = new DocumentPathFilter();
+        pathFilter.init(Collections.singletonMap("endsWith", "Doc"));
+        func.filter = docEvent(pathFilter);
+        applied = func.apply(event);
+        assertEquals("Paths ends with Doc", 1, applied.size());
+        Map<String, String> options = new HashMap<>();
+        options.put("endsWith", "Doc,oc");
+        options.put("startsWith", "/My");
+        options.put("contains", "My Doc");
+        options.put("pattern", "NOT_MATCHING");
+        pathFilter.init(options);
+        assertNull("Everything matches except the pattern.", func.apply(event));
+        options.put("pattern", ".*\\s+\\w{3}");
+        pathFilter.init(options);
+        applied = func.apply(event);
+        assertEquals("Pattern now matches", 1, applied.size());
 
         // Test PrimaryTypeFilter
         PrimaryTypeFilter typeFilter = new PrimaryTypeFilter();
