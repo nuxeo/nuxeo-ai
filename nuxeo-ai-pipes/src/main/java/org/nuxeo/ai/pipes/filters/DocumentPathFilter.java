@@ -56,10 +56,10 @@ public class DocumentPathFilter implements Filter.DocumentFilter, Initializable 
     @Override
     public boolean test(DocumentModel doc) {
         String path = doc.getPathAsString();
-        return (startsWith.isEmpty() || startsWith.stream().anyMatch(path::startsWith)
-                && (endsWith.isEmpty() || endsWith.stream().anyMatch(path::endsWith))
-                && (contains.isEmpty() || contains.stream().anyMatch(path::contains))
-                && (pattern == null || pattern.test(path)));
+        return startsWith.stream().anyMatch(path::startsWith)
+                || endsWith.stream().anyMatch(path::endsWith)
+                || contains.stream().anyMatch(path::contains)
+                || (pattern != null && pattern.test(path));
     }
 
 }
