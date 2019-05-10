@@ -36,7 +36,6 @@ public class PrimaryTypeFilter implements Filter.DocumentFilter, Initializable {
     @Override
     public void init(Map<String, String> options) {
         isType = options.get("isType");
-        excludedTypes = propsList(options.get("excludedTypes"));
     }
 
     /**
@@ -44,8 +43,7 @@ public class PrimaryTypeFilter implements Filter.DocumentFilter, Initializable {
      */
     @Override
     public boolean test(DocumentModel doc) {
-        return excludedTypes.stream().noneMatch(t -> t.equals(doc.getType()))
-                && (isType == null || isType.equals(doc.getType()));
+        return isType != null & isType.equals(doc.getType());
     }
 
 }

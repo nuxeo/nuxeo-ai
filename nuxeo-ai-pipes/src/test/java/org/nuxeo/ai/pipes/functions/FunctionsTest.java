@@ -146,6 +146,12 @@ public class FunctionsTest {
         func.filter = docEvent(d -> true);
         Collection<Record> applied = func.apply(event);
         assertEquals("It is a document with a creator", 1, applied.size());
+        facetFilter.init(Collections.singletonMap("excludedFacets", "Versionable,Commentable"));
+        func.filter = docEvent(facetFilter);
+        assertNull("Versionable are excluded.", func.apply(event));
+        facetFilter.init(Collections.singletonMap("includedFacets", "Versionable"));
+        applied = func.apply(event);
+        assertEquals("Versionable are included", 1, applied.size());
 
         DocumentPathFilter pathFilter = new DocumentPathFilter();
         pathFilter.init(Collections.singletonMap("endsWith", "Doc"));
@@ -153,12 +159,16 @@ public class FunctionsTest {
         applied = func.apply(event);
         assertEquals("Paths ends with Doc", 1, applied.size());
         Map<String, String> options = new HashMap<>();
-        options.put("endsWith", "Doc,oc");
         options.put("startsWith", "/My");
         options.put("contains", "My Doc");
-        options.put("pattern", "NOT_MATCHING");
         pathFilter.init(options);
-        assertNull("Everything matches except the pattern.", func.apply(event));
+        applied = func.apply(event);
+        assertEquals("Paths contains Doc", 1, applied.size());
+        options.clear();
+        options.put("pattern", "NO_MATCH");
+        pathFilter.init(options);
+        applied = func.apply(event);
+        assertNull("Pattern does not match", func.apply(event));
         options.put("pattern", ".*\\s+\\w{3}");
         pathFilter.init(options);
         applied = func.apply(event);
@@ -173,14 +183,8 @@ public class FunctionsTest {
         typeFilter.init(Collections.singletonMap("isType", "File"));
         func.filter = docEvent(typeFilter);
         applied = func.apply(event);
-        assertEquals("It is a document with a creator", 1, applied.size());
-        typeFilter.init(Collections.singletonMap("excludedTypes", "Picture"));
-        func.filter = docEvent(typeFilter);
-        applied = func.apply(event);
-        assertEquals("It is a document with a creator", 1, applied.size());
-        typeFilter.init(Collections.singletonMap("excludedTypes", "File"));
-        func.filter = docEvent(typeFilter);
-        assertNull("Its a File", func.apply(event));
+        assertEquals("It is a file", 1, applied.size());
+
     }
 
     @Test

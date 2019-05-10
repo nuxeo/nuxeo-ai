@@ -20,23 +20,31 @@ package org.nuxeo.ai.pipes.filters;
 
 import java.util.List;
 import java.util.Map;
-
-import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ai.pipes.streams.Initializable;
+import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
  * A Document Facet filter.
- * Check that none match the excluded facets and ANY match the included facets
+ * Check that none match the excluded facets and ANY match the included facets.
+ * If both excluded and included facets are specified then excluded facets are used.
  */
 public class FacetFilter implements Filter.DocumentFilter, Initializable {
 
-    protected List<String> includedFacets;
-    protected List<String> excludedFacets;
+    protected List<String> facets;
+
+    protected boolean excluded;
 
     @Override
     public void init(Map<String, String> options) {
-        includedFacets = propsList(options.get("includedFacets"));
-        excludedFacets = propsList(options.getOrDefault("excludedFacets", "Folderish"));
+        facets = propsList(options.get("includedFacets"));
+        List<String> excludedFacets = propsList(options.get("excludedFacets"));
+
+        if (excludedFacets != null && !excludedFacets.isEmpty()) {
+            facets = excludedFacets;
+            excluded = true;
+        } else {
+            excluded = false;
+        }
     }
 
     /**
@@ -44,8 +52,11 @@ public class FacetFilter implements Filter.DocumentFilter, Initializable {
      */
     @Override
     public boolean test(DocumentModel doc) {
-        return excludedFacets.stream().noneMatch(doc::hasFacet) &&
-                (includedFacets.isEmpty() || includedFacets.stream().anyMatch(doc::hasFacet));
+        if (excluded) {
+            return facets.stream().noneMatch(doc::hasFacet);
+        } else {
+            return facets.stream().anyMatch(doc::hasFacet);
+        }
     }
 
 }
