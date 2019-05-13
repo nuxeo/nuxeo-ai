@@ -22,11 +22,10 @@ package org.nuxeo.ai.pipes.filters;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
 import org.nuxeo.ecm.core.api.Blob;
 
 /**
- * Tests to see if a Blob mimetype matches the regular expression.
+ * Tests to see if a Blob mime type matches the regular expression.
  */
 public class MimeBlobPropertyFilter extends PropertyFilter.BlobPropertyFilter {
 
@@ -40,7 +39,6 @@ public class MimeBlobPropertyFilter extends PropertyFilter.BlobPropertyFilter {
 
     @Override
     public boolean testBlob(Blob blob) {
-        String mimeType = blob.getMimeType();
-        return mimeType != null && mimeRegex.test(mimeType);
+        return mimeRegex.test(blob.getMimeType());
     }
 }

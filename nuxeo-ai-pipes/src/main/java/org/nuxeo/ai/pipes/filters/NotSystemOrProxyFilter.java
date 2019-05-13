@@ -27,6 +27,6 @@ public class NotSystemOrProxyFilter implements Filter.DocumentFilter {
 
     @Override
     public boolean test(DocumentModel doc) {
-        return !doc.isProxy() && !doc.hasFacet("SystemDocument");
+        return !(doc.isProxy() || doc.hasFacet("SystemDocument"));
     }
 }

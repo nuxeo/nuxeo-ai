@@ -25,7 +25,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
  * A Document Facet filter.
- * Check that none match the excluded facets and ANY match the included facets.
+ * Check that none match the excluded facets OR ANY match the included facets.
  * If both excluded and included facets are specified then excluded facets are used.
  */
 public class FacetFilter implements Filter.DocumentFilter, Initializable {
