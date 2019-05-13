@@ -18,20 +18,17 @@
  */
 package org.nuxeo.ai.pipes.filters;
 
-import java.util.List;
 import java.util.Map;
 import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
  * A Document type filter.
- * Check that none match the excluded types and is of the specified type
+ * Check that the document is of the specified type.
  */
 public class PrimaryTypeFilter implements Filter.DocumentFilter, Initializable {
 
     protected String isType;
-
-    protected List<String> excludedTypes;
 
     @Override
     public void init(Map<String, String> options) {
@@ -39,11 +36,11 @@ public class PrimaryTypeFilter implements Filter.DocumentFilter, Initializable {
     }
 
     /**
-     * A predicate that checks that none match the excluded types and is of the specified type
+     * A predicate that checks that the document is of the specified type.
      */
     @Override
     public boolean test(DocumentModel doc) {
-        return isType != null & isType.equals(doc.getType());
+        return doc.getType().equals(isType);
     }
 
 }
