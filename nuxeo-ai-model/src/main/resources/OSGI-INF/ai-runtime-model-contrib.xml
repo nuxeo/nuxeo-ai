@@ -17,4 +17,8 @@
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
     <operation class="org.nuxeo.ai.model.serving.SuggestionOp"/>
   </extension>
+
+  <extension point="marshallers" target="org.nuxeo.ecm.core.io.MarshallerRegistry">
+    <register class="org.nuxeo.ai.model.serving.ModelJsonEnricher" enable="true" />
+  </extension>
 </component>

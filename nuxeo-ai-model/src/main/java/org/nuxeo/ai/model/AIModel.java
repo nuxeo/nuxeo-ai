@@ -40,6 +40,11 @@ public interface AIModel {
     Set<ModelProperty> getInputs();
 
     /**
+     * The input property names
+     */
+    Set<String> getInputNames();
+
+    /**
      * The output properties
      */
     Set<ModelProperty> getOutputs();

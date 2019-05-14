@@ -209,6 +209,11 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     }
 
     @Override
+    public Set<String> getInputNames() {
+        return inputNames;
+    }
+
+    @Override
     public SuggestionMetadata predict(DocumentModel doc) {
         Map<String, Tensor> props = new HashMap<>(inputs.size());
         for (ModelProperty input : inputs) {

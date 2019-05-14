@@ -62,7 +62,27 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     protected final Map<String, Predicate<DocumentModel>> predicates = new HashMap<>();
 
+    protected final Map<String, Predicate<DocumentModel>> filterPredicates = new HashMap<>();
+
     protected DirectoryEntryResolver inputTypesResolver;
+
+    /**
+     * Makes a DocumentModel predicate including the properties
+     */
+    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs, ModelDescriptor.ModelPredicate filter) {
+        return makeFilterPredicate(filter).and(d -> inputs.stream().allMatch(i -> notNull(d, i.getName())));
+    }
+
+    /*
+     * Makes a DocumentModel predicate based on just the filter
+     */
+    public static Predicate<DocumentModel> makeFilterPredicate(ModelDescriptor.ModelPredicate filter) {
+        Predicate<DocumentModel> docPredicate = Predicates.doc();
+        if (StringUtils.isNotBlank(filter.primaryType)) {
+            docPredicate = docPredicate.and(d -> filter.primaryType.equals(d.getType()));
+        }
+        return docPredicate;
+    }
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -92,7 +112,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
             Framework.getService(AIComponent.class).addEnrichmentService(descriptor.id, (EnrichmentService) model);
         }
         models.put(descriptor.id, model);
-        predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter.primaryType));
+        predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter));
+        filterPredicates.put(descriptor.id, makeFilterPredicate(descriptor.filter));
     }
 
     @Override
@@ -119,6 +140,16 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
+    public Collection<RuntimeModel> getDocumentModels(DocumentModel document) {
+        return filterPredicates.entrySet()
+                               .stream()
+                               .filter(e -> e.getValue().test(document))
+                               .map(e -> models.get(e.getKey()))
+                               .filter(Objects::nonNull)
+                               .collect(Collectors.toList());
+    }
+
+    @Override
     public List<SuggestionMetadata> predict(DocumentModel document) {
         return predicates.entrySet()
                          .stream()
@@ -126,17 +157,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                          .map(e -> models.get(e.getKey()).predict(document))
                          .filter(Objects::nonNull)
                          .collect(Collectors.toList());
-    }
-
-    /**
-     * Makes a DocumentModel predicate
-     */
-    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs, String primaryType) {
-        Predicate<DocumentModel> docPredicate = Predicates.doc();
-        if (StringUtils.isNotBlank(primaryType)) {
-            docPredicate = docPredicate.and(d -> primaryType.equals(d.getType()));
-        }
-        return docPredicate.and(d -> inputs.stream().allMatch(i -> notNull(d, i.getName())));
     }
 
     /**
