@@ -40,6 +40,11 @@ public interface ModelServingService {
     Collection<ModelDescriptor> listModels();
 
     /**
+     * List all models that match the provided document
+     */
+    Collection<RuntimeModel> getDocumentModels(DocumentModel document);
+
+    /**
      * Get a RuntimeModel by Id
      */
     RuntimeModel getModel(String modelId);
