@@ -70,9 +70,9 @@ public class TestRekognitionService {
 
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.imageLabels");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        EnrichmentMetadata metadata = (EnrichmentMetadata) metadataCollection.iterator().next();
         assertNotNull(metadata);
         assertEquals(blobTextFromDoc.getRepositoryName(), metadata.context.repositoryName);
         assertEquals(blobTextFromDoc.getId(), metadata.context.documentRef);
@@ -88,7 +88,7 @@ public class TestRekognitionService {
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.faceDetection");
         assertNotNull(service);
-        List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         assertTrue(metadataCollection.get(0).getTags().size() >= 1);
         assertTrue(metadataCollection.get(0).getTags().get(0).getValues().get(0).features.size() >= 2);
@@ -100,7 +100,7 @@ public class TestRekognitionService {
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.celebrityDetection");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         AIMetadata.Tag single = metadataCollection.iterator().next().getTags().get(0).getValues().iterator().next();
         assertEquals("Steve Ballmer", single.name);
@@ -118,7 +118,7 @@ public class TestRekognitionService {
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.unsafeImages");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(0, metadataCollection.size());
 
         blobTextFromDoc = setupBlobTextFromDocument("creative_adults-beautiful-blue.jpg");
@@ -134,9 +134,9 @@ public class TestRekognitionService {
 
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textDetection");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        EnrichmentMetadata metadata = (EnrichmentMetadata) metadataCollection.iterator().next();
         assertNotNull(metadata);
         assertFalse(metadata.getTags().isEmpty());
         assertNotNull(metadata.getTags().get(0).getValues().get(0).box);

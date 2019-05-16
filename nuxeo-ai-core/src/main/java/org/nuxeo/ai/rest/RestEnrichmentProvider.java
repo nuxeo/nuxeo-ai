@@ -40,6 +40,7 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
@@ -66,7 +67,7 @@ public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider 
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
 
         return client.call(builder -> prepareRequest(builder, blobTextFromDoc),
                            response -> {
@@ -92,7 +93,7 @@ public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider 
     /**
      * Handle the response and return the result
      */
-    public abstract Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc);
+    public abstract Collection<AIMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc);
 
     /**
      * Set a string as a Json body parameter on the request

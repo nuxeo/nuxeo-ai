@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.security.SecurityConstants;
 
@@ -34,7 +35,7 @@ import org.nuxeo.ecm.core.api.security.SecurityConstants;
 public class TextReversingEnrichmentProvider extends AbstractEnrichmentProvider {
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         String reversedText = StringUtils.reverse(blobTextFromDoc.getProperties().values().iterator().next());
         List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1, 0L))

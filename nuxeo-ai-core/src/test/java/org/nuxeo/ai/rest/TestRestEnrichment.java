@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -62,9 +63,9 @@ public class TestRestEnrichment {
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
         blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> results = service.enrich(blobTextFromDoc);
         assertEquals(1, results.size());
-        EnrichmentMetadata metadata = results.iterator().next();
+        EnrichmentMetadata metadata = (EnrichmentMetadata) results.iterator().next();
         assertNotNull(metadata.getRawKey());
 
         TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentProvider(metadata.getModelName());

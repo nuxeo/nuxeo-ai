@@ -69,7 +69,7 @@ public class TestComprehendService {
         textStream.setId("docId");
         textStream.setRepositoryName("test");
         textStream.addProperty("dc:title", "I am very disappointed");
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
+        Collection<AIMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata result = metadataCollection.iterator().next();
         assertEquals(SentimentType.NEGATIVE.toString(), result.getLabels().get(0).getValues().get(0).getName());

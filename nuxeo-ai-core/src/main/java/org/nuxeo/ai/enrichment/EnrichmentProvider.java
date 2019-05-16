@@ -49,7 +49,7 @@ public interface EnrichmentProvider {
     /**
      * The main enrich method for the provider to implement.  Enriching the blob or text and returning a result.
      */
-    Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc);
+    Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc);
 
     /**
      * The retry policy for the provider

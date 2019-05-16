@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
@@ -32,7 +33,7 @@ public class LoggingEnrichmentProvider extends AbstractEnrichmentProvider {
     private static final Log log = LogFactory.getLog(LoggingEnrichmentProvider.class);
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         log.info("Logging: " + blobTextFromDoc);
         return Collections.emptyList();
     }

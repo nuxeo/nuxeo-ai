@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
@@ -113,7 +114,7 @@ public class TestEnrichmentMetaData {
         assertEquals(metadataBackAgain.getLabels(), metadata.getLabels());
         assertEquals(metadataBackAgain.getTags(), metadata.getTags());
     }
-    
+
     @Test
     public void testRawJson() throws IOException {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
