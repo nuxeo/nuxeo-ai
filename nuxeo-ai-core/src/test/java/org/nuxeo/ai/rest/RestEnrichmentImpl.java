@@ -31,6 +31,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
@@ -55,7 +56,7 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc) {
         String content = getContent(response);
         String rawKey = saveJsonAsRawBlob(content);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();

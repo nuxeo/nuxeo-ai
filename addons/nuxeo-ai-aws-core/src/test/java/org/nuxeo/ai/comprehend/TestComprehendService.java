@@ -33,6 +33,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.enrichment.SentimentEnrichmentService;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -69,14 +70,14 @@ public class TestComprehendService {
         textStream.setId("docId");
         textStream.setRepositoryName("test");
         textStream.addProperty("dc:title", "I am very disappointed");
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
+        Collection<AIMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata result = metadataCollection.iterator().next();
+        EnrichmentMetadata result = (EnrichmentMetadata) metadataCollection.iterator().next();
         assertTrue(result.isSingleLabel());
         assertEquals(SentimentType.NEGATIVE.toString(), result.getLabels().get(0).getName());
         textStream.addProperty("dc:title", "A car");
         metadataCollection = service.enrich(textStream);
-        result = metadataCollection.iterator().next();
+        result = (EnrichmentMetadata) metadataCollection.iterator().next();
         assertEquals(SentimentType.NEUTRAL.toString(), result.getLabels().get(0).getName());
     }
 

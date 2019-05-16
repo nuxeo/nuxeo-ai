@@ -41,6 +41,7 @@ import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -77,9 +78,9 @@ public class TestTextractService {
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.documentText");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        EnrichmentMetadata metadata = (EnrichmentMetadata) metadataCollection.iterator().next();
         assertNotNull(metadata);
         List<Block> blocks = AWSHelper.getInstance().getTextractBlocks(metadata);
         assertNotNull(blocks);
@@ -93,9 +94,9 @@ public class TestTextractService {
 
         EnrichmentService service = aiComponent.getEnrichmentService("aws.documentAnalyze");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        EnrichmentMetadata metadata = (EnrichmentMetadata) metadataCollection.iterator().next();
         assertNotNull(metadata);
         List<Block> blocks = AWSHelper.getInstance().getTextractBlocks(metadata);
         assertNotNull(blocks);
