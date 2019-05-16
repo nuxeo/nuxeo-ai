@@ -30,14 +30,19 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.Suggestion;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
@@ -69,6 +74,7 @@ public class TestEnrichmentMetaData {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalid() {
         new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
+        new SuggestionMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
     }
 
     @Test
@@ -103,8 +109,19 @@ public class TestEnrichmentMetaData {
         assertEquals(metadata, metadataBackAgain);
         assertNotNull(metadataBackAgain.toString());
 
-    }
+        Suggestion suggestion = new Suggestion("my:property", labels);
+        SuggestionMetadata suggestionMetadata = new SuggestionMetadata.Builder(Instant.now(), "m1", "stest", blobTextFromDoc)
+                .withSuggestions(Collections.singletonList(suggestion))
+                .withDigest("blobxx")
+                .withDigest("fredblogs")
+                .withCreator("bob")
+                .withRawKey("xyz").build();
 
+        SuggestionMetadata suggest = EnrichmentUtils.copyMetadata(suggestionMetadata, blobTextFromDoc);
+        assertNotNull(suggest);
+        assertEquals(suggest.getSuggestions(), suggestionMetadata.getSuggestions());
+    }
+    
     @Test
     public void testRawJson() throws IOException {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);

@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -74,9 +75,9 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService implement
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
-            List<EnrichmentMetadata> enriched = new ArrayList<>();
+            List<AIMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectLabelsResult result = Framework.getService(RekognitionService.class)
                                                      .detectLabels(blob.getValue(), maxResults, minConfidence);

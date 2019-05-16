@@ -29,6 +29,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.comprehend.ComprehendService;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
@@ -56,9 +57,9 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService implem
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
-            List<EnrichmentMetadata> enriched = new ArrayList<>();
+            List<AIMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, String> prop : blobTextFromDoc.getProperties().entrySet()) {
                 DetectSentimentResult result = Framework.getService(ComprehendService.class)
                                                         .detectSentiment(prop.getValue(), languageCode);

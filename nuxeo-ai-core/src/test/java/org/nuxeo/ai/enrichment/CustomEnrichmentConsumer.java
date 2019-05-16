@@ -19,6 +19,7 @@
 package org.nuxeo.ai.enrichment;
 
 import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.functions.AbstractEnrichmentConsumer;
@@ -40,7 +41,6 @@ public class CustomEnrichmentConsumer extends AbstractEnrichmentConsumer {
                     try {
                         // DocumentModel doc = session.getDocument(new IdRef(metadata.context.documentRef));
                         metadata.getTags().forEach(tag -> log.debug("A tag " + tag));
-                        metadata.getSuggestions().forEach(suggestion -> log.debug("A suggestion " + suggestion));
                         metadata.getLabels().forEach(label -> log.debug("A label " + label));
                         String raw = EnrichmentUtils.getRawBlob(metadata);
                         log.debug("Raw is " + raw);
