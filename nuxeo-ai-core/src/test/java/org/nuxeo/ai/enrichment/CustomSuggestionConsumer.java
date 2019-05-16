@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2019 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,20 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.util.Collection;
-import java.util.Collections;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.functions.AbstractSuggestionConsumer;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+/**
+ * Example consumer of suggestion data
+ */
+public class CustomSuggestionConsumer extends AbstractSuggestionConsumer {
 
-public class BadEnrichmentService extends AbstractEnrichmentService {
-
-    public BadEnrichmentService(String name) {
-        super();
-    }
+    private static final Log log = LogFactory.getLog(CustomSuggestionConsumer.class);
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-        return Collections.emptyList();
+    public void accept(SuggestionMetadata suggestionMetadata) {
+        log.info("Metadata is "+ suggestionMetadata);
     }
 }

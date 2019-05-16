@@ -160,7 +160,7 @@ public class TestDocMetadataService {
         );
         blobTextFromDoc.addProperty(TEST_PROPERTY, SOME_TEXT);
         EnrichmentService service = aiComponent.getEnrichmentService(SERVICE_NAME);
-        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
+        Collection<AIMetadata> results = service.enrich(blobTextFromDoc);
         TestCase.assertEquals(2, results.size());
         EnrichmentMetadata[] metaResults = results.toArray(new EnrichmentMetadata[0]);
         EnrichmentMetadata metadata = metaResults[0];

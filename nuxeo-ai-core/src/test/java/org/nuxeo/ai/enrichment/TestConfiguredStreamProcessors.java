@@ -31,13 +31,22 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.inject.Inject;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.Suggestion;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -59,6 +68,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -182,6 +192,34 @@ public class TestConfiguredStreamProcessors {
         waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
 
         assertEquals(cacheHit + 2, cached.getValue());
+    }
+
+    @Test
+    public void testSuggestConsumer() throws IOException, InterruptedException {
+
+        BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
+        blobTextFromDoc.setId("mydocId");
+        blobTextFromDoc.setRepositoryName("text");
+        List<EnrichmentMetadata.Label> labels = Arrays.asList(new AIMetadata.Label("girl", 0.5f),
+                new AIMetadata.Label("boy", 0.4f));
+        Suggestion suggestion = new Suggestion("my:property", labels);
+        SuggestionMetadata suggestionMetadata = new SuggestionMetadata.Builder(Instant.now(), "m1", "stest",
+                blobTextFromDoc).withSuggestions(Collections.singletonList(suggestion))
+                                .withDigest("blobxx")
+                                .withDigest("fredblogs")
+                                .withCreator("bob")
+                                .withRawKey("xyz")
+                                .build();
+        Map<String, Gauge> gauges = getMetrics("nuxeo.ai.streams.func.test_suggestion$CustomSuggestionConsumer.");
+        Gauge call = gauges.get("nuxeo.ai.streams.func.test_suggestion$CustomSuggestionConsumer." + "called");
+        long called = (long) call.getValue();
+        assertEquals(0, called);
+        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
+        LogAppender<Record> appender = manager.getAppender("test_suggestion");
+        appender.append("suggest1", toRecord("s1", suggestionMetadata));
+        appender.append("suggest2", toRecord("s2", suggestionMetadata));
+        waitForNoLag(manager, "test_suggestion", "test_suggestion$CustomSuggestionConsumer", Duration.ofSeconds(5));
+        assertEquals(2L, call.getValue());
     }
 
     /**

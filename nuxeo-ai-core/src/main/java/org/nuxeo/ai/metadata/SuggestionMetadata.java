@@ -20,18 +20,24 @@ package org.nuxeo.ai.metadata;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 /**
- * A normalized view of the suggestion data.
- * This class is designed to be serialized as JSON.
+ * A normalized view of the suggestion data. This class is designed to be serialized as JSON.
  */
 @JsonDeserialize(builder = SuggestionMetadata.Builder.class)
 public class SuggestionMetadata extends AIMetadata {
@@ -49,9 +55,15 @@ public class SuggestionMetadata extends AIMetadata {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
-        if (!super.equals(o)) { return false; }
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
         SuggestionMetadata that = (SuggestionMetadata) o;
         return Objects.equals(suggestions, that.suggestions);
     }
@@ -61,12 +73,32 @@ public class SuggestionMetadata extends AIMetadata {
         return Objects.hash(super.hashCode(), suggestions);
     }
 
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this).append("created", created)
+                                        .append("creator", creator)
+                                        .append("serviceName", serviceName)
+                                        .append("context", context)
+                                        .append("kind", kind)
+                                        .append("rawKey", rawKey)
+                                        .append("suggestions", suggestions)
+                                        .toString();
+    }
+
     public static class Builder extends AbstractMetaDataBuilder {
 
         private List<Suggestion> suggestions;
 
-        public Builder(String kind, String serviceName, Set<String> inputProperties) {
-            super(Instant.now(), kind, serviceName, null, null, null, inputProperties);
+        public Builder(String kind, String serviceName, Set<String> inputProperties, String repositoryName,
+                String documentRef, Set<String> digests) {
+            super(Instant.now(), kind, serviceName, repositoryName, documentRef, digests, inputProperties);
+            suggestions = new ArrayList<>();
+        }
+
+        public Builder(Instant created, String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
+            super(created, kind, serviceName, blobTextFromDoc.getRepositoryName(), blobTextFromDoc.getId(),
+                    getDigests(blobTextFromDoc), getPropertyNames(blobTextFromDoc));
+            suggestions = new ArrayList<>();
         }
 
         @JsonCreator

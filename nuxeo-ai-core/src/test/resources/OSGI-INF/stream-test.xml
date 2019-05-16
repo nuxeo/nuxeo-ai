@@ -82,4 +82,13 @@
       </operation>
     </chain>
   </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="suggestProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.enrichment.CustomSuggestionConsumer">
+      <option name="source">test_suggestion</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+    </streamProcessor>
+  </extension>
+
 </component>

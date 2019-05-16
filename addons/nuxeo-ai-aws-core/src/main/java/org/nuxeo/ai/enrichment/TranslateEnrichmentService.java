@@ -28,14 +28,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.Suggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.translate.TranslateService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.translate.model.TranslateTextResult;
 
@@ -66,7 +67,7 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService implem
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         try {
             return Collections.singletonList(translate(blobTextFromDoc));
         } catch (IOException e) {
@@ -77,18 +78,18 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService implem
     /**
      * Translate the specified text properties using the blobTextFromDoc for context info.
      */
-    protected EnrichmentMetadata translate(BlobTextFromDocument blobTextFromDoc) throws IOException {
+    protected AIMetadata translate(BlobTextFromDocument blobTextFromDoc) throws IOException {
 
-        List<Suggestion> suggestions = new ArrayList<>();
+        List<EnrichmentMetadata.Label> labels = new ArrayList<>();
         List<String> raw = new ArrayList<>();
 
         for (Map.Entry<String, String> textEntry : blobTextFromDoc.getProperties().entrySet()) {
             try {
                 TranslateTextResult result = Framework.getService(TranslateService.class)
-                                                      .translateText(textEntry.getValue(),
-                                                                     sourceLanguageCode, targetLanguageCode);
+                                                      .translateText(textEntry.getValue(), sourceLanguageCode,
+                                                              targetLanguageCode);
                 if (result != null && StringUtils.isNotEmpty(result.getTranslatedText())) {
-                    suggestions.add(processSuggestion(textEntry.getKey(), result));
+                    labels.add(new AIMetadata.Label(result.getTranslatedText(), CONFIDENCE));
                     raw.add(processRaw(textEntry.getValue(), result));
                 }
             } catch (AmazonServiceException e) {
@@ -102,7 +103,7 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService implem
             builder.withRawKey(rawKey);
         }
 
-        return builder.withSuggestions(suggestions).build();
+        return builder.withLabels(labels).build();
     }
 
     @Override
@@ -122,11 +123,4 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService implem
         });
     }
 
-    /**
-     * Processes the result of the call to AWS returning a Suggestion
-     */
-    protected Suggestion processSuggestion(String propName, TranslateTextResult result) {
-        return new Suggestion(propName, Collections
-                .singletonList(new AIMetadata.Label(result.getTranslatedText(), CONFIDENCE)));
-    }
 }

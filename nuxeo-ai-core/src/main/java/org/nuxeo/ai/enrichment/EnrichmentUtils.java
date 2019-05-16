@@ -33,8 +33,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -52,6 +55,7 @@ import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -76,7 +80,7 @@ public class EnrichmentUtils {
 
     protected static final TypeReference<List<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE =
             new TypeReference<List<EnrichmentMetadata>>() {
-            };
+    };
 
     private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
 
@@ -97,7 +101,11 @@ public class EnrichmentUtils {
      * Gets the digests of any blobs used by the BlobTextFromDocument.
      */
     public static Set<String> getDigests(BlobTextFromDocument blobtext) {
-        return blobtext.getBlobs().values().stream().map(Blob::getDigest).filter(Objects::nonNull)
+        return blobtext.getBlobs()
+                       .values()
+                       .stream()
+                       .map(Blob::getDigest)
+                       .filter(Objects::nonNull)
                        .collect(Collectors.toSet());
     }
 
@@ -194,7 +202,8 @@ public class EnrichmentUtils {
     /**
      * Convert the provided image blob.
      */
-    public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth, String conversionFormat) {
+    public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth,
+            String conversionFormat) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, width);
@@ -212,7 +221,7 @@ public class EnrichmentUtils {
     /**
      * Get an entry from the enrichment cache
      */
-    public static Collection<EnrichmentMetadata> cacheGet(String cacheKey) {
+    public static Collection<AIMetadata> cacheGet(String cacheKey) {
         if (isNotBlank(cacheKey)) {
             KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(ENRICHMENT_CACHE_KV);
             byte[] result = kvStore.get(cacheKey);
@@ -230,13 +239,19 @@ public class EnrichmentUtils {
     /**
      * Put an entry in the enrichment cache, specify the TTL in seconds.
      */
-    public static void cachePut(String cacheKey, Collection<EnrichmentMetadata> metadata, long ttl) {
+    public static void cachePut(String cacheKey, Collection<AIMetadata> metadata, long ttl) {
         if (isNotBlank(cacheKey)) {
             KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(ENRICHMENT_CACHE_KV);
             try {
-                byte[] result = JacksonUtil.MAPPER.writeValueAsBytes(metadata);
-                if (result != null) {
-                    kvStore.put(cacheKey, result, ttl);
+                if (!metadata.isEmpty()) {
+                    if (metadata.stream().allMatch(aiMetadata -> aiMetadata instanceof EnrichmentMetadata)) {
+                        byte[] result = JacksonUtil.MAPPER.writeValueAsBytes(metadata);
+                        if (result != null) {
+                            kvStore.put(cacheKey, result, ttl);
+                        }
+                    } else {
+                        log.warn("Caching is only currently supported for EnrichmentMetadata.");
+                    }
                 }
             } catch (JsonProcessingException e) {
                 log.warn(String.format("Failed to serialize metadata to cache for key %s", cacheKey), e);
@@ -247,20 +262,34 @@ public class EnrichmentUtils {
     /**
      * Copy all the supplied metadata but using the BlobTextFromDocument as the context.
      */
-    public static Collection<EnrichmentMetadata> copyEnrichmentMetadata(Collection<EnrichmentMetadata> metadata,
-                                                                        BlobTextFromDocument blobTextFromDoc) {
-        return metadata
-                .stream()
-                .<EnrichmentMetadata>map(meta ->
-                                                 new EnrichmentMetadata.Builder(meta.created, meta.kind,
-                                                                                meta.serviceName, blobTextFromDoc)
-                                                         .withLabels(meta.getLabels())
-                                                         .withTags(meta.getTags())
-                                                         .withSuggestions(meta.getSuggestions())
-                                                         .withRawKey(meta.rawKey)
-                                                         .withDocumentProperties(meta.context.inputProperties)
-                                                         .withCreator(meta.creator).build())
-                .collect(Collectors.toList());
+    public static Collection<AIMetadata> copyEnrichmentMetadata(Collection<AIMetadata> metadata,
+            BlobTextFromDocument blobTextFromDoc) {
+        return metadata.stream().map(meta -> copyMetadata(meta, blobTextFromDoc)).collect(Collectors.toList());
+    }
+
+    /**
+     * Copy enrichment AIMetadata, using the BlobTextFromDocument as the context.
+     */
+    public static <T extends AIMetadata> T copyMetadata(T metadata, BlobTextFromDocument blobTextFromDoc) {
+        if (metadata instanceof EnrichmentMetadata) {
+            EnrichmentMetadata meta = (EnrichmentMetadata) metadata;
+            return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.serviceName,
+                    blobTextFromDoc).withLabels(meta.getLabels())
+                                    .withTags(meta.getTags())
+                                    .withRawKey(meta.rawKey)
+                                    .withDocumentProperties(meta.context.inputProperties)
+                                    .withCreator(meta.creator)
+                                    .build();
+        } else {
+            SuggestionMetadata meta = (SuggestionMetadata) metadata;
+            return new SuggestionMetadata.Builder(meta.created, meta.kind, meta.serviceName,
+                    blobTextFromDoc).withSuggestions(meta.getSuggestions())
+                                    .withRawKey(meta.rawKey)
+                                    .withDocumentProperties(meta.context.inputProperties)
+                                    .withCreator(meta.creator)
+                                    .build();
+        }
+
     }
 
     /**

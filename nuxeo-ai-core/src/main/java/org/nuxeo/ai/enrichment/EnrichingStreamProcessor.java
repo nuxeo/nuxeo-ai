@@ -32,8 +32,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -132,14 +134,14 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 log.debug("Processing record " + record);
             }
             BlobTextFromDocument blobTextFromDoc = fromRecord(record, BlobTextFromDocument.class);
-            Callable<Collection<EnrichmentMetadata>> callable = getService(blobTextFromDoc);
+            Callable<Collection<AIMetadata>> callable = getService(blobTextFromDoc);
 
             if (callable != null) {
                 metrics.called();
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Calling %s for doc %s", enricherName, blobTextFromDoc.getId()));
                 }
-                Collection<EnrichmentMetadata> result = null;
+                Collection<AIMetadata> result = null;
                 try {
                     result = callService(record, callable);
                 } catch (CircuitBreakerOpenException cboe) {
@@ -156,10 +158,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 if (result != null) {
                     if (useCache && service instanceof EnrichmentCachable) {
                         EnrichmentCachable cachingService = (EnrichmentCachable) service;
-                        EnrichmentUtils.cachePut(cachingService.getCacheKey(blobTextFromDoc), result,
-                                                 cachingService.getTimeToLive());
+                        cachePut(cachingService.getCacheKey(blobTextFromDoc), result, cachingService.getTimeToLive());
                     }
-                    List<Record> results = result.stream().map(meta -> toRecord(meta.context.documentRef, meta))
+                    List<Record> results = result.stream()
+                                                 .map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
                     writeToStreams(context, results);
                 }
@@ -174,9 +176,23 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         /**
+         * Put an entry in the enrichment cache, specify the TTL in seconds.
+         */
+        protected void cachePut(String cacheKey, Collection<AIMetadata> metadata, long ttl) {
+            EnrichmentUtils.cachePut(cacheKey, metadata, ttl);
+        }
+
+        /**
+         * Get an entry from the enrichment cache
+         */
+        protected Collection<AIMetadata> cacheGet(String cacheKey) {
+            return EnrichmentUtils.cacheGet(cacheKey);
+        }
+
+        /**
          * Calls the service using the retryPolicy
          */
-        protected Collection<EnrichmentMetadata> callService(Record record, Callable<Collection<EnrichmentMetadata>> callable) {
+        protected Collection<AIMetadata> callService(Record record, Callable<Collection<AIMetadata>> callable) {
             return Failsafe.with(retryPolicy)
                            .onSuccess(r -> {
                                metrics.success();
@@ -203,10 +219,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * Try to get a reference to an enrichment service if the BlobTextFromDocument meets the requirements,
          * otherwise return null,
          */
-        protected Callable<Collection<EnrichmentMetadata>> getService(BlobTextFromDocument blobTextFromDoc) {
+        protected Callable<Collection<AIMetadata>> getService(BlobTextFromDocument blobTextFromDoc) {
             if (useCache && service instanceof EnrichmentCachable) {
                 String cacheKey = ((EnrichmentCachable) service).getCacheKey(blobTextFromDoc);
-                Collection<EnrichmentMetadata> metadata = EnrichmentUtils.cacheGet(cacheKey);
+                Collection<AIMetadata> metadata = cacheGet(cacheKey);
                 if (!metadata.isEmpty()) {
                     metrics.cacheHit();
                     return () -> EnrichmentUtils.copyEnrichmentMetadata(metadata, blobTextFromDoc);
@@ -235,7 +251,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         /**
-         * Writes to the output streams.  Performs no action if no Record or output streams.
+         * Writes to the output streams. Performs no action if no Record or output streams.
          */
         protected void writeToStreams(ComputationContext context, List<Record> records) {
             if (records != null && !records.isEmpty() && !metadata.outputStreams().isEmpty()) {
