@@ -27,19 +27,19 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
-import org.nuxeo.ai.metadata.Suggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
- * A normalized view of the result of an Enrichment Service.
- * This class is designed to be serialized as JSON.
+ * A normalized view of the result of an Enrichment Service. This class is designed to be serialized as JSON.
  */
 @JsonDeserialize(builder = EnrichmentMetadata.Builder.class)
 public class EnrichmentMetadata extends AIMetadata {
@@ -50,14 +50,11 @@ public class EnrichmentMetadata extends AIMetadata {
 
     private final List<Tag> tags;
 
-    private final List<Suggestion> suggestions;
-
     private EnrichmentMetadata(Builder builder) {
-        super(builder.serviceName, builder.kind, builder.getContext(),
-              builder.getCreator(), builder.created, builder.getRawKey());
+        super(builder.serviceName, builder.kind, builder.getContext(), builder.getCreator(), builder.created,
+                builder.getRawKey());
         labels = unmodifiableList(builder.labels);
         tags = unmodifiableList(builder.tags);
-        suggestions = unmodifiableList(builder.suggestions);
     }
 
     public List<Tag> getTags() {
@@ -66,10 +63,6 @@ public class EnrichmentMetadata extends AIMetadata {
 
     public List<Label> getLabels() {
         return labels;
-    }
-
-    public List<Suggestion> getSuggestions() {
-        return suggestions;
     }
 
     @JsonIgnore
@@ -89,46 +82,39 @@ public class EnrichmentMetadata extends AIMetadata {
             return false;
         }
         EnrichmentMetadata metadata = (EnrichmentMetadata) o;
-        return Objects.equals(labels, metadata.labels) &&
-                Objects.equals(suggestions, metadata.suggestions) &&
-                Objects.equals(tags, metadata.tags);
+        return Objects.equals(labels, metadata.labels) && Objects.equals(tags, metadata.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), labels, tags, suggestions);
+        return Objects.hash(super.hashCode(), labels, tags);
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("labels", labels)
-                .append("tags", tags)
-                .append("suggestions", suggestions)
-                .append("created", created)
-                .append("creator", creator)
-                .append("serviceName", serviceName)
-                .append("context", context)
-                .append("kind", kind)
-                .append("rawKey", rawKey)
-                .toString();
+        return new ToStringBuilder(this).append("labels", labels)
+                                        .append("tags", tags)
+                                        .append("created", created)
+                                        .append("creator", creator)
+                                        .append("serviceName", serviceName)
+                                        .append("context", context)
+                                        .append("kind", kind)
+                                        .append("rawKey", rawKey)
+                                        .toString();
     }
 
     public static class Builder extends AbstractMetaDataBuilder {
 
-        //optional
+        // optional
         private List<Label> labels;
 
         private List<Tag> tags;
 
-        private List<Suggestion> suggestions;
-
         public Builder(Instant created, String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
             super(created, kind, serviceName, blobTextFromDoc.getRepositoryName(), blobTextFromDoc.getId(),
-                  getDigests(blobTextFromDoc), getPropertyNames(blobTextFromDoc));
+                    getDigests(blobTextFromDoc), getPropertyNames(blobTextFromDoc));
             labels = new ArrayList<>();
             tags = new ArrayList<>();
-            suggestions = new ArrayList<>();
         }
 
         public Builder(String kind, String serviceName, BlobTextFromDocument blobTextFromDoc) {
@@ -148,14 +134,6 @@ public class EnrichmentMetadata extends AIMetadata {
          */
         public Builder withLabels(List<Label> labels) {
             this.labels = labels;
-            return this;
-        }
-
-        /**
-         * Set the metadata suggestions overwriting any existing ones.
-         */
-        public Builder withSuggestions(List<Suggestion> suggestions) {
-            this.suggestions = suggestions;
             return this;
         }
 
@@ -204,9 +182,6 @@ public class EnrichmentMetadata extends AIMetadata {
             }
             if (tags == null) {
                 tags = emptyList();
-            }
-            if (suggestions == null) {
-                suggestions = emptyList();
             }
             return new EnrichmentMetadata(this);
         }

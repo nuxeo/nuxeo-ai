@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -68,15 +69,16 @@ public class TestImageQualityService {
         EnrichmentService service = aiComponent.getEnrichmentService("ai.imagequality.mock.fail");
         assertNotNull(service);
 
-        List<EnrichmentMetadata> metadata = (List<EnrichmentMetadata>)
+        Collection<AIMetadata> metadata =
                 service.enrich(EnrichmentTestFeature.blobTestImage(manager));
         assertEquals("Service must fail gracefully.", 0, metadata.size());
 
         service = aiComponent.getEnrichmentService("ai.imagequality.mock");
-        metadata = (List<EnrichmentMetadata>) service.enrich(EnrichmentTestFeature.blobTestImage(manager));
+        metadata = service.enrich(EnrichmentTestFeature.blobTestImage(manager));
         assertEquals(1, metadata.size());
-        assertEquals(17, metadata.get(0).getLabels().size());
-        assertEquals(4, metadata.get(0).getTags().size());
+        EnrichmentMetadata enrichmentMetadata = (EnrichmentMetadata) metadata.iterator().next();
+        assertEquals(17, enrichmentMetadata.getLabels().size());
+        assertEquals(4, enrichmentMetadata.getTags().size());
     }
 
     @Test
@@ -90,7 +92,7 @@ public class TestImageQualityService {
         EnrichmentService service = aiComponent.getEnrichmentService("ai.imagequality.real");
         assertNotNull(service);
 
-        Collection<EnrichmentMetadata> metadata = service.enrich(EnrichmentTestFeature.blobTestImage(manager));
+        Collection<AIMetadata> metadata = service.enrich(EnrichmentTestFeature.blobTestImage(manager));
         assertEquals("Service must call successfully.", 1, metadata.size());
     }
 

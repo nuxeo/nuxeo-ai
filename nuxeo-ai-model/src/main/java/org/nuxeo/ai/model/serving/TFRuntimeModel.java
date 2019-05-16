@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
@@ -53,6 +54,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -90,7 +92,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     protected String modelPath = "";
 
-    protected boolean useLabels;  //Indicates if enrichment should use suggestion or labels
+    protected boolean useLabels; // Indicates if enrichment should use suggestion or labels
 
     @Override
     public void init(ModelDescriptor descriptor) {
@@ -109,7 +111,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     /**
      * For the supplied input values try to predict a result or return null
      */
-    public SuggestionMetadata predict(Map<String, Tensor> inputValues) {
+    public SuggestionMetadata predict(Map<String, Tensor> inputValues, String repositoryName, String documentRef) {
         if (inputValues.size() != inputs.size()) {
             log.debug(getName() + " did not call prediction.  Properties provided were " + inputValues.keySet());
             return null;
@@ -118,15 +120,13 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         if (client.isAvailable()) {
             String json = prepareRequest(inputValues);
             if (isNotBlank(json)) {
-                return client.post(buildUri(), json,
-                                   response -> {
-                                       SuggestionMetadata meta = handlePredict(response.body().string());
-                                       if (log.isDebugEnabled()) {
-                                           log.debug(getName() + " prediction is " + MAPPER.writeValueAsString(meta));
-                                       }
-                                       return meta;
-                                   }
-                );
+                return client.post(buildUri(), json, response -> {
+                    SuggestionMetadata meta = handlePredict(response.body().string(), repositoryName, documentRef);
+                    if (log.isDebugEnabled()) {
+                        log.debug(getName() + " prediction is " + MAPPER.writeValueAsString(meta));
+                    }
+                    return meta;
+                });
             }
         }
 
@@ -136,13 +136,13 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     /**
      * Handle the response from Tensorflow serving and return normalized SuggestionMetadata.
      */
-    protected SuggestionMetadata handlePredict(String content) {
+    protected SuggestionMetadata handlePredict(String content, String repositoryName, String documentRef) {
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
-            SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(getKind(), getId(), inputNames);
+            SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(getKind(), getId(), inputNames,
+                    repositoryName, documentRef, Collections.emptySet());
             List<Suggestion> suggestions = new ArrayList<>();
-            labelledResults.forEach((output, labels) ->
-                                            suggestions.add(new Suggestion(output, labels)));
+            labelledResults.forEach((output, labels) -> suggestions.add(new Suggestion(output, labels)));
             builder.withSuggestions(suggestions);
             return builder.withRawKey(saveJsonAsRawBlob(content)).build();
         }
@@ -228,12 +228,11 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                     props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
             }
         }
-        return predict(props);
+        return predict(props, doc.getRepositoryName(), doc.getId());
     }
 
-
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
+    public Collection<AIMetadata> enrich(BlobTextFromDocument blobtext) {
         Map<String, Tensor> inputProperties = new HashMap<>();
 
         for (Map.Entry<String, ManagedBlob> blobEntry : blobtext.getBlobs().entrySet()) {
@@ -258,28 +257,25 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         if (inputProperties.isEmpty()) {
             log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), blobtext.getId()));
         } else {
-            SuggestionMetadata suggestions = predict(inputProperties);
+            SuggestionMetadata suggestions = predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId());
             if (suggestions != null && !suggestions.getSuggestions().isEmpty()) {
-                EnrichmentMetadata.Builder builder =
-                        new EnrichmentMetadata.Builder(Instant.now(), getKind(), getId(),
-                                                       new AIMetadata.Context(
-                                                               blobtext.getRepositoryName(), blobtext.getId(),
-                                                               null, inputNames));
-                builder.withRawKey(suggestions.getRawKey());
                 if (useLabels) {
                     if (suggestions.getSuggestions().size() != 1) {
                         log.error("Multiple outputs is currently unsupported.  The output name will be lost.");
                     }
-                    List<AIMetadata.Label> vals = suggestions.getSuggestions().stream()
+                    EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(Instant.now(), getKind(),
+                            getId(), suggestions.getContext());
+                    builder.withRawKey(suggestions.getRawKey());
+                    List<AIMetadata.Label> vals = suggestions.getSuggestions()
+                                                             .stream()
                                                              .map(Suggestion::getValues)
                                                              .flatMap(Collection::stream)
                                                              .collect(Collectors.toList());
                     builder.withLabels(vals);
+                    return Collections.singletonList(builder.build());
                 } else {
-                    builder.withSuggestions(suggestions.getSuggestions());
+                    return Collections.singletonList(suggestions);
                 }
-                return Collections.singletonList(builder.build());
-
             }
         }
         return emptyList();
