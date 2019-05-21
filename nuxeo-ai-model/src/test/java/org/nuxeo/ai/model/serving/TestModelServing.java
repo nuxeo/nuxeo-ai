@@ -120,7 +120,7 @@ public class TestModelServing {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testPredict() throws IOException {
         //Create a document
-        DocumentModel testDoc = session.createDocumentModel("/", "My Special Doc", "File");
+        DocumentModel testDoc = session.createDocumentModel("/", "My Special Doc", "FileRefDoc");
         testDoc.setPropertyValue("dc:title", "My document title");
         testDoc.setPropertyValue("dc:subjects", (Serializable) Arrays.asList("sciences", "art/cinema"));
         testDoc = session.createDocument(testDoc);
@@ -150,13 +150,13 @@ public class TestModelServing {
         blobTextFromDoc.addProperty("ecm:mixinType", "Versionable | Downloadable");
         enriched = service.enrich(blobTextFromDoc);
         EnrichmentMetadata metadata = (EnrichmentMetadata) enriched.iterator().next();
-        assertEquals(2, metadata.getLabels().size());
+        assertEquals(7, metadata.getLabels().size());
 
         service = aiComponent.getEnrichmentService("customSuggest");
         assertNotNull(service);
         enriched = service.enrich(blobTextFromDoc);
         SuggestionMetadata suggestionMetadata = (SuggestionMetadata) enriched.iterator().next();
-        assertEquals(2, suggestionMetadata.getSuggestions().size());
+        assertEquals(4, suggestionMetadata.getSuggestions().size());
 
     }
 
@@ -172,7 +172,7 @@ public class TestModelServing {
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
         EnrichmentMetadata metadata = (EnrichmentMetadata) results.iterator().next();
-        assertEquals(2, metadata.getLabels().size());
+        assertEquals(7, metadata.getLabels().size());
         assertNotNull(metadata.getRawKey());
 
         TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore("testTransient");
@@ -195,10 +195,9 @@ public class TestModelServing {
         Collection<ModelDescriptor> models = modelServingService.listModels();
         assertEquals(3, models.size());
 
-        DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "File");
+        DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "FileRefDoc");
         Collection<RuntimeModel> docModels = modelServingService.getDocumentModels(testDoc);
         assertEquals(2, docModels.size());
-        Set<String> names = docModels.stream().flatMap(m -> m.getInputNames().stream()).collect(Collectors.toSet());
 
         testDoc = session.createDocumentModel("/", "My note Doc", "Note");
         docModels = modelServingService.getDocumentModels(testDoc);
@@ -219,7 +218,7 @@ public class TestModelServing {
     public void testDocumentEnricher() throws IOException {
         DocumentModelJsonWriter writer = registry
                 .getInstance(enrichDoc(ModelJsonEnricher.NAME).get(), DocumentModelJsonWriter.class);
-        DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "File");
+        DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "FileRefDoc");
         testDoc = session.createDocument(testDoc);
         session.saveDocument(testDoc);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
