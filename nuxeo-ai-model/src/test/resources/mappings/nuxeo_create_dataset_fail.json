@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/ai/mockBadProject"
+  },
+  "response": {
+    "status": 403,
+    "jsonBody": {
+      "health": "FAIL"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -7,10 +7,6 @@
   </parent>
   <artifactId>nuxeo-ai-model</artifactId>
   <name>Ai custom models</name>
-  <description>Nuxeo AI functionality for custom models</description>
-  <properties>
-    <wiremock.version>2.18.0</wiremock.version>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>org.nuxeo.ai</groupId>

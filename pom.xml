@@ -14,11 +14,13 @@
   <packaging>pom</packaging>
   <properties>
     <tensorflow.version>1.11.0</tensorflow.version>
+    <wiremock.version>2.18.0</wiremock.version>
   </properties>
   <modules>
     <module>nuxeo-ai-pipes</module>
     <module>nuxeo-ai-core</module>
     <module>nuxeo-ai-model</module>
+    <module>nuxeo-ai-jaxrs</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
   </modules>
@@ -89,6 +91,11 @@
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-jaxrs</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-core-package</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -102,3 +109,4 @@
   </scm>
 
 </project>
+
