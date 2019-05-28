@@ -23,10 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -34,7 +33,6 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 
@@ -47,7 +45,7 @@ public class FunctionStreamProcessor {
 
     public static final String STREAM_OUT = "sink";
 
-    private static final Log log = LogFactory.getLog(FunctionStreamProcessor.class);
+    private static final Logger log = LogManager.getLogger(FunctionStreamProcessor.class);
 
     /**
      * A list of streams for this stream processor
@@ -127,16 +125,15 @@ public class FunctionStreamProcessor {
         @Override
         public void processRecord(ComputationContext context, String inputStreamName, Record record) {
             metrics.called();
-            if (log.isDebugEnabled()) {
-                log.debug("Processing record " + record);
-            }
+            log.debug("Processing record {}.", record);
             try {
                 Optional<Record> applied = function.apply(record);
                 applied.ifPresent(rec -> writeToStreams(context, rec));
                 context.askForCheckpoint();
             } catch (NuxeoException e) {
-                log.error("Discard invalid record: " + record, e);
+                log.debug("Problem with record {}. Error is {}.", record, e.getMessage());
                 metrics.error();
+                throw e; // Throw the error so it can be handled or retried higher up the stack.
             }
         }
 
