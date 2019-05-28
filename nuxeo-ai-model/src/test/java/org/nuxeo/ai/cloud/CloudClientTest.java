@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.cloud;
 
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -30,7 +31,9 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +47,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
@@ -52,7 +57,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 public class CloudClientTest {
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(5089);
+    public WireMockRule wireMockRule = new WireMockRule(
+            options().extensions(new ResponseTemplateTransformer(true)).port(5089));
 
     @Inject
     protected CoreSession session;
@@ -84,10 +90,20 @@ public class CloudClientTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void testConfigured() throws IOException {
+    public void testConfiguredSuccess() throws IOException {
+        assertTrue(client.uploadedDataset(testDocument()));
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-bad-test.xml")
+    public void testConfiguredFails() throws IOException {
+        assertFalse(client.uploadedDataset(testDocument()));
+    }
+
+    protected DocumentModel testDocument() throws IOException {
         ManagedBlob managedBlob = createTestBlob(manager);
 
-        //Create a document
+        // Create a document
         DocumentModel doc = session.createDocumentModel("/", "corpora", CORPUS_TYPE);
         doc = session.createDocument(doc);
         String jobId = "testing1";
@@ -109,15 +125,31 @@ public class CloudClientTest {
         doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT, documentsCountValue);
         doc = session.createDocument(doc);
         txFeature.nextTransaction();
-        assertTrue(client.uploadedDataset(doc));
+        return doc;
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void testGetPut() throws IOException {
+        String result = client.get("path/" + client.byProjectId("/models?enrichers.document=children"),
+                response -> response.isSuccessful() ? response.body().string() : null);
+
+        String result2 = client.getByPath("/models?enrichers.document=children",
+                response -> response.isSuccessful() ? response.body().string() : null);
+
+        assertEquals(result, result2);
+
+        String putBody = "could be anything";
+        String resBody = client.put(client.byProjectId("/models"), putBody,
+                response -> response.isSuccessful() ? response.body().string() : null);
+        assertTrue(resBody.contains(putBody));
     }
 
     @Test
     public void testTitle() {
         NuxeoCloudClient nuxClient = (NuxeoCloudClient) client;
-        assertEquals("2 features, 34 Training, 56 Evaluation, Export id xyz", nuxClient
-                .makeTitle(34, 56, "xyz", 2));
-        assertEquals("0 features, 100 Training, 206 Evaluation, Export id xyzx", nuxClient
-                .makeTitle(100, 206, "xyzx", 0));
+        assertEquals("2 features, 34 Training, 56 Evaluation, Export id xyz", nuxClient.makeTitle(34, 56, "xyz", 2));
+        assertEquals("0 features, 100 Training, 206 Evaluation, Export id xyzx",
+                nuxClient.makeTitle(100, 206, "xyzx", 0));
     }
 }

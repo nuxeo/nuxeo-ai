@@ -43,10 +43,25 @@ public interface CloudClient {
      */
     <T> T post(String url, String jsonBody, ResponseHandler<T> handler);
 
-    /**
-     * The base url for all calls to the cloud including the project id.
+    /*
+     * Make a http PUT request to the cloud using the provided parameters.
      */
-    String getBaseUrl();
+    <T> T put(String putUrl, String jsonBody, ResponseHandler<T> handler);
+
+    /*
+     * Make a http GET request to the cloud.
+     */
+    <T> T get(String url, ResponseHandler<T> handler);
+
+    /*
+     * Make a http GET request to the cloud by project path.
+     */
+    <T> T getByPath(String url, ResponseHandler<T> handler);
+
+    /**
+     * The url for all calls to the cloud prefixed by the project id.
+     */
+    String byProjectId(String url);
 
     /**
      * A callback to handle a response from a call to the cloud.
