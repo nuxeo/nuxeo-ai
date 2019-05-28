@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/api/v1/path/mockTestProject/models?enrichers.document=children"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {"just":"ignored"},
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

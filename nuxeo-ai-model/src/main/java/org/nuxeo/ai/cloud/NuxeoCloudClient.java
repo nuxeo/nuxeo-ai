@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
@@ -70,7 +72,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             "  }\n" +
             "}";
 
-    public static final String API_V1_AI = API_PATH + "ai/";
+    public static final String API_AI = "ai/";
 
     private static final Logger log = LogManager.getLogger(NuxeoCloudClient.class);
 
@@ -97,6 +99,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         NuxeoClient.Builder builder = new NuxeoClient.Builder()
                 .url(descriptor.url)
                 .readTimeout(descriptor.readTimeout.getSeconds())
+                .schemas("dublincore", "common")
                 .connectTimeout(descriptor.connectTimeout.getSeconds());
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
@@ -178,26 +181,23 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             trainingCount = Math.round(docCount * Double.valueOf("0." + split));
             evalCount = Math.round(docCount * Double.valueOf("0." + (100 - split)));
         }
-        Response response = null;
 
         try {
             // noinspection unchecked
-            List<Map<String, Object>> inputs =
-                    (List<Map<String, Object>>) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_INPUTS);
+            List<Map<String, Object>> inputs = (List<Map<String, Object>>) corpusDoc.getPropertyValue(
+                    AiDocumentTypeConstants.CORPUS_INPUTS);
             // noinspection unchecked
-            List<Map<String, Object>> outputs =
-                    (List<Map<String, Object>>) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS);
+            List<Map<String, Object>> outputs = (List<Map<String, Object>>) corpusDoc.getPropertyValue(
+                    AiDocumentTypeConstants.CORPUS_OUTPUTS);
             List<Map<String, Object>> fields = new ArrayList<>(inputs);
             fields.addAll(outputs);
             String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
             String fieldsAsJson = JacksonUtil.MAPPER.writeValueAsString(fields);
-            String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query,
-                                           split, fieldsAsJson, batchId, batchId, batchId);
+            String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query, split,
+                    fieldsAsJson, batchId, batchId, batchId);
 
             log.debug("Uploading to cloud project: {}, payload {}", projectId, payload);
-
-            response = getClient().post(getBaseUrl(), payload);
-
+            Response response = post(API_AI + byProjectId(""), payload, r -> r);
             log.debug("Upload to cloud project: {}, finished.", projectId);
 
             if (!response.isSuccessful()) {
@@ -206,28 +206,45 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             return response.isSuccessful();
         } catch (IOException e) {
             log.error("Failed to process corpus dataset. ", e);
-        } finally {
-            if (response != null && response.body() != null) {
-                response.body().close();
-            }
         }
         return false;
     }
 
     @Override
     public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
+        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody), handler);
+    }
+
+    @Override
+    public <T> T put(String putUrl, String jsonBody, ResponseHandler<T> handler) {
+        return callCloud(() -> getClient().put(getApiUrl() + putUrl, jsonBody), handler);
+    }
+
+    @Override
+    public <T> T get(String url, ResponseHandler<T> handler) {
+        return callCloud(() -> getClient().get(getApiUrl() + url), handler);
+    }
+
+    @Override
+    public <T> T getByPath(String url, ResponseHandler<T> handler) {
+        return get("path/" + byProjectId(url), handler);
+    }
+
+    public <T> T callCloud(Supplier<Response> caller, ResponseHandler<T> handler) {
         Response response = null;
         try {
-            response = getClient().post(getBaseUrl() + postUrl, jsonBody);
-            if (response != null && handler != null) {
-                if (response.isSuccessful()) {
+            if (isAvailable()) {
+                response = caller.get();
+                if (response != null && handler != null) {
                     return handler.handleResponse(response);
-                } else {
-                    log.warn(String.format("Unsuccessful call to (%s), status is %d", postUrl, response.code()));
                 }
+            } else {
+                log.warn("Nuxeo cloud client is not configured or unavailable.");
             }
+        } catch (IllegalArgumentException iae) {
+            log.warn("IllegalArgumentException exception: ", iae);
         } catch (IOException e) {
-            log.info(String.format("Unsuccessful call to api %s", postUrl), e);
+            log.warn("IOException exception: ", e);
         } finally {
             if (response != null && response.body() != null) {
                 response.body().close();
@@ -237,8 +254,12 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public String getBaseUrl() {
-        return url + API_V1_AI + projectId;
+    public String byProjectId(String url) {
+        return projectId + url;
+    }
+
+    protected String getApiUrl() {
+        return url + API_PATH;
     }
 
     /**
