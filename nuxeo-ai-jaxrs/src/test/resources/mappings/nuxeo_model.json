@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/api/v1/path/mockRestProject/models/pet_model"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody":
+    {"entity-type":"document","repository":"default","uid":"f1fc5f99-ad21-4661-8f6f-25cf99b4db36","path":"/Nuxeo Jira/models/corpus_pet_model","type":"AI_Model","state":"trained","parentRef":"2c276419-0ee8-4a1b-b8b4-1c7051d41f0a","isCheckedOut":true,"isVersion":false,"isProxy":false,"changeToken":"24-0","isTrashed":false,"title":"Tags-finder","lastModified":"2019-05-23T20:09:30.631Z","facets":["Versionable","NXTag","Publishable","Commentable","HasRelatedText","Thumbnail","Downloadable"]},
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -23,6 +23,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
@@ -116,12 +117,18 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         if (client.isAvailable()) {
             String json = prepareRequest(inputValues);
             if (isNotBlank(json)) {
-                return client.post(buildUri(), json, response -> {
-                    SuggestionMetadata meta = handlePredict(response.body().string(), repositoryName, documentRef);
-                    if (log.isDebugEnabled()) {
-                        log.debug(getName() + " prediction is " + MAPPER.writeValueAsString(meta));
+                String uri = buildUri(client);
+                return client.post(uri, json, response -> {
+                    if (response.isSuccessful()) {
+                        SuggestionMetadata meta = handlePredict(response.body().string(), repositoryName, documentRef);
+                        if (log.isDebugEnabled()) {
+                            log.debug(getName() + " prediction is " + MAPPER.writeValueAsString(meta));
+                        }
+                        return meta;
+                    } else {
+                        log.warn(String.format("Unsuccessful call to (%s), status is %d", uri, response.code()));
+                        return null;
                     }
-                    return meta;
                 });
             }
         }
@@ -197,9 +204,11 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     /**
      * Builds the uri.
+     * 
+     * @param client
      */
-    protected String buildUri() {
-        return String.format("/model/%s/", getName()) + modelPath + VERB_PREDICT;
+    protected String buildUri(CloudClient client) {
+        return API_AI + client.byProjectId(String.format("/model/%s/", getName()) + modelPath + VERB_PREDICT);
     }
 
     @Override

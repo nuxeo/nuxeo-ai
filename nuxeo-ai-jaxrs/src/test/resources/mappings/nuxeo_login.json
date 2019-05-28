@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/automation/login"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "entity-type":"login",
+      "username":"customera-user",
+      "isAdministrator":false,
+      "groups":["MobilityDepartment"]
+    },
+    "headers": {
+      "Content-Type": "application/json+nxentity"
+    }
+  }
+}
