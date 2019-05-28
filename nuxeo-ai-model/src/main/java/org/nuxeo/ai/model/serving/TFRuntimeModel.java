@@ -203,7 +203,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
 
     /**
      * Builds the uri.
-     * 
+     *
      * @param client
      */
     protected String buildUri(CloudClient client) {
