@@ -63,9 +63,9 @@ public class TestRestEnrichment {
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
         blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
-        Collection<AIMetadata> results = service.enrich(blobTextFromDoc);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertEquals(1, results.size());
-        EnrichmentMetadata metadata = (EnrichmentMetadata) results.iterator().next();
+        EnrichmentMetadata metadata = results.iterator().next();
         assertNotNull(metadata.getRawKey());
 
         TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(metadata.getServiceName());

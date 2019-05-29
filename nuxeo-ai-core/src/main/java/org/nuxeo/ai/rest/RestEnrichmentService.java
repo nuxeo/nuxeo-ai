@@ -67,7 +67,7 @@ public abstract class RestEnrichmentService extends AbstractEnrichmentService {
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
 
         return client.call(builder -> prepareRequest(builder, blobTextFromDoc),
                            response -> {
@@ -93,7 +93,7 @@ public abstract class RestEnrichmentService extends AbstractEnrichmentService {
     /**
      * Handle the response and return the result
      */
-    public abstract Collection<AIMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc);
+    public abstract Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc);
 
     /**
      * Set a string as a Json body parameter on the request

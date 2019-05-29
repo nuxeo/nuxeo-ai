@@ -29,8 +29,6 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -71,9 +69,9 @@ public class TestTranslateService {
         textStream.setId("docId");
         textStream.setRepositoryName("test");
         textStream.addProperty("my:text", sourceText);
-        Collection<AIMetadata> metadataCollection = service.enrich(textStream);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata result = (EnrichmentMetadata) metadataCollection.iterator().next();
+        EnrichmentMetadata result = metadataCollection.iterator().next();
         assertEquals(1, result.getLabels().size());
         assertTrue(result.getLabels().get(0).getName().contains(translatedText));
     }

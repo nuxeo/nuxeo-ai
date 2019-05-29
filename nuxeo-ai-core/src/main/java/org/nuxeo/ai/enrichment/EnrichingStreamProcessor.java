@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -62,6 +61,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
     public static final String USE_CACHE = "cache";
 
+    public static final String USE_SUGGESTIONS = "suggest";
+
     private static final Log log = LogFactory.getLog(EnrichingStreamProcessor.class);
 
     @Override
@@ -69,7 +70,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         String streamIn = options.get(STREAM_IN);
         String streamOut = options.get(STREAM_OUT);
         List<String> streams = getStreamsList(streamIn, streamOut);
-        boolean shouldCache = Boolean.parseBoolean(options.getOrDefault(USE_CACHE, "true"));
+        boolean useSuggestions = Boolean.parseBoolean(options.getOrDefault(USE_SUGGESTIONS, "false"));
+        boolean useCache = Boolean.parseBoolean(options.getOrDefault(USE_CACHE, "true"));
+        boolean shouldCache = !useSuggestions && useCache; // Currently cached suggestions isn't supported.
         String enricherName = options.get(ENRICHER_NAME);
         if (isBlank(enricherName)) {
             throw new IllegalArgumentException("Please specify valid config for " + ENRICHER_NAME);
@@ -78,7 +81,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         EnrichmentMetrics metrics = registerMetrics(new EnrichmentMetrics(computationName), computationName);
         return Topology.builder()
                        .addComputation(() -> new EnrichmentComputation(streams.size() - 1, computationName,
-                                                                       enricherName, metrics, shouldCache), streams)
+                                                                       enricherName, metrics, shouldCache, useSuggestions), streams)
                        .build();
     }
 
@@ -91,6 +94,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected final boolean useCache;
 
+        protected final boolean useSuggestions;
+
         protected final String enricherName;
 
         protected EnrichmentService service;
@@ -102,11 +107,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected CircuitBreaker circuitBreaker;
 
         public EnrichmentComputation(int outputStreams, String computationName, String enricherName,
-                                     EnrichmentMetrics metrics, boolean useCache) {
+                                     EnrichmentMetrics metrics, boolean useCache, boolean useSuggestions) {
             super(computationName, 1, outputStreams);
             this.enricherName = enricherName;
             this.metrics = metrics;
             this.useCache = useCache;
+            this.useSuggestions = useSuggestions;
         }
 
         @Override
@@ -233,7 +239,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     // Only checks if the first blob matches
                     if (enrichmentSupport.supportsMimeType(blob.getMimeType()) &&
                             enrichmentSupport.supportsSize(blob.getLength())) {
-                        return () -> service.enrich(blobTextFromDoc);
+                        return () -> getAiMetadata(blobTextFromDoc);
                     } else {
                         log.info(String.format("%s does not support a blob with these characteristics %s %s",
                                                metadata.name(), blob.getMimeType(), blob.getLength()
@@ -242,7 +248,15 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     }
                 }
             }
-            return () -> service.enrich(blobTextFromDoc);
+            return () -> getAiMetadata(blobTextFromDoc);
+        }
+
+        protected Collection<AIMetadata> getAiMetadata(BlobTextFromDocument blobTextFromDoc) {
+            if (useSuggestions) {
+                return service.suggest(blobTextFromDoc).stream().map(m -> (AIMetadata) m).collect(Collectors.toList());
+            } else {
+                return service.enrich(blobTextFromDoc).stream().map(m -> (AIMetadata) m).collect(Collectors.toList());
+            }
         }
 
         @Override

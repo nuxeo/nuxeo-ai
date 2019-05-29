@@ -19,6 +19,7 @@
 package org.nuxeo.ai.enrichment;
 
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import java.util.Collection;
@@ -46,9 +47,14 @@ public interface EnrichmentService {
     String getKind();
 
     /**
-     * The main method for the service to implement.  Enriching the blob or text and returning a result.
+     * The main enrich method for the service to implement.  Enriching the blob or text and returning a result.
      */
-    Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc);
+    Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc);
+
+    /**
+     * Enriching the blob or text with metadata suggestions.
+     */
+    Collection<SuggestionMetadata> suggest(BlobTextFromDocument blobtext);
 
     /**
      * The retry policy for the service
@@ -71,4 +77,5 @@ public interface EnrichmentService {
                 .withSuccessThreshold(1)
                 .withTimeout(60, TimeUnit.SECONDS);
     }
+
 }
