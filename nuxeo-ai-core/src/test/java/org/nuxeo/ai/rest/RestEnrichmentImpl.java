@@ -56,7 +56,7 @@ public class RestEnrichmentImpl extends RestEnrichmentProvider {
     }
 
     @Override
-    public Collection<AIMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc) {
         String content = getContent(response);
         String rawKey = saveJsonAsRawBlob(content);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();

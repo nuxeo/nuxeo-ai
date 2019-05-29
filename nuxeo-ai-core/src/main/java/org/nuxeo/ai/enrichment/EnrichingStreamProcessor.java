@@ -188,21 +188,6 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         /**
          * Get an entry from the enrichment cache
          */
-        protected Collection<AIMetadata> cacheGet(String cacheKey) {
-            return EnrichmentUtils.cacheGet(cacheKey);
-        }
-
-        /**
-         * Put an entry in the enrichment cache, specify the TTL in seconds.
-         */
-        protected void cachePut(String cacheKey, Collection<AIMetadata> metadata, long ttl) {
-            EnrichmentUtils.cachePut(cacheKey, metadata, ttl);
-        }
-
-        /**
-         * Get an entry from the enrichment cache
-         * @return
-         */
         protected Collection<? extends AIMetadata> cacheGet(String cacheKey) {
             return EnrichmentUtils.cacheGet(cacheKey);
         }

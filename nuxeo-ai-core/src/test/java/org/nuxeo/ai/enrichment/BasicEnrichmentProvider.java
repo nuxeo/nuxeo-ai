@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 public class BasicEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
@@ -50,7 +49,7 @@ public class BasicEnrichmentProvider extends AbstractEnrichmentProvider implemen
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,

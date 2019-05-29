@@ -67,7 +67,7 @@ public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider impl
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         try {
             return Collections.singletonList(translate(blobTextFromDoc));
         } catch (IOException e) {
@@ -78,7 +78,7 @@ public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider impl
     /**
      * Translate the specified text properties using the blobTextFromDoc for context info.
      */
-    protected AIMetadata translate(BlobTextFromDocument blobTextFromDoc) throws IOException {
+    protected EnrichmentMetadata translate(BlobTextFromDocument blobTextFromDoc) throws IOException {
 
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
         List<String> raw = new ArrayList<>();

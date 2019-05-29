@@ -33,7 +33,7 @@ public class LoggingEnrichmentProvider extends AbstractEnrichmentProvider {
     private static final Log log = LogFactory.getLog(LoggingEnrichmentProvider.class);
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         log.info("Logging: " + blobTextFromDoc);
         return Collections.emptyList();
     }

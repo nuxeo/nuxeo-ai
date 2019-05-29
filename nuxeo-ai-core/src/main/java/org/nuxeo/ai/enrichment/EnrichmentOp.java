@@ -102,7 +102,7 @@ public class EnrichmentOp {
             docs.forEach(documentModel -> {
                 Collection<BlobTextFromDocument> blobTexts = docEventToStream.docSerialize(documentModel);
                 blobTexts.forEach(b -> {
-                    Collection<AIMetadata> result = null;
+                    Collection<EnrichmentMetadata> result = null;
                     try {
                         result = provider.enrich(b);
                     } catch (NuxeoException e) {

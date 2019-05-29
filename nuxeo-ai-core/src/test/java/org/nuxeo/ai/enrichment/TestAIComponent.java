@@ -72,7 +72,7 @@ public class TestAIComponent {
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
         EnrichingStreamProcessor.EnrichmentComputation computation
-                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", "e1", metrics, false);
+                = new EnrichingStreamProcessor.EnrichmentComputation(1, "test", "e1", metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.errors);
@@ -94,7 +94,7 @@ public class TestAIComponent {
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test");
         EnrichingStreamProcessor.EnrichmentComputation computation =
                 new EnrichingStreamProcessor.EnrichmentComputation(1, "test", "error1",
-                                                                   metrics, false);
+                                                                   metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
@@ -104,7 +104,7 @@ public class TestAIComponent {
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test2");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test2", "error2",
-                                                                         metrics, false);
+                                                                         metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
@@ -114,7 +114,7 @@ public class TestAIComponent {
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test3");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test3", "error3",
-                                                                         metrics, false);
+                                                                         metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.retries);
@@ -124,7 +124,7 @@ public class TestAIComponent {
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test4");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "test4", "error4",
-                                                                         metrics, false);
+                                                                         metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
 
@@ -145,7 +145,7 @@ public class TestAIComponent {
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testErrors");
         EnrichingStreamProcessor.EnrichmentComputation computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste1",
                                                                                                                         "circ1",
-                                                                                                                        metrics, false);
+                                                                                                                        metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         computation.processRecord(testContext, null, record);
@@ -164,7 +164,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testCirc");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste2",
                                                                          "circ2",
-                                                                         metrics, false);
+                                                                         metrics, false, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         computation.processRecord(testContext, null, record);
@@ -185,7 +185,7 @@ public class TestAIComponent {
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testError");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste3",
                                                                          "circ3",
-                                                                         metrics, false);
+                                                                         metrics, false, false);
         computation.init(testContext);
         assertEquals(0, metrics.fatal);
         try {
@@ -267,7 +267,7 @@ public class TestAIComponent {
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("badMetrics");
         EnrichingStreamProcessor.EnrichmentComputation computation
-                = new EnrichingStreamProcessor.EnrichmentComputation(1, "b1", "IDONTEXIST", metrics, false);
+                = new EnrichingStreamProcessor.EnrichmentComputation(1, "b1", "IDONTEXIST", metrics, false, false);
         try {
             computation.init(null);
             fail();

@@ -21,8 +21,6 @@ package org.nuxeo.ai.enrichment;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
-
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 
@@ -76,7 +74,7 @@ public class ErroringEnrichmentProvider extends AbstractEnrichmentProvider {
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         if (++attempts <= numFailures) {
             throw exception;
         }

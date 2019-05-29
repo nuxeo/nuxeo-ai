@@ -140,7 +140,7 @@ public class TestModelServing {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("xyz");
         assertNotNull(service);
-        Collection<AIMetadata> enriched = service.enrich(blobTextFromDoc);
+        Collection<EnrichmentMetadata> enriched = service.enrich(blobTextFromDoc);
         assertTrue("We didn't specify all the params so it should not be enriched.", enriched.isEmpty());
 
         blobTextFromDoc.addProperty("dc:title", "My test doc");
