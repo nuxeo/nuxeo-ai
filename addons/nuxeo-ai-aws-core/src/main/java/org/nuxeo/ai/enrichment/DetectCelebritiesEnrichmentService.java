@@ -58,9 +58,9 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
-            List<AIMetadata> enriched = new ArrayList<>();
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 RecognizeCelebritiesResult result =
                         Framework.getService(RekognitionService.class).detectCelebrityFaces(blob.getValue());

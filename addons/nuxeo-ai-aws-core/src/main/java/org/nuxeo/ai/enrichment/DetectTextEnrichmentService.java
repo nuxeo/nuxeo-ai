@@ -82,9 +82,9 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService imple
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
-            List<AIMetadata> enriched = new ArrayList<>();
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectTextResult result = Framework.getService(RekognitionService.class)
                                                    .detectText(blob.getValue());

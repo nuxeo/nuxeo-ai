@@ -18,10 +18,16 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-
+import java.util.stream.Collectors;
+import org.nuxeo.ai.metadata.Suggestion;
+import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blobs;
 
 /**
@@ -35,6 +41,8 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
 
     public static final String MAX_RESULTS = "maxResults";
 
+    public static final String SUGGESTION_PROPERTY = "suggestionProperty";
+
     protected String name;
 
     protected long maxSize;
@@ -42,6 +50,8 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
     protected String kind;
 
     protected String transientStoreName;
+
+    protected String suggestionProperty;
 
     protected Set<String> supportedMimeTypes = new HashSet<>();
 
@@ -51,6 +61,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
         this.maxSize = descriptor.maxSize;
         this.kind = descriptor.kind;
         this.transientStoreName = descriptor.transientStoreName;
+        this.suggestionProperty = descriptor.options.getOrDefault(SUGGESTION_PROPERTY, "UNSET_" + name);
     }
 
     @Override
@@ -85,4 +96,18 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
         return EnrichmentUtils.saveRawBlob(Blobs.createJSONBlob(rawJson), transientStoreName);
     }
 
+    @Override
+    public Collection<SuggestionMetadata> suggest(BlobTextFromDocument blobtext) {
+        Collection<EnrichmentMetadata> enrichment = enrich(blobtext);
+        return enrichment.stream().map(m -> asSuggestion(blobtext, m)).collect(Collectors.toList());
+    }
+
+    protected SuggestionMetadata asSuggestion(BlobTextFromDocument blobtext, EnrichmentMetadata aiMetadata) {
+        SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(Instant.now(), getKind(), getName(), blobtext);
+        builder.withRawKey(aiMetadata.getRawKey());
+        List<Suggestion> suggestions = new ArrayList<>();
+        suggestions.add(new Suggestion(suggestionProperty, aiMetadata.getLabels()));
+        builder.withSuggestions(suggestions);
+        return builder.build();
+    }
 }

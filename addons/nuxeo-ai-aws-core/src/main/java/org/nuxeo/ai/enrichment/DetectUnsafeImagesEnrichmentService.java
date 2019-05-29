@@ -68,9 +68,9 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
-            List<AIMetadata> enriched = new ArrayList<>();
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectModerationLabelsResult result = Framework.getService(RekognitionService.class)
                                                                .detectUnsafeImages(blob.getValue());

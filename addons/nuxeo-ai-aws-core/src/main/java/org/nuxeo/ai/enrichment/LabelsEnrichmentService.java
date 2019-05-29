@@ -75,9 +75,9 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService implement
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
-            List<AIMetadata> enriched = new ArrayList<>();
+            List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DetectLabelsResult result = Framework.getService(RekognitionService.class)
                                                      .detectLabels(blob.getValue(), maxResults, minConfidence);

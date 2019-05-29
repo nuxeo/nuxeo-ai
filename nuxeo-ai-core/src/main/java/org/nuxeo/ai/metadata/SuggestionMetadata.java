@@ -38,6 +38,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A normalized view of the suggestion data. This class is designed to be serialized as JSON.
+ *
+ * SuggestionMetadata should be considered "internal" data and should not be used directly.
  */
 @JsonDeserialize(builder = SuggestionMetadata.Builder.class)
 public class SuggestionMetadata extends AIMetadata {

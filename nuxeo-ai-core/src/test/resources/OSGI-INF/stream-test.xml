@@ -10,6 +10,7 @@
       <option name="maxResults">50</option>
       <option name="features">all</option>
       <option name="labels">George,Paul</option>
+      <option name="suggestionProperty">dc:superhero</option>
     </enrichment>
   </extension>
 
@@ -81,6 +82,16 @@
         <param type="serializable" name="value">I_AM_LISTENING</param>
       </operation>
     </chain>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="suggestionProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">test_images</option>
+      <option name="sink">test_suggestion_out</option>
+      <option name="enrichmentServiceName">simpleTest</option>
+      <option name="suggest">true</option>
+    </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
