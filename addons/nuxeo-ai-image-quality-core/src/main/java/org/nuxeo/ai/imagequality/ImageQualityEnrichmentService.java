@@ -151,7 +151,7 @@ public class ImageQualityEnrichmentService extends RestEnrichmentService {
     }
 
     @Override
-    public Collection<AIMetadata> handleResponse(HttpResponse httpResponse, BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> handleResponse(HttpResponse httpResponse, BlobTextFromDocument blobTextFromDoc) {
         String json = getContent(httpResponse);
         try {
             if (log.isDebugEnabled()) {
@@ -169,7 +169,7 @@ public class ImageQualityEnrichmentService extends RestEnrichmentService {
     /**
      * Process the returned json image properties into enrichment metadata.
      */
-    protected Collection<AIMetadata> processResponseProperties(ImageProperties props,
+    protected Collection<EnrichmentMetadata> processResponseProperties(ImageProperties props,
                                                                        String rawKey, BlobTextFromDocument blobTextFromDoc) {
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
         List<AIMetadata.Tag> tags = new ArrayList<>();

@@ -19,6 +19,7 @@
 package org.nuxeo.ai.model.serving;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
@@ -75,8 +76,6 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     public static final String KIND_CONFIG = "kind";
 
-    public static final String USE_LABELS = "useLabels";
-
     public static final String MODEL_LABEL = "modelLabel";
 
     public static final String JSON_RESULTS = "results";
@@ -93,12 +92,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
     protected String modelPath = "";
 
-    protected boolean useLabels; // Indicates if enrichment should use suggestion or labels
-
     @Override
     public void init(ModelDescriptor descriptor) {
         super.init(descriptor);
-        useLabels = Boolean.parseBoolean(descriptor.configuration.getOrDefault(USE_LABELS, Boolean.TRUE.toString()));
         kind = descriptor.configuration.getOrDefault(KIND_CONFIG, PREDICTION_CUSTOM);
         inputNames = inputs.stream().map(ModelProperty::getName).collect(Collectors.toSet());
         String modelLabel = descriptor.info.get(MODEL_LABEL);
@@ -246,7 +242,35 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
     }
 
     @Override
-    public Collection<AIMetadata> enrich(BlobTextFromDocument blobtext) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
+
+        Collection<SuggestionMetadata> suggestions = suggest(blobtext);
+        if (!suggestions.isEmpty()) {
+            if (suggestions.size() == 1) {
+                SuggestionMetadata suggestion = suggestions.iterator().next();
+                if (suggestion != null && !suggestion.getSuggestions().isEmpty()) {
+
+                    EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(Instant.now(), getKind(),
+                                                                                        getId(), suggestion
+                                                                                                .getContext());
+                    builder.withRawKey(suggestion.getRawKey());
+                    List<AIMetadata.Label> vals = suggestion.getSuggestions()
+                                                            .stream()
+                                                            .map(Suggestion::getValues)
+                                                            .flatMap(Collection::stream)
+                                                            .collect(Collectors.toList());
+                    builder.withLabels(vals);
+                    return singletonList(builder.build());
+                }
+            } else {
+                log.error("Multiple suggestions is currently unsupported.");
+            }
+        }
+        return emptyList();
+    }
+
+    @Override
+    public Collection<SuggestionMetadata> suggest(BlobTextFromDocument blobtext) {
         Map<String, Tensor> inputProperties = new HashMap<>();
 
         for (Map.Entry<String, ManagedBlob> blobEntry : blobtext.getBlobs().entrySet()) {
@@ -269,27 +293,11 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         }
 
         if (inputProperties.isEmpty()) {
-            log.warn(String.format("(%s) unable to enrich doc properties for doc %s", getName(), blobtext.getId()));
+            log.warn(String.format("(%s) unable to suggest doc properties for doc %s", getName(), blobtext.getId()));
         } else {
-            SuggestionMetadata suggestions = predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId());
-            if (suggestions != null && !suggestions.getSuggestions().isEmpty()) {
-                if (useLabels) {
-                    if (suggestions.getSuggestions().size() != 1) {
-                        log.error("Multiple outputs is currently unsupported.  The output name will be lost.");
-                    }
-                    EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(Instant.now(), getKind(),
-                            getId(), suggestions.getContext());
-                    builder.withRawKey(suggestions.getRawKey());
-                    List<AIMetadata.Label> vals = suggestions.getSuggestions()
-                                                             .stream()
-                                                             .map(Suggestion::getValues)
-                                                             .flatMap(Collection::stream)
-                                                             .collect(Collectors.toList());
-                    builder.withLabels(vals);
-                    return Collections.singletonList(builder.build());
-                } else {
-                    return Collections.singletonList(suggestions);
-                }
+            SuggestionMetadata suggestion = predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId());
+            if (suggestion != null && !suggestion.getSuggestions().isEmpty()) {
+                return singletonList(suggestion);
             }
         }
         return emptyList();

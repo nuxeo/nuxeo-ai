@@ -45,7 +45,6 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -143,21 +142,20 @@ public class TestModelServing {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
         assertNotNull(service);
-        Collection<AIMetadata> enriched = service.enrich(blobTextFromDoc);
+        Collection<EnrichmentMetadata> enriched = service.enrich(blobTextFromDoc);
         assertTrue("We didn't specify all the params so it should not be enriched.", enriched.isEmpty());
 
         blobTextFromDoc.addProperty("dc:title", "My test doc");
         blobTextFromDoc.addProperty("ecm:mixinType", "Versionable | Downloadable");
         enriched = service.enrich(blobTextFromDoc);
-        EnrichmentMetadata metadata = (EnrichmentMetadata) enriched.iterator().next();
+        EnrichmentMetadata metadata = enriched.iterator().next();
         assertEquals(7, metadata.getLabels().size());
 
         service = aiComponent.getEnrichmentService("customSuggest");
         assertNotNull(service);
-        enriched = service.enrich(blobTextFromDoc);
-        SuggestionMetadata suggestionMetadata = (SuggestionMetadata) enriched.iterator().next();
+        Collection<SuggestionMetadata> suggest = service.suggest(blobTextFromDoc);
+        SuggestionMetadata suggestionMetadata = suggest.iterator().next();
         assertEquals(4, suggestionMetadata.getSuggestions().size());
-
     }
 
     @Test
@@ -168,10 +166,10 @@ public class TestModelServing {
         blobTextFromDoc.addProperty("dc:title", "My Custom doc");
         blobTextFromDoc.addProperty("ecm:mixinType", "Downloadable");
         EnrichmentService service = aiComponent.getEnrichmentService("xyz");
-        Collection<AIMetadata> results = service.enrich(blobTextFromDoc);
+        Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
-        EnrichmentMetadata metadata = (EnrichmentMetadata) results.iterator().next();
+        EnrichmentMetadata metadata = results.iterator().next();
         assertEquals(7, metadata.getLabels().size());
         assertNotNull(metadata.getRawKey());
 
