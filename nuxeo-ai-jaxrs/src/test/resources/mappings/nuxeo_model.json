@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/v1/path/mockRestProject/models/pet_model"
+    "url": "/api/v1/ai/mockRestProject/models/pet_model"
   },
   "response": {
     "status": 200,

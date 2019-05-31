@@ -44,7 +44,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.ai-jaxrs")
 public class TestRESTAPI extends BaseTest {
 
-    public static final String AI_CLOUD_PATH = "ai/cloud/path";
+    public static final String AI_CLOUD_PATH = "ai/cloud/project";
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(5084);
