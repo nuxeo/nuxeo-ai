@@ -226,8 +226,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public <T> T getByPath(String url, ResponseHandler<T> handler) {
-        return get("path/" + byProjectId(url), handler);
+    public <T> T getByProject(String url, ResponseHandler<T> handler) {
+        return get(API_AI + byProjectId(url), handler);
     }
 
     public <T> T callCloud(Supplier<Response> caller, ResponseHandler<T> handler) {

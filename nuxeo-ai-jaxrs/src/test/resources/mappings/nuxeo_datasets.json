@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/v1/path/mockRestProject/datasets/@children"
+    "url": "/api/v1/ai/mockRestProject/datasets/@children"
   },
   "response": {
     "status": 200,
