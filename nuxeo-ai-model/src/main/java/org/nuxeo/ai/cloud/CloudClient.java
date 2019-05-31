@@ -56,7 +56,7 @@ public interface CloudClient {
     /*
      * Make a http GET request to the cloud by project path.
      */
-    <T> T getByPath(String url, ResponseHandler<T> handler);
+    <T> T getByProject(String url, ResponseHandler<T> handler);
 
     /**
      * The url for all calls to the cloud prefixed by the project id.

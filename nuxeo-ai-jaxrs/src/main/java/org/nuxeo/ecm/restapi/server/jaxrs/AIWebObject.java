@@ -42,13 +42,13 @@ public class AIWebObject extends DefaultObject {
     protected static Logger log = LogManager.getLogger(AIWebObject.class);
 
     /**
-     * GET from the cloud by a path
+     * GET from the cloud by a project path
      */
     @GET
-    @Path("/cloud/path/{pathSuffix:.*}")
-    public Response getByProjectPath(@PathParam("pathSuffix") String path) {
+    @Path("/cloud/project/{pathSuffix:.*}")
+    public Response getByProject(@PathParam("pathSuffix") String path) {
 
-        Response toReturn = Framework.getService(CloudClient.class).getByPath("/" + path, response -> {
+        Response toReturn = Framework.getService(CloudClient.class).getByProject("/" + path, response -> {
             if (response.isSuccessful()) {
                 return Response.ok(response.body().string()).build();
             } else {
