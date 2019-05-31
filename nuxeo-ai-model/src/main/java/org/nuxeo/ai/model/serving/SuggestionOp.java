@@ -131,7 +131,7 @@ public class SuggestionOp {
                 }
                 jg.writeEndArray();  // a1
                 jg.writeEndObject(); // 1
-            } catch (PropertyException | IOException e) {
+            } catch (PropertyException | IOException | UnsupportedOperationException e) {
                 log.error("Failed to write property. ", e);
             }
         }

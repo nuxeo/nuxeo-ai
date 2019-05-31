@@ -160,6 +160,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
         Map<String, List<EnrichmentMetadata.Label>> results = new HashMap<>();
 
         try {
+            if (log.isDebugEnabled()) {
+                log.debug("Response is " + content);
+            }
             JsonNode jsonResponse = MAPPER.readTree(content);
             jsonResponse.get(JSON_RESULTS).elements().forEachRemaining(resultsNode -> {
                 resultsNode.get(JSON_OUTPUTS).elements().forEachRemaining(outputNode -> {
@@ -238,7 +241,18 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                     props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
             }
         }
-        return predict(props, doc.getRepositoryName(), doc.getId());
+
+        String repoName = null;
+        String docId = null;
+
+        try {
+            repoName = doc.getRepositoryName();
+            docId = doc.getId();
+        } catch (UnsupportedOperationException e) {
+            // Ignore unsupported values
+            log.debug("Unable to get the document repositoryName and id.");
+        }
+        return predict(props, repoName, docId);
     }
 
     @Override
