@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 
@@ -131,10 +132,10 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testGetPut() throws IOException {
-        String result = client.get("path/" + client.byProjectId("/models?enrichers.document=children"),
+        String result = client.get(API_AI + client.byProjectId("/models?enrichers.document=children"),
                 response -> response.isSuccessful() ? response.body().string() : null);
 
-        String result2 = client.getByPath("/models?enrichers.document=children",
+        String result2 = client.getByProject("/models?enrichers.document=children",
                 response -> response.isSuccessful() ? response.body().string() : null);
 
         assertEquals(result, result2);
