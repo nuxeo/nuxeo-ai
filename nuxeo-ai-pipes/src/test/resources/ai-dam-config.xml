@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.Pipeline.damConfig">
+  <require>org.nuxeo.runtime.stream.service</require>
+
+  <!-- IMAGES PIPELINE START -->
+
+  <!-- Listens for "pictureViewsGenerationDone" and sends "picture:views/3/content" to the "images" stream. -->
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
+    <pipe id="pipe.dam.images" enabled="true" postCommit="true">
+      <supplier>
+        <event name="pictureViewsGenerationDone">
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+            <option name="includedFacets">Picture</option>
+          </filter>
+        </event>
+      </supplier>
+      <consumer>
+        <stream name="images"/>
+      </consumer>
+      <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
+        <option name="blobProperties">picture:views/3/content</option>
+      </transformer>
+    </pipe>
+  </extension>
+
+  <!-- Read from the "images" stream, call aws.celebrityDetection and put the response in the
+      images.enrichment.in stream -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="celebrityProcessor" defaultConcurrency="2" defaultPartitions="4"
+                     logConfig="pipes"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">images.enrichment.in</option>
+      <option name="enrichmentServiceName">aws.celebrityDetection</option>
+      <option name="cache">true</option>
+      <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+    </streamProcessor>
+  </extension>
+
+  <!-- Read from the "images.enrichment.in" stream, and raise an "imageMetadataCreated" event for each new enrichment entry. -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="raiseEventProcessor" defaultConcurrency="2" defaultPartitions="4"
+                     logConfig="pipes"
+                     class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+      <option name="source">images.enrichment.in</option>
+      <option name="eventName">imageMetadataCreated</option>
+    </streamProcessor>
+  </extension>
+
+  <!-- A listener for the  "imageMetadataCreated" event that just writes a log message. -->
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="event-handlers">
+    <handler chainId="metaListening">
+      <event>imageMetadataCreated</event>
+    </handler>
+  </extension>
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="chains">
+    <chain id="metaListening">
+      <operation id="Context.FetchDocument"/>
+      <operation id="Log">
+        <param type="string" name="level">warn</param>
+        <param type="string" name="message">A new image event, you can use ctx.Event.context.getProperty("enrichmentMetadata")</param>
+        <param type="string" name="category">org.nuxeo.ai.event</param>
+      </operation>
+    </chain>
+  </extension>
+  <!-- IMAGES PIPELINE END -->
+
+  <!-- VIDEO PIPELINE START -->
+  <!-- Listens for new "vid:storyboard" modifications for a path containing "movies"
+    and sends 4 of the video storyboard images to the "videos" stream. -->
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
+    <pipe id="pipe.dam.video" enabled="true">
+      <supplier>
+        <event name="documentModified">
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+            <option name="includedFacets">HasStoryboard</option>
+          </filter>
+          <filter class="org.nuxeo.ai.pipes.filters.DocumentPathFilter">
+            <option name="contains">movies</option>
+          </filter>
+          <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
+          <option name="properties">vid:storyboard</option>
+        </event>
+      </supplier>
+      <consumer>
+        <stream name="video"/>
+      </consumer>
+      <transformer>
+        <option name="blobProperties">
+          vid:storyboard/1/content,vid:storyboard/2/content,vid:storyboard/3/content,vid:storyboard/4/content
+        </option>
+      </transformer>
+    </pipe>
+  </extension>
+
+  <!-- Read from the "video" stream, call aws.imageLabels and put the response in the
+      video.enrichment.in stream -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="pipes"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">video</option>
+      <option name="sink">video.enrichment.in</option>
+      <option name="enrichmentServiceName">aws.imageLabels</option>
+      <option name="cache">true</option>
+      <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+    </streamProcessor>
+  </extension>
+
+  <!-- Read from the "video.enrichment.in" stream and create document tags for the enrichment labels -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="tagsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="pipes"
+                     class="org.nuxeo.ai.functions.StoreLabelsAsTags">
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+      <option name="source">video.enrichment.in</option>
+    </streamProcessor>
+  </extension>
+  <!-- VIDEO PIPELINE END -->
+
+</component>

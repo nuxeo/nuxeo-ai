@@ -32,8 +32,8 @@
     </enrichment>
     <enrichment name="circ2" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
       <option name="exception">java.util.NoSuchElementException</option>
-      <option name="failures">4</option>
-      <option name="retries">2</option>
+      <option name="failures">8</option>
+      <option name="retries">3</option>
     </enrichment>
     <enrichment name="circ3" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
       <option name="exception">org.nuxeo.ai.enrichment.FatalEnrichmentError</option>
