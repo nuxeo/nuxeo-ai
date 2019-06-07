@@ -72,7 +72,7 @@ public interface EnrichmentService {
      */
     default CircuitBreaker getCircuitBreaker() {
         return new CircuitBreaker()
-                .withFailureThreshold(4, 5)
+                .withFailureThreshold(8, 9)
                 .withDelay(2, TimeUnit.MINUTES)
                 .withSuccessThreshold(1)
                 .withTimeout(60, TimeUnit.SECONDS);

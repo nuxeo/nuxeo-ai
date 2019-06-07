@@ -176,6 +176,23 @@ Nuxeo AI Core provides 3 Java modules:
 These streams are *disabled by default* but can be enabled by the [corresponding configuration parameters](#configuration-parameters).
 
 ### Customization
+##### Sample configuration for DAM Installations.
+The [configuration parameters](#configuration-parameters) are used to configure Nuxeo xml contributions, instead you can provide your own configuration that meets your requirements.
+
+A [Sample DAM configuration is available to download](https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-pipes/src/test/resources/ai-dam-config.xml), and defines 2 pipelines:
+###### Images Pipeline
+ * Listens for `pictureViewsGenerationDone` and sends `picture:views/3/content` to the `images` stream.
+ * Configures an `EnrichingStreamProcessor` to read from the  `images` stream, calls the `aws.celebrityDetection` enrichment service and puts the response in the `images.enrichment.in` stream.
+ * The next stream processor reads from the `images.enrichment.in` stream, and raises an `imageMetadataCreated` event for each new enrichment entry.
+ * An example listener for the  `imageMetadataCreated` event writes a log message.
+
+###### Video Pipeline
+ * Listens for new `vid:storyboard` modifications for a document in a path containing `movies` and sends 4 of the video storyboard images to the `video` stream.
+ * Configures an `EnrichingStreamProcessor` to read from the `video` stream, calls the `aws.imageLabels` enrichment service and puts the response in the `video.enrichment.in` stream.
+ * The next stream processor reads from the `video.enrichment.in` stream and creates document tags for the enrichment labels.
+
+Please note that the `EnrichingStreamProcessors` are using a stream processing policy of `continueOnFailure=true`, this means that *stream processing will continue even if the enrichment failed*.
+
 ##### Events
 Using an Nuxeo extension you can dynamically register a pipeline for any custom event.  
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
@@ -245,6 +262,27 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 </streamProcessor>
 </extension>
 ```
+### Monitoring
+Nuxeo AI adds additional metrics to the standard [Nuxeo Metrics reporting](https://doc.nuxeo.com/nxdoc/metrics-and-monitoring/#metrics).
+
+
+| Metric name | Metric
+| --- | --- |
+|nuxeo.ai.streams.[eventListener].events| Count of events received.|
+|nuxeo.ai.streams.[eventListener].consumed| Count of events that matched the filter condition and were processed.|
+| nuxeo.ai.enrichment.[enrichmentService].called| Count of stream records received. |
+| nuxeo.ai.enrichment.[enrichmentService].errors| Count of errors.|
+| nuxeo.ai.enrichment.[enrichmentService].produced| How many records were produced after calling the service.|
+| nuxeo.ai.enrichment.[enrichmentService].retries| Count of retries.|
+| nuxeo.ai.enrichment.[enrichmentService].cacheHit| Count of times the result was returned from the cache rather than calling the enrichment service.|
+| nuxeo.ai.enrichment.[enrichmentService].unsupported| Count of unprocessable records, perhaps due to mime-type or size.|
+| nuxeo.ai.enrichment.[enrichmentService].success| Count of successful calls.|
+| nuxeo.ai.enrichment.[enrichmentService].circuitbreaker| Incremented when the circuilt breaker is open, stopping the stream from any more processing.|
+| nuxeo.ai.enrichment.[enrichmentService].fatal| Incremented when a fatal error occurs stopping the stream from any more processing.|
+| nuxeo.ai.streams.func.[functionName].called| Count of stream records received.|
+| nuxeo.ai.streams.func.[functionName].errors| Count of errors.|
+| nuxeo.ai.streams.func.[functionName].produced| How many records were produced by the function.|
+
 ### Notes
 * When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
 stream processors matches the number of partitions you have, eg. 4.
@@ -278,6 +316,22 @@ Similarly, to view the consumer lag on the "images" stream, for chronicle use th
 ```
 ./bin/stream.sh lag --chronicle nxserver/data/stream/pipes -l images --verbose
 ./bin/stream.sh lag -k -l images --verbose
+```
+#### Stream Bulk Actions
+Dataset exports use the [Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/).  To track progress of your bulk action you can use a command like this:
+```
+export COMMAND_ID=your-bulk-action-id
+curl -s -X GET "localhost:8080/nuxeo/api/v1/bulk/$COMMAND_ID" -u Administrator:Administrator -H 'content-type: application/json'
+
+```
+
+The documentation on [Debugging The Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/#debugging) has more useful stream commands.  Some further examples are:
+```
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l bulkDatasetExport
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l exp-training
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l exp-validation
+./bin/stream.sh tail -n 8 --chronicle /var/lib/nuxeo/data/stream/bulk -l done --codec avro --schema-store /var/lib/nuxeo/data/avro/ --data-size 3000
+./bin/stream.sh tail -n 8 --chronicle /var/lib/nuxeo/data/stream/bulk -l command --codec avro --schema-store /var/lib/nuxeo/data/avro/ --data-size 3000
 ```
 
 # License

@@ -122,7 +122,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                     if (response.isSuccessful()) {
                         SuggestionMetadata meta = handlePredict(response.body().string(), repositoryName, documentRef);
                         if (log.isDebugEnabled()) {
-                            log.debug(getName() + " prediction is " + MAPPER.writeValueAsString(meta));
+                            log.debug(getName() + ": prediction metadata is: " + MAPPER.writeValueAsString(meta));
                         }
                         return meta;
                     } else {
@@ -161,7 +161,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
 
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Response is " + content);
+                log.debug(getName() + ": response is: " + content);
             }
             JsonNode jsonResponse = MAPPER.readTree(content);
             jsonResponse.get(JSON_RESULTS).elements().forEachRemaining(resultsNode -> {

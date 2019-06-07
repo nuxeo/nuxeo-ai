@@ -158,6 +158,8 @@ public class TestAIComponent {
         assertEquals(2, metrics.errors);
         assertEquals(6, metrics.called);
         assertEquals(5, metrics.success);
+        assertEquals(0, metrics.circuitBreaker);
+        assertEquals(0, metrics.fatal);
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testCirc");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste2",
@@ -166,15 +168,17 @@ public class TestAIComponent {
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         computation.processRecord(testContext, null, record);
+        computation.processRecord(testContext, null, record);
         try {
             computation.processRecord(testContext, null, record);
             fail();
         } catch (NuxeoException e) {
             assertTrue(e.getMessage().contains("Stream circuit breaker"));
+            assertEquals(1, metrics.circuitBreaker);
         }
-        assertEquals(3, metrics.retries);
-        assertEquals(4, metrics.errors);
-        assertEquals(3, metrics.called);
+        assertEquals(6, metrics.retries);
+        assertEquals(8, metrics.errors);
+        assertEquals(4, metrics.called);
         assertEquals(1, metrics.success);
 
 
@@ -183,6 +187,7 @@ public class TestAIComponent {
                                                                          "circ3",
                                                                          metrics, false, false);
         computation.init(testContext);
+        assertEquals(0, metrics.fatal);
         try {
             computation.processRecord(testContext, null, record);
             fail();
@@ -193,6 +198,7 @@ public class TestAIComponent {
         assertEquals(1, metrics.errors);
         assertEquals(1, metrics.called);
         assertEquals(0, metrics.success);
+        assertEquals(1, metrics.fatal);
     }
 
 
