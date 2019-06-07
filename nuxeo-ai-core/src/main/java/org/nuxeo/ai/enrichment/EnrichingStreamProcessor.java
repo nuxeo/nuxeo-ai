@@ -151,11 +151,13 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 try {
                     result = callService(record, callable);
                 } catch (CircuitBreakerOpenException cboe) {
+                    metrics.circuitBreaker();
                     // The circuit break is open, throw NuxeoException so it doesn't continue processing.
                     throw new NuxeoException(
                             String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
                                           enricherName));
                 } catch (FatalEnrichmentError fee) {
+                    metrics.fatal();
                     //Fatal error so throw it to stop processing
                     throw fee;
                 } catch (RuntimeException e) {
@@ -290,6 +292,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected long errors = 0;
 
+        protected long fatal = 0;
+
+        protected long circuitBreaker = 0;
+
         protected long unsupported = 0;
 
         protected long produced = 0;
@@ -302,6 +308,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             this.putGauge(() -> success, "success");
             this.putGauge(() -> retries, "retries");
             this.putGauge(() -> errors, "errors");
+            this.putGauge(() -> fatal, "fatal");
+            this.putGauge(() -> circuitBreaker, "circuitbreaker");
             this.putGauge(() -> produced, "produced");
             this.putGauge(() -> unsupported, "unsupported");
             this.putGauge(() -> cacheHit, "cacheHit");
@@ -333,6 +341,20 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          */
         public void error() {
             errors++;
+        }
+
+        /**
+         * Increment fatal errors
+         */
+        public void fatal() {
+            fatal++;
+        }
+
+        /**
+         * Increment circuit breakers
+         */
+        public void circuitBreaker() {
+            circuitBreaker++;
         }
 
         /**
