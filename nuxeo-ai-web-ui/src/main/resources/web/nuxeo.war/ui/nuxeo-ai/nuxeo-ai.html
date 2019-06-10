@@ -16,6 +16,7 @@ limitations under the License.
 -->
 <link rel="import" href="admin/admin-ai-core.html">
 <link rel="import" href="admin/admin-ai-export.html">
+<link rel="import" href="admin/admin-ai-advanced-export.html">
 <link rel="import" href="nuxeo-ai-suggestions.html">
 
 <nuxeo-slot-content name="adminAIMenuItem" slot="ADMINISTRATION_MENU" order="100">
@@ -32,19 +33,25 @@ limitations under the License.
     <template>
         <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
             <template>
-                <nuxeo-admin-ai name="aicore" ></nuxeo-admin-ai>
+                <nuxeo-admin-ai name="aicore"></nuxeo-admin-ai>
             </template>
         </nuxeo-filter>
     </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="adminAiExport" slot="AI_ITEMS" order="20">
     <template>
-        <nuxeo-page-item name="export" label="Datasets"></nuxeo-page-item>
+        <nuxeo-page-item name="export" label="Export"></nuxeo-page-item>
+    </template>
+</nuxeo-slot-content>
+<nuxeo-slot-content name="adminAiExportAdvanced" slot="AI_ITEMS" order="20">
+    <template>
+        <nuxeo-page-item name="advanced" label="Advanced"></nuxeo-page-item>
     </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="adminAiExportPage" slot="AI_PAGES" order="20">
     <template>
         <nuxeo-admin-ai-export name="export"></nuxeo-admin-ai-export>
+        <nuxeo-admin-ai-advanced-export name="advanced"></nuxeo-admin-ai-advanced-export>
     </template>
 </nuxeo-slot-content>
 
