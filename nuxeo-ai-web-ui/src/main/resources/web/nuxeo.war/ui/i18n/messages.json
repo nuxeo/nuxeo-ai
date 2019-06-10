@@ -19,5 +19,6 @@
   "admin.ai.export.id" : "Export Id is {0}.",
   "admin.ai.stats.field" : "Property Name",
   "admin.ai.stats.type" : "Statistic Type",
-  "admin.ai.stats.value" : "Value"
+  "admin.ai.stats.value" : "Value",
+  "admin.ai.model.selection" : "Model selection"
 }
