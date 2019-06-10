@@ -28,3 +28,4 @@ bin/
 *~bak
 *-bak
 *.bak
+.factorypath

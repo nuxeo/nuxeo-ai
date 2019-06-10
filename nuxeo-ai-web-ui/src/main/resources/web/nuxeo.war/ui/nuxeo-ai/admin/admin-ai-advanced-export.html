@@ -17,28 +17,13 @@ limitations under the License.
 <!--
 `nuxeo-ai-admin`
 @group Nuxeo UI
-@element nuxeo-admin-ai-export
+@element admin-ai-advanced-export
 -->
-<dom-module id="nuxeo-admin-ai-export">
+<dom-module id="nuxeo-admin-ai-advanced-export">
     <template>
         <style>
-            .page {
-                @apply --layout-horizontal;
-            }
-
-            .main {
-                @apply --layout-vertical;
-                @apply --layout-flex-3;
-                padding-right: 8px;
-                overflow: hidden;
-            }
-
-            .side {
-                @apply --layout-vertical;
-                @apply --layout-flex-2;
-                position: relative;
-                margin-bottom: var(--nuxeo-card-margin-bottom, 16px);
-                min-height: 60vh;
+            #statsResult {
+                height: 60vh;
             }
 
             .totalLabel {
@@ -49,45 +34,52 @@ limitations under the License.
                 @apply --layout-horizontal;
                 @apply --layout-wrap;
             }
-
-            /* #exportDatasetBtn {
-                    color: var(--nuxeo-button-primary-text);
-                    background-color: var(--nuxeo-button-primary-focus);
-                } */
         </style>
 
         <nuxeo-operation id="aiStats" op="AI.DatasetStats" response="{{_stats}}"></nuxeo-operation>
         <nuxeo-operation id="aiExport" op="AI.DatasetExport"></nuxeo-operation>
-
-        <div class="page">
-            <div class="main">
-                <nuxeo-card heading="[[i18n('admin.ai.model.selection')]]">
-                    <paper-textarea id="queryInput" type="search" label="[[i18n('admin.ai.query')]]" value="{{query}}"
-                        placeholder="[[i18n('imaging.query.placeholder')]]" autofocus>
-                    </paper-textarea>
-                    <nuxeo-document-suggestion
-                        value="{{document.properties.ai_model_schema:training_algorithm_document}}" label=""
-                        placeholder="Click here to view model list" min-chars="0" role="widget">
-                    </nuxeo-document-suggestion>
-
-                    <paper-button id="exportDatasetBtn" noink on-tap="_export">[[i18n('admin.ai.export.action')]]
-                    </paper-button>
-                </nuxeo-card>
+        <nuxeo-card heading="[[i18n('admin.ai.export')]]">
+            <paper-textarea id="queryInput" type="search" label="[[i18n('admin.ai.query')]]" value="{{query}}"
+                placeholder="[[i18n('imaging.query.placeholder')]]" autofocus>
+            </paper-textarea>
+            <paper-input id="inputs" label="[[i18n('admin.ai.inputs')]]" value="{{inProps}}"></paper-input>
+            <paper-input id="outputs" label="[[i18n('admin.ai.outputs')]]" value="{{outProps}}"></paper-input>
+            <paper-input id="split" label="[[i18n('admin.ai.split')]]" value="{{splitProp}}"></paper-input>
+            <paper-button on-tap="_recompute">[[i18n('admin.ai.stats.action')]]</paper-button>
+            <paper-button on-tap="_export">[[i18n('admin.ai.export.action')]]</paper-button>
+        </nuxeo-card>
+        <nuxeo-card heading="[[i18n('admin.ai.stats')]]">
+            <div class="row-container">
+                <span class="totalLabel">[[_computeLabel(_stats, 'total', i18n)]]</span>
+                <span class="totalLabel">[[_computeLabel(_stats, 'count', i18n)]]</span>
             </div>
-            <div class="side">
-                <nuxeo-card heading="[[i18n('admin.ai.export')]]">
-                    <div class="row-container">
-                        [[_exportText]]
-                    </div>
-                </nuxeo-card>
+            <nuxeo-data-table id="statsResult" items="[[_filter(_stats)]]">
+                <nuxeo-data-table-column name="[[i18n('admin.ai.stats.field')]]" flex="10">
+                    <template>
+                        [[item.field]]
+                    </template>
+                </nuxeo-data-table-column>
+                <nuxeo-data-table-column name="[[i18n('admin.ai.stats.type')]]" flex="10">
+                    <template>
+                        [[item.type]]
+                    </template>
+                </nuxeo-data-table-column>
+                <nuxeo-data-table-column name="[[i18n('admin.ai.stats.value')]]" flex="50">
+                    <template>
+                        [[_displayVal(item)]]
+                    </template>
+                </nuxeo-data-table-column>
+            </nuxeo-data-table>
+        </nuxeo-card>
+        <nuxeo-card heading="[[i18n('admin.ai.export')]]">
+            <div class="row-container">
+                [[_exportText]]
             </div>
-
-        </div>
-
+        </nuxeo-card>
     </template>
     <script>
         Polymer({
-            is: 'nuxeo-admin-ai-export',
+            is: 'nuxeo-admin-ai-advanced-export',
             behaviors: [Nuxeo.LayoutBehavior],
             properties: {
                 inProps: {
@@ -108,7 +100,7 @@ limitations under the License.
                 },
                 _exportText: {
                     type: String,
-                    value: 'No exports'
+                    value: ''
                 },
                 _stats: {
                     type: String
