@@ -40,6 +40,7 @@
       <config name="conversionService">superSpecialConverter</config>
       <config name="liveness.uri">http://localhost:5089/health</config>
       <config name="liveness.methodName">GET</config>
+      <config name="minConfidence">0.45</config>
       <inputProperties>
         <property name="dc:title" type="txt"/>
         <property name="file:content" type="img"/>
