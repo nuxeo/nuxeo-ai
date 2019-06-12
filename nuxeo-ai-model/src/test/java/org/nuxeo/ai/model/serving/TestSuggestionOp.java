@@ -19,6 +19,7 @@
 package org.nuxeo.ai.model.serving;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
@@ -26,7 +27,9 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -35,6 +38,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.common.utils.Path;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
@@ -51,6 +55,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 /**
@@ -94,17 +99,25 @@ public class TestSuggestionOp {
         chain.add(SuggestionOp.ID);
         assertEmptyList((JSONBlob) automationService.run(ctx, chain));
 
+        Map<String, Object> resolveParams = new HashMap<>();
+        resolveParams.put("references", true);
         ctx = new OperationContext(session);
         ctx.setInput(testDoc);
         chain = new OperationChain("testSuggestChain2");
-        chain.add(SuggestionOp.ID);
+        chain.add(SuggestionOp.ID).from(resolveParams);
         assertSuggestionList((JSONBlob) automationService.run(ctx, chain));
 
         ctx = new OperationContext(session);
         ctx.setInput(testDoc.getRef());
         chain = new OperationChain("testSuggestChain2b");
-        chain.add(SuggestionOp.ID);
+        chain.add(SuggestionOp.ID).from(resolveParams);
         assertSuggestionList((JSONBlob) automationService.run(ctx, chain));
+
+        ctx = new OperationContext(session);
+        ctx.setInput(testDoc);
+        chain = new OperationChain("testSuggestChainWithResolve");
+        chain.add(SuggestionOp.ID);
+        assertSimpleSuggestionList((JSONBlob) automationService.run(ctx, chain));
 
         testDoc = session.createDocumentModel("/", "My Doc", "Note");
         testDoc = session.createDocument(testDoc);
@@ -140,6 +153,16 @@ public class TestSuggestionOp {
                 case "dc:subjects":
                     assertTrue(entityType.contains("directoryEntry"));
             }
+        }
+    }
+
+    protected void assertSimpleSuggestionList(JSONBlob blob) throws IOException {
+        JsonNode jsonTree = MAPPER.readTree(blob.getString());
+        JsonNode suggestions = jsonTree.get(0).get("suggestions");
+        assertEquals(4, suggestions.size());
+        for (JsonNode suggestion : suggestions) {
+            List<JsonNode> asProperty = suggestion.get("values").findValues("value");
+            assertTrue(asProperty.stream().allMatch(n -> n instanceof TextNode));
         }
     }
 
