@@ -120,7 +120,7 @@ public class TestDocMetadataService {
         classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
         classifications = classProp.getValue(List.class);
-        assertEquals("There is still 2 classifications because nothing was saved", 2, classifications.size());
+        assertEquals("There is still 3 classifications.", 3, classifications.size());
 
     }
 
