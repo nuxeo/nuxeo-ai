@@ -18,10 +18,14 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -37,6 +41,7 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.impl.DocumentPartImpl;
@@ -47,6 +52,7 @@ import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.ListType;
 import org.nuxeo.ecm.core.schema.types.Schema;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
@@ -74,67 +80,60 @@ public class SuggestionOp {
     @Param(name = "document", description = "A document", required = false)
     protected DocumentModel documentModel;
 
+    @Param(name = "references", description = "Should the entity references be resolved?", required = false)
+    protected boolean references = false;
+
     @OperationMethod
-    public Blob run(DocumentModel doc) throws IOException {
+    public Blob run(DocumentModel doc) {
 
         List<SuggestionMetadata> suggestions;
         if (doc == null || (suggestions = modelServingService.predict(doc)) == null || suggestions.isEmpty()) {
             return Blobs.createJSONBlob(EMPTY_JSON_LIST);
         }
 
-        String toReturn = toJsonString(jg -> {
-            // JsonGenerator won't let you start with an array, so I am wrapping it in a field and removing the
-            // field at the end of the method.
-            jg.writeFieldName("return");
-            jg.writeStartArray();
-            suggestions.forEach(metadata -> {
-                try {
-                    writeProperties(metadata, doc, jg);
-                } catch (IllegalArgumentException e) {
-                    log.debug("Document {} error. {}", doc.getId(), e.getMessage());
-                }
-            });
-            jg.writeEndArray();
-        });
-        return Blobs.createJSONBlob(toReturn.substring(10, toReturn.length() - 1));
+        ByteArrayOutputStream outWriter = new ByteArrayOutputStream();
+        DocumentPropertyJsonWriter writer = references ? registry
+                .getInstance(RenderingContext.CtxBuilder.fetchInDoc("properties").get(),
+                             DocumentPropertyJsonWriter.class) : null;
+        try (JsonGenerator jg = MAPPER.getFactory().createGenerator(outWriter)) {
+            List<SuggestionsAsJson> suggestionsAsJson = suggestions.stream()
+                                                                   .map(metadata -> writeJson(metadata, doc, writer, outWriter, jg))
+                                                                   .filter(Objects::nonNull)
+                                                                   .collect(Collectors.toList());
+            return Blobs.createJSONBlob(MAPPER.writeValueAsString(suggestionsAsJson));
+        } catch (IOException e) {
+            throw new NuxeoException("Unable to turn data into a json String", e);
+        }
     }
 
     /**
      * Write property information alongside suggestions.
      */
-    protected void writeProperties(SuggestionMetadata metadata, DocumentModel input, JsonGenerator jg) {
-
-        RenderingContext ctx = RenderingContext.CtxBuilder.fetchInDoc("properties").get();
-        ctx.setParameterValues("document", input);
-        DocumentPropertyJsonWriter writer = registry.getInstance(ctx, DocumentPropertyJsonWriter.class);
-        if (writer != null) {
-            try {
-
-                jg.writeStartObject();  // 1
-                jg.writeStringField("serviceName", metadata.getServiceName());
-                jg.writeArrayFieldStart("suggestions");  // a1
-                for (Suggestion suggestion : metadata.getSuggestions()) {
-                    Property property = input.getProperty(suggestion.getProperty());
-                    jg.writeStartObject();  // 2
-                    jg.writeStringField("property", suggestion.getProperty());
-                    jg.writeArrayFieldStart("values");  // a2
-                    for (AIMetadata.Label label : suggestion.getValues()) {
-                        jg.writeStartObject();  // 3
-                        jg.writeStringField("confidence", String.valueOf(label.getConfidence()));
-                        jg.writeFieldName("value");
+    protected SuggestionsAsJson writeJson(SuggestionMetadata metadata, DocumentModel input,
+                                          DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter,
+                                          JsonGenerator jg) {
+        try {
+            List<SuggestionListAsJson> suggestionList = new ArrayList<>();
+            for (Suggestion suggestion : metadata.getSuggestions()) {
+                Property property = input.getProperty(suggestion.getProperty());
+                List<SuggestionAsJson> suggestionValues = new ArrayList<>();
+                for (AIMetadata.Label label : suggestion.getValues()) {
+                    String value = "\"" + label.getName() + "\"";
+                    if (writer != null) {
                         Property prop = setProperty(property.getField(), label);
+                        outWriter.reset();
                         writer.write(prop, jg);
-                        jg.writeEndObject();  // 3
+                        value = outWriter.toString();
                     }
-                    jg.writeEndArray();   // a2
-                    jg.writeEndObject();  // 2
+                    suggestionValues.add(new SuggestionAsJson(label.getConfidence(), value));
                 }
-                jg.writeEndArray();  // a1
-                jg.writeEndObject(); // 1
-            } catch (PropertyException | IOException | UnsupportedOperationException e) {
-                log.error("Failed to write property. ", e);
+                suggestionList.add(new SuggestionListAsJson(suggestion.getProperty(), suggestionValues));
             }
+            return new SuggestionsAsJson(metadata.getServiceName(), suggestionList);
+        } catch (PropertyException | IOException | UnsupportedOperationException e) {
+            log.error("Failed to write property. ", e);
         }
+        return null;
     }
 
     /**
@@ -156,13 +155,80 @@ public class SuggestionOp {
     }
 
     @OperationMethod
-    public Blob run(DocumentRef docRef) throws IOException {
+    public Blob run(DocumentRef docRef) {
         DocumentModel docModel = coreSession.getDocument(docRef);
         return run(docModel);
     }
 
     @OperationMethod
-    public Blob run() throws IOException {
+    public Blob run() {
         return run(documentModel);
+    }
+
+    /**
+     * Class used for JSON serialization
+     */
+    public static class SuggestionsAsJson {
+        protected final String serviceName;
+
+        protected final List<SuggestionListAsJson> suggestions;
+
+        public SuggestionsAsJson(String serviceName, List<SuggestionListAsJson> suggestions) {
+            this.serviceName = serviceName;
+            this.suggestions = suggestions;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public List<SuggestionListAsJson> getSuggestions() {
+            return suggestions;
+        }
+    }
+
+    /**
+     * Class used for JSON serialization
+     */
+    public static class SuggestionListAsJson {
+        protected final String property;
+
+        protected final List<SuggestionAsJson> values;
+
+        public SuggestionListAsJson(String property, List<SuggestionAsJson> values) {
+            this.property = property;
+            this.values = values;
+        }
+
+        public String getProperty() {
+            return property;
+        }
+
+        public List<SuggestionAsJson> getValues() {
+            return values;
+        }
+    }
+
+    /**
+     * Class used for JSON serialization
+     */
+    public static class SuggestionAsJson {
+        protected final float confidence;
+
+        @JsonRawValue
+        protected final String value;
+
+        public SuggestionAsJson(float confidence, String value) {
+            this.confidence = confidence;
+            this.value = value;
+        }
+
+        public float getConfidence() {
+            return confidence;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 }
