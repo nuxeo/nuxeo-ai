@@ -27,6 +27,7 @@ import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -71,8 +72,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         return Framework.getService(CodecService.class).getCodec(DEFAULT_CODEC, ExportBulkProcessed.class);
     }
 
-    public static void updateExportStatusProcessed(ComputationContext context, String commandId, long processed) {
-        ExportBulkProcessed exportStatus = new ExportBulkProcessed(commandId, processed);
+    public static void updateExportStatusProcessed(ComputationContext context, String commandId, long processed, long errored) {
+        ExportBulkProcessed exportStatus = new ExportBulkProcessed(commandId, processed, errored);
         context.produceRecord(OUTPUT_1, commandId, getExportStatusCodec().encode(exportStatus));
     }
 
@@ -84,7 +85,12 @@ public class DataSetExportStatusComputation extends AbstractComputation {
     public void processRecord(ComputationContext context, String inputStreamName, Record record) {
         ExportBulkProcessed exportStatus = getExportStatusCodec().decode(record.getData());
         BulkService service = Framework.getService(BulkService.class);
-        if (isEndOfBatch(exportStatus)) {
+        BulkStatus bulkStatus = service.getStatus(exportStatus.getCommandId());
+        BulkStatus deltaStatus = BulkStatus.deltaOf(exportStatus.getCommandId());
+        if (bulkStatus.getProcessingStartTime() == null) {
+            deltaStatus.setProcessingStartTime(Instant.now());
+        }
+        if (isEndOfBatch(exportStatus, bulkStatus)) {
             BulkCommand command = service.getCommand(exportStatus.getCommandId());
             log.debug("Ending batch for {}", exportStatus.getCommandId());
             for (String name : writerNames) {
@@ -113,13 +119,14 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                     log.debug("No writer file exists for {} {}", exportStatus.getCommandId(), name);
                 }
             }
+            deltaStatus.setProcessingEndTime(Instant.now());
             // Clear counter
             counters.remove(exportStatus.getCommandId());
         }
         updateDelta(exportStatus.getCommandId(), exportStatus.getProcessed());
-        BulkStatus status = BulkStatus.deltaOf(exportStatus.getCommandId());
-        status.setProcessed(exportStatus.getProcessed());
-        updateStatus(context, status);
+        deltaStatus.setErrorCount(exportStatus.getErrored());
+        deltaStatus.setProcessed(exportStatus.getProcessed());
+        updateStatus(context, deltaStatus);
         context.askForCheckpoint();
     }
 
@@ -157,8 +164,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         counters.computeIfPresent(commandId, (s, aLong) -> processed + aLong);
     }
 
-    protected boolean isEndOfBatch(ExportBulkProcessed exportStatus) {
-        BulkStatus status = Framework.getService(BulkService.class).getStatus(exportStatus.getCommandId());
+    protected boolean isEndOfBatch(ExportBulkProcessed exportStatus, BulkStatus status) {
         Long processed = getCount(exportStatus.getCommandId());
         if (processed == null) {
             processed = 0L;

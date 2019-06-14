@@ -156,9 +156,9 @@ public class DataSetBulkAction implements StreamProcessorTopology {
         }
 
         @Override
-        public void endBucket(ComputationContext context, BulkStatus delta) {
+        public void endBucket(ComputationContext context, BulkStatus ignored) {
             if (discarded > 0) {
-                updateExportStatusProcessed(context, command.getId(), discarded);
+                updateExportStatusProcessed(context, command.getId(), 0, discarded);
                 discarded = 0;
             }
             training.forEach(record -> context.produceRecord(OUTPUT_2, record));
