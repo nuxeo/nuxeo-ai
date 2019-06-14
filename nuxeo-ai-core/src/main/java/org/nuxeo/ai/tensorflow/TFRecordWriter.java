@@ -128,12 +128,11 @@ public class TFRecordWriter extends AbstractRecordWriter {
     }
 
     @Override
-    public void write(List<Record> list) throws IOException {
+    public long write(List<Record> list) throws IOException {
+        int written = 0;
+        int skipped = 0;
         if (list != null && !list.isEmpty()) {
-
             File file = getFile(list.get(0).getKey());
-            int written = 0;
-            int skipped = 0;
             try (BufferedOutputStream buffy = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
                  DataOutputStream dataOutputStream = new DataOutputStream(buffy)) {
 
@@ -159,6 +158,7 @@ public class TFRecordWriter extends AbstractRecordWriter {
                                         name, list.size(), written, skipped));
             }
         }
+        return skipped;
     }
 
     /**

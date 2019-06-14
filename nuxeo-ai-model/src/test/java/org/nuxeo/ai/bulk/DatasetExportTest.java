@@ -35,7 +35,6 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -120,10 +119,11 @@ public class DatasetExportTest {
 
         BulkStatus status = service.getStatus(commandId);
         assertNotNull(status);
+        assertNotNull(status.getProcessingStartTime());
+        assertNotNull(status.getProcessingEndTime());
         assertEquals(COMPLETED, status.getState());
         // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
         assertEquals(450, status.getProcessed());
-
         DocumentModel doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, "nonsense");
         assertNull(doc);
         doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, commandId);
@@ -132,6 +132,7 @@ public class DatasetExportTest {
         int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_EVALUATION_DATA), 3);
         assertTrue(trainingCount > validationCount);
         assertEquals("We should have disguarded 50 bad blobs.", 400, trainingCount + validationCount);
+        assertEquals("50 bad blobs.", 50, status.getErrorCount());
     }
 
     /**
@@ -143,7 +144,6 @@ public class DatasetExportTest {
         esa.refresh();
     }
 
-    @NotNull
     protected DocumentModel setupTestData() throws IOException {
         DocumentModel testRoot = session.createDocumentModel("/", "bulkexporttest", "Folder");
         testRoot = session.createDocument(testRoot);
