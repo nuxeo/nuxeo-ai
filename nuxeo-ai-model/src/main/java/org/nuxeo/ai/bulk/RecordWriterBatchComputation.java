@@ -52,15 +52,16 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
             throw new NuxeoException("Unknown record write specified: " + metadata.name());
         }
         recordsByCommand.forEach((commandId, recordsOfCommand) -> {
+            long errors = 0;
             try {
-                writer.write(recordsOfCommand);
+                errors = writer.write(recordsOfCommand);
             } catch (IOException e) {
                 throw new NuxeoException(
                         String.format("Failed to write the %s batch for %s.", metadata.name(), commandId), e);
+            } finally {
+                updateExportStatusProcessed(context, commandId, recordsOfCommand.size(), errors);
             }
         });
-        recordsByCommand.forEach((commandId, recordsOfCommand) ->
-                                         updateExportStatusProcessed(context, commandId, recordsOfCommand.size()));
     }
 
     @Override
