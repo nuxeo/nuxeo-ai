@@ -32,8 +32,9 @@ public class BadRecordWriter extends AbstractRecordWriter {
     }
 
     @Override
-    public void write(List<Record> list) {
+    public long write(List<Record> list) {
         // Will never get here
+        return 99;
     }
 
 

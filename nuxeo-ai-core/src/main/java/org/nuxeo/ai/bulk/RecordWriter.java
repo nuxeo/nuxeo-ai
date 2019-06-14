@@ -37,8 +37,9 @@ public interface RecordWriter {
 
     /**
      * Write the records using this writer.  It is assumed that the implementation writes to a file.
+     * Returns the number of errors.
      */
-    void write(List<Record> list) throws IOException;
+    long write(List<Record> list) throws IOException;
 
     /**
      * Indicates if a file exists for this id

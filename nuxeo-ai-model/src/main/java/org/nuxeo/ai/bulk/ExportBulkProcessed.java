@@ -32,12 +32,15 @@ public class ExportBulkProcessed implements Serializable {
 
     protected long processed;
 
+    protected long errored;
+
     public ExportBulkProcessed() {
     }
 
-    public ExportBulkProcessed(String commandId, long processed) {
+    public ExportBulkProcessed(String commandId, long processed, long errored) {
         this.commandId = commandId;
         this.processed = processed;
+        this.errored = errored;
     }
 
     public String getCommandId() {
@@ -54,6 +57,14 @@ public class ExportBulkProcessed implements Serializable {
 
     public void setProcessed(long processed) {
         this.processed = processed;
+    }
+
+    public long getErrored() {
+        return errored;
+    }
+
+    public void setErrored(long errored) {
+        this.errored = errored;
     }
 
     @Override
