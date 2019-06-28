@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<link rel="import" href="nuxeo-ai-icons.html">
+<link rel="import" href="nuxeo-ai-suggestion.html">
 <dom-module id="nuxeo-ai-suggestions">
   <template>
 
@@ -30,46 +30,19 @@ limitations under the License.
         display: none;
       }
 
-      .suggestion {
+      nuxeo-ai-suggestion {
         margin: 0 10px 10px 0;
-        padding: 5px 9px 5px;
-
-        border-radius: 2em;
-        background-color: var(--nuxeo-tag-background, transparent);
-
-        cursor: pointer;
-
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-
-        @apply --layout-horizontal;
-        @apply --layout-center;
-      }
-
-      .suggestion:hover {
-        background-color: var(--nuxeo-artificial-intelligence-confidence-hover, rgba(74, 144, 246, 0.1));
-      }
-
-      .chosen {
-        opacity: 0.3;
-        pointer-events:none;
-      }
-
-      iron-icon {
-        --iron-icon-fill-color: var(--nuxeo-artificial-intelligence-confidence-color, #4A90E2);
-        margin-left: 7px;
-        height: 1.2em;
       }
     </style>
 
     <template is="dom-repeat" items="[[suggestions]]">
-      <div class$="suggestion [[_styleSuggestion(item, _inputMatches)]]" on-click="_selectSuggestion">
-        <span>[[idFunction(item.value)]]</span>
-        <iron-icon icon="[[_getConfidenceIcon(item.confidence)]]"></iron-icon>
-      </div>
+      <nuxeo-ai-suggestion
+        suggestion="[[item]]"
+        match$="[[_machesInput(item, _inputMatches)]]"
+        threshold="[[threshold]]"
+        property="[[property]]"
+        on-click="_selectSuggestion"
+      ></nuxeo-ai-suggestion>
     </template>
 
   </template>
@@ -88,7 +61,7 @@ limitations under the License.
        * @memberof Nuxeo
        */
       class AISuggestions
-        extends Polymer.mixinBehaviors([Nuxeo.I18nBehavior, Polymer.IronFormElementBehavior], Nuxeo.Element) {
+        extends Polymer.mixinBehaviors([Polymer.IronFormElementBehavior], Nuxeo.Element) {
 
         static get is() {
           return 'nuxeo-ai-suggestions';
@@ -139,14 +112,12 @@ limitations under the License.
 
             _inputMatches: {
               type: Object,
-            }
+            },
           };
         }
 
         static get observers() {
-          return [
-            '_matchInput(property, suggestions, document.properties.*)',
-          ];
+          return ['_matchInput(property, suggestions, document.properties.*)'];
         }
 
         _matchInput() {
@@ -155,11 +126,11 @@ limitations under the License.
           }
           // XXX: this method memoizes matching between the property value and the suggestions
           const matches = new Map();
-          let currentValue = this.get(this._parsePropertyPath());
+          const currentValue = this.get(this._parsePropertyPath());
           if (this.suggestions.length > 0) {
             const isArray = Array.isArray(currentValue);
             this.suggestions.forEach((suggestion) => {
-              const suggestedValue = this.idFunction(suggestion.value);
+              const suggestedValue = this.idFunction(suggestion.name);
               const match = isArray ? currentValue.includes(suggestedValue) : currentValue === suggestedValue;
               matches.set(suggestedValue, match);
             });
@@ -167,21 +138,8 @@ limitations under the License.
           this._inputMatches = matches;
         }
 
-        _styleSuggestion(suggestion) {
-          return (this._inputMatches && suggestion.value && this._inputMatches.get(suggestion.value)) ? 'chosen' : '';
-        }
-
-        _getConfidenceIcon(confidenceLevel) {
-          const interval = (1 - this.threshold) / 3;
-          let icon;
-          if (confidenceLevel >= this.threshold && confidenceLevel < this.threshold + interval) {
-            icon = 'nuxeo-ai:confidence-level-low';
-          } else if (confidenceLevel >= this.threshold + interval && confidenceLevel < this.threshold + (2 * interval)) {
-            icon = 'nuxeo-ai:confidence-level-medium';
-          } else if (confidenceLevel >= this.threshold + (2 * interval) && confidenceLevel <= 1) {
-            icon = 'nuxeo-ai:confidence-level-high';
-          }
-          return icon;
+        _machesInput(suggestion) {
+          return this._inputMatches && suggestion.name && this._inputMatches.get(suggestion.name);
         }
 
         _selectSuggestion(event) {
@@ -190,7 +148,7 @@ limitations under the License.
           if (!this.get(propertyPath)) {
             this._createNestedObjectRecursive(this.document.properties, this.property.split('/'));
           }
-          const value = this.idFunction(suggestion.value);
+          const value = this.idFunction(suggestion.name);
           if (Array.isArray(this.get(propertyPath))) {
             // XXX: we're doing this instead of `this.push(propertyPath, value);` because the push will produce
             // a `<propertyPath>.splices` which might not reflect to widgets with the value double bound to
@@ -250,7 +208,7 @@ limitations under the License.
           let composedPath = startingPath;
           path.forEach((piece) => {
             obj = this.get(composedPath);
-            composedPath += (`${composedPath.length === 0 ? '' : '.'}${piece}`);
+            composedPath += `${composedPath.length === 0 ? '' : '.'}${piece}`;
             if (!this.get(composedPath)) {
               obj[piece] = {};
             }
