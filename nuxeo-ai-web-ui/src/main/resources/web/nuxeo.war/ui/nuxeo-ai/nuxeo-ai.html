@@ -22,6 +22,7 @@ limitations under the License.
 <link rel="import" href="nuxeo-ai-suggestion-formatters.html">
 <link rel="import" href="formatters/nuxeo-document-ai-suggestion-formatter.html">
 <link rel="import" href="formatters/nuxeo-directory-ai-suggestion-formatter.html">
+<link rel="import" href="formatters/nuxeo-user-group-ai-suggestion-formatter.html">
 
 <nuxeo-slot-content name="adminAIMenuItem" slot="ADMINISTRATION_MENU" order="100">
     <template>
@@ -62,6 +63,9 @@ limitations under the License.
 <script>
   Nuxeo.AISuggestionFormatters.register(Nuxeo.DocumentAISuggestionFormatter.is, { type: 'document' });
   Nuxeo.AISuggestionFormatters.register(Nuxeo.DirectoryAISuggestionFormatter.is, { type: 'directoryEntry' });
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, { type: 'user' });
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, { type: 'group' });
+
   AISuggestionManager = (() => {
     const _map = new WeakMap(); // store field elements and suggestion widgets without preventing gc
     let _updateDebouncer = null;
