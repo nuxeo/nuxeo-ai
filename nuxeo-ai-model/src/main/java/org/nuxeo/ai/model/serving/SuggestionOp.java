@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.Suggestion;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -86,7 +86,7 @@ public class SuggestionOp {
     @OperationMethod
     public Blob run(DocumentModel doc) {
 
-        List<SuggestionMetadata> suggestions;
+        List<EnrichmentMetadata> suggestions;
         if (doc == null || (suggestions = modelServingService.predict(doc)) == null || suggestions.isEmpty()) {
             return Blobs.createJSONBlob(EMPTY_JSON_LIST);
         }
@@ -109,15 +109,15 @@ public class SuggestionOp {
     /**
      * Write property information alongside suggestions.
      */
-    protected SuggestionsAsJson writeJson(SuggestionMetadata metadata, DocumentModel input,
+    protected SuggestionsAsJson writeJson(EnrichmentMetadata metadata, DocumentModel input,
                                           DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter,
                                           JsonGenerator jg) {
         try {
             List<SuggestionListAsJson> suggestionList = new ArrayList<>();
-            for (Suggestion suggestion : metadata.getSuggestions()) {
-                Property property = input.getProperty(suggestion.getProperty());
+            for (LabelSuggestion labelSuggestion : metadata.getLabels()) {
+                Property property = input.getProperty(labelSuggestion.getProperty());
                 List<SuggestionAsJson> suggestionValues = new ArrayList<>();
-                for (AIMetadata.Label label : suggestion.getValues()) {
+                for (AIMetadata.Label label : labelSuggestion.getValues()) {
                     String value = "\"" + label.getName() + "\"";
                     if (writer != null) {
                         Property prop = setProperty(property.getField(), label);
@@ -127,9 +127,9 @@ public class SuggestionOp {
                     }
                     suggestionValues.add(new SuggestionAsJson(label.getConfidence(), value));
                 }
-                suggestionList.add(new SuggestionListAsJson(suggestion.getProperty(), suggestionValues));
+                suggestionList.add(new SuggestionListAsJson(labelSuggestion.getProperty(), suggestionValues));
             }
-            return new SuggestionsAsJson(metadata.getServiceName(), suggestionList);
+            return new SuggestionsAsJson(metadata.getModelName(), suggestionList);
         } catch (PropertyException | IOException | UnsupportedOperationException e) {
             log.error("Failed to write property. ", e);
         }
@@ -169,17 +169,17 @@ public class SuggestionOp {
      * Class used for JSON serialization
      */
     public static class SuggestionsAsJson {
-        protected final String serviceName;
+        protected final String modelName;
 
         protected final List<SuggestionListAsJson> suggestions;
 
-        public SuggestionsAsJson(String serviceName, List<SuggestionListAsJson> suggestions) {
-            this.serviceName = serviceName;
+        public SuggestionsAsJson(String modelName, List<SuggestionListAsJson> suggestions) {
+            this.modelName = modelName;
             this.suggestions = suggestions;
         }
 
-        public String getServiceName() {
-            return serviceName;
+        public String getModelName() {
+            return modelName;
         }
 
         public List<SuggestionListAsJson> getSuggestions() {

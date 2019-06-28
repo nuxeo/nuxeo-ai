@@ -34,9 +34,4 @@ public interface DocMetadataService {
      * Saves the enrichment metadata on a document and returns the DocumentModel.
      */
     DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata);
-
-    /**
-     * Produce a list of labels from the provided tags
-     */
-    Set<String> getTagLabels(List<AIMetadata.Tag> tags);
 }

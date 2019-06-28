@@ -36,8 +36,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +43,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -128,11 +126,11 @@ public class TestModelServing {
         txFeature.nextTransaction();
 
         testDoc.setPropertyValue("file:content", (Serializable) createTestBlob(manager));
-        List<SuggestionMetadata> suggestions = modelServingService.predict(testDoc);
+        List<EnrichmentMetadata> suggestions = modelServingService.predict(testDoc);
         assertEquals(2, suggestions.size());
 
         //Test serialize results
-        SuggestionMetadata andBackAgain = fromRecord(toRecord("t", suggestions.get(0)), SuggestionMetadata.class);
+        EnrichmentMetadata andBackAgain = fromRecord(toRecord("t", suggestions.get(0)), EnrichmentMetadata.class);
         assertEquals(suggestions.get(0), andBackAgain);
     }
 
@@ -149,13 +147,13 @@ public class TestModelServing {
         blobTextFromDoc.addProperty("ecm:mixinType", "Versionable | Downloadable");
         enriched = service.enrich(blobTextFromDoc);
         EnrichmentMetadata metadata = enriched.iterator().next();
-        assertEquals(7, metadata.getLabels().size());
+        assertEquals(7, metadata.getLabels().stream().mapToInt(l -> l.getValues().size()).sum());
 
         service = aiComponent.getEnrichmentService("customSuggest");
         assertNotNull(service);
-        Collection<SuggestionMetadata> suggest = service.suggest(blobTextFromDoc);
-        SuggestionMetadata suggestionMetadata = suggest.iterator().next();
-        assertEquals(4, suggestionMetadata.getSuggestions().size());
+        Collection<EnrichmentMetadata> suggest = service.enrich(blobTextFromDoc);
+        EnrichmentMetadata enrichmentMetadata = suggest.iterator().next();
+        assertEquals(4, enrichmentMetadata.getLabels().size());
     }
 
     @Test
@@ -170,7 +168,7 @@ public class TestModelServing {
         assertNotNull("The api must successfully return a result", results);
         assertEquals("There must be 1 result", 1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
-        assertEquals(7, metadata.getLabels().size());
+        assertEquals(7, metadata.getLabels().stream().mapToInt(l -> l.getValues().size()).sum());
         assertNotNull(metadata.getRawKey());
 
         TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore("testTransient");

@@ -19,23 +19,36 @@
   <xs:simpleType name="stringList">
     <xs:list itemType="xs:string"/>
   </xs:simpleType>
-  <xs:simpleType name="kindType">
-    <xs:restriction base="xs:string" ref:resolver="directoryResolver" ref:directory="aikind"/>
-  </xs:simpleType>
-
+  <xs:complexType name="labelSuggestion">
+    <xs:sequence>
+      <xs:element name="label" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="confidence" type="xs:float"  nillable="false" nxsv:nillable="false"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="labelSuggestionsListType">
+    <xs:sequence>
+      <xs:element name="value" type="nxrich:labelSuggestion" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="suggestionType">
+    <xs:sequence>
+      <xs:element name="property" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="labels" type="nxrich:labelSuggestionsListType"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="suggestionListType">
+    <xs:sequence>
+      <xs:element name="suggestion" type="nxrich:suggestionType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
   <xs:complexType name="itemsType">
     <xs:sequence>
-      <xs:element name="creator">
-        <xs:simpleType>
-          <xs:restriction base="xs:string" ref:resolver="userManagerResolver" ref:type="user"/>
-        </xs:simpleType>
-      </xs:element>
-      <xs:element name="service" type="xs:string" nillable="false" nxsv:nillable="false"/>
-      <xs:element name="kind" type="nxrich:kindType" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="modelName" type="xs:string" nillable="false" nxsv:nillable="false"/>
+      <xs:element name="modelVersion" type="xs:string" />
       <xs:element name="raw" type="nxrich:content"/>
       <xs:element name="normalized" type="nxrich:content"/>
       <xs:element name="inputProperties" type="nxrich:stringList"/>
-      <xs:element name="labels" type="nxrich:stringList"/>
+      <xs:element name="suggestions" type="nxrich:suggestionListType"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="itemsListType">
@@ -45,5 +58,7 @@
   </xs:complexType>
 
   <xs:element name="items" type="nxrich:itemsListType"/>
-
+  <xs:element name="filled" type="nxrich:stringList"/>
+  <xs:element name="corrected" type="nxrich:stringList"/>
+  <xs:element name="history" type="nxrich:content"/>
 </xs:schema>

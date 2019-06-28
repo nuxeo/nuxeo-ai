@@ -20,15 +20,23 @@ package org.nuxeo.ai.enrichment;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
-import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -42,24 +50,17 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
-import org.nuxeo.ecm.core.api.security.SecurityConstants;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml" })
 public class TestDocMetadataService {
 
     public static final String SERVICE_NAME = "reverse";
@@ -87,7 +88,7 @@ public class TestDocMetadataService {
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "File");
         EnrichmentMetadata metadata = enrichTestDoc(testDoc);
         DocumentModel doc = session.getDocument(testDoc.getRef());
-        //Now read the values and check them
+        // Now read the values and check them
         String textReversed = StringUtils.reverse(SOME_TEXT);
         Property classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
@@ -95,11 +96,7 @@ public class TestDocMetadataService {
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
         assertEquals(2, classifications.size());
         Map<String, Object> classification = classifications.get(0);
-        assertEquals(SERVICE_NAME, classification.get(AI_SERVICE_PROPERTY));
-        assertEquals(SecurityConstants.SYSTEM_USERNAME, classification.get(AI_CREATOR_PROPERTY));
-        assertEquals("/classification/custom", classification.get(ENRICHMENT_KIND_PROPERTY));
-        String[] labels = (String[]) classification.get(ENRICHMENT_LABELS_PROPERTY);
-        assertEquals(textReversed.toLowerCase(), labels[0]);
+        assertEquals(SERVICE_NAME, classification.get(ENRICHMENT_MODEL));
         String[] targetProps = (String[]) classification.get(ENRICHMENT_INPUT_DOCPROP_PROPERTY);
         assertEquals(TEST_PROPERTY, targetProps[0]);
         Blob blob = (Blob) classification.get(ENRICHMENT_RAW_KEY_PROPERTY);
@@ -108,13 +105,15 @@ public class TestDocMetadataService {
         assertEquals(textReversed, EnrichmentUtils.getRawBlob(metadata));
         blob = (Blob) classification.get(NORMALIZED_PROPERTY);
         assertEquals(metadata, JacksonUtil.MAPPER.readValue(blob.getString(), EnrichmentMetadata.class));
+        List<Map<String, Object>> suggestions = (List<Map<String, Object>>) classification.get(SUGGESTION_SUGGESTIONS);
+        assertEquals(1, suggestions.size());
+        List<Map<String, Object>> labels = (List<Map<String, Object>>) suggestions.get(0).get(SUGGESTION_LABELS);
+        assertEquals(1, labels.size());
+        assertEquals(textReversed, labels.get(0).get(SUGGESTION_LABEL).toString());
 
-        //Check when there's no metadata to save
+        // Check when there's no metadata to save
         EnrichmentMetadata meta = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
-                                                                 new AIMetadata.Context(doc.getRepositoryName(),
-                                                                                        doc.getId(),
-                                                                                        null,
-                                                                                        null)).build();
+                new AIMetadata.Context(doc.getRepositoryName(), doc.getId(), null, null)).build();
         doc = docMetadataService.saveEnrichment(session, meta);
         txFeature.nextTransaction();
         classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
@@ -140,10 +139,10 @@ public class TestDocMetadataService {
         txFeature.nextTransaction();
         doc = session.getDocument(testDoc.getRef());
         classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
-        //noinspection unchecked
+        // noinspection unchecked
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
-        assertEquals("1 of the 2 enrichments must be removed because our test property is dirty",
-                     1, classifications.size());
+        assertEquals("1 of the 2 enrichments must be removed because our test property is dirty", 1,
+                classifications.size());
     }
 
     /**
@@ -155,9 +154,7 @@ public class TestDocMetadataService {
         txFeature.nextTransaction();
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(testDoc.getId(), testDoc.getRepositoryName(),
-                                                                        testDoc.getParentRef().toString(), testDoc.getType(),
-                                                                        testDoc.getFacets()
-        );
+                testDoc.getParentRef().toString(), testDoc.getType(), testDoc.getFacets());
         blobTextFromDoc.addProperty(TEST_PROPERTY, SOME_TEXT);
         EnrichmentService service = aiComponent.getEnrichmentService(SERVICE_NAME);
         Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);

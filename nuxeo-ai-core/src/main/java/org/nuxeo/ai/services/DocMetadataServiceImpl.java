@@ -18,34 +18,33 @@
  */
 package org.nuxeo.ai.services;
 
-import static org.nuxeo.ai.AIConstants.AI_CREATOR_PROPERTY;
-import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_KIND_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_LABELS_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL_VERSION;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 import static org.nuxeo.ai.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichedPropertiesEventListener;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -83,7 +82,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
-        //TODO: Handle versions here?
+        // TODO: Handle versions here?
         DocumentModel doc;
         try {
             doc = session.getDocument(new IdRef(metadata.context.documentRef));
@@ -114,33 +113,41 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
      * Create a enrichment Map using the enrichment metadata
      */
     protected Map<String, Object> createEnrichment(EnrichmentMetadata metadata) {
+
+        List<Map<String, Object>> suggestions = new ArrayList<>(metadata.getLabels().size());
+        metadata.getLabels().forEach(suggestion -> {
+            Map<String, Object> anEntry = new HashMap<>();
+            anEntry.put(SUGGESTION_PROPERTY, suggestion.getProperty());
+            List<Map<String, Object>> values = new ArrayList<>(suggestion.getValues().size());
+            suggestion.getValues().forEach(value -> {
+                Map<String, Object> val = new HashMap<>(2);
+                val.put(SUGGESTION_LABEL, value.getName());
+                val.put(SUGGESTION_CONFIDENCE, value.getConfidence());
+                values.add(val);
+            });
+            anEntry.put(SUGGESTION_LABELS, values);
+            suggestions.add(anEntry);
+        });
+
         Map<String, Object> anEntry = new HashMap<>();
         AIComponent aiComponent = Framework.getService(AIComponent.class);
 
-        Set<String> labels = new HashSet<>();
-        labels.addAll(metadata.getLabels().stream()
-                              .filter(Objects::nonNull)
-                              .map(label -> label.getName().toLowerCase())
-                              .distinct()
-                              .collect(Collectors.toList()));
-        labels.addAll(getTagLabels(metadata.getTags()));
-
-        if (!labels.isEmpty()) {
-            anEntry.put(ENRICHMENT_LABELS_PROPERTY, labels);
+        if (!suggestions.isEmpty()) {
+            anEntry.put(SUGGESTION_SUGGESTIONS, suggestions);
         }
 
         Blob metaDataBlob;
         Blob rawBlob = null;
         try {
             if (StringUtils.isNotEmpty(metadata.getRawKey())) {
-                TransientStore transientStore = aiComponent
-                        .getTransientStoreForEnrichmentService(metadata.getServiceName());
+                TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(
+                        metadata.getModelName());
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     rawBlob = rawBlobs.get(0);
                 } else {
-                    log.warn(String.format("Unexpected transient store raw blob information for %s. " +
-                                                   "A single raw blob is expected.", metadata.getServiceName()));
+                    log.warn(String.format("Unexpected transient store raw blob information for %s. "
+                            + "A single raw blob is expected.", metadata.getModelName()));
                 }
             }
             metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(metadata));
@@ -148,34 +155,17 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             throw new NuxeoException("Unable to process metadata blob", e);
         }
 
-        anEntry.put(AI_SERVICE_PROPERTY, metadata.getServiceName());
-        anEntry.put(ENRICHMENT_KIND_PROPERTY, metadata.getKind());
+        anEntry.put(ENRICHMENT_MODEL, metadata.getModelName());
         anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, metadata.context.inputProperties);
         anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlob);
         anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
-        if (StringUtils.isNotBlank(metadata.getCreator())) {
-            anEntry.put(AI_CREATOR_PROPERTY, metadata.getCreator());
+        if (metadata.getModelVersion() != null) {
+            anEntry.put(ENRICHMENT_MODEL_VERSION, metadata.getModelVersion());
         }
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, labels));
+            log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, suggestions));
         }
         return anEntry;
-    }
-
-    /**
-     * Produce a list of labels from these tags
-     */
-    @Override
-    public Set<String> getTagLabels(List<AIMetadata.Tag> tags) {
-        Set<String> labels = new HashSet<>();
-        for (AIMetadata.Tag tag : tags) {
-            String tagName = tag.name;
-            labels.add(tagName);
-            if (!tag.features.isEmpty()) {
-                tag.features.forEach(feature -> labels.add(tagName + "/" + feature.getName()));
-            }
-        }
-        return labels;
     }
 
 }

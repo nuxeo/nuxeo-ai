@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.AI_SERVICE_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
@@ -45,8 +45,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.Suggestion;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -139,7 +138,7 @@ public class TestConfiguredStreamProcessors {
         assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
         Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         Assert.assertNotNull(classProp);
-        assertEquals("simpleTest", classProp.get(0).get(AI_SERVICE_PROPERTY).getValue());
+        assertEquals("simpleTest", classProp.get(0).get(ENRICHMENT_MODEL).getValue());
 
         //Confirm event listeners fired
         String description = (String) enrichedDoc.getPropertyValue("dc:description");
@@ -202,9 +201,9 @@ public class TestConfiguredStreamProcessors {
         blobTextFromDoc.setRepositoryName("text");
         List<EnrichmentMetadata.Label> labels = Arrays.asList(new AIMetadata.Label("girl", 0.5f),
                 new AIMetadata.Label("boy", 0.4f));
-        Suggestion suggestion = new Suggestion("my:property", labels);
-        SuggestionMetadata suggestionMetadata = new SuggestionMetadata.Builder(Instant.now(), "m1", "stest",
-                blobTextFromDoc).withSuggestions(Collections.singletonList(suggestion))
+        LabelSuggestion labelSuggestion = new LabelSuggestion("my:property", labels);
+        EnrichmentMetadata EnrichmentMetadata = new EnrichmentMetadata.Builder(Instant.now(), "m1", "stest",
+                blobTextFromDoc).withLabels(Collections.singletonList(labelSuggestion))
                                 .withDigest("blobxx")
                                 .withDigest("fredblogs")
                                 .withCreator("bob")
@@ -216,8 +215,8 @@ public class TestConfiguredStreamProcessors {
         assertEquals(0, called);
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         LogAppender<Record> appender = manager.getAppender("test_suggestion");
-        appender.append("suggest1", toRecord("s1", suggestionMetadata));
-        appender.append("suggest2", toRecord("s2", suggestionMetadata));
+        appender.append("suggest1", toRecord("s1", EnrichmentMetadata));
+        appender.append("suggest2", toRecord("s2", EnrichmentMetadata));
         waitForNoLag(manager, "test_suggestion", "test_suggestion$CustomSuggestionConsumer", Duration.ofSeconds(5));
         assertEquals(2L, call.getValue());
     }

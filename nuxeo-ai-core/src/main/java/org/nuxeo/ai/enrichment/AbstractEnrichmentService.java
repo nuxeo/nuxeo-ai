@@ -18,24 +18,22 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import org.nuxeo.ai.metadata.Suggestion;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.metadata.TagSuggestion;
 import org.nuxeo.ecm.core.api.Blobs;
 
 /**
  * Basic implementation of an enrichment service with mimetype and max file size support.
  * <p>
- * It is the responsibility of the implementing class to save any raw data, however,
- * helper methods are provided by this class.  You can specify your own <code>TransientStore</code> name on the
- * descriptor using <code>transientStore</code>.
+ * It is the responsibility of the implementing class to save any raw data, however, helper methods are provided by this
+ * class. You can specify your own <code>TransientStore</code> name on the descriptor using <code>transientStore</code>.
  */
 public abstract class AbstractEnrichmentService implements EnrichmentService, EnrichmentSupport {
 
@@ -96,18 +94,11 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
         return EnrichmentUtils.saveRawBlob(Blobs.createJSONBlob(rawJson), transientStoreName);
     }
 
-    @Override
-    public Collection<SuggestionMetadata> suggest(BlobTextFromDocument blobtext) {
-        Collection<EnrichmentMetadata> enrichment = enrich(blobtext);
-        return enrichment.stream().map(m -> asSuggestion(blobtext, m)).collect(Collectors.toList());
+    protected List<LabelSuggestion> asLabels(List<AIMetadata.Label> labels) {
+        return Collections.singletonList(new LabelSuggestion(suggestionProperty, labels));
     }
 
-    protected SuggestionMetadata asSuggestion(BlobTextFromDocument blobtext, EnrichmentMetadata aiMetadata) {
-        SuggestionMetadata.Builder builder = new SuggestionMetadata.Builder(Instant.now(), getKind(), getName(), blobtext);
-        builder.withRawKey(aiMetadata.getRawKey());
-        List<Suggestion> suggestions = new ArrayList<>();
-        suggestions.add(new Suggestion(suggestionProperty, aiMetadata.getLabels()));
-        builder.withSuggestions(suggestions);
-        return builder.build();
+    protected List<TagSuggestion> asTags(List<AIMetadata.Tag> tags) {
+        return Collections.singletonList(new TagSuggestion(suggestionProperty, tags));
     }
 }

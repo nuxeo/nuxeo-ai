@@ -73,6 +73,6 @@ public class TestTranslateService {
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata result = metadataCollection.iterator().next();
         assertEquals(1, result.getLabels().size());
-        assertTrue(result.getLabels().get(0).getName().contains(translatedText));
+        assertTrue(result.getLabels().get(0).getValues().get(0).getName().contains(translatedText));
     }
 }

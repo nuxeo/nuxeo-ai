@@ -54,8 +54,8 @@ public class BasicEnrichmentService extends AbstractEnrichmentService implements
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
                                                blobTextFromDoc)
-                        .withLabels(labels)
-                        .withTags(tags)
+                        .withLabels(asLabels(labels))
+                        .withTags(asTags(tags))
                         .build());
     }
 

@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -68,7 +67,7 @@ public class TestRestEnrichment {
         EnrichmentMetadata metadata = results.iterator().next();
         assertNotNull(metadata.getRawKey());
 
-        TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(metadata.getServiceName());
+        TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(metadata.getModelName());
         List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
         assertEquals(1, rawBlobs.size());
         String raw = rawBlobs.get(0).getString();

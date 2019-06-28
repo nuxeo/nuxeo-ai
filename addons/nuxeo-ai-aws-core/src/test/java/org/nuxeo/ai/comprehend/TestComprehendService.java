@@ -72,12 +72,11 @@ public class TestComprehendService {
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata result = metadataCollection.iterator().next();
-        assertTrue(result.isSingleLabel());
-        assertEquals(SentimentType.NEGATIVE.toString(), result.getLabels().get(0).getName());
+        assertEquals(SentimentType.NEGATIVE.toString(), result.getLabels().get(0).getValues().get(0).getName());
         textStream.addProperty("dc:title", "A car");
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
-        assertEquals(SentimentType.NEUTRAL.toString(), result.getLabels().get(0).getName());
+        assertEquals(SentimentType.NEUTRAL.toString(), result.getLabels().get(0).getValues().get(0).getName());
     }
 
     @Test

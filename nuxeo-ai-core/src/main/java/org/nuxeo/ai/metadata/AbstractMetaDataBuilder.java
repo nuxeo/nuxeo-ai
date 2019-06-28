@@ -30,14 +30,14 @@ import java.util.Set;
  */
 public abstract class AbstractMetaDataBuilder {
 
-    //mandatory
+    // mandatory
     public final Instant created;
 
-    public final String serviceName;
+    public final String modelName;
 
     public final String kind;
 
-    //Context
+    // Context
     protected final String repositoryName;
 
     protected final String documentRef;
@@ -48,28 +48,29 @@ public abstract class AbstractMetaDataBuilder {
 
     protected Set<String> digests;
 
-    //optional
+    // optional
+    protected String modelVersion;
+
     protected String rawKey;
 
     protected String creator;
 
-    public AbstractMetaDataBuilder(Instant created, String kind, String serviceName,
-                                   String repositoryName, String documentRef,
-                                   Set<String> digests,
+    public AbstractMetaDataBuilder(Instant created, String kind, String modelName,
+                                   String repositoryName, String documentRef, Set<String> digests,
                                    Set<String> inputProperties) {
         this.created = created;
         this.kind = kind;
-        this.serviceName = serviceName;
+        this.modelName = modelName;
         this.repositoryName = repositoryName;
         this.documentRef = documentRef;
         this.digests = digests;
         this.inputProperties = inputProperties;
     }
 
-    public AbstractMetaDataBuilder(Instant created, String kind, String serviceName, AIMetadata.Context context) {
+    public AbstractMetaDataBuilder(Instant created, String kind, String modelName, AIMetadata.Context context) {
         this.created = created;
         this.kind = kind;
-        this.serviceName = serviceName;
+        this.modelName = modelName;
         if (context == null) {
             throw new IllegalArgumentException("You must specify a valid context.");
         }
@@ -92,6 +93,10 @@ public abstract class AbstractMetaDataBuilder {
         return creator;
     }
 
+    public String getModelVersion() {
+        return modelVersion;
+    }
+
     public AbstractMetaDataBuilder withDocumentProperties(Set<String> targetDocumentProperty) {
         this.inputProperties = targetDocumentProperty;
         return this;
@@ -104,6 +109,11 @@ public abstract class AbstractMetaDataBuilder {
 
     public AbstractMetaDataBuilder withRawKey(String rawBlobKey) {
         this.rawKey = rawBlobKey;
+        return this;
+    }
+
+    public AbstractMetaDataBuilder withModelVersion(String modelVersion) {
+        this.modelVersion = modelVersion;
         return this;
     }
 
@@ -123,9 +133,7 @@ public abstract class AbstractMetaDataBuilder {
     }
 
     public <T extends AIMetadata> T build() {
-        if (StringUtils.isBlank(serviceName)
-                || StringUtils.isBlank(kind)
-                || created == null) {
+        if (StringUtils.isBlank(modelName) || StringUtils.isBlank(kind) || created == null) {
             throw new IllegalArgumentException("Invalid metadata has been given. " + this.toString());
         }
 
