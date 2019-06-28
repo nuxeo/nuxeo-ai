@@ -90,7 +90,7 @@ public class TestRekognitionService {
         List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
         assertTrue(metadataCollection.get(0).getTags().size() >= 1);
-        assertTrue(metadataCollection.get(0).getTags().get(0).features.size() >= 2);
+        assertTrue(metadataCollection.get(0).getTags().get(0).getValues().get(0).features.size() >= 2);
     }
 
     @Test
@@ -101,7 +101,7 @@ public class TestRekognitionService {
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        AIMetadata.Tag single = metadataCollection.iterator().next().getTags().iterator().next();
+        AIMetadata.Tag single = metadataCollection.iterator().next().getTags().get(0).getValues().iterator().next();
         assertEquals("Steve Ballmer", single.name);
         assertNotNull(single.box);
 
@@ -123,7 +123,7 @@ public class TestRekognitionService {
         blobTextFromDoc = setupBlobTextFromDocument("creative_adults-beautiful-blue.jpg");
         metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        assertTrue(metadataCollection.iterator().next().getLabels().size() >= 2);
+        assertTrue(metadataCollection.iterator().next().getLabels().stream().mapToInt(l -> l.getValues().size()).sum() >= 2);
     }
 
     @Test
@@ -138,7 +138,7 @@ public class TestRekognitionService {
         EnrichmentMetadata metadata = metadataCollection.iterator().next();
         assertNotNull(metadata);
         assertFalse(metadata.getTags().isEmpty());
-        assertNotNull(metadata.getTags().get(0).box);
+        assertNotNull(metadata.getTags().get(0).getValues().get(0).box);
         String normalized = JacksonUtil.MAPPER.writeValueAsString(metadata);
         assertNotNull(normalized);
 

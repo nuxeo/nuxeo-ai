@@ -21,17 +21,19 @@ package org.nuxeo.ai.metadata;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * A suggestion, made up of a property name and one or more labels
  */
-public class Suggestion implements Serializable {
+public class LabelSuggestion implements Serializable {
 
     private static final long serialVersionUID = 7549317566844895574L;
 
@@ -40,7 +42,7 @@ public class Suggestion implements Serializable {
     protected final List<AIMetadata.Label> values;
 
     @JsonCreator
-    public Suggestion(@JsonProperty("property") String property, @JsonProperty("values") List<AIMetadata.Label> values) {
+    public LabelSuggestion(@JsonProperty("property") String property, @JsonProperty("values") List<AIMetadata.Label> values) {
         this.property = property;
         this.values = values != null ? unmodifiableList(values) : emptyList();
     }
@@ -61,7 +63,7 @@ public class Suggestion implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Suggestion that = (Suggestion) o;
+        LabelSuggestion that = (LabelSuggestion) o;
         return Objects.equals(property, that.property) && Objects.equals(values, that.values);
     }
 

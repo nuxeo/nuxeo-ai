@@ -30,13 +30,17 @@ public class AIConstants {
     public static final String ENRICHMENT_SCHEMA_NAME = "enrichment";
     public static final String ENRICHMENT_SCHEMA_PREFIX = "enrichment:";
     public static final String ENRICHMENT_ITEMS = "items";
-    public static final String AI_SERVICE_PROPERTY = "service";
+    public static final String ENRICHMENT_MODEL = "modelName";
+    public static final String ENRICHMENT_MODEL_VERSION = "modelVersion";
     public static final String ENRICHMENT_INPUT_DOCPROP_PROPERTY = "inputProperties";
     public static final String NORMALIZED_PROPERTY = "normalized";
     public static final String ENRICHMENT_RAW_KEY_PROPERTY = "raw";
-    public static final String AI_CREATOR_PROPERTY = "creator";
-    public static final String ENRICHMENT_LABELS_PROPERTY = "labels";
-    public static final String ENRICHMENT_KIND_PROPERTY = "kind";
+
+    public static final String SUGGESTION_PROPERTY = "property";
+    public static final String SUGGESTION_SUGGESTIONS = "suggestions";
+    public static final String SUGGESTION_LABEL = "label";
+    public static final String SUGGESTION_CONFIDENCE = "confidence";
+    public static final String SUGGESTION_LABELS = "labels";
 
     public static final String EXPORT_ACTION_NAME = "bulkDatasetExport";
     public static final String EXPORT_FEATURES_PARAM = "features";

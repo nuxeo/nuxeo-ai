@@ -41,8 +41,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.Suggestion;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.TagSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
@@ -74,7 +75,7 @@ public class TestEnrichmentMetaData {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalid() {
         new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
-        new SuggestionMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
+        new EnrichmentMetadata.Builder(Instant.now(), "m1", "test", (AIMetadata.Context) null).build();
     }
 
     @Test
@@ -96,8 +97,8 @@ public class TestEnrichmentMetaData {
         blobTextFromDoc.addProperty("dc:title", "tbloby");
         EnrichmentMetadata metadata =
                 new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc)
-                        .withLabels(labels)
-                        .withTags(tags)
+                        .withLabels(Collections.singletonList(new LabelSuggestion("my:property", labels)))
+                        .withTags(Collections.singletonList(new TagSuggestion("my:property2", tags)))
                         .withDigest("blobxx")
                         .withDigest("freblogs")
                         .withCreator("bob")
@@ -109,17 +110,10 @@ public class TestEnrichmentMetaData {
         assertEquals(metadata, metadataBackAgain);
         assertNotNull(metadataBackAgain.toString());
 
-        Suggestion suggestion = new Suggestion("my:property", labels);
-        SuggestionMetadata suggestionMetadata = new SuggestionMetadata.Builder(Instant.now(), "m1", "stest", blobTextFromDoc)
-                .withSuggestions(Collections.singletonList(suggestion))
-                .withDigest("blobxx")
-                .withDigest("fredblogs")
-                .withCreator("bob")
-                .withRawKey("xyz").build();
-
-        SuggestionMetadata suggest = EnrichmentUtils.copyMetadata(suggestionMetadata, blobTextFromDoc);
+        EnrichmentMetadata suggest = EnrichmentUtils.copyMetadata(metadataBackAgain, blobTextFromDoc);
         assertNotNull(suggest);
-        assertEquals(suggest.getSuggestions(), suggestionMetadata.getSuggestions());
+        assertEquals(metadataBackAgain.getLabels(), metadata.getLabels());
+        assertEquals(metadataBackAgain.getTags(), metadata.getTags());
     }
     
     @Test

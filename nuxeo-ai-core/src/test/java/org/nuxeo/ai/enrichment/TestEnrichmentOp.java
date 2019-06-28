@@ -84,13 +84,11 @@ public class TestEnrichmentOp {
         assertEquals(2, results.size());
         EnrichmentMetadata resultMetadata = results.get(0);
         String reversed = StringUtils.reverse(title);
-        assertTrue(resultMetadata.isSingleLabel());
-        assertEquals(reversed, resultMetadata.getLabels().get(0).getName());
+        assertEquals(reversed, resultMetadata.getLabels().get(0).getValues().get(0).getName());
         assertEquals(reversed, EnrichmentUtils.getRawBlob(resultMetadata));
         assertNotNull(resultMetadata.context.documentRef);
         assertEquals(new HashSet<>(Arrays.asList("dc:title")), resultMetadata.context.inputProperties);
         assertTrue("reverse service sets the username so must be true", resultMetadata.isHuman());
-        assertTrue("reverse service must return a single label", resultMetadata.isSingleLabel());
 
         try {
             params.put("enrichmentName", "I_DONT_EXIST");

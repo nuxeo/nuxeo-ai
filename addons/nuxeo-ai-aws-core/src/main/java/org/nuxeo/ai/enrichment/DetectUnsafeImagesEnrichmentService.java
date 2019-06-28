@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -103,7 +102,7 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withLabels(labels)
+                                                 .withLabels(asLabels(labels))
                                                  .withRawKey(rawKey)
                                                  .withDocumentProperties(singleton(propName))
                                                  .build());

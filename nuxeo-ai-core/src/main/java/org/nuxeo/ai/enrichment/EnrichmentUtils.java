@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -78,8 +77,7 @@ public class EnrichmentUtils {
 
     public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
 
-    protected static final TypeReference<List<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE =
-            new TypeReference<List<EnrichmentMetadata>>() {
+    protected static final TypeReference<List<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE = new TypeReference<List<EnrichmentMetadata>>() {
     };
 
     private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
@@ -120,9 +118,8 @@ public class EnrichmentUtils {
      * Creates a key based on a concatenation of the property value hash codes used by the BlobTextFromDocument.
      */
     public static String makeKeyUsingProperties(BlobTextFromDocument blobTextFromDoc, String prefix) {
-        return makeKeyUsingStream(blobTextFromDoc.getProperties().values()
-                                                 .stream()
-                                                 .map(s -> String.valueOf(s.hashCode())), prefix);
+        return makeKeyUsingStream(
+                blobTextFromDoc.getProperties().values().stream().map(s -> String.valueOf(s.hashCode())), prefix);
     }
 
     /**
@@ -138,8 +135,8 @@ public class EnrichmentUtils {
     }
 
     /**
-     * Saves the blob using the using the specified transient store and returns the blob key.
-     * If the transientStoreName is NULL the TransientStoreService will still return the default TransientStore
+     * Saves the blob using the using the specified transient store and returns the blob key. If the transientStoreName
+     * is NULL the TransientStoreService will still return the default TransientStore
      */
     public static String saveRawBlob(Blob rawBlob, String transientStoreName) {
         TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
@@ -155,7 +152,7 @@ public class EnrichmentUtils {
         try {
             if (isNotBlank(metadata.getRawKey())) {
                 TransientStore transientStore = Framework.getService(AIComponent.class)
-                                                         .getTransientStoreForEnrichmentService(metadata.getServiceName());
+                                                         .getTransientStoreForEnrichmentService(metadata.getModelName());
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     return rawBlobs.get(0).getString();
@@ -271,25 +268,14 @@ public class EnrichmentUtils {
      * Copy enrichment AIMetadata, using the BlobTextFromDocument as the context.
      */
     public static <T extends AIMetadata> T copyMetadata(T metadata, BlobTextFromDocument blobTextFromDoc) {
-        if (metadata instanceof EnrichmentMetadata) {
-            EnrichmentMetadata meta = (EnrichmentMetadata) metadata;
-            return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.serviceName,
-                    blobTextFromDoc).withLabels(meta.getLabels())
-                                    .withTags(meta.getTags())
-                                    .withRawKey(meta.rawKey)
-                                    .withDocumentProperties(meta.context.inputProperties)
-                                    .withCreator(meta.creator)
-                                    .build();
-        } else {
-            SuggestionMetadata meta = (SuggestionMetadata) metadata;
-            return new SuggestionMetadata.Builder(meta.created, meta.kind, meta.serviceName,
-                    blobTextFromDoc).withSuggestions(meta.getSuggestions())
-                                    .withRawKey(meta.rawKey)
-                                    .withDocumentProperties(meta.context.inputProperties)
-                                    .withCreator(meta.creator)
-                                    .build();
-        }
-
+        EnrichmentMetadata meta = (EnrichmentMetadata) metadata;
+        return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.modelName,
+                blobTextFromDoc).withLabels(meta.getLabels())
+                                .withTags(meta.getTags())
+                                .withRawKey(meta.rawKey)
+                                .withDocumentProperties(meta.context.inputProperties)
+                                .withCreator(meta.creator)
+                                .build();
     }
 
     /**
@@ -298,6 +284,21 @@ public class EnrichmentUtils {
     public static int optionAsInteger(Map<String, String> options, String option, int defaultValue) {
         String value = options.get(option);
         return value == null ? defaultValue : Integer.parseInt(value);
+    }
+
+    /**
+     * Converts tags to a Set of labels
+     */
+    public static Set<String> getTagLabels(List<AIMetadata.Tag> tags) {
+        Set<String> labels = new HashSet<>();
+        for (AIMetadata.Tag tag : tags) {
+            String tagName = tag.name;
+            labels.add(tagName);
+            if (!tag.features.isEmpty()) {
+                tag.features.forEach(feature -> labels.add(tagName + "/" + feature.getName()));
+            }
+        }
+        return labels;
     }
 
 }

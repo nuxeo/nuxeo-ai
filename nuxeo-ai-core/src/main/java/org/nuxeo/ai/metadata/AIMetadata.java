@@ -47,22 +47,25 @@ public abstract class AIMetadata implements Serializable {
 
     public final String creator;
 
-    public final String serviceName;
+    public final String modelName;
 
     public final Context context;
+
+    public final String modelVersion;
 
     public final String kind;
 
     public final String rawKey;
 
-    public AIMetadata(String serviceName, String kind, Context context,
+    public AIMetadata(String modelName, String modelVersion, String kind, Context context,
                       String creator, Instant created, String rawKey) {
         this.kind = kind;
         this.context = context;
         this.created = created;
         this.creator = creator;
         this.rawKey = rawKey;
-        this.serviceName = serviceName;
+        this.modelName = modelName;
+        this.modelVersion = modelVersion;
     }
 
     public String getKind() {
@@ -81,8 +84,12 @@ public abstract class AIMetadata implements Serializable {
         return rawKey;
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public String getModelName() {
+        return modelName;
+    }
+
+    public String getModelVersion() {
+        return modelVersion;
     }
 
     @JsonIgnore
@@ -101,7 +108,8 @@ public abstract class AIMetadata implements Serializable {
         AIMetadata that = (AIMetadata) o;
         return Objects.equals(created, that.created) &&
                 Objects.equals(creator, that.creator) &&
-                Objects.equals(serviceName, that.serviceName) &&
+                Objects.equals(modelName, that.modelName) &&
+                Objects.equals(modelVersion, that.modelVersion) &&
                 Objects.equals(kind, that.kind) &&
                 Objects.equals(context, that.context) &&
                 Objects.equals(rawKey, that.rawKey);
@@ -109,7 +117,7 @@ public abstract class AIMetadata implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(created, creator, serviceName, kind, context, rawKey);
+        return Objects.hash(created, creator, modelName, modelVersion, kind, context, rawKey);
     }
 
     /**

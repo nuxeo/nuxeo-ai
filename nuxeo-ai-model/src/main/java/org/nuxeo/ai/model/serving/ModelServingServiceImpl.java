@@ -33,7 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentService;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.ai.services.AIComponent;
@@ -150,7 +150,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
-    public List<SuggestionMetadata> predict(DocumentModel document) {
+    public List<EnrichmentMetadata> predict(DocumentModel document) {
         return predicates.entrySet()
                          .stream()
                          .filter(e -> e.getValue().test(document))
