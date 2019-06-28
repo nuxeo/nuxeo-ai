@@ -147,7 +147,7 @@ public class TestTextractService {
 
         EnrichmentMetadata metadata = builder.build();
         assertEquals(1, metadata.getLabels().size());
-        assertTrue(metadata.getLabels().get(0).getName().contains("There are 1 blocks"));
+        assertTrue(metadata.getLabels().get(0).getValues().get(0).getName().contains("There are 1 blocks"));
     }
 
 

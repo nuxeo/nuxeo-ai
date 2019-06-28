@@ -103,7 +103,7 @@ public class TranslateEnrichmentService extends AbstractEnrichmentService implem
             builder.withRawKey(rawKey);
         }
 
-        return builder.withLabels(labels).build();
+        return builder.withLabels(asLabels(labels)).build();
     }
 
     @Override

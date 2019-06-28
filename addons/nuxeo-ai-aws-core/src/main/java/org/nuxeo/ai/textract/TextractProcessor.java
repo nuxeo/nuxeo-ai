@@ -54,24 +54,4 @@ public interface TextractProcessor {
         return block.getConfidence() / 100;
     }
 
-    /**
-     * Convenience method to add a label.
-     */
-    default void addLabel(EnrichmentMetadata.Builder builder, String name, float confidence) {
-        if (builder != null) {
-            builder.addLabel(new AIMetadata.Label(name, confidence));
-        }
-    }
-
-    /**
-     * Convenience method to add a tag.
-     */
-    default void addTag(EnrichmentMetadata.Builder builder, String name, String kind, String reference, Block block) {
-        if (builder != null) {
-            builder.addTag(new AIMetadata.Tag(name, kind, reference, asBox(block),
-                                              Collections.emptyList(),
-                                              normalizeConfidence(block)
-            ));
-        }
-    }
 }

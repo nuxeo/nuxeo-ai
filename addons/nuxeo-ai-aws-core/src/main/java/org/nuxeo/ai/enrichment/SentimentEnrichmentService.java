@@ -29,7 +29,6 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.comprehend.ComprehendService;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
@@ -82,7 +81,7 @@ public class SentimentEnrichmentService extends AbstractEnrichmentService implem
         });
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withLabels(labels)
+                                                 .withLabels(asLabels(labels))
                                                  .withRawKey(rawKey)
                                                  .withDocumentProperties(Collections.singleton(propName))
                                                  .build());

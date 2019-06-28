@@ -20,18 +20,17 @@ package org.nuxeo.ai.enrichment;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.functions.AbstractSuggestionConsumer;
-import org.nuxeo.ai.metadata.SuggestionMetadata;
+import org.nuxeo.ai.functions.AbstractEnrichmentConsumer;
 
 /**
  * Example consumer of suggestion data
  */
-public class CustomSuggestionConsumer extends AbstractSuggestionConsumer {
+public class CustomSuggestionConsumer extends AbstractEnrichmentConsumer {
 
     private static final Log log = LogFactory.getLog(CustomSuggestionConsumer.class);
 
     @Override
-    public void accept(SuggestionMetadata suggestionMetadata) {
-        log.info("Metadata is "+ suggestionMetadata);
+    public void accept(EnrichmentMetadata EnrichmentMetadata) {
+        log.info("Metadata is "+ EnrichmentMetadata);
     }
 }

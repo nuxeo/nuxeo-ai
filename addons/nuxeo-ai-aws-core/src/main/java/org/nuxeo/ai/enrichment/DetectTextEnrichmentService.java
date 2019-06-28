@@ -108,7 +108,7 @@ public class DetectTextEnrichmentService extends AbstractEnrichmentService imple
         String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withTags(tags)
+                                                 .withTags(asTags(tags))
                                                  .withRawKey(rawKey)
                                                  .withDocumentProperties(singleton(propName))
                                                  .build());

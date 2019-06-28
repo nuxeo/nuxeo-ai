@@ -46,13 +46,13 @@ public class TextReversingEnrichmentService extends AbstractEnrichmentService {
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
                                                blobTextFromDoc)
-                    .withLabels(labels)
+                    .withLabels(asLabels(labels))
                     .withRawKey(rawKey)
                     .withCreator(SecurityConstants.SYSTEM_USERNAME).build(),
                 new EnrichmentMetadata.Builder("/classification/custom",
                                                name,
                                                blobTextFromDoc)
-                    .withLabels(labels)
+                    .withLabels(asLabels(labels))
                     .withRawKey(rawKey)
                     .withDocumentProperties(Stream.of("dc:description").collect(Collectors.toSet()))
                     .withCreator(SecurityConstants.SYSTEM_USERNAME).build()
