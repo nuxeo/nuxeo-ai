@@ -273,8 +273,8 @@ public class ImageQualityEnrichmentService extends RestEnrichmentService {
 
         //Return the result
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withLabels(labels)
-                                                 .withTags(tags)
+                                                 .withLabels(asLabels(labels))
+                                                 .withTags(asTags(tags))
                                                  .withRawKey(rawKey)
                                                  .build());
     }
