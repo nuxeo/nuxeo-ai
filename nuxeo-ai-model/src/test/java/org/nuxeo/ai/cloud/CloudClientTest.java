@@ -19,6 +19,7 @@
 package org.nuxeo.ai.cloud;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,6 +42,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -144,6 +146,13 @@ public class CloudClientTest {
         String resBody = client.put(client.byProjectId("/models"), putBody,
                 response -> response.isSuccessful() ? response.body().string() : null);
         assertTrue(resBody.contains(putBody));
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void shouldGetModelsFromCloud() throws IOException {
+        JSONBlob models = client.getCloudAIModels(session);
+        assertThat(models.toString()).isNotEmpty();
     }
 
     @Test

@@ -21,10 +21,12 @@ bin/
 .mylar
 *.orig
 .pmd
-.project
 *.pyc
 .pydevproject
 *.rej
 *~bak
 *-bak
 *.bak
+.factorypath
+.vscode
+.java-version
