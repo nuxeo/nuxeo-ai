@@ -29,8 +29,16 @@ limitations under the License.
             .main {
                 @apply --layout-vertical;
                 @apply --layout-flex-3;
-                padding-right: 8px;
+                padding: 2em 1em 0 2em;
                 overflow: hidden;
+            }
+
+            .mainCard {
+                padding: 1em;
+            }
+
+            .sideCard {
+                padding: 1em 2em;
             }
 
             .side {
@@ -39,6 +47,8 @@ limitations under the License.
                 position: relative;
                 margin-bottom: var(--nuxeo-card-margin-bottom, 16px);
                 min-height: 60vh;
+                padding: 2em 2em 0 0;
+
             }
 
             .totalLabel {
@@ -50,34 +60,41 @@ limitations under the License.
                 @apply --layout-wrap;
             }
 
+
             /* #exportDatasetBtn {
                     color: var(--nuxeo-button-primary-text);
                     background-color: var(--nuxeo-button-primary-focus);
                 } */
         </style>
 
-        <nuxeo-operation id="aiStats" op="AI.DatasetStats" response="{{_stats}}"></nuxeo-operation>
         <nuxeo-operation id="aiExport" op="AI.DatasetExport"></nuxeo-operation>
-
+        <nuxeo-operation id="aiExportStatus" op="AI.ExportStatus" on-response="_statusReceived">
+        </nuxeo-operation>
         <div class="page">
             <div class="main">
                 <nuxeo-card heading="[[i18n('admin.ai.model.selection')]]">
-                    <paper-textarea id="queryInput" type="search" label="[[i18n('admin.ai.query')]]" value="{{query}}"
-                        placeholder="[[i18n('imaging.query.placeholder')]]" autofocus>
-                    </paper-textarea>
-                    <nuxeo-document-suggestion
-                        value="{{document.properties.ai_model_schema:training_algorithm_document}}" label=""
-                        placeholder="Click here to view model list" min-chars="0" role="widget">
-                    </nuxeo-document-suggestion>
+                    <div class="mainCard">
+                        <nuxeo-input class="widget" value="{{typeName}}" label="Document Type" type="text">
+                        </nuxeo-input>
+                        <nuxeo-document-suggestion on-selected-item-changed="_updateItem" value="{{fetchedDoc}}"
+                                                   label="" placeholder="[[i18n('admin.ai.model.listing')]]"
+                                                   min-chars="0" role="widget"
+                                                   operation="AI.GetModel">
+                        </nuxeo-document-suggestion>
 
-                    <paper-button id="exportDatasetBtn" noink on-tap="_export">[[i18n('admin.ai.export.action')]]
-                    </paper-button>
+                        <paper-button id="exportDatasetBtn" noink on-tap="_export">[[i18n('admin.ai.export.action')]]
+                        </paper-button>
+                    </div>
                 </nuxeo-card>
             </div>
             <div class="side">
                 <nuxeo-card heading="[[i18n('admin.ai.export')]]">
-                    <div class="row-container">
-                        [[_exportText]]
+                    <div class="sideCard">
+                        <div>
+                            <template is="dom-repeat" items="[[statuses]]">
+                                <nuxeo-ai-export-progress status="[[item]]"></nuxeo-ai-export-progress>
+                            </template>
+                        </div>
                     </div>
                 </nuxeo-card>
             </div>
@@ -90,83 +107,83 @@ limitations under the License.
             is: 'nuxeo-admin-ai-export',
             behaviors: [Nuxeo.LayoutBehavior],
             properties: {
-                inProps: {
+                typeName: {
                     type: String,
-                    value: 'dc:title,file:content'
+                    value: ''
                 },
-                outProps: {
-                    type: String,
-                    value: 'dc:lastContributor'
+                fetchedDoc: {
+                    type: Object
                 },
-                splitProp: {
-                    type: String,
-                    value: '80'
+                currentDoc: {
+                    type: Object
                 },
-                query: {
-                    type: String,
-                    value: "SELECT * FROM Document WHERE ecm:primaryType = 'File'"
-                },
-                _exportText: {
-                    type: String,
-                    value: 'No exports'
-                },
-                _stats: {
-                    type: String
+
+                statuses: {
+                    type: Array,
+                    value: []
                 }
             },
-            _displayVal: function (val) {
-                if (val.numericValue != null) {
-                    return val.numericValue;
+
+            ready: function () {
+                this.$.aiExportStatus.execute();
+            },
+
+            _statusReceived: function (resp) {
+                this.statuses = resp.detail.response.value;
+                var pollTime = 30000;
+                // defines if the tab is currently active if so, we want to poll more often
+                if (this.offsetParent !== null) {
+                    var pollTime = 2000;
                 }
-                if (val.type === 'terms') {
-                    var toReturn = '';
-                    for (i = 0, len = val.value.length; i < len; i++) {
-                        toReturn += ' ' + val.value[i].key + ' (' + val.value[i].docCount + ')';
-                    }
-                    return toReturn;
-                } else {
-                    return JSON.stringify(val.value);
-                }
+
+                setTimeout(this._poll, pollTime, this.$.aiExportStatus);
             },
-            _filter: function (items) {
-                return items && items.filter(function (item) {
-                    return !(item.type === 'total' || item.type === 'count');
-                });
+
+            _poll: function (func) {
+                return func.execute();
             },
-            _computeLabel: function (theStats, fieldName) {
-                var foundItem = theStats && theStats.find(function (item) {
-                    return item.type === fieldName;
-                });
-                return foundItem && this.i18n('admin.ai.export.' + fieldName, foundItem.numericValue);
+
+            _updateItem: function (e) {
+                this.$.currentDoc = e.detail.value;
             },
-            _recompute: function () {
-                this.$.aiStats.params = {
-                    'query': this.query,
-                    'inputs': this.inProps,
-                    'outputs': this.outProps
-                };
-                this.$.aiStats.execute().then(function (response) {
-                    if (response === undefined || response.length === 0) {
-                        this.fire('notify', { message: this.i18n('admin.ai.stats.none') });
-                    }
-                }.bind(this)).catch(function () {
-                    this.fire('notify', { message: this.i18n('admin.ai.stats.error') });
-                }.bind(this));
-            },
+
             _export: function () {
+                if (!this._canExport()) {
+                    this.fire('notify', {message: 'Type and Model are required parameters'});
+                    return;
+                }
+                let props = this.$.currentDoc.properties;
+                let inputs = props["ai_model:inputs"];
+                let input = inputs.map(e => {
+                    return e.name
+                }).join(',');
+
+                let outputs = props["ai_model:outputs"];
+                let output = outputs.map(e => {
+                    return e.name
+                }).join(',');
+
+                let query = `SELECT * FROM Document WHERE ecm:isProxy = 0 AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ecm:primaryType = '${this.typeName}'`;
                 this.$.aiExport.params = {
-                    'query': this.query,
-                    'inputs': this.inProps,
-                    'outputs': this.outProps,
-                    'split': this.splitProp
+                    'query': query,
+                    'inputs': input,
+                    'outputs': output
                 };
-                this.$.aiExport.execute().then(function (response) {
-                    this._exportText = this.i18n('admin.ai.export.id', response.value);
-                    this.fire('notify', { message: this.i18n('admin.ai.export.success') });
-                }.bind(this)).catch(function () {
-                    this._exportText = '';
-                    this.fire('notify', { message: this.i18n('admin.ai.export.error') });
-                }.bind(this));
+
+                this.$.aiExport.execute()
+                    .then(function (response) {
+                        this.fire('notify', {message: this.i18n('admin.ai.export.success')});
+                        return response.value;
+                    }.bind(this))
+                    .catch(function () {
+                        this.fire('notify', {message: this.i18n('admin.ai.export.error')});
+                    }.bind(this))
+
+
+            },
+
+            _canExport: function () {
+                return this.typeName.length !== 0 && this.$.currentDoc !== undefined;
             }
         });
     </script>
