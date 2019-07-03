@@ -20,5 +20,6 @@
   "admin.ai.stats.field" : "Property Name",
   "admin.ai.stats.type" : "Statistic Type",
   "admin.ai.stats.value" : "Value",
-  "admin.ai.model.selection" : "Model selection"
+  "admin.ai.model.selection" : "Model selection",
+  "admin.ai.model.listing" : "Click here to view model list"
 }
