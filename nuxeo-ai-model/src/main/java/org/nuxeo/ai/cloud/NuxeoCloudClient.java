@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.cloud;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
@@ -27,8 +28,12 @@ import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
 import static org.nuxeo.client.ConstantsV1.API_PATH;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -42,7 +47,14 @@ import org.nuxeo.client.objects.upload.BatchUpload;
 import org.nuxeo.client.spi.NuxeoClientException;
 import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.io.registry.MarshallerRegistry;
+import org.nuxeo.ecm.core.io.registry.Reader;
+import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -208,6 +220,19 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             log.error("Failed to process corpus dataset. ", e);
         }
         return false;
+    }
+
+    @Override
+    public JSONBlob getCloudAIModels(CoreSession session) throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, "models?properties=ai_model");
+        Response response = getClient().get(modelsPath.toString());
+        if (response.body() == null) {
+            log.warn("Could not resolve any AI Models");
+            return new JSONBlob("{}");
+        }
+
+        String body = response.body().string();
+        return new JSONBlob(body);
     }
 
     @Override

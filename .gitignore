@@ -29,3 +29,5 @@ bin/
 *-bak
 *.bak
 .factorypath
+.vscode
+.java-version

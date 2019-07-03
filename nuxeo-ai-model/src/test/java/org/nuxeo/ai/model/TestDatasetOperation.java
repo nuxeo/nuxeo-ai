@@ -32,10 +32,20 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.inject.Inject;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nuxeo.ai.model.export.DatasetUploadOperation;
+import org.nuxeo.ai.model.export.DatasetExportInterruptOperation;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
+import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
+import org.nuxeo.ai.model.export.DatasetGetModelOperation;
+import org.nuxeo.ai.model.export.DatasetUploadOperation;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -43,17 +53,15 @@ import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({AutomationFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
@@ -64,6 +72,9 @@ import java.util.Map;
 public class TestDatasetOperation {
 
     public static final String TEST_QUERY = "SELECT * from document WHERE dc:title IS NOT NULL";
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(5089);
 
     @Inject
     protected CoreSession session;
@@ -187,5 +198,44 @@ public class TestDatasetOperation {
         chain = new OperationChain("uploadAgainChain2");
         chain.add(DatasetUploadOperation.ID).from(params);
         automationService.run(ctx, chain);
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void shouldRetrieveAIModels() throws OperationException {
+        OperationContext ctx = new OperationContext(session);
+        JSONBlob result = (JSONBlob) automationService.run(ctx, DatasetGetModelOperation.ID);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void shouldRunInterruptOperation() throws OperationException {
+        OperationContext ctx = new OperationContext(session);
+        HashMap<String, Serializable> params = new HashMap<>();
+        params.put("commandId", "fakeOne");
+        boolean result = (boolean) automationService.run(ctx, DatasetExportInterruptOperation.ID, params);
+        assertTrue(result);
+    }
+
+    @Test
+    public void shouldRunRestartOperation() throws OperationException {
+        OperationContext ctx = new OperationContext(session);
+        Map<String, Object> params = new HashMap<>();
+
+        int split = 60;
+        params.put("query", TEST_QUERY);
+        params.put("inputs", "dc:title,dc:description");
+        params.put("outputs", "dc:nature");
+        params.put("split", split);
+        OperationChain chain = new OperationChain("testChain1");
+        chain.add(DatasetExportOperation.ID).from(params);
+        String returned = (String) automationService.run(ctx, chain);
+        assertNotNull(returned);
+
+        ctx = new OperationContext(session);
+        params = new HashMap<>();
+        params.put("commandId", returned);
+        String result = (String) automationService.run(ctx, DatasetExportRestartOperation.ID, params);
+        assertNotNull(result);
     }
 }

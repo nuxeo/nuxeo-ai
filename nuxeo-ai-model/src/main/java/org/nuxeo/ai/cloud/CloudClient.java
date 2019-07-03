@@ -19,7 +19,10 @@
 package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
+
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 
 import okhttp3.Response;
 
@@ -37,6 +40,13 @@ public interface CloudClient {
      * Upload the blobs to the cloud, using data from the corpus document.
      */
     boolean uploadedDataset(DocumentModel corpusDoc);
+
+    /**
+     * @param session session of acting user
+     * @return a list of AI Models retrieved from AI Cloud
+     * @throws IOException
+     */
+    JSONBlob getCloudAIModels(CoreSession session) throws IOException;
 
     /*
      * Make a http POST request to the cloud using the provided parameters.
