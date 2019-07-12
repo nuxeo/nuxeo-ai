@@ -41,6 +41,9 @@ public class AIConstants {
     public static final String SUGGESTION_LABEL = "label";
     public static final String SUGGESTION_CONFIDENCE = "confidence";
     public static final String SUGGESTION_LABELS = "labels";
+    public static final String AUTO_FILLED = "filled";
+    public static final String AUTO_CORRECTED = "corrected";
+    public static final String AUTO_HISTORY = "history";
 
     public static final String EXPORT_ACTION_NAME = "bulkDatasetExport";
     public static final String EXPORT_FEATURES_PARAM = "features";

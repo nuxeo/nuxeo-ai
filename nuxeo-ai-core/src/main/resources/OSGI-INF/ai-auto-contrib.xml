@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.ai.auto">
+
+  <require>org.nuxeo.ecm.core.CoreExtensions</require>
+  <implementation class="org.nuxeo.ai.auto.AutoServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.auto.AutoService"/>
+  </service>
+
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="org.nuxeo.ai.auto.AutoPropertiesOperation"/>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.api.DocumentAdapterService" point="adapters">
+    <adapter class="org.nuxeo.ai.metadata.SuggestionMetadataAdapter" factory="org.nuxeo.ai.metadata.EnrichmentAdapterFactory"/>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.audit.service.NXAuditEventsService" point="event">
+    <event name="AUTO_FILLED" />
+    <event name="AUTO_CORRECTED" />
+  </extension>
+
+</component>
