@@ -9,4 +9,6 @@ Require-Bundle: org.nuxeo.ai.nuxeo-ai-pipes
 Bundle-SymbolicName: org.nuxeo.ai.ai-core;singleton=true
 Nuxeo-Component: OSGI-INF/ai-contrib.xml,
  OSGI-INF/ai-metadata-service.xml,
+ OSGI-INF/ai-auto-contrib.xml,
+ OSGI-INF/ai-auto-threshold.xml,
  OSGI-INF/enrichment-core-types-contrib.xml

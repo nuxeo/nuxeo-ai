@@ -18,11 +18,13 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
@@ -32,7 +34,9 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +46,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.metadata.SuggestionMetadataAdapter;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -81,9 +87,23 @@ public class TestDocMetadataService {
     @Inject
     protected TransactionalFeature txFeature;
 
+    public static EnrichmentMetadata setupTestEnrichmentMetadata(DocumentModel testDoc) {
+        List<EnrichmentMetadata.Label> labels = Arrays.asList(new AIMetadata.Label("girl", 0.5f),
+                                                              new AIMetadata.Label("boy", 0.4f));
+        List<EnrichmentMetadata.Label> labelz = Collections.singletonList(new AIMetadata.Label("cat", 0.9f));
+        LabelSuggestion suggestion = new LabelSuggestion("dc:title", labels);
+        LabelSuggestion suggestion2 = new LabelSuggestion("dc:format", labelz);
+
+        return new EnrichmentMetadata.Builder("m1", "stest", emptySet(),
+                                              testDoc.getRepositoryName(), testDoc.getId(), emptySet())
+                .withLabels(Arrays.asList(suggestion, suggestion2))
+                .withCreator("bob")
+                .build();
+    }
+
     @SuppressWarnings("unchecked")
     @Test
-    public void testSavesData() throws IOException {
+    public void testSavesEnrichmentData() throws IOException {
         assertNotNull(docMetadataService);
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "File");
         EnrichmentMetadata metadata = enrichTestDoc(testDoc);
@@ -121,6 +141,39 @@ public class TestDocMetadataService {
         classifications = classProp.getValue(List.class);
         assertEquals("There is still 3 classifications.", 3, classifications.size());
 
+    }
+
+    @Test
+    public void testSavesSuggestions() {
+        assertNotNull(docMetadataService);
+        DocumentModel testDoc = session.createDocumentModel("/", "My Suggestion Doc", "File");
+        testDoc = session.createDocument(testDoc);
+        session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+
+        EnrichmentMetadata suggestionMetadata = setupTestEnrichmentMetadata(testDoc);
+        testDoc = docMetadataService.saveEnrichment(session, suggestionMetadata);
+        session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+
+        //Lets save the same data again so we can check we don't duplicate it.
+        testDoc = docMetadataService.saveEnrichment(session, suggestionMetadata);
+        session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+
+        Property classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        assertNotNull(classProp);
+        List<Map<String, Object>> suggested = classProp.getValue(List.class);
+        assertEquals("There must be 1 suggestion", 1, suggested.size());
+        Map<String, Object> suggest = suggested.get(0);
+        assertEquals("stest", suggest.get(ENRICHMENT_MODEL));
+
+        SuggestionMetadataAdapter adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        assertTrue(adapted.getModels().contains("stest"));
+        assertEquals(2, adapted.getSuggestionsByProperty("dc:title").size());
+        assertEquals(1, adapted.getSuggestionsByProperty("dc:format").size());
+        assertEquals(3, adapted.getSuggestionsByModel("stest", null)
+                               .stream().mapToInt(l -> l.getValues().size()).sum());
     }
 
     @Test

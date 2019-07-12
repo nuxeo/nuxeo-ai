@@ -294,9 +294,7 @@ public class EnrichmentUtils {
         for (AIMetadata.Tag tag : tags) {
             String tagName = tag.name;
             labels.add(tagName);
-            if (!tag.features.isEmpty()) {
-                tag.features.forEach(feature -> labels.add(tagName + "/" + feature.getName()));
-            }
+            tag.features.forEach(feature -> labels.add(tagName + "/" + feature.getName()));
         }
         return labels;
     }
