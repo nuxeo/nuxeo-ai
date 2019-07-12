@@ -18,15 +18,15 @@
  */
 package org.nuxeo.ai.services;
 
+import java.io.Serializable;
 import java.util.List;
-import java.util.Set;
+import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
- * Works with metadata.
+ * Works with metadata for the Enrichment facet.
  */
 public interface DocMetadataService {
 
@@ -34,4 +34,24 @@ public interface DocMetadataService {
      * Saves the enrichment metadata on a document and returns the DocumentModel.
      */
     DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata);
+
+    /**
+     * Sets the document properties for autofill/auto correct and history information.
+     */
+    DocumentModel updateAuto(DocumentModel doc, String autoType, String xPath, Serializable oldValue, String comment);
+
+    /**
+     * Reset an auto field to its previous value.
+     */
+    DocumentModel resetAuto(DocumentModel doc, String autoType, String xPath, boolean resetValue);
+
+    /**
+     * Gets the auto correct history for a document.
+     */
+    List<AutoHistory> getAutoHistory(DocumentModel doc);
+
+    /**
+     * Sets the auto correct history for a document.
+     */
+    void setAutoHistory(DocumentModel doc, List<AutoHistory> history);
 }
