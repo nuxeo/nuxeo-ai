@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.bulk.recordwriter.test" version="1.0">
+
+  <extension target="org.nuxeo.ai.services.AIComponent"
+             point="thresholdConfiguration" >
+    <thresholdConfiguration global="0.7">
+      <configurations>
+        <configuration type="File">
+          <thresholds>
+            <threshold property="dc:title" value="0.75"/>
+          </thresholds>
+        </configuration>
+      </configurations>
+    </thresholdConfiguration>
+  </extension>
+</component>
