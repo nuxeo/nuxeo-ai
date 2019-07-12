@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.ai.auto.Threshold">
+
+  <implementation class="org.nuxeo.ai.auto.ThresholdServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.auto.ThresholdService"/>
+  </service>
+
+</component>
