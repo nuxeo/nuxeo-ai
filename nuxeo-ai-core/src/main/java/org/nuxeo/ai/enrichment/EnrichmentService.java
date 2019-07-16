@@ -18,12 +18,10 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.NuxeoException;
 
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.RetryPolicy;
@@ -35,6 +33,8 @@ import net.jodah.failsafe.RetryPolicy;
  * @see AbstractEnrichmentService
  */
 public interface EnrichmentService {
+
+    String UNSET = "UNSET_";
 
     /**
      * The name of the service

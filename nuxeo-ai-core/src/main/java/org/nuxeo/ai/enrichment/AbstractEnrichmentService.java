@@ -59,7 +59,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
         this.maxSize = descriptor.maxSize;
         this.kind = descriptor.kind;
         this.transientStoreName = descriptor.transientStoreName;
-        this.suggestionProperty = descriptor.options.getOrDefault(SUGGESTION_PROPERTY, "UNSET_" + name);
+        this.suggestionProperty = descriptor.options.getOrDefault(SUGGESTION_PROPERTY, UNSET + name);
     }
 
     @Override
