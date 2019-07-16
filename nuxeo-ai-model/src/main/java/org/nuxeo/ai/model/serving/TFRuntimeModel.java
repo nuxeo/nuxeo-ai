@@ -248,8 +248,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
             repoName = doc.getRepositoryName();
             docId = doc.getId();
         } catch (UnsupportedOperationException e) {
-            // Ignore unsupported values
             log.debug("Unable to get the document repositoryName and id.");
+            repoName = UNSET;
+            docId = UNSET;
         }
         return predict(props, repoName, docId);
     }
