@@ -1,10 +1,17 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.ecm.ai.auto.Threshold">
+<component name="org.nuxeo.ai.configuration.ThresholdComponent">
 
-  <implementation class="org.nuxeo.ai.auto.ThresholdServiceImpl"/>
+  <implementation class="org.nuxeo.ai.configuration.ThresholdComponent"/>
 
   <service>
-    <provide interface="org.nuxeo.ai.auto.ThresholdService"/>
+    <provide interface="org.nuxeo.ai.configuration.ThresholdService"/>
   </service>
+
+  <extension-point name="thresholdConfiguration">
+    <documentation>
+      Configures threshold for given Document types
+    </documentation>
+    <object class="org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor"/>
+  </extension-point>
 
 </component>
