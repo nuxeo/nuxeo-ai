@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.SuggestionMetadataAdapter;
 import org.nuxeo.ai.services.DocMetadataService;

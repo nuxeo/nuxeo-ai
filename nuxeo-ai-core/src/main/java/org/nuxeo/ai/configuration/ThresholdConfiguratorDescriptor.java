@@ -21,38 +21,106 @@ package org.nuxeo.ai.configuration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XObject;
+import org.nuxeo.runtime.model.Descriptor;
 
 @XObject("thresholdConfiguration")
-public class ThresholdConfiguratorDescriptor {
+public class ThresholdConfiguratorDescriptor implements Descriptor {
+
+
+    @XNode("@type")
+    protected String type;
 
     @XNode("@global")
     protected float global;
 
-    @XNodeList(value = "configurations/configuration", type = ArrayList.class, componentType = Configuration.class)
-    protected List<Configuration> configurations = new ArrayList<>();
+    @XNodeList(value = "thresholds/threshold", type = ArrayList.class, componentType = Threshold.class)
+    protected List<Threshold> thresholds = new ArrayList<>();
 
-    @XObject("configuration")
-    public static class Configuration {
+    /**
+     * @return global threshold for the {@link ThresholdConfiguratorDescriptor#type}
+     */
+    public float getGlobal() {
+        return global;
+    }
 
-        @XNode("@type")
-        protected String type;
+    /**
+     * @return String as a Document Type or Facet
+     */
+    public String getType() {
+        return type;
+    }
 
-        @XNodeList(value = "thresholds/threshold", type = ArrayList.class, componentType = Threshold.class)
-        protected List<Threshold> thresholds = new ArrayList<>();
+    /**
+     * @return List of {@link Threshold} objects
+     */
+    public List<Threshold> getThresholds() {
+        return thresholds;
+    }
+
+    @Override
+    public String getId() {
+        return UUID.randomUUID().toString();
     }
 
     @XObject("threshold")
     public static class Threshold {
 
-        @XNode("@property")
-        protected String property;
+        @XNode("@xpath")
+        protected String xpath;
 
         @XNode("@value")
-        protected float value;
+        protected float value = -1.f;
 
+        @XNode("@autofill")
+        protected float autofillValue = -1.f;
+
+        @XNode("@autocorrect")
+        protected float autocorrect = -1.f;
+
+        /**
+         * Merges with another {@link Threshold} prioritizing max value for each value
+         * @param that another {@link Threshold}
+         */
+        public void merge(Threshold that) {
+            if (that == null) {
+                return;
+            }
+            value = Math.max(value, that.value);
+            autofillValue = Math.max(autofillValue, that.autofillValue);
+            autocorrect = Math.max(autocorrect, that.autocorrect);
+        }
+
+        /**
+         * @return XPath to property
+         */
+        public String getXPath() {
+            return xpath;
+        }
+
+        /**
+         * @return threshold value
+         */
+        public float getValue() {
+            return value;
+        }
+
+        /**
+         * @return Threshold for autofill
+         */
+        public float getAutofillValue() {
+            return autofillValue;
+        }
+
+        /**
+         * @return Threshold for auto-correct
+         */
+        public float getAutocorrect() {
+            return autocorrect;
+        }
     }
 }
