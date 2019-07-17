@@ -19,17 +19,8 @@
 package script
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata
-import org.nuxeo.ecm.core.api.CoreInstance
-import org.nuxeo.ecm.core.api.IdRef
-import org.nuxeo.runtime.transaction.TransactionHelper
-
-import java.util.function.Consumer
 
 EnrichmentMetadata metadata = context.properties["enrichmentMetadata"]
-TransactionHelper.runInTransaction {
-    CoreInstance.doPrivileged(metadata.context.repositoryName, { session ->
-        def doc = session.getDocument(new IdRef(metadata.context.documentRef))
-        doc.setPropertyValue("dc:title", metadata.labels.collect { it.name }.join(" "))
-        session.saveDocument(doc)
-    } as Consumer)
-}
+def doc = context.sourceDocument
+doc.setPropertyValue("dc:title", metadata.labels.collect({ it.name }).join(" "))
+context.coreSession.saveDocument(doc)
