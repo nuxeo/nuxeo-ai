@@ -144,6 +144,24 @@ You can set these in your `nuxeo.conf`.
 <td colspan="1">`true`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
+<tr>
+<td colspan="1">`nuxeo.ai.default.threshold`</td>
+<td colspan="1">Default Threshold value. Should be a float type between 0.0 and 1.0</td>
+<td colspan="1">`0.75`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.autofill.default.threshold`</td>
+<td colspan="1">Default Threshold value for autofill. Should be a float type between 0.0 and 1.0</td>
+<td colspan="1">`0.75`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.autocorrect.default.threshold`</td>
+<td colspan="1">Default Threshold value for autocorrect. Should be a float type between 0.0 and 1.0</td>
+<td colspan="1">`0.75`</td>
+<td colspan="1">Since 1.0</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -161,6 +179,21 @@ Nuxeo AI Core provides 3 Java modules:
  * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentService`.
  * An Operation called `EnrichmentOp` to call an `EnrichmentService` and return the result.
  * Provides a `RestClient` and `RestEnrichmentService` for easily calling a custom json rest api.
+ * Provides a `ThresholdComponents` to register type/facet based thresholds. 
+ ```xml
+<extension target="org.nuxeo.ai.configuration.ThresholdComponent"
+             point="thresholdConfiguration">
+    <thresholdConfiguration type="Document"
+                            global="0.8">
+      <thresholds>
+        <threshold xpath="dc:title"
+                   value="0.6"
+                   autofill="0.65"
+                   autocorrect="0.70"/>
+      </thresholds>
+    </thresholdConfiguration>
+</extension>
+```
 
 
 ## Nuxeo Pipes

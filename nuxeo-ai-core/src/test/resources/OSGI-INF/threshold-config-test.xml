@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.threshold.test" version="1.0">
+
+  <extension target="org.nuxeo.ai.configuration.ThresholdComponent"
+             point="thresholdConfiguration">
+    <thresholdConfiguration type="File"
+                            global="0.88">
+      <thresholds>
+        <threshold xpath="dc:title"
+                   value="0.75"
+                   autofill="0.76"
+                   autocorrect="0.77"/>
+      </thresholds>
+    </thresholdConfiguration>
+
+    <thresholdConfiguration type="Document">
+      <thresholds>
+        <threshold xpath="dc:title"
+                   value="0.2"/>
+      </thresholds>
+    </thresholdConfiguration>
+
+    <thresholdConfiguration type="Commentable"
+                            global="0.5">
+    </thresholdConfiguration>
+  </extension>
+
+  <extension target="org.nuxeo.ai.configuration.ThresholdComponent"
+             point="thresholdConfiguration">
+    <thresholdConfiguration type="Downloadable">
+      <thresholds>
+        <threshold xpath="dc:description"
+                   value="0.6"
+                   autofill="0.65"
+                   autocorrect="0.66"/>
+      </thresholds>
+    </thresholdConfiguration>
+  </extension>
+</component>

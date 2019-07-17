@@ -33,6 +33,7 @@ import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichment
 import java.util.Collections;
 import java.util.List;
 import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.auto.AutoHistory;
