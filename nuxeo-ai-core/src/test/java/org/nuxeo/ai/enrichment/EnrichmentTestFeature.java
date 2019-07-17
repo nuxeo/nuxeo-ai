@@ -18,9 +18,13 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.nuxeo.ai.configuration.ThresholdComponent.AUTOFILL_DEFAULT_VALUE;
+import static org.nuxeo.ai.configuration.ThresholdComponent.AUTO_CORRECT_DEFAULT_VALUE;
+
 import java.io.IOException;
 import java.util.UUID;
 
+import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -29,10 +33,9 @@ import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.SimpleFeature;
+import org.nuxeo.runtime.test.runner.RunnerFeature;
 
 /**
  * Sets the configuration for Enrichment tests
@@ -41,15 +44,16 @@ import org.nuxeo.runtime.test.runner.SimpleFeature;
         "org.nuxeo.ecm.default.config",
         "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-stream-config-test.xml",
         "org.nuxeo.ai.ai-core"})
-public class EnrichmentTestFeature extends SimpleFeature {
+public class EnrichmentTestFeature implements RunnerFeature {
 
     public static final String PIPES_TEST_CONFIG = "test_enrichment";
     public static final String FILE_CONTENT = "file:content";
 
     @Override
     public void beforeRun(FeaturesRunner runner) throws Exception {
-        super.beforeRun(runner);
         Framework.getProperties().put(PipelineServiceImpl.PIPES_CONFIG, PIPES_TEST_CONFIG);
+        Framework.getProperties().put(AUTOFILL_DEFAULT_VALUE, "0.2");
+        Framework.getProperties().put(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
     }
 
     /**
