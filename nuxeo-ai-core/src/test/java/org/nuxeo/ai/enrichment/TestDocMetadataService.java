@@ -176,7 +176,7 @@ public class TestDocMetadataService {
         assertTrue(adapted.getModels().contains("stest"));
         assertEquals(2, adapted.getSuggestionsByProperty("dc:title").size());
         assertEquals(1, adapted.getSuggestionsByProperty("dc:format").size());
-        assertEquals(3, adapted.getSuggestionsByModel("stest", null)
+        assertEquals(3, adapted.getSuggestionsByModel("stest")
                                .stream().mapToInt(l -> l.getValues().size()).sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:title");
