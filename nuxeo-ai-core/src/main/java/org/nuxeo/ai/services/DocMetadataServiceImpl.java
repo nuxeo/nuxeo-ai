@@ -84,6 +84,8 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     public static final String AUTO_ADDED = "AUTO_";
 
+    public static final String AUTO_REMOVED = "AUTO_REMOVED_";
+
     public static final String ENRICHMENT_USING_FACETS = "nuxeo.enrichment.facets.inUse";
 
     protected static final TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
@@ -282,6 +284,31 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             ctx.setProperty(COMMENT_PROPERTY_KEY, comment);
         }
         Framework.getService(EventService.class).fireEvent(ctx.newEvent(eventName));
+    }
+
+    @Override
+    public DocumentModel removeSuggestionsForTargetProperty(DocumentModel doc, String xPath) {
+
+        List<Map<String, Object>> itemsList = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        if (itemsList == null) {
+            return doc;
+        }
+        List<Map<String, Object>> newSuggestList = new ArrayList<>(itemsList.size());
+
+        itemsList.forEach(suggestObj -> {
+            List<Map<String, Object>> suggestions = (List<Map<String, Object>>) suggestObj.get(SUGGESTION_SUGGESTIONS);
+            List<Map<String, Object>> newSuggestions = suggestions.stream()
+                                                                  .filter(s -> !xPath
+                                                                          .equals(s.get(SUGGESTION_PROPERTY)))
+                                                                  .collect(Collectors.toList());
+            if (!newSuggestions.isEmpty()) {
+                suggestObj.put(SUGGESTION_SUGGESTIONS, newSuggestions);
+                newSuggestList.add(suggestObj);
+            }
+        });
+        doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, newSuggestList);
+        raiseEvent(doc, AUTO_REMOVED + SUGGESTION_SUGGESTIONS.toUpperCase(), xPath, null);
+        return doc;
     }
 
     @Override

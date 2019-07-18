@@ -147,9 +147,6 @@ public class AutoServiceImpl implements AutoService {
             if (label.isPresent()) {
                 if (label.get().getConfidence() > threshold) {
                     return label.get();
-                } else {
-                    //BELOW_CONFIDENCE_AUTO_FILLED
-                    //AutoFill, Raise an event (label.get().getConfidence()) (& label) is below threshold for document id, xpath.
                 }
             }
         }
@@ -157,13 +154,11 @@ public class AutoServiceImpl implements AutoService {
     }
 
     @Override
-    public void confirmProperty(DocumentModel doc, String xpath) {
-        confirmProperty(doc, xpath, true);
-    }
-
-    @Override
-    public void confirmProperty(DocumentModel doc, String xpath, boolean includeSuggestions) {
-        throw new UnsupportedOperationException();
+    public void approveAutoProperty(DocumentModel doc, String xPath) {
+        DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
+        metadataService.removeSuggestionsForTargetProperty(doc, xPath);
+        metadataService.resetAuto(doc, AUTO_CORRECTED, xPath, false);
+        metadataService.resetAuto(doc, AUTO_FILLED, xPath, false);
     }
 
 }

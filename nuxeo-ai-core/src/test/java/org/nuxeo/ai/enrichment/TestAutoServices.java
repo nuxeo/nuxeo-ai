@@ -94,14 +94,16 @@ public class TestAutoServices {
         assertTrue(adapted.getModels().contains("stest"));
         assertFalse("Property hasn't been autofilled yet.", adapted.isAutoFilled("dc:title"));
         assertFalse("Property hasn't been autofilled yet.", adapted.isAutoFilled("dc:format"));
-
+        assertFalse("Doesn't have a human value because its null", adapted.hasHumanValue("dc:title"));
+        assertFalse("Desn't have a human value because its null", adapted.hasHumanValue("dc:format"));
         autoService.calculateProperties(testDoc, FILL);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
         assertTrue("dc:title must be auto filled.", adapted.isAutoFilled("dc:title"));
         assertTrue("dc:format must be auto filled.", adapted.isAutoFilled("dc:format"));
-
+        assertFalse(adapted.hasHumanValue("dc:title"));
+        assertFalse(adapted.hasHumanValue("dc:format"));
         //Call it again to check there are no side effects
         autoService.calculateProperties(testDoc, FILL);
         testDoc = session.saveDocument(testDoc);
@@ -129,6 +131,25 @@ public class TestAutoServices {
         adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
         assertTrue("dc:title must be AutoCorrected.", adapted.isAutoCorrected("dc:title"));
         assertFalse("Won't be autofilled because its been autocorrected.", adapted.isAutoFilled("dc:title"));
+
+        autoService.approveAutoProperty(testDoc, "dc:title");
+        testDoc = session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        assertFalse("dc:title must no longer by AutoCorrected.", adapted.isAutoCorrected("dc:title"));
+        assertTrue("dc:format must be AutoCorrected.", adapted.isAutoCorrected("dc:format"));
+        assertTrue(adapted.getSuggestionsByProperty("dc:title").isEmpty());
+        assertFalse(adapted.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(adapted.hasHumanValue("dc:title"));
+        assertFalse(adapted.hasHumanValue("dc:format"));
+
+        autoService.approveAutoProperty(testDoc, "dc:format");
+        testDoc = session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        assertFalse("dc:format must no longer by AutoCorrected.", adapted.isAutoCorrected("dc:format"));
+        assertTrue(adapted.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(adapted.hasHumanValue("dc:format"));
     }
 
     @Test
@@ -142,6 +163,8 @@ public class TestAutoServices {
         txFeature.nextTransaction();
 
         SuggestionMetadataAdapter adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        assertTrue(adapted.hasHumanValue("dc:title"));
+        assertTrue(adapted.hasHumanValue("dc:format"));
         assertFalse("Property hasn't been AutoCorrected.", adapted.isAutoCorrected("dc:title"));
 
         autoService.calculateProperties(testDoc, ALL);

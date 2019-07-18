@@ -320,9 +320,12 @@ stream processors matches the number of partitions you have, eg. 4.
 #### Useful log config:
 Edit `$NUXEO_HOME/lib/log4j2.xml`, in the `<Appenders>` section, add a `AI-FILE` appender:
 ```xml
-<File name="AI-FILE" fileName="${sys:nuxeo.log.dir}/nuxeo-ai.log" append="true">
+<RollingFile name="AI-FILE" fileName="${sys:nuxeo.log.dir}/nuxeo-ai.log"
+             filePattern="${sys:nuxeo.log.dir}/nuxeo-ai-%d{yyyy-MM-dd}.log.gz" append="true">
   <PatternLayout pattern="%d{ISO8601} %-5p [%t] [%c] %m%n" />
-</File>
+  <CronTriggeringPolicy schedule="0 0 0 * * ?" evaluateOnStartup="true" /> <!-- Rollover at midnight every day -->
+  <DefaultRolloverStrategy />
+</RollingFile>
 ```
 Then in the `<Loggers>` section, add a logger pointing to the `AI-FILE` appender:
 ```xml
@@ -347,6 +350,26 @@ Similarly, to view the consumer lag on the "images" stream, for chronicle use th
 ./bin/stream.sh lag --chronicle nxserver/data/stream/pipes -l images --verbose
 ./bin/stream.sh lag -k -l images --verbose
 ```
+### Automatic Property Filling
+When a document is enriched with suggestions, the suggestions are stored in the `Enrichment` facet.
+It is possible to automatically set a property with a suggested value in two ways.
+If the property currently has no value then you can use `Autofill`, if the property already has a value then use `Autocorrect`.
+
+#### Autofill Logic
+ * If the target property is `null` or its previously been autofilled then attempt to set the property.
+ * Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.  
+    * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.
+ * If we have already autofilled this property but it doesn't meet the threshold then reset it to `null`.
+ * Raise an `AUTO_FILLED` document event.
+
+#### Autocorrect Logic
+ * Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.  
+    * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.  
+    * Save the previous value in the history blob (unless it was previously auto-corrected).
+    * If its previously autofilled then remove that information because autofill and autocorrect are mutually exclusive.
+ * If we have already autocorrected this property but it doesn't meet the threshold then reset it to the previous value from the history.
+ * Raise an `AUTO_CORRECTED` document event.
+
 #### Stream Bulk Actions
 Dataset exports use the [Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/).  To track progress of your bulk action you can use a command like this:
 ```
