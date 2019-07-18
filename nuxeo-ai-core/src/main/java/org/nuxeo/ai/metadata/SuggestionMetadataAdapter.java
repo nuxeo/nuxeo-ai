@@ -23,7 +23,6 @@ import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL_VERSION;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
@@ -66,10 +65,6 @@ public class SuggestionMetadataAdapter {
         adaptToDoc();
     }
 
-    public static String modelKey(String modelName, String modelVersion) {
-        return modelName + ";" + (modelVersion != null ? modelVersion : "");
-    }
-
     protected void adaptToDoc() {
 
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
@@ -94,9 +89,7 @@ public class SuggestionMetadataAdapter {
         }
 
         suggestList.forEach(suggestObj -> {
-            String modelName = (String) suggestObj.get(ENRICHMENT_MODEL);
-            String modelVersion = (String) suggestObj.get(ENRICHMENT_MODEL_VERSION);
-            String modelId = modelKey(modelName, modelVersion);
+            String modelId = (String) suggestObj.get(ENRICHMENT_MODEL);
             List<Map<String, Object>> suggestions = (List<Map<String, Object>>) suggestObj.get(SUGGESTION_SUGGESTIONS);
 
             for (Map<String, Object> suggestion : suggestions) {
@@ -108,7 +101,7 @@ public class SuggestionMetadataAdapter {
                                                               .get(SUGGESTION_CONFIDENCE)).floatValue()))
                                                       .collect(Collectors.toList());
                 LabelSuggestion label = new LabelSuggestion(property, labels);
-                models.add(modelName);
+                models.add(modelId);
                 List<LabelSuggestion> byModel = suggestionsByModelId.getOrDefault(modelId, new ArrayList<>());
                 byModel.add(label);
                 suggestionsByModelId.put(modelId, byModel);
@@ -132,8 +125,8 @@ public class SuggestionMetadataAdapter {
         return models;
     }
 
-    public List<LabelSuggestion> getSuggestionsByModel(String modelName, String modelVersion) {
-        return suggestionsByModelId.getOrDefault(modelKey(modelName, modelVersion), Collections.emptyList());
+    public List<LabelSuggestion> getSuggestionsByModel(String modelId) {
+        return suggestionsByModelId.getOrDefault(modelId, Collections.emptyList());
     }
 
     public List<AIMetadata.Label> getSuggestionsByProperty(String propertyName) {

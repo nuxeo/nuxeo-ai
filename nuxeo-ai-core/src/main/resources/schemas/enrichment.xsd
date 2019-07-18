@@ -43,8 +43,7 @@
   </xs:complexType>
   <xs:complexType name="itemsType">
     <xs:sequence>
-      <xs:element name="modelName" type="xs:string" nillable="false" nxsv:nillable="false"/>
-      <xs:element name="modelVersion" type="xs:string" />
+      <xs:element name="model" type="xs:string" nillable="false" nxsv:nillable="false"/>
       <xs:element name="raw" type="nxrich:content"/>
       <xs:element name="normalized" type="nxrich:content"/>
       <xs:element name="inputProperties" type="nxrich:stringList"/>
