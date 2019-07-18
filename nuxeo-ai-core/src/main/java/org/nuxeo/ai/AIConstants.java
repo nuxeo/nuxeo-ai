@@ -30,8 +30,7 @@ public class AIConstants {
     public static final String ENRICHMENT_SCHEMA_NAME = "enrichment";
     public static final String ENRICHMENT_SCHEMA_PREFIX = "enrichment:";
     public static final String ENRICHMENT_ITEMS = "items";
-    public static final String ENRICHMENT_MODEL = "modelName";
-    public static final String ENRICHMENT_MODEL_VERSION = "modelVersion";
+    public static final String ENRICHMENT_MODEL = "model";
     public static final String ENRICHMENT_INPUT_DOCPROP_PROPERTY = "inputProperties";
     public static final String NORMALIZED_PROPERTY = "normalized";
     public static final String ENRICHMENT_RAW_KEY_PROPERTY = "raw";

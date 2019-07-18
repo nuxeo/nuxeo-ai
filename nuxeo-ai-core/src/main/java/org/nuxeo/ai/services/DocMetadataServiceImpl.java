@@ -24,7 +24,6 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL_VERSION;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
@@ -33,7 +32,6 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-import static org.nuxeo.ai.metadata.SuggestionMetadataAdapter.modelKey;
 import static org.nuxeo.ai.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
@@ -155,8 +153,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         } else if (inputs instanceof String[]) {
             input = String.join(";", (String[]) inputs);
         }
-        return modelKey((String) suggestion.get(ENRICHMENT_MODEL),
-                        (String) suggestion.get(ENRICHMENT_MODEL_VERSION)) + input;
+        return (String) suggestion.get(ENRICHMENT_MODEL) + input;
     }
 
     /**
@@ -206,9 +203,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
         anEntry.put(ENRICHMENT_MODEL, metadata.getModelName());
         anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, metadata.context.inputProperties);
-        if (metadata.getModelVersion() != null) {
-            anEntry.put(ENRICHMENT_MODEL_VERSION, metadata.getModelVersion());
-        }
         if (log.isDebugEnabled()) {
             log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, suggestions));
         }
