@@ -53,7 +53,7 @@ public class EnrichmentMetadata extends AIMetadata {
     private final List<TagSuggestion> tagSuggestions;
 
     private EnrichmentMetadata(Builder builder) {
-        super(builder.modelName, builder.getModelVersion(), builder.kind, builder.getContext(), builder.getCreator(), builder.created,
+        super(builder.modelName, builder.kind, builder.getContext(), builder.getCreator(), builder.created,
               builder.getRawKey());
         labelSuggestions = unmodifiableList(builder.labelSuggestions);
         tagSuggestions = unmodifiableList(builder.tagSuggestions);
@@ -95,7 +95,6 @@ public class EnrichmentMetadata extends AIMetadata {
                                         .append("created", created)
                                         .append("creator", creator)
                                         .append("modelName", modelName)
-                                        .append("modelVersion", modelVersion)
                                         .append("context", context)
                                         .append("kind", kind)
                                         .append("rawKey", rawKey)
