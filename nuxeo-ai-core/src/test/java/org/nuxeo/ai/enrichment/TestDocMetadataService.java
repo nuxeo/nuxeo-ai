@@ -20,7 +20,9 @@ package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
@@ -174,6 +176,22 @@ public class TestDocMetadataService {
         assertEquals(1, adapted.getSuggestionsByProperty("dc:format").size());
         assertEquals(3, adapted.getSuggestionsByModel("stest", null)
                                .stream().mapToInt(l -> l.getValues().size()).sum());
+
+        testDoc = docMetadataService.removeSuggestionsForProperty(testDoc, "dc:title");
+        testDoc = session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        assertTrue(adapted.getSuggestionsByProperty("dc:title").isEmpty());
+        assertFalse(adapted.getSuggestionsByProperty("dc:format").isEmpty());
+
+        testDoc = docMetadataService.removeSuggestionsForProperty(testDoc, "dc:format");
+        testDoc = session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+        classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        assertTrue(adapted.getSuggestionsByProperty("dc:format").isEmpty());
+        suggested = classProp.getValue(List.class);
+        assertTrue("No longer any suggestions.", suggested.isEmpty());
     }
 
     @Test
