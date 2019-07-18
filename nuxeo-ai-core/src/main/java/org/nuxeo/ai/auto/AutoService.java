@@ -38,12 +38,7 @@ public interface AutoService {
     /**
      * Remove the property from the list of auto updated values and remove suggestions.
      */
-    void confirmProperty(DocumentModel doc, String xpath);
-
-    /**
-     * Remove the property from the list of auto updated values.
-     */
-    void confirmProperty(DocumentModel doc, String xpath, boolean includeSuggestions);
+    void approveAutoProperty(DocumentModel doc, String xPath);
 
     enum AUTO_ACTION {
         FILL, CORRECT, ALL

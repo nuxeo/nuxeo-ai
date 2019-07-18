@@ -46,6 +46,11 @@ public interface DocMetadataService {
     DocumentModel resetAuto(DocumentModel doc, String autoType, String xPath, boolean resetValue);
 
     /**
+     * Removes any suggestions for the specified output property.
+     */
+    DocumentModel removeSuggestionsForTargetProperty(DocumentModel doc, String xPath);
+
+    /**
      * Gets the auto correct history for a document.
      */
     List<AutoHistory> getAutoHistory(DocumentModel doc);

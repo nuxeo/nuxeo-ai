@@ -153,7 +153,7 @@ public class SuggestionMetadataAdapter {
      * @return true if the value was entered by a human.
      */
     public boolean hasHumanValue(String propertyName) {
-        //auto-filled  //auto-correct
-        return false;
+        return (doc.getPropertyValue(propertyName) != null)
+                && !(isAutoFilled(propertyName) || isAutoCorrected(propertyName));
     }
 }
