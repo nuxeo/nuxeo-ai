@@ -363,10 +363,10 @@ If the property currently has no value then you can use `Autofill`, if the prope
  * Raise an `AUTO_FILLED` document event.
 
 #### Autocorrect Logic
+ * If its previously autofilled then don't attempt an autocorrect because autofill and autocorrect are mutually exclusive.
  * Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.  
     * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.  
     * Save the previous value in the history blob (unless it was previously auto-corrected).
-    * If its previously autofilled then remove that information because autofill and autocorrect are mutually exclusive.
  * If we have already autocorrected this property but it doesn't meet the threshold then reset it to the previous value from the history.
  * Raise an `AUTO_CORRECTED` document event.
 

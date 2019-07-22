@@ -22,6 +22,8 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
  * Autofill and AutoCorrect services
+ * This service deals with the logic of "auto properties", modifying the actual document enrichment facet is done by the
+ * DocMetadataService.
  */
 public interface AutoService {
 
