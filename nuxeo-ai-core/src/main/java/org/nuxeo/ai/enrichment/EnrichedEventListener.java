@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2019 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@
 package org.nuxeo.ai.enrichment;
 
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.services.DocMetadataServiceImpl.ENRICHMENT_ADDED;
 
-import java.io.Serializable;
-import org.nuxeo.ai.services.DocMetadataService;
+import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
@@ -30,11 +28,9 @@ import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.runtime.api.Framework;
 
 /**
- * Listen for modifications that were used to create enrichment metadata.
- * If the property is dirty then the metadata information is removed.
+ * Listens to an enrichment event and calls a recompute on auto fields.
  */
-public class EnrichedPropertiesEventListener implements EventListener {
-
+public class EnrichedEventListener implements EventListener {
     @Override
     public void handleEvent(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
@@ -42,9 +38,8 @@ public class EnrichedPropertiesEventListener implements EventListener {
             return;
         }
         DocumentModel doc = docCtx.getSourceDocument();
-        Serializable enrichmentAdding = doc.getContextData(ENRICHMENT_ADDED);
-        if (enrichmentAdding == null && !doc.isProxy() && doc.hasFacet(ENRICHMENT_FACET)) {
-            Framework.getService(DocMetadataService.class).removeItemsForDirtyProperties(doc);
+        if (!doc.isProxy() && doc.hasFacet(ENRICHMENT_FACET)) {
+            Framework.getService(AutoService.class).calculateProperties(doc);
         }
     }
 }
