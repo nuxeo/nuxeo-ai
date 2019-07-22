@@ -227,6 +227,7 @@ public class EnrichmentUtils {
                     return JacksonUtil.MAPPER.readValue(result, ENRICHMENT_LIST_TYPE);
                 } catch (IOException e) {
                     log.warn(String.format("Failed to read metadata from cache for key %s", cacheKey), e);
+                    kvStore.put(cacheKey, (byte[]) null);
                 }
             }
         }

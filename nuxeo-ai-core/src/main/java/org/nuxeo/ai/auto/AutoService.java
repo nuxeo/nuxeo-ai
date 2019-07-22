@@ -38,6 +38,11 @@ public interface AutoService {
     void calculateProperties(DocumentModel doc, AUTO_ACTION action);
 
     /**
+     * If a property has been modified then remove its auto information.
+     */
+    void autoApproveDirtyProperties(DocumentModel doc);
+
+    /**
      * Remove the property from the list of auto updated values and remove suggestions.
      */
     void approveAutoProperty(DocumentModel doc, String xPath);
