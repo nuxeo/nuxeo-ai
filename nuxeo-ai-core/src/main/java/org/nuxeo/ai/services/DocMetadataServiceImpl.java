@@ -55,6 +55,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.auto.AutoHistory;
+import org.nuxeo.ai.enrichment.EnrichedEventListener;
 import org.nuxeo.ai.enrichment.EnrichedPropertiesEventListener;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.services.PipelineService;
@@ -66,6 +67,8 @@ import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.event.CoreEventConstants;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
@@ -82,10 +85,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
 
-    public static final String AUTO_ADDED = "AUTO_";
-
-    public static final String AUTO_REMOVED = "AUTO_REMOVED_";
-
     public static final String ENRICHMENT_USING_FACETS = "nuxeo.enrichment.facets.inUse";
 
     protected static final TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
@@ -97,9 +96,10 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     public void start(ComponentContext context) {
         super.start(context);
         if (Framework.getService(ConfigurationService.class).isBooleanTrue(ENRICHMENT_USING_FACETS)) {
+            PipelineService pipelineService = Framework.getService(PipelineService.class);
             // Facets are being used so lets clean it up as well.
-            Framework.getService(PipelineService.class)
-                     .addEventListener(DIRTY_EVENT_NAME, false, false, new EnrichedPropertiesEventListener());
+            pipelineService.addEventListener(DIRTY_EVENT_NAME, false, false, new EnrichedPropertiesEventListener());
+            pipelineService.addEventListener(ENRICHMENT_MODIFIED, false, false, new EnrichedEventListener());
         }
     }
 
@@ -128,6 +128,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             Collection allEnriched = updateEnrichment(enrichmentList, anItem);
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, allEnriched);
             doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
+            raiseEvent(doc, ENRICHMENT_MODIFIED, null, metadata.getModelName());
         }
         return doc;
     }
@@ -234,7 +235,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             history.add(new AutoHistory(xPath, String.valueOf(oldValue)));
             setAutoHistory(doc, history);
         }
-        raiseEvent(doc, AUTO_ADDED + autoField.toUpperCase(), xPath, comment);
+        raiseEvent(doc, AUTO_ADDED + autoField.toUpperCase(), Collections.singleton(xPath), comment);
         return doc;
     }
 
@@ -274,13 +275,20 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         return autoProps;
     }
 
-    protected void raiseEvent(DocumentModel doc, String eventName, String xPath, String comment) {
+    protected void raiseEvent(DocumentModel doc, String eventName, Set<String> xPaths, String comment) {
         DocumentEventContext ctx = new DocumentEventContext(doc.getCoreSession(), doc.getCoreSession()
                                                                                      .getPrincipal(), doc);
         ctx.setProperty(CoreEventConstants.REPOSITORY_NAME, doc.getRepositoryName());
         ctx.setProperty(CoreEventConstants.SESSION_ID, doc.getSessionId());
-        ctx.setProperty(CoreEventConstants.DESTINATION_NAME, xPath);
-        if (StringUtils.isNotEmpty(comment)) {
+
+        String paths = null;
+        if (xPaths != null && !xPaths.isEmpty()) {
+            paths = String.join(",", xPaths);
+        }
+        ctx.setProperty(PATHS, paths);
+        if (StringUtils.isEmpty(comment)) {
+            ctx.setProperty(COMMENT_PROPERTY_KEY, paths);
+        } else {
             ctx.setProperty(COMMENT_PROPERTY_KEY, comment);
         }
         Framework.getService(EventService.class).fireEvent(ctx.newEvent(eventName));
@@ -307,8 +315,59 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             }
         });
         doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, newSuggestList);
-        raiseEvent(doc, AUTO_REMOVED + SUGGESTION_SUGGESTIONS.toUpperCase(), xPath, null);
+        raiseEvent(doc, ENRICHMENT_MODIFIED, Collections.singleton(xPath), SUGGESTION_SUGGESTIONS);
         return doc;
+    }
+
+    @Override
+    public DocumentModel removeItemsForDirtyProperties(DocumentModel doc) {
+        List<Map<String, Object>> itemsList = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        if (itemsList == null || itemsList.isEmpty()) {
+            return doc;
+        }
+        List<Map<String, Object>> cleanItemsList = new ArrayList<>(itemsList.size());
+        Set<String> removedTargetProperties = new HashSet<>();
+
+        itemsList.forEach(entry -> {
+            String[] props = (String[]) entry.get(ENRICHMENT_INPUT_DOCPROP_PROPERTY);
+            Set<String> inputProperties = props == null ? Collections.emptySet() : new HashSet<>(Arrays.asList(props));
+            if (hadBeenModified(doc, inputProperties)) {
+                List<Map<String, Object>> suggestions = (List<Map<String, Object>>) entry.get(SUGGESTION_SUGGESTIONS);
+                Set<String> targetProps = suggestions.stream()
+                                                     .map(s -> (String) s.get(SUGGESTION_PROPERTY))
+                                                     .collect(Collectors.toSet());
+                removedTargetProperties.addAll(targetProps);
+            } else {
+                cleanItemsList.add(entry);
+            }
+        });
+
+        if (cleanItemsList.size() != itemsList.size()) {
+            //We made some changes lets update
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, cleanItemsList);
+            raiseEvent(doc, ENRICHMENT_MODIFIED, removedTargetProperties, "Dirty inputs");
+        }
+        return doc;
+    }
+
+    /**
+     * Have one of the supplied properties been modified?
+     */
+    protected boolean hadBeenModified(DocumentModel doc, Set<String> props) {
+
+        if (props != null) {
+            for (String propName : props) {
+                try {
+                    Property prop = doc.getProperty(propName);
+                    if (prop != null && prop.isDirty()) {
+                        return true;
+                    }
+                } catch (PropertyNotFoundException e) {
+                    // Just ignore
+                }
+            }
+        }
+        return false;
     }
 
     @Override

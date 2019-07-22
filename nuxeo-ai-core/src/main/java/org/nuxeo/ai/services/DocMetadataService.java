@@ -30,6 +30,13 @@ import org.nuxeo.ecm.core.api.DocumentModel;
  */
 public interface DocMetadataService {
 
+
+    String AUTO_ADDED = "AUTO_";
+
+    String ENRICHMENT_MODIFIED = "ENRICHMENT_MODIFIED";
+
+    String PATHS = "xPaths";
+
     /**
      * Saves the enrichment metadata on a document and returns the DocumentModel.
      */
@@ -49,6 +56,13 @@ public interface DocMetadataService {
      * Removes any suggestions for the specified output property.
      */
     DocumentModel removeSuggestionsForTargetProperty(DocumentModel doc, String xPath);
+
+    /**
+     * Finds existing enrichment metadata, checks to see if any of the properties used to create
+     * that metadata have been modified.  If they are modified then it removes the enrichment data for that
+     * property.
+     */
+    DocumentModel removeItemsForDirtyProperties(DocumentModel doc);
 
     /**
      * Gets the auto correct history for a document.

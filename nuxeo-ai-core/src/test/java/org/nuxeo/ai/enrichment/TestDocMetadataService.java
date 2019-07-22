@@ -22,7 +22,6 @@ import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
@@ -41,12 +40,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import javax.inject.Inject;
-
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.SuggestionMetadataAdapter;
@@ -67,8 +65,8 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import junit.framework.TestCase;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
-@Deploy({ "org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml" })
+@Features({EnrichmentTestFeature.class, PlatformFeature.class})
+@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
 public class TestDocMetadataService {
 
     public static final String SERVICE_NAME = "reverse";
@@ -82,6 +80,9 @@ public class TestDocMetadataService {
 
     @Inject
     protected AIComponent aiComponent;
+
+    @Inject
+    protected AutoService autoService;
 
     @Inject
     protected DocMetadataService docMetadataService;
@@ -135,7 +136,8 @@ public class TestDocMetadataService {
 
         // Check when there's no metadata to save
         EnrichmentMetadata meta = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
-                new AIMetadata.Context(doc.getRepositoryName(), doc.getId(), null, null)).build();
+                                                                 new AIMetadata.Context(doc.getRepositoryName(), doc
+                                                                         .getId(), null, null)).build();
         doc = docMetadataService.saveEnrichment(session, meta);
         txFeature.nextTransaction();
         classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
@@ -177,14 +179,14 @@ public class TestDocMetadataService {
         assertEquals(3, adapted.getSuggestionsByModel("stest", null)
                                .stream().mapToInt(l -> l.getValues().size()).sum());
 
-        testDoc = docMetadataService.removeSuggestionsForProperty(testDoc, "dc:title");
+        testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:title");
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
         assertTrue(adapted.getSuggestionsByProperty("dc:title").isEmpty());
         assertFalse(adapted.getSuggestionsByProperty("dc:format").isEmpty());
 
-        testDoc = docMetadataService.removeSuggestionsForProperty(testDoc, "dc:format");
+        testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:format");
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
@@ -206,6 +208,7 @@ public class TestDocMetadataService {
 
         // Dirty only 1 of the properties that was enriched, the enrichment will be removed, leaving just 1.
         doc.setPropertyValue(TEST_PROPERTY, "Testing property change");
+        autoService.calculateProperties(doc);
         session.saveDocument(doc);
         txFeature.nextTransaction();
         doc = session.getDocument(testDoc.getRef());
@@ -213,7 +216,7 @@ public class TestDocMetadataService {
         // noinspection unchecked
         List<Map<String, Object>> classifications = classProp.getValue(List.class);
         assertEquals("1 of the 2 enrichments must be removed because our test property is dirty", 1,
-                classifications.size());
+                     classifications.size());
     }
 
     /**
@@ -225,7 +228,8 @@ public class TestDocMetadataService {
         txFeature.nextTransaction();
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(testDoc.getId(), testDoc.getRepositoryName(),
-                testDoc.getParentRef().toString(), testDoc.getType(), testDoc.getFacets());
+                                                                        testDoc.getParentRef().toString(), testDoc
+                                                                                .getType(), testDoc.getFacets());
         blobTextFromDoc.addProperty(TEST_PROPERTY, SOME_TEXT);
         EnrichmentService service = aiComponent.getEnrichmentService(SERVICE_NAME);
         Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);

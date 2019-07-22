@@ -55,6 +55,8 @@ public class SuggestionMetadataAdapter {
 
     protected Set<String> autoCorrected = new HashSet<>();
 
+    protected Set<String> autoProperties = new HashSet<>();
+
     protected Map<String, List<LabelSuggestion>> suggestionsByModelId = new HashMap<>();
 
     protected Map<String, List<AIMetadata.Label>> suggestionsByProperty = new HashMap<>();
@@ -116,6 +118,10 @@ public class SuggestionMetadataAdapter {
             }
 
         });
+
+        autoProperties.addAll(suggestionsByProperty.keySet());
+        autoProperties.addAll(autoFilled);
+        autoProperties.addAll(autoCorrected);
     }
 
     public DocumentModel getDoc() {
@@ -134,8 +140,11 @@ public class SuggestionMetadataAdapter {
         return suggestionsByProperty.getOrDefault(propertyName, Collections.emptyList());
     }
 
-    public Set<String> getSuggestedProperties() {
-        return suggestionsByProperty.keySet();
+    /**
+     * Get the xPath of any properties that could be suggested or have been auto filled or auto corrected.
+     */
+    public Set<String> getAutoProperties() {
+        return autoProperties;
     }
 
     public boolean isAutoFilled(String propertyName) {
