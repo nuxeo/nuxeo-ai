@@ -347,7 +347,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     /**
      * Have one of the supplied properties been modified?
      */
-    protected boolean hadBeenModified(DocumentModel doc, Set<String> props) {
+    public static boolean hadBeenModified(DocumentModel doc, Set<String> props) {
 
         if (props != null) {
             for (String propName : props) {

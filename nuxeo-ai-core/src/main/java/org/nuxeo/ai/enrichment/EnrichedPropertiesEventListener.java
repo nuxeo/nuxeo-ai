@@ -22,6 +22,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.ENRICHMENT_ADDED;
 
 import java.io.Serializable;
+import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
@@ -44,6 +45,7 @@ public class EnrichedPropertiesEventListener implements EventListener {
         DocumentModel doc = docCtx.getSourceDocument();
         Serializable enrichmentAdding = doc.getContextData(ENRICHMENT_ADDED);
         if (enrichmentAdding == null && !doc.isProxy() && doc.hasFacet(ENRICHMENT_FACET)) {
+            Framework.getService(AutoService.class).autoApproveDirtyProperties(doc);
             Framework.getService(DocMetadataService.class).removeItemsForDirtyProperties(doc);
         }
     }

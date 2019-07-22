@@ -19,60 +19,87 @@ This repository provides 3 packages:
 #### Indexing and Search
 It is recommended that the Elasticsearch mappings are updated to allow a full text search on enrichment labels.
  The following code will add this mapping to a server running locally.
-```json
+```
 curl -X PUT \
   http://localhost:9200/nuxeo/_mapping/doc/ \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
   -d '{
-    "dynamic_templates": [
-  {
-    "no_enriched_raw_template": {
-      "path_match": "enrichment:items.raw.*",
-      "mapping": {
-        "index": false
-      }
-    }
-  },
-  {
-    "no_enriched_norms_template": {
-      "path_match": "enrichment:items.normalized.*",
-      "mapping": {
-        "index": false
-      }
-    }
-  }
-],
-  "properties": {
-    "enrichment:items": {
-      "properties": {
-        "labels": {
-          "type": "keyword",
-          "copy_to": [
-            "all_field"
-          ],
-          "ignore_above": 256,
-          "fields": {
-            "fulltext": {
-              "analyzer": "fulltext",
-              "type": "text"
-            }
+  "dynamic_templates": [
+      {
+          "no_enriched_raw_template": {
+              "path_match": "enrichment:items.raw.*",
+              "mapping": {
+                  "index": false
+              }
           }
-        },
-        "service": {
-          "type": "keyword",
-          "ignore_above": 256
-        },
-        "inputProperties": {
-          "type": "keyword",
-          "ignore_above": 256
-        },
-        "kind": {
-          "type": "keyword",
-          "ignore_above": 256
-        }
+      },
+      {
+          "no_enriched_norms_template": {
+              "path_match": "enrichment:items.normalized.*",
+              "mapping": {
+                  "index": false
+              }
+          }
+      },
+      {
+          "no_enriched_history_template": {
+              "path_match": "enrichment:history.*",
+              "mapping": {
+                  "index": false
+              }
+          }
       }
-    }
+  ],
+  "properties": {
+      "enrichment:items": {
+          "properties": {
+              "model": {
+                  "type": "keyword",
+                  "ignore_above": 256
+              },
+              "inputProperties": {
+                  "type": "keyword",
+                  "ignore_above": 256
+              },
+              "suggestions": {
+                  "properties": {
+                      "labels": {
+                          "properties": {
+                              "confidence": {
+                                  "type": "float"
+                              },
+                              "label": {
+                                  "type": "keyword",
+                                  "copy_to": [
+                                      "all_field"
+                                  ],
+                                  "ignore_above": 256,
+                                  "fields": {
+                                      "fulltext": {
+                                          "analyzer": "fulltext",
+                                          "type": "text"
+                                      }
+                                  }
+                              }
+                          }
+                      },
+                      "property": {
+                          "type": "keyword",
+                          "ignore_above": 256
+                      }
+                  }
+              }
+          }
+      },
+      "enrichment:filled": {
+          "type": "keyword",
+          "ignore_above": 256
+      },
+      "enrichment:corrected": {
+          "type": "keyword",
+          "ignore_above": 256
+      }
   }
 }'
 ```
