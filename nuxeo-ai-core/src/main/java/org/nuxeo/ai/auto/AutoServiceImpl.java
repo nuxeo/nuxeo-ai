@@ -22,8 +22,10 @@ import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
 import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
 import static org.nuxeo.ai.enrichment.EnrichmentService.UNSET;
+import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -176,6 +178,16 @@ public class AutoServiceImpl implements AutoService {
             }
         }
         return null;
+    }
+
+    @Override
+    public void autoApproveDirtyProperties(DocumentModel doc) {
+        SuggestionMetadataAdapter adapted = doc.getAdapter(SuggestionMetadataAdapter.class);
+        for (String xPath : adapted.getAutoProperties()) {
+            if (hadBeenModified(doc, Collections.singleton(xPath))) {
+                approveAutoProperty(doc, xPath);
+            }
+        }
     }
 
     @Override

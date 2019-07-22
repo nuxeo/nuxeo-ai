@@ -144,7 +144,8 @@ public class TestAutoServices {
         assertTrue("dc:title must be Auto Filled.", adapted.isAutoFilled("dc:title"));
         assertFalse("Won't be autocorrected because its been autofilled.", adapted.isAutoCorrected("dc:title"));
 
-        autoService.approveAutoProperty(testDoc, "dc:title");
+        testDoc.setPropertyValue("dc:title", "title again");
+        autoService.autoApproveDirtyProperties(testDoc);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
