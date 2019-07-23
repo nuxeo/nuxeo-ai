@@ -107,36 +107,56 @@ limitations under the License.
             is: 'nuxeo-admin-ai-export',
             behaviors: [Nuxeo.LayoutBehavior],
             properties: {
+                /**
+                 * Type to be used in query for export
+                 */
                 typeName: {
                     type: String,
-                    value: ''
+                    value: '',
                 },
-                fetchedDoc: {
-                    type: Object
-                },
+                /**
+                 * Document received from AI Cloud
+                 */
                 currentDoc: {
-                    type: Object
+                    type: Object,
                 },
-
+                /**
+                 * A list of statuses from BAF
+                 */
                 statuses: {
                     type: Array,
-                    value: []
-                }
+                    value: [],
+                },
+                /**
+                 * Flag to determine visibility of this element
+                 */
+                visible: {
+                    type: Boolean,
+                    value: false,
+                    observer: '_visibleChanged',
+                },
+                /**
+                 * reference for scheduled call
+                 */
+                _timeOut: {
+                    type: Number,
+                },
             },
 
-            ready: function () {
-                this.$.aiExportStatus.execute();
+            _visibleChanged: function (newVal) {
+                if (newVal) {
+                    this.$.aiExportStatus.execute();
+                } else if (!newVal && this._timeOut) {
+                    clearTimeout(this._timeOut);
+                }
             },
 
             _statusReceived: function (resp) {
                 this.statuses = resp.detail.response.value;
-                var pollTime = 30000;
                 // defines if the tab is currently active if so, we want to poll more often
-                if (this.offsetParent !== null) {
-                    var pollTime = 2000;
+                if (this.visible) {
+                    this._timeOut = setTimeout(this._poll, 2000, this.$.aiExportStatus);
                 }
-
-                setTimeout(this._poll, pollTime, this.$.aiExportStatus);
             },
 
             _poll: function (func) {
@@ -152,39 +172,35 @@ limitations under the License.
                     this.fire('notify', {message: 'Type and Model are required parameters'});
                     return;
                 }
-                let props = this.$.currentDoc.properties;
-                let inputs = props["ai_model:inputs"];
-                let input = inputs.map(e => {
-                    return e.name
-                }).join(',');
+                const props = this.$.currentDoc.properties;
+                const inputs = props['ai_model:inputs'];
+                const input = inputs.map((e) => e.name).join(',');
 
-                let outputs = props["ai_model:outputs"];
-                let output = outputs.map(e => {
-                    return e.name
-                }).join(',');
+                const outputs = props['ai_model:outputs'];
+                const output = outputs.map((e) => e.name).join(',');
 
-                let query = `SELECT * FROM Document WHERE ecm:isProxy = 0 AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ecm:primaryType = '${this.typeName}'`;
+                const query = `SELECT * FROM Document WHERE ecm:isProxy = 0` +
+                    ` AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ecm:primaryType = '${this.typeName}'`;
                 this.$.aiExport.params = {
-                    'query': query,
-                    'inputs': input,
-                    'outputs': output
+                    query,
+                    inputs: input,
+                    outputs: output,
                 };
 
-                this.$.aiExport.execute()
-                    .then(function (response) {
+                this.$.aiExport
+                    .execute()
+                    .then((response) => {
                         this.fire('notify', {message: this.i18n('admin.ai.export.success')});
                         return response.value;
-                    }.bind(this))
-                    .catch(function () {
+                    })
+                    .catch(() => {
                         this.fire('notify', {message: this.i18n('admin.ai.export.error')});
-                    }.bind(this))
-
-
+                    });
             },
 
             _canExport: function () {
-                return this.typeName.length !== 0 && this.$.currentDoc !== undefined;
-            }
+                return this.typeName.length !== 0 && this.$.currentDoc != null;
+            },
         });
     </script>
 </dom-module>
