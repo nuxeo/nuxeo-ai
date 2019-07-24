@@ -12,10 +12,6 @@
     <operation class="org.nuxeo.ai.auto.AutoPropertiesOperation"/>
   </extension>
 
-  <extension target="org.nuxeo.ecm.core.api.DocumentAdapterService" point="adapters">
-    <adapter class="org.nuxeo.ai.metadata.SuggestionMetadataAdapter" factory="org.nuxeo.ai.metadata.EnrichmentAdapterFactory"/>
-  </extension>
-
   <extension target="org.nuxeo.ecm.platform.audit.service.NXAuditEventsService" point="event">
     <event name="AUTO_FILLED" />
     <event name="AUTO_CORRECTED" />
