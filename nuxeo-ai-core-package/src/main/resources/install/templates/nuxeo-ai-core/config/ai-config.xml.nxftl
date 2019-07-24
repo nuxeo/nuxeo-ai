@@ -22,10 +22,6 @@
     </streamProcessor>
   </extension>
 
-  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
-    <documentation>Indicates if Enrichment facets are being used.</documentation>
-    <property name="nuxeo.enrichment.facets.inUse">true</property>
-  </extension>
 </#if>
 
 <#if "${nuxeo.enrichment.raiseEvent}" == "true">

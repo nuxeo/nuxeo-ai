@@ -30,8 +30,4 @@
     <enrichment name="reverse" kind="/classification/sentiment" transientStore="myTransient" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentService" />
   </extension>
 
-  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
-    <property name="nuxeo.enrichment.facets.inUse">true</property>
-  </extension>
-
 </component>

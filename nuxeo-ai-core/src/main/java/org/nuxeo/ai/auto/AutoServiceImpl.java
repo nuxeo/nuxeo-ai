@@ -33,7 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.SuggestionMetadataAdapter;
+import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
@@ -54,23 +54,23 @@ public class AutoServiceImpl implements AutoService {
 
     @Override
     public void calculateProperties(DocumentModel doc, AUTO_ACTION action) {
-        SuggestionMetadataAdapter adapted = doc.getAdapter(SuggestionMetadataAdapter.class);
-        for (String xpath : adapted.getAutoProperties()) {
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
+        for (String xpath : wrapper.getAutoProperties()) {
             switch (action) {
                 case ALL:
-                    calculateAutoFill(adapted, xpath);
-                    calculateAutoCorrect(adapted, xpath);
+                    calculateAutoFill(wrapper, xpath);
+                    calculateAutoCorrect(wrapper, xpath);
                     break;
                 case CORRECT:
-                    calculateAutoCorrect(adapted, xpath);
+                    calculateAutoCorrect(wrapper, xpath);
                     break;
                 case FILL:
-                    calculateAutoFill(adapted, xpath);
+                    calculateAutoFill(wrapper, xpath);
             }
         }
     }
 
-    protected void calculateAutoFill(SuggestionMetadataAdapter docMetadata, String xpath) {
+    protected void calculateAutoFill(SuggestionMetadataWrapper docMetadata, String xpath) {
         if (xpath.startsWith(UNSET)) {
             // Nothing to do, no property specified
             return;
@@ -98,9 +98,9 @@ public class AutoServiceImpl implements AutoService {
 
         AIMetadata.Label max = calculateMaxLabel(docMetadata.getSuggestionsByProperty(xpath), threshold);
         if (max != null) {
-            String comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)",
-                                           xpath, max.getConfidence(), threshold);
             if (setProperty(property, max.getName())) {
+                String comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)",
+                                               xpath, max.getConfidence(), threshold);
                 log.debug(comment);
                 Framework.getService(DocMetadataService.class)
                          .updateAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, null, comment);
@@ -114,7 +114,7 @@ public class AutoServiceImpl implements AutoService {
         }
     }
 
-    protected void calculateAutoCorrect(SuggestionMetadataAdapter docMetadata, String xpath) {
+    protected void calculateAutoCorrect(SuggestionMetadataWrapper docMetadata, String xpath) {
         if (xpath.startsWith(UNSET) || docMetadata.isAutoFilled(xpath)) {
             // Nothing to do
             return;
@@ -138,11 +138,10 @@ public class AutoServiceImpl implements AutoService {
 
         AIMetadata.Label max = calculateMaxLabel(docMetadata.getSuggestionsByProperty(xpath), threshold);
         if (max != null) {
-            String comment = String.format("Auto corrected %s. (Confidence %s , Threshold %s)",
-                                           xpath, max.getConfidence(), threshold);
             Serializable oldValue = property.getValue();
-
             if (setProperty(property, max.getName())) {
+                String comment = String.format("Auto corrected %s. (Confidence %s , Threshold %s)",
+                                               xpath, max.getConfidence(), threshold);
                 log.debug(comment);
                 if (alreadyAutoCorrected) {
                     // We already auto corrected so we don't need to save the value in the history
@@ -182,8 +181,8 @@ public class AutoServiceImpl implements AutoService {
 
     @Override
     public void autoApproveDirtyProperties(DocumentModel doc) {
-        SuggestionMetadataAdapter adapted = doc.getAdapter(SuggestionMetadataAdapter.class);
-        for (String xPath : adapted.getAutoProperties()) {
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
+        for (String xPath : wrapper.getAutoProperties()) {
             if (hadBeenModified(doc, Collections.singleton(xPath))) {
                 approveAutoProperty(doc, xPath);
             }
@@ -193,9 +192,9 @@ public class AutoServiceImpl implements AutoService {
     @Override
     public void approveAutoProperty(DocumentModel doc, String xPath) {
         DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
-        metadataService.removeSuggestionsForTargetProperty(doc, xPath);
         metadataService.resetAuto(doc, AUTO_CORRECTED, xPath, false);
         metadataService.resetAuto(doc, AUTO_FILLED, xPath, false);
+        metadataService.removeSuggestionsForTargetProperty(doc, xPath);
     }
 
 }
