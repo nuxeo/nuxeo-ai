@@ -23,34 +23,22 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
 import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
 import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.auto.AutoPropertiesOperation;
 import org.nuxeo.ai.auto.AutoService;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.SuggestionMetadataAdapter;
+import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.automation.AutomationService;
@@ -60,7 +48,6 @@ import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -69,8 +56,9 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core"})
+@Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml"})
 public class TestAutoServices {
+
     @Inject
     protected CoreSession session;
 
@@ -102,108 +90,95 @@ public class TestAutoServices {
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
 
-        SuggestionMetadataAdapter adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue(adapted.getModels().contains("stest"));
-        assertFalse("Property hasn't been autofilled yet.", adapted.isAutoFilled("dc:title"));
-        assertFalse("Property hasn't been autofilled yet.", adapted.isAutoFilled("dc:format"));
-        assertFalse("Doesn't have a human value because its null", adapted.hasHumanValue("dc:title"));
-        assertFalse("Desn't have a human value because its null", adapted.hasHumanValue("dc:format"));
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue(wrapper.getModels().contains("stest"));
+        assertTrue("dc:title must be auto filled.", wrapper.isAutoFilled("dc:title"));
+        assertTrue("dc:format must be auto filled.", wrapper.isAutoFilled("dc:format"));
+        assertFalse("Doesn't have a human value", wrapper.hasHumanValue("dc:title"));
+        assertFalse("Doesn't have a human value", wrapper.hasHumanValue("dc:format"));
         autoService.calculateProperties(testDoc, FILL);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue("dc:title must be auto filled.", adapted.isAutoFilled("dc:title"));
-        assertTrue("dc:format must be auto filled.", adapted.isAutoFilled("dc:format"));
-        assertFalse(adapted.hasHumanValue("dc:title"));
-        assertFalse(adapted.hasHumanValue("dc:format"));
-        //Call it again to check there are no side effects
-        autoService.calculateProperties(testDoc, FILL);
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue("dc:title must be auto filled.", adapted.isAutoFilled("dc:title"));
-        assertTrue("dc:format must be auto filled.", adapted.isAutoFilled("dc:format"));
-        assertFalse("Property hasn't been AutoCorrected.", adapted.isAutoCorrected("dc:title"));
-        assertFalse("Property hasn't been AutoCorrected.", adapted.isAutoCorrected("dc:format"));
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue("dc:title must be auto filled.", wrapper.isAutoFilled("dc:title"));
+        assertTrue("dc:format must be auto filled.", wrapper.isAutoFilled("dc:format"));
+        assertFalse("Property hasn't been AutoCorrected.", wrapper.isAutoCorrected("dc:title"));
+        assertFalse("Property hasn't been AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
         assertEquals("cat", testDoc.getPropertyValue("dc:format"));
 
         docMetadataService.resetAuto(testDoc, AUTO_FILLED, "dc:format", true);
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        wrapper = new SuggestionMetadataWrapper(testDoc);
         assertNull("The property must be reset to old value.", testDoc.getPropertyValue("dc:format"));
-        assertFalse("Property is no longer Auto filled.", adapted.isAutoFilled("dc:format"));
-        assertTrue("dc:title must be auto filled.", adapted.isAutoFilled("dc:title"));
-        assertFalse("dc:title hasn't been AutoCorrected.", adapted.isAutoCorrected("dc:title"));
+        assertFalse("Property is no longer Auto filled.", wrapper.isAutoFilled("dc:format"));
+        assertTrue("dc:title must be auto filled.", wrapper.isAutoFilled("dc:title"));
+        assertFalse("dc:title hasn't been AutoCorrected.", wrapper.isAutoCorrected("dc:title"));
 
         // Now test mutual exclusivity
         autoService.calculateProperties(testDoc, CORRECT);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue("dc:title must be Auto Filled.", adapted.isAutoFilled("dc:title"));
-        assertFalse("Won't be autocorrected because its been autofilled.", adapted.isAutoCorrected("dc:title"));
-
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue("dc:title must be Auto Filled.", wrapper.isAutoFilled("dc:title"));
+        assertTrue("dc:format must be AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
+        assertFalse("Won't be autocorrected because its been autofilled.", wrapper.isAutoCorrected("dc:title"));
         testDoc.setPropertyValue("dc:title", "title again");
         autoService.autoApproveDirtyProperties(testDoc);
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertFalse("dc:title must no longer by autofilled.", adapted.isAutoFilled("dc:title"));
-        assertTrue("dc:format must be AutoCorrected.", adapted.isAutoCorrected("dc:format"));
-        assertTrue(adapted.getSuggestionsByProperty("dc:title").isEmpty());
-        assertFalse(adapted.getSuggestionsByProperty("dc:format").isEmpty());
-        assertTrue(adapted.hasHumanValue("dc:title"));
-        assertFalse(adapted.hasHumanValue("dc:format"));
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse("dc:title must no longer by autofilled.", wrapper.isAutoFilled("dc:title"));
+        assertTrue("dc:format must be AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
+        assertTrue(wrapper.getSuggestionsByProperty("dc:title").isEmpty());
+        assertFalse(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(wrapper.hasHumanValue("dc:title"));
+        assertFalse(wrapper.hasHumanValue("dc:format"));
 
         autoService.approveAutoProperty(testDoc, "dc:format");
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertFalse("dc:format must no longer by AutoCorrected.", adapted.isAutoCorrected("dc:format"));
-        assertTrue(adapted.getSuggestionsByProperty("dc:format").isEmpty());
-        assertTrue(adapted.hasHumanValue("dc:format"));
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse("dc:format must no longer by AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
+        assertTrue(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(wrapper.hasHumanValue("dc:format"));
     }
 
     @Test
     public void testAutoCorrect() {
+        String formatText = "something";
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto Corrected Doc", "File");
         testDoc = session.createDocument(testDoc);
-        testDoc = docMetadataService.saveEnrichment(session, setupTestEnrichmentMetadata(testDoc));
         testDoc.setPropertyValue("dc:title", "my title");
-        testDoc.setPropertyValue("dc:format", "something");
+        testDoc.setPropertyValue("dc:format", formatText);
+        session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue(wrapper.hasHumanValue("dc:title"));
+        assertTrue(wrapper.hasHumanValue("dc:format"));
+        testDoc = docMetadataService.saveEnrichment(session, setupTestEnrichmentMetadata(testDoc));
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
 
-        SuggestionMetadataAdapter adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue(adapted.hasHumanValue("dc:title"));
-        assertTrue(adapted.hasHumanValue("dc:format"));
-        assertFalse("Property hasn't been AutoCorrected.", adapted.isAutoCorrected("dc:title"));
-
-        autoService.calculateProperties(testDoc, ALL);
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue("dc:title must be AutoCorrected.", adapted.isAutoCorrected("dc:title"));
-        assertTrue("dc:format must be AutoCorrected.", adapted.isAutoCorrected("dc:format"));
-        assertFalse("Won't be autofilled because its been autocorrected.", adapted.isAutoFilled("dc:title"));
-        assertFalse("Won't be autofilled because its been autocorrected", adapted.isAutoFilled("dc:format"));
-        assertEquals("girl", testDoc.getPropertyValue("dc:title"));
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse("Property hasn't been AutoCorrected.", wrapper.isAutoCorrected("dc:title"));
+        assertTrue("dc:format must be AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
+        assertFalse("Won't be autofilled because its been autocorrected.", wrapper.isAutoFilled("dc:title"));
+        assertFalse("Won't be autofilled because its been autocorrected", wrapper.isAutoFilled("dc:format"));
+        assertEquals("cat", testDoc.getPropertyValue("dc:format"));
         List<AutoHistory> history = docMetadataService.getAutoHistory(testDoc);
-        assertEquals(2, history.size());
+        assertEquals(1, history.size());
+        assertEquals(formatText, history.get(0).getPreviousValue());
 
         // Manipulate the test data so the suggestion are removed
         testDoc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, null);
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
 
         // Run correct again
         autoService.calculateProperties(testDoc, CORRECT);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertEquals("The property must be reset to old value.", "my title", testDoc.getPropertyValue("dc:title"));
-        assertFalse("Property is no longer AutoCorrected.", adapted.isAutoCorrected("dc:title"));
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertEquals("The property must be reset to old value.", formatText, testDoc.getPropertyValue("dc:format"));
+        assertFalse("Property is no longer AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
+        history = docMetadataService.getAutoHistory(testDoc);
+        assertTrue(wrapper.getAutoProperties().isEmpty());
+        assertTrue(history.isEmpty());
     }
 
     @Test
@@ -245,9 +220,9 @@ public class TestAutoServices {
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);
-        SuggestionMetadataAdapter adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
         assertTrue("History must be empty because there is no old value.", history.isEmpty());
-        assertTrue("dc:title was auto filled with no history.", adapted.isAutoFilled("dc:title"));
+        assertTrue("dc:title was auto filled with no history.", wrapper.isAutoFilled("dc:title"));
 
         docMetadataService.updateAuto(testDoc, AUTO_FILLED, "dc:title", "I_AM_OLD", comment);
         testDoc = session.saveDocument(testDoc);
@@ -295,8 +270,8 @@ public class TestAutoServices {
         DocumentModel opDoc = (DocumentModel) automationService.run(ctx, chain);
         opDoc = session.saveDocument(opDoc);
         txFeature.nextTransaction();
-        SuggestionMetadataAdapter adapted = opDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue("dc:title must be AutoFilled.", adapted.isAutoFilled("dc:title"));
-        assertTrue("dc:format must be AutoFilled.", adapted.isAutoFilled("dc:format"));
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue("dc:title must be AutoFilled.", wrapper.isAutoFilled("dc:title"));
+        assertTrue("dc:format must be AutoFilled.", wrapper.isAutoFilled("dc:format"));
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.auto.config.test" version="1.0">
+  <extension target="org.nuxeo.ai.configuration.ThresholdComponent"
+             point="thresholdConfiguration">
+    <thresholdConfiguration type="File" global="0.88">
+      <thresholds>
+        <threshold xpath="dc:title" autofill="0.4" autocorrect="0.7"/>
+        <threshold xpath="dc:format" autocorrect="0.9"/>
+      </thresholds>
+    </thresholdConfiguration>
+  </extension>
+</component>

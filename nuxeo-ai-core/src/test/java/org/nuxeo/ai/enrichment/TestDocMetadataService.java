@@ -47,7 +47,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.metadata.SuggestionMetadataAdapter;
+import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -172,26 +172,22 @@ public class TestDocMetadataService {
         Map<String, Object> suggest = suggested.get(0);
         assertEquals("stest", suggest.get(ENRICHMENT_MODEL));
 
-        SuggestionMetadataAdapter adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue(adapted.getModels().contains("stest"));
-        assertEquals(2, adapted.getSuggestionsByProperty("dc:title").size());
-        assertEquals(1, adapted.getSuggestionsByProperty("dc:format").size());
-        assertEquals(3, adapted.getSuggestionsByModel("stest")
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue(wrapper.getModels().contains("stest"));
+        assertEquals(2, wrapper.getSuggestionsByProperty("dc:title").size());
+        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format").size());
+        assertEquals(3, wrapper.getSuggestionsByModel("stest")
                                .stream().mapToInt(l -> l.getValues().size()).sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:title");
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue(adapted.getSuggestionsByProperty("dc:title").isEmpty());
-        assertFalse(adapted.getSuggestionsByProperty("dc:format").isEmpty());
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue(wrapper.getSuggestionsByProperty("dc:title").isEmpty());
+        assertFalse(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:format");
-        testDoc = session.saveDocument(testDoc);
-        txFeature.nextTransaction();
+        wrapper = new SuggestionMetadataWrapper(testDoc);
         classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
-        adapted = testDoc.getAdapter(SuggestionMetadataAdapter.class);
-        assertTrue(adapted.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
         suggested = classProp.getValue(List.class);
         assertTrue("No longer any suggestions.", suggested.isEmpty());
     }

@@ -1,9 +1,24 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.services.DocMetadataService" version="1.0">
-  <implementation class="org.nuxeo.ai.services.DocMetadataServiceImpl" />
+  <implementation class="org.nuxeo.ai.services.DocMetadataServiceImpl"/>
 
   <service>
-    <provide interface="org.nuxeo.ai.services.DocMetadataService" />
+    <provide interface="org.nuxeo.ai.services.DocMetadataService"/>
   </service>
 
+
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <documentation>
+      Listen for modifications that were used to create enrichment metadata,
+      if the property is dirty then the metadata information is removed.
+    </documentation>
+    <listener name="enrichedDirtyProp" async="false" postCommit="false"
+              class="org.nuxeo.ai.enrichment.EnrichedPropertiesEventListener" priority="12">
+      <event>beforeDocumentModification</event>
+    </listener>
+    <listener name="enrichmentModified" async="false" postCommit="false"
+              class="org.nuxeo.ai.enrichment.EnrichedEventListener">
+      <event>ENRICHMENT_MODIFIED</event>
+    </listener>
+  </extension>
 </component>
