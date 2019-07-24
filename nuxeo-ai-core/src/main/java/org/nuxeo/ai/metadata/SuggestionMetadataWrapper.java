@@ -42,9 +42,9 @@ import java.util.stream.Collectors;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
- * An adapter for suggestion metadata.
+ * An wrapper around suggestion metadata that pre-processes the data to make it easier to use.
  */
-public class SuggestionMetadataAdapter {
+public class SuggestionMetadataWrapper {
 
     protected final DocumentModel doc;
 
@@ -60,12 +60,16 @@ public class SuggestionMetadataAdapter {
 
     protected Map<String, List<AIMetadata.Label>> suggestionsByProperty = new HashMap<>();
 
-    public SuggestionMetadataAdapter(DocumentModel doc) {
+    public SuggestionMetadataWrapper(DocumentModel doc) {
         this.doc = doc;
-        adaptToDoc();
+        init();
     }
 
-    protected void adaptToDoc() {
+    /**
+     * Process the document
+     */
+    protected void init() {
+
 
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             return;

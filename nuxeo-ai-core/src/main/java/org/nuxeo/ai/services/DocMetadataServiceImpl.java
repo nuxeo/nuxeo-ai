@@ -32,7 +32,6 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-import static org.nuxeo.ai.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
 
@@ -53,10 +52,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.auto.AutoHistory;
-import org.nuxeo.ai.enrichment.EnrichedEventListener;
-import org.nuxeo.ai.enrichment.EnrichedPropertiesEventListener;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.services.PipelineService;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -71,9 +67,7 @@ import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import org.nuxeo.runtime.services.config.ConfigurationService;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -83,23 +77,10 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
 
-    public static final String ENRICHMENT_USING_FACETS = "nuxeo.enrichment.facets.inUse";
-
     protected static final TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
     };
 
     private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
-
-    @Override
-    public void start(ComponentContext context) {
-        super.start(context);
-        if (Framework.getService(ConfigurationService.class).isBooleanTrue(ENRICHMENT_USING_FACETS)) {
-            PipelineService pipelineService = Framework.getService(PipelineService.class);
-            // Facets are being used so lets clean it up as well.
-            pipelineService.addEventListener(DIRTY_EVENT_NAME, false, false, new EnrichedPropertiesEventListener());
-            pipelineService.addEventListener(ENRICHMENT_MODIFIED, false, false, new EnrichedEventListener());
-        }
-    }
 
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
@@ -218,7 +199,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         Set<String> autoProps = getAutoPropAsSet(doc, autoField);
         autoProps.add(xPath);
         doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField, autoProps);
-        doc.putContextData(AUTO_ADDED + autoField.toUpperCase(), Boolean.TRUE);
+        doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
 
         if (oldValue != null) {
             List<AutoHistory> existingHistory = getAutoHistory(doc);
@@ -335,7 +316,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                 cleanItemsList.add(entry);
             }
         });
-
         if (cleanItemsList.size() != itemsList.size()) {
             //We made some changes lets update
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, cleanItemsList);
