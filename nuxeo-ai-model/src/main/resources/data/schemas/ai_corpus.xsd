@@ -15,6 +15,10 @@
       <xs:element name="digest" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
+  <xs:element name="model_id" type="xs:string"/>
+  <xs:element name="model_name" type="xs:string"/>
+  <xs:element name="model_start_date" type="xs:dateTime"/>
+  <xs:element name="model_end_date" type="xs:dateTime"/>
   <xs:element name="query" type="xs:string"/>
   <xs:element name="job_id" type="xs:string"/>
   <xs:element name="split" type="xs:integer"/>

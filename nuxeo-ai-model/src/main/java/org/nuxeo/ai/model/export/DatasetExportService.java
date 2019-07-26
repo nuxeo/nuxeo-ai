@@ -18,9 +18,14 @@
  */
 package org.nuxeo.ai.model.export;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import java.util.Collection;
 
 /**
  * For a given dataset provides exporting capabilities.
@@ -40,6 +45,22 @@ public interface DatasetExportService {
      */
     String export(CoreSession session, String nxql, Collection<String> inputProperties,
                   Collection<String> outputProperties, int split);
+
+    /**
+     * Export the dataset matched by the nxql query and property names.
+     * Splits the dataset into 2 random groups based on the percentage split value.
+     * Overloaded version of {@link DatasetExportService#export(CoreSession, String, Collection, Collection, int)}
+     *
+     * @param session          core session
+     * @param nxql             a valid query to use as a filter
+     * @param inputProperties  list of document property names
+     * @param outputProperties list of document property names
+     * @param split            a number between 1 and 100.
+     * @param modelParams      Reference parameters of AI_Model
+     * @return a bulk command id reference
+     */
+    String export(CoreSession session, String nxql, Collection<String> inputProperties,
+                  Collection<String> outputProperties, int split, @Nullable Map<String, Serializable> modelParams);
 
     /**
      * Get the Corpus document by id or return null

@@ -26,23 +26,33 @@ public class AiDocumentTypeConstants {
     // corpus type constants
     public static final String CORPUS_TYPE = "AI_Corpus";
 
-    public static final String CORPUS_JOBID = "ai_corpus:job_id";
+    public static final String CORPUS_SCHEMA = "ai_corpus";
 
-    public static final String CORPUS_QUERY = "ai_corpus:query";
+    public static final String CORPUS_MODEL_ID = CORPUS_SCHEMA + ":model_id";
 
-    public static final String CORPUS_SPLIT = "ai_corpus:split";
+    public static final String CORPUS_MODEL_NAME = CORPUS_SCHEMA + ":model_name";
 
-    public static final String CORPUS_DOCUMENTS_COUNT = "ai_corpus:documents_count";
+    public static final String CORPUS_MODEL_START_DATE = CORPUS_SCHEMA + ":model_start_date";
 
-    public static final String CORPUS_INPUTS = "ai_corpus:inputs";
+    public static final String CORPUS_MODEL_END_DATE = CORPUS_SCHEMA + ":model_end_date";
 
-    public static final String CORPUS_OUTPUTS = "ai_corpus:outputs";
+    public static final String CORPUS_JOBID = CORPUS_SCHEMA + ":job_id";
 
-    public static final String CORPUS_TRAINING_DATA = "ai_corpus:training_data";
+    public static final String CORPUS_QUERY = CORPUS_SCHEMA + ":query";
 
-    public static final String CORPUS_EVALUATION_DATA = "ai_corpus:evaluation_data";
+    public static final String CORPUS_SPLIT = CORPUS_SCHEMA + ":split";
 
-    public static final String CORPUS_STATS = "ai_corpus:statistics";
+    public static final String CORPUS_DOCUMENTS_COUNT = CORPUS_SCHEMA + ":documents_count";
+
+    public static final String CORPUS_INPUTS = CORPUS_SCHEMA + ":inputs";
+
+    public static final String CORPUS_OUTPUTS = CORPUS_SCHEMA + ":outputs";
+
+    public static final String CORPUS_TRAINING_DATA = CORPUS_SCHEMA + ":training_data";
+
+    public static final String CORPUS_EVALUATION_DATA = CORPUS_SCHEMA + ":evaluation_data";
+
+    public static final String CORPUS_STATS = CORPUS_SCHEMA + ":statistics";
 
     private AiDocumentTypeConstants() {
         // just Constants
