@@ -19,19 +19,15 @@
 package org.nuxeo.ai.pipes.functions;
 
 import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
-import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Calendar;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,11 +38,7 @@ import org.nuxeo.ecm.core.api.DocumentRef;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.io.avro.AvroConstants;
-import org.nuxeo.ecm.core.query.sql.NXQL;
-import org.nuxeo.ecm.core.schema.SchemaManager;
-import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.QName;
-import org.nuxeo.runtime.api.Framework;
 
 /**
  * Utilities to work with document properties
@@ -179,42 +171,6 @@ public class PropertyUtils {
             return null;
         }
 
-    }
-
-    /**
-     * For the given property, find out if it exists and determine if its text or content
-     */
-    public static Map<String, String> getPropertyWithType(String prop) {
-        Field field = Framework.getService(SchemaManager.class).getField(prop);
-        Map<String, String> feature = new HashMap<>();
-        feature.put(NAME_PROP, prop);
-        if (field == null) {
-            if (NXQL.ECM_FULLTEXT.equals(prop)) {
-                log.debug("Skipping {} because its not possible to get stats on it.", NXQL.ECM_FULLTEXT);
-                return null;
-            } else {
-                log.warn(prop + " does not exist as a type, defaulting to txt type.");
-                feature.put(TYPE_PROP, TEXT_TYPE);
-            }
-            return feature;
-        }
-        String type = isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE;
-        if (field.getType().isListType()) {
-            type = CATEGORY_TYPE;
-        }
-        feature.put(TYPE_PROP, type);
-        return feature;
-    }
-
-
-    /**
-     * For a given Collection of property names, return a list of features with the property name and type.
-     */
-    public static List<Map<String, String>> propsToTypedList(Collection<String> properties) {
-        return properties.stream()
-                         .map(PropertyUtils::getPropertyWithType)
-                         .filter(Objects::nonNull)
-                         .collect(Collectors.toList());
     }
 
     /**

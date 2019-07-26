@@ -18,12 +18,15 @@
  */
 package org.nuxeo.ai.model;
 
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_INPUTS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_START_DATE;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_OUTPUTS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_QUERY;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_SPLIT;
@@ -33,6 +36,8 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 
 import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +101,9 @@ public class TestDatasetOperation {
         params.put("inputs", "dc:title,dc:description");
         params.put("outputs", "dc:nature");
         params.put("split", split);
+        params.put("model_id", "fake_id");
+        params.put("model_start_date", new Date());
+
         OperationChain chain = new OperationChain("testChain1");
         chain.add(DatasetExportOperation.ID).from(params);
         String returned = (String) automationService.run(ctx, chain);
@@ -103,7 +111,12 @@ public class TestDatasetOperation {
 
         DocumentModel doc = getCorpusDoc(returned);
         assertEquals(TEST_QUERY, doc.getPropertyValue(CORPUS_QUERY));
-        assertEquals(Long.valueOf(split), doc.getPropertyValue(CORPUS_SPLIT));
+        assertEquals((long) split, doc.getPropertyValue(CORPUS_SPLIT));
+        assertEquals("fake_id", doc.getPropertyValue(CORPUS_MODEL_ID));
+        Calendar startDate = (Calendar) doc.getPropertyValue(CORPUS_MODEL_START_DATE);
+
+        assertNotNull(startDate);
+        assertThat(startDate.getTime()).isInSameDayAs(new Date());
     }
 
     protected DocumentModel getCorpusDoc(String returned) {

@@ -29,8 +29,8 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.propsToTypedList;
 import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
+import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MIN_DOC_COUNT_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
@@ -46,10 +46,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.model.AiDocumentTypeConstants;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.adapters.AICorpus;
+import org.nuxeo.ai.adapters.AICorpus.IOParam;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -58,6 +60,9 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
+import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
 import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
@@ -86,7 +91,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     protected static final Properties EMPTY_PROPS = new Properties();
 
-    private static final Log log = LogFactory.getLog(DatasetExportServiceImpl.class);
+    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
 
     /**
      * Make an Aggregate using AggregateFactory.
@@ -107,6 +112,13 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public String export(CoreSession session, String nxql,
                          Collection<String> inputProperties, Collection<String> outputProperties, int split) {
+        return export(session, nxql, inputProperties, outputProperties, split, null);
+    }
+
+    @Override
+    public String export(CoreSession session, String nxql,
+                         Collection<String> inputProperties, Collection<String> outputProperties, int split,
+                         Map<String, Serializable> modelParams) {
 
         validateParams(nxql, inputProperties, outputProperties);
 
@@ -120,22 +132,36 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         } catch (IOException e) {
             throw new NuxeoException("Unable to process stats blob", e);
         }
-        List<Map<String, String>> inputs = propsToTypedList(inputProperties);
-        List<Map<String, String>> outputs = propsToTypedList(outputProperties);
-        List<Map<String, String>> featuresWithType = new ArrayList<>(inputs);
+        List<IOParam> inputs = propsToTypedList(inputProperties);
+        List<IOParam> outputs = propsToTypedList(outputProperties);
+
+        List<IOParam> featuresWithType = new ArrayList<>(inputs);
         featuresWithType.addAll(outputs);
-        DocumentModel corpus = createCorpus(session, nxql, inputs, outputs, split, statsBlob);
+        AICorpus corpus = createCorpus(session, nxql, inputs, outputs, split, statsBlob);
 
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNxql(nxql, featuresWithType))
+
+        String notNullNXQL = notNullNxql(nxql, featuresWithType);
+        String username = session.getPrincipal().getName();
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL)
+                .user(username)
                 .repository(session.getRepositoryName())
-                .user(session.getPrincipal().getName())
                 .param(EXPORT_FEATURES_PARAM, String.join(",", featuresList))
                 .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
+
         String bulkId = Framework.getService(BulkService.class).submit(bulkCommand);
-        corpus.setPropertyValue(CORPUS_JOBID, bulkId);
-        session.saveDocument(corpus);
+        corpus.setJobId(bulkId);
+
+        DocumentModel document = corpus.getDocument();
+        if (modelParams != null) {
+            for (String key : modelParams.keySet()) {
+                document.setPropertyValue(key, modelParams.get(key));
+            }
+        }
+
+        session.createDocument(document);
+
         return bulkId;
     }
 
@@ -156,24 +182,27 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Create a corpus document for the data export.
      */
-    public DocumentModel createCorpus(CoreSession session, String query,
-                                      List<Map<String, String>> inputs, List<Map<String, String>> outputs, int split,
-                                      Blob statsBlob) {
+    public AICorpus createCorpus(CoreSession session, String query,
+                                 List<IOParam> inputs, List<IOParam> outputs, int split,
+                                 Blob statsBlob) {
         DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", CORPUS_TYPE);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY, query);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_SPLIT, split);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_INPUTS, (Serializable) inputs);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS, (Serializable) outputs);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_STATS, (Serializable) statsBlob);
-        return session.createDocument(doc);
+
+        AICorpus adapter = doc.getAdapter(AICorpus.class);
+        adapter.setQuery(query);
+        adapter.setSplit(split);
+        adapter.setInputs(inputs);
+        adapter.setOutputs(outputs);
+        adapter.setStatistics(statsBlob);
+
+        return adapter;
     }
 
     @Override
     public DocumentModel getCorpusDocument(CoreSession session, String id) {
         List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
-                                                               CORPUS_TYPE,
-                                                               CORPUS_JOBID,
-                                                               id));
+                CORPUS_TYPE,
+                CORPUS_JOBID,
+                id));
         if (docs.size() == 1) {
             return docs.get(0);
         } else {
@@ -200,7 +229,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         validateParams(nxql, inputProperties, outputProperties);
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
-        List<Map<String, String>> featuresWithType = propsToTypedList(featuresList);
+        List<IOParam> featuresWithType = propsToTypedList(featuresList);
 
         List<Statistic> stats = new ArrayList<>();
         NxQueryBuilder qb = new NxQueryBuilder(session).nxql(nxql).limit(0);
@@ -217,13 +246,13 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Get the stats for the smaller dataset of valid values.
      */
     @SuppressWarnings("unchecked")
-    protected void getValidStats(List<Map<String, String>> featuresWithType,
+    protected void getValidStats(List<IOParam> featuresWithType,
                                  long total, List<Statistic> stats, NxQueryBuilder qb) {
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
                 case IMAGE_TYPE:
-         //           qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
+                    //           qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
                     break;
                 default:
                     // Only 2 types at the moment, we would need numeric type in the future.
@@ -238,18 +267,18 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
         stats.addAll(esResult.getAggregates().stream()
-                             .map(Statistic::from)
-                             .filter(Objects::nonNull)
-                             .collect(Collectors.toList()));
+                .map(Statistic::from)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()));
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
-                               esResult.getElasticsearchResponse().getHits().getTotalHits()));
+                esResult.getElasticsearchResponse().getHits().getTotalHits()));
     }
 
     /**
      * Gets the overall stats for the dataset, before considering if the fields are valid.
      */
     @SuppressWarnings("unchecked")
-    protected Long getOverallStats(List<Map<String, String>> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
+    protected Long getOverallStats(List<IOParam> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
 
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
@@ -276,7 +305,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         return propName + "/length";
     }
 
-    protected String notNullNxql(String nxql, List<Map<String, String>> featuresWithType) {
+    protected String notNullNxql(String nxql, List<IOParam> featuresWithType) {
         StringBuilder buffy = new StringBuilder(nxql);
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
@@ -292,5 +321,42 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             }
         }
         return buffy.toString();
+    }
+
+    /**
+     * For the given property, find out if it exists and determine if its text or content
+     */
+    protected IOParam getPropertyWithType(String prop) {
+        Field field = Framework.getService(SchemaManager.class).getField(prop);
+        IOParam feature = new IOParam();
+
+        feature.put(NAME_PROP, prop);
+        if (field == null) {
+            if (NXQL.ECM_FULLTEXT.equals(prop)) {
+                log.debug("Skipping {} because its not possible to get stats on it.", NXQL.ECM_FULLTEXT);
+                return null;
+            } else {
+                log.warn(prop + " does not exist as a type, defaulting to txt type.");
+                feature.put(TYPE_PROP, TEXT_TYPE);
+            }
+            return feature;
+        }
+        String type = isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE;
+        if (field.getType().isListType()) {
+            type = CATEGORY_TYPE;
+        }
+        feature.put(TYPE_PROP, type);
+        return feature;
+    }
+
+
+    /**
+     * For a given Collection of property names, return a list of features with the property name and type.
+     */
+    protected List<IOParam> propsToTypedList(Collection<String> properties) {
+        return properties.stream()
+                .map(this::getPropertyWithType)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 }

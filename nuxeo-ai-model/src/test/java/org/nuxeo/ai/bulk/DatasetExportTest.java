@@ -34,7 +34,17 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -63,16 +73,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
@@ -113,7 +115,7 @@ public class DatasetExportTest {
         String commandId = Framework.getService(DatasetExportService.class)
                                     .export(session, nxql,
                                             Arrays.asList("dc:title", "file:content"),
-                                            Arrays.asList("dc:description"), 60);
+                                            Arrays.asList("dc:description"), 60, null);
         txFeature.nextTransaction();
         assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
 
