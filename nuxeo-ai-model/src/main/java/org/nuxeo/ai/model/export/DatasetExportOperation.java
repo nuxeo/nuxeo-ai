@@ -18,7 +18,16 @@
  */
 package org.nuxeo.ai.model.export;
 
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.bulk.DataSetBulkAction.ExportingComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_END_DATE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_NAME;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_START_DATE;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
 
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
@@ -51,8 +60,42 @@ public class DatasetExportOperation {
     @Param(name = "split", required = false)
     protected int split = DEFAULT_SPLIT;
 
+    @Param(name = "model_id", required = false)
+    protected String modelId;
+
+    @Param(name = "model_name", required = false)
+    protected String modelName;
+
+    @Param(name = "model_start_date", required = false)
+    protected Date start;
+
+    @Param(name = "model_end_date", required = false)
+    protected Date end;
+
     @OperationMethod
     public String run() {
-        return service.export(session, query, inputs, outputs, split);
+        HashMap<String, Serializable> params = buildCorpusParameters();
+        return service.export(session, query, inputs, outputs, split, params);
+    }
+
+    protected HashMap<String, Serializable> buildCorpusParameters() {
+        HashMap<String, Serializable> params = new HashMap<>();
+        if (isNotEmpty(modelId)) {
+            params.put(CORPUS_MODEL_ID, modelId);
+        }
+
+        if (isNotEmpty(modelName)) {
+            params.put(CORPUS_MODEL_NAME, modelName);
+        }
+
+        if (start != null) {
+            params.put(CORPUS_MODEL_START_DATE, start);
+        }
+
+        if (end != null) {
+            params.put(CORPUS_MODEL_END_DATE, end);
+        }
+
+        return params;
     }
 }

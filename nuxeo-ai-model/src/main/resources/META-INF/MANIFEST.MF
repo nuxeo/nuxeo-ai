@@ -7,8 +7,9 @@ Bundle-Name: ai-model
 Bundle-ManifestVersion: 2
 Require-Bundle: org.nuxeo.ai.nuxeo-ai-pipes,org.nuxeo.ai.ai-core,org.nuxeo.ecm.platform.picture.api
 Bundle-SymbolicName: org.nuxeo.ai.ai-model;singleton=true
-Nuxeo-Component: OSGI-INF/custom-model-types-contrib.xml,
-   OSGI-INF/ai-cloud-client.xml,
-   OSGI-INF/ai-export-service.xml,
-   OSGI-INF/ai-runtime-model-contrib.xml,
-   OSGI-INF/ai-bulk.xml
+Nuxeo-Component: OSGI-INF/adapters-contrib.xml,
+ OSGI-INF/custom-model-types-contrib.xml,
+ OSGI-INF/ai-cloud-client.xml,
+ OSGI-INF/ai-export-service.xml,
+ OSGI-INF/ai-runtime-model-contrib.xml,
+ OSGI-INF/ai-bulk.xml
