@@ -1,10 +1,10 @@
 {
   "request": {
-    "method": "POST",
-    "url": "/api/v1/ai/mockTestProject"
+    "method": "GET",
+    "url": "/api/v1/ai/mockTestProject/model"
   },
   "response": {
-    "status": 201,
+    "status": 200,
     "jsonBody": {
       "entity-type": "document",
       "repository": "test",

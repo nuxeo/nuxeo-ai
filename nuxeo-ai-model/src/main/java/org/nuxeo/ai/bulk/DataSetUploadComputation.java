@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 
 import org.apache.logging.log4j.LogManager;
@@ -61,19 +62,24 @@ public class DataSetUploadComputation extends AbstractComputation {
                             try (CloseableCoreSession session =
                                          CoreInstance.openCoreSession(cmd.getRepository(), cmd.getUsername())) {
                                 DocumentModel document = Framework.getService(DatasetExportService.class)
-                                                                  .getCorpusDocument(session, cmd.getId());
+                                        .getCorpusDocument(session, cmd.getId());
                                 if (document != null) {
                                     CloudClient client = Framework.getService(CloudClient.class);
                                     if (client.isAvailable()) {
                                         log.info("Uploading dataset to cloud for command {}," +
-                                                         " corpus doc {}", cmd.getId(), document.getId());
-                                        boolean success = client.uploadedDataset(document);
+                                                " corpus doc {}", cmd.getId(), document.getId());
+
+                                        String uid = client.uploadedDataset(document);
                                         log.info("Upload of dataset to cloud for command {} {}.", cmd.getId(),
-                                                 success ? "successful" : "failed");
+                                                isNotEmpty(uid) ? "successful" : "failed");
+
+                                        boolean success = client.addDatasetToModel(document, uid);
+                                        log.info("Added dataset to AI_Model {} for command {} {}.", uid, cmd.getId(),
+                                                success ? "successful" : "failed");
                                     } else {
                                         log.warn("Upload to cloud not possible for export command {}," +
-                                                         " corpus doc {} and client {}",
-                                                 cmd.getId(), document.getId(), client.isAvailable());
+                                                        " corpus doc {} and client {}",
+                                                cmd.getId(), document.getId(), client.isAvailable());
                                     }
                                 }
                             }
@@ -82,7 +88,6 @@ public class DataSetUploadComputation extends AbstractComputation {
             } else {
                 log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", status.getId());
             }
-
         }
         context.askForCheckpoint();
     }
