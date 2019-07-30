@@ -18,11 +18,13 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ecm.core.api.DocumentModel;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
+
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
  * Serves runtime AI models
@@ -40,11 +42,6 @@ public interface ModelServingService {
     Collection<ModelDescriptor> listModels();
 
     /**
-     * List all models that match the provided document
-     */
-    Collection<RuntimeModel> getDocumentModels(DocumentModel document);
-
-    /**
      * Get a RuntimeModel by Id
      */
     RuntimeModel getModel(String modelId);
@@ -55,8 +52,13 @@ public interface ModelServingService {
     Predicate<DocumentModel> getPredicate(String modelId);
 
     /**
-     * For each running model, evaluate if the supplied document passes the predicate test for a model, if so
-     * call the model and return the results.
+     * Get all the input properties for all models that match the provided document.
+     */
+    Set<String> getInputs(DocumentModel document);
+
+    /**
+     * For each running model, evaluate if the supplied document passes the predicate test for a model, if so call the
+     * model and return the results.
      */
     List<EnrichmentMetadata> predict(DocumentModel documentModel);
 }

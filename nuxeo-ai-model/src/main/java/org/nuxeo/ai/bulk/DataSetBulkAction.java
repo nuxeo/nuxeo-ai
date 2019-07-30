@@ -132,7 +132,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             for (String id : ids) {
                 try {
                     DocumentModel doc = coreSession.getDocument(new IdRef(id));
-                    BlobTextFromDocument subDoc = PropertyUtils.docSerialize(doc, customProperties);
+                    BlobTextFromDocument subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(customProperties));
                     boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                     if (subDoc != null) {
                         if (log.isTraceEnabled()) {

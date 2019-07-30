@@ -29,13 +29,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.ModelProperty;
-import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
@@ -69,19 +67,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     /**
      * Makes a DocumentModel predicate including the properties
      */
-    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs, ModelDescriptor.ModelPredicate filter) {
-        return makeFilterPredicate(filter).and(d -> inputs.stream().allMatch(i -> notNull(d, i.getName())));
-    }
-
-    /*
-     * Makes a DocumentModel predicate based on just the filter
-     */
-    public static Predicate<DocumentModel> makeFilterPredicate(ModelDescriptor.ModelPredicate filter) {
-        Predicate<DocumentModel> docPredicate = Predicates.doc();
-        if (StringUtils.isNotBlank(filter.primaryType)) {
-            docPredicate = docPredicate.and(d -> filter.primaryType.equals(d.getType()));
-        }
-        return docPredicate;
+    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs, Predicate<DocumentModel> predicate) {
+        return predicate.and(d -> inputs.stream().allMatch(i -> notNull(d, i.getName())));
     }
 
     @Override
@@ -112,8 +99,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
             Framework.getService(AIComponent.class).addEnrichmentService(descriptor.id, (EnrichmentService) model);
         }
         models.put(descriptor.id, model);
-        predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter));
-        filterPredicates.put(descriptor.id, makeFilterPredicate(descriptor.filter));
+        predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter.get()));
+        filterPredicates.put(descriptor.id, descriptor.filter.get());
     }
 
     @Override
@@ -140,13 +127,14 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
-    public Collection<RuntimeModel> getDocumentModels(DocumentModel document) {
+    public Set<String> getInputs(DocumentModel document) {
         return filterPredicates.entrySet()
                                .stream()
                                .filter(e -> e.getValue().test(document))
                                .map(e -> models.get(e.getKey()))
                                .filter(Objects::nonNull)
-                               .collect(Collectors.toList());
+                               .flatMap(m -> m.getInputNames().stream())
+                               .collect(Collectors.toSet());
     }
 
     @Override

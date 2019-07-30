@@ -24,8 +24,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Base64;
@@ -183,7 +183,7 @@ public class PropertyUtils {
     /**
      * Convert a document to BlobTextFromDocument with only a sub-set of the properties.
      */
-    public static BlobTextFromDocument docSerialize(DocumentModel doc, List<String> propertiesList) {
+    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<String> propertiesList) {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
         Map<String, String> properties = blobTextFromDoc.getProperties();
 
