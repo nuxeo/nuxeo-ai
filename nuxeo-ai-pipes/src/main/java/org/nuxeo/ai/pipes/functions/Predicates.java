@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
@@ -65,6 +66,14 @@ public class Predicates {
 
     public static Predicate<DocumentModel> hasFacets(String... facets) {
         return doc().and(d -> Arrays.stream(facets).allMatch(d::hasFacet));
+    }
+
+    public static Predicate<DocumentModel> isType(String primaryType) {
+        Predicate<DocumentModel> docPredicate = Predicates.doc();
+        if (StringUtils.isNotBlank(primaryType)) {
+            docPredicate = docPredicate.and(d -> primaryType.equals(d.getType()));
+        }
+        return docPredicate;
     }
 
     public static Predicate<DocumentModel> isPicture() {

@@ -86,4 +86,18 @@
     </model>
   </extension>
 
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="simpleModel">
+      <filter primaryType="File"/>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
+      <info name="modelName">mockTestModel</info>
+      <info name="modelLabel">testing</info>
+    </model>
+  </extension>
+
 </component>
