@@ -3,13 +3,19 @@
 
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
     <action name="bulkDatasetExport" bucketSize="100" batchSize="20"/>
+    <action name="bulkEnrich" bucketSize="100" batchSize="50"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
                      defaultConcurrency="1" defaultPartitions="1">
-      <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true" />
-      <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true" />
+      <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
+      <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+    </streamProcessor>
+    <streamProcessor name="bulkEnrich" class="org.nuxeo.ai.bulk.BulkEnrichmentAction" logConfig="bulk"
+                     defaultConcurrency="2" defaultPartitions="2">
+      <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
+      <option name="streamName">bulk.enrich</option>
     </streamProcessor>
   </extension>
 </component>
