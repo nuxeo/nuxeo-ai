@@ -22,6 +22,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
@@ -80,7 +82,7 @@ public class CloudClientTest {
 
         assertFalse(client.isAvailable());
         // Doesn't do anything because its not configured.
-        assertFalse(client.uploadedDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE)));
+        assertNull(client.uploadedDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE)));
 
         try {
             ((NuxeoCloudClient) client).configureClient(new CloudConfigDescriptor());
@@ -94,13 +96,13 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testConfiguredSuccess() throws IOException {
-        assertTrue(client.uploadedDataset(testDocument()));
+        assertNotNull(client.uploadedDataset(testDocument()));
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-bad-test.xml")
     public void testConfiguredFails() throws IOException {
-        assertFalse(client.uploadedDataset(testDocument()));
+        assertNull(client.uploadedDataset(testDocument()));
     }
 
     protected DocumentModel testDocument() throws IOException {
@@ -151,6 +153,13 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldGetModelsFromCloud() throws IOException {
+        JSONBlob models = client.getCloudAIModels(session);
+        assertThat(models.toString()).isNotEmpty();
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void shouldGetCorpusFromCloud() throws IOException {
         JSONBlob models = client.getCloudAIModels(session);
         assertThat(models.toString()).isNotEmpty();
     }

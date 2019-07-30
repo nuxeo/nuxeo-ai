@@ -77,6 +77,10 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
+    public static final String QUERY = "SELECT * FROM " + CORPUS_TYPE
+            + " WHERE ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
+            + CORPUS_JOBID + " = ";
+
     public static final PathRef PARENT_PATH = new PathRef("/" + CORPUS_TYPE);
 
     public static final String NUXEO_FOLDER = "Folder";
@@ -186,7 +190,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                                  List<IOParam> inputs, List<IOParam> outputs, int split,
                                  Blob statsBlob) {
         DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", CORPUS_TYPE);
-
         AICorpus adapter = doc.getAdapter(AICorpus.class);
         adapter.setQuery(query);
         adapter.setSplit(split);
@@ -199,14 +202,11 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     @Override
     public DocumentModel getCorpusDocument(CoreSession session, String id) {
-        List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
-                CORPUS_TYPE,
-                CORPUS_JOBID,
-                id));
-        if (docs.size() == 1) {
-            return docs.get(0);
+        List<DocumentModel> docs = session.query(QUERY + NXQL.escapeString(id), 1);
+        if (docs.isEmpty()) {
+            log.warn("Could not find any AI_Corpus documents for id: {}", id);
         } else {
-            log.warn(String.format("Corpus document error, there should only be 1 document for %s", id));
+            return docs.get(0);
         }
         return null;
     }
@@ -238,7 +238,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             return emptyList();
         }
         qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresWithType)).limit(0);
-        getValidStats(featuresWithType, total, stats, qb);
+        getValidStats(featuresWithType, stats, qb);
         return stats;
     }
 
@@ -246,8 +246,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Get the stats for the smaller dataset of valid values.
      */
     @SuppressWarnings("unchecked")
-    protected void getValidStats(List<IOParam> featuresWithType,
-                                 long total, List<Statistic> stats, NxQueryBuilder qb) {
+    protected void getValidStats(List<IOParam> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
@@ -268,7 +267,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
         stats.addAll(esResult.getAggregates().stream()
                 .map(Statistic::from)
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
                 esResult.getElasticsearchResponse().getHits().getTotalHits()));

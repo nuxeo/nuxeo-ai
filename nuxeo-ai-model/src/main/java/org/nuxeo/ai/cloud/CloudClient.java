@@ -20,6 +20,8 @@ package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
 
+import javax.validation.constraints.NotNull;
+
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
@@ -38,8 +40,17 @@ public interface CloudClient {
 
     /**
      * Upload the blobs to the cloud, using data from the corpus document.
+     * @return
      */
-    boolean uploadedDataset(DocumentModel corpusDoc);
+    String uploadedDataset(DocumentModel corpusDoc);
+
+    /**
+     * Asks Cloud to add given corpus id to AI_Model
+     * @param doc Local AI_Corpus to get AI_Model uuid
+     * @param corpusId AI_Cloud's AI_Corpus uuid
+     * @return success
+     */
+    boolean addDatasetToModel(@NotNull DocumentModel doc, String corpusId);
 
     /**
      * @param session session of acting user

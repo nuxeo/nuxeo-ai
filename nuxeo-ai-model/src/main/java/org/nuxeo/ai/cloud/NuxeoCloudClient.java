@@ -18,30 +18,30 @@
  */
 package org.nuxeo.ai.cloud;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_STATS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
 import static org.nuxeo.client.ConstantsV1.API_PATH;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import javax.validation.constraints.NotNull;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.adapters.AICorpus;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
-import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.client.NuxeoClient;
 import org.nuxeo.client.objects.upload.BatchUpload;
 import org.nuxeo.client.spi.NuxeoClientException;
@@ -49,15 +49,11 @@ import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
-import org.nuxeo.ecm.core.io.registry.MarshallerRegistry;
-import org.nuxeo.ecm.core.io.registry.Reader;
-import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import okhttp3.Response;
 
 /**
@@ -147,7 +143,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public boolean uploadedDataset(DocumentModel corpusDoc) {
+    public String uploadedDataset(DocumentModel corpusDoc) {
         if (corpusDoc != null) {
             String jobId = (String) corpusDoc.getPropertyValue(CORPUS_JOBID);
             Blob trainingData = (Blob) corpusDoc.getPropertyValue(CORPUS_TRAINING_DATA);
@@ -178,10 +174,25 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 }
             }
         }
+        return null;
+    }
+
+    @Override
+    public boolean addDatasetToModel(@NotNull DocumentModel doc, String corpusId) {
+        if (isEmpty(corpusId)) {
+            return false;
+        }
+
+        AICorpus corpus = doc.getAdapter(AICorpus.class);
+        if (corpus != null) {
+            Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, corpus.getModelId(), corpusId);
+            Response response = getClient().put(modelsPath.toString(), "{}");
+            return response.isSuccessful();
+        }
         return false;
     }
 
-    protected boolean createDataset(DocumentModel corpusDoc, String batchId) {
+    protected String createDataset(DocumentModel corpusDoc, String batchId) {
         String jobId = (String) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_JOBID);
         String query = (String) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY);
         Long docCount = (Long) corpusDoc.getPropertyValue(AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT);
@@ -190,8 +201,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         long evalCount = 0;
         if (docCount != null && docCount > 0 && split != null && split > 0) {
             // Estimate counts
-            trainingCount = Math.round(docCount * Double.valueOf("0." + split));
-            evalCount = Math.round(docCount * Double.valueOf("0." + (100 - split)));
+            trainingCount = Math.round(docCount * split / 100.f);
+            evalCount = Math.round(docCount * (100 - split) / 100.f);
         }
 
         try {
@@ -204,22 +215,29 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             List<Map<String, Object>> fields = new ArrayList<>(inputs);
             fields.addAll(outputs);
             String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
-            String fieldsAsJson = JacksonUtil.MAPPER.writeValueAsString(fields);
+            String fieldsAsJson = MAPPER.writeValueAsString(fields);
             String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query, split,
                     fieldsAsJson, batchId, batchId, batchId);
 
             log.debug("Uploading to cloud project: {}, payload {}", projectId, payload);
-            Response response = post(API_AI + byProjectId(""), payload, r -> r);
+
+            String url = API_AI + byProjectId("");
+            JsonNode node = post(url, payload, resp ->
+                    MAPPER.readTree(resp.body() != null ? resp.body().byteStream() : null));
+
             log.debug("Upload to cloud project: {}, finished.", projectId);
 
-            if (!response.isSuccessful()) {
-                log.error("Failed to upload the corpus dataset. " + response.toString());
+            if (node == null || !node.has("uid")) {
+                log.error("Failed to upload the corpus dataset.");
+                return null;
+            } else {
+                return node.get("uid").toString();
             }
-            return response.isSuccessful();
         } catch (IOException e) {
             log.error("Failed to process corpus dataset. ", e);
         }
-        return false;
+
+        return null;
     }
 
     @Override
