@@ -36,6 +36,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -189,15 +190,15 @@ public class TestModelServing {
     @Test
     public void testModelListing() throws IOException {
         Collection<ModelDescriptor> models = modelServingService.listModels();
-        assertEquals(3, models.size());
+        assertEquals(4, models.size());
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "FileRefDoc");
-        Collection<RuntimeModel> docModels = modelServingService.getDocumentModels(testDoc);
-        assertEquals(2, docModels.size());
+        Set<String> inputs = modelServingService.getInputs(testDoc);
+        assertEquals(4, inputs.size());
 
         testDoc = session.createDocumentModel("/", "My note Doc", "Note");
-        docModels = modelServingService.getDocumentModels(testDoc);
-        assertEquals(1, docModels.size());
+        inputs = modelServingService.getInputs(testDoc);
+        assertEquals(1, inputs.size());
 
     }
 
