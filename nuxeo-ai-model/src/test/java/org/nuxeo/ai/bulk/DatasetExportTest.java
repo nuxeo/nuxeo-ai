@@ -24,8 +24,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
@@ -126,12 +126,12 @@ public class DatasetExportTest {
         assertEquals(COMPLETED, status.getState());
         // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
         assertEquals(450, status.getProcessed());
-        DocumentModel doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, "nonsense");
+        DocumentModel doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, "nonsense");
         assertNull(doc);
-        doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, commandId);
+        doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, commandId);
         assertNotNull(doc);
-        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_TRAINING_DATA), 3);
-        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_EVALUATION_DATA), 3);
+        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
+        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
         assertTrue(trainingCount > validationCount);
         assertEquals("We should have disguarded 50 bad blobs.", 400, trainingCount + validationCount);
         assertEquals("50 bad blobs.", 50, status.getErrorCount());
@@ -198,12 +198,12 @@ public class DatasetExportTest {
         // All 500 records are processed, even the 50 records that have null subjects
         assertEquals(500, status.getProcessed());
 
-        DocumentModel doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, "nonsense");
+        DocumentModel doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, "nonsense");
         assertNull(doc);
-        doc = Framework.getService(DatasetExportService.class).getCorpusDocument(session, commandId);
+        doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, commandId);
         assertNotNull(doc);
-        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_TRAINING_DATA), -1);
-        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(CORPUS_EVALUATION_DATA), -1);
+        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), -1);
+        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
         assertTrue(trainingCount > validationCount);
         assertEquals(500, trainingCount + validationCount);
     }

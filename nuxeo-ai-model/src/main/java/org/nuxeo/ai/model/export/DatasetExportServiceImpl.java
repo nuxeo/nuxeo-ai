@@ -22,8 +22,8 @@ import static java.util.Collections.emptyList;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 import static org.nuxeo.ai.AIConstants.EXPORT_FEATURES_PARAM;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
@@ -50,8 +50,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.adapters.AICorpus;
-import org.nuxeo.ai.adapters.AICorpus.IOParam;
+import org.nuxeo.ai.adapters.DatasetExport;
+import org.nuxeo.ai.adapters.DatasetExport.IOParam;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -77,11 +77,11 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
-    public static final String QUERY = "SELECT * FROM " + CORPUS_TYPE
+    public static final String QUERY = "SELECT * FROM " + DATASET_EXPORT_TYPE
             + " WHERE ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
-            + CORPUS_JOBID + " = ";
+            + DATASET_EXPORT_JOB_ID + " = ";
 
-    public static final PathRef PARENT_PATH = new PathRef("/" + CORPUS_TYPE);
+    public static final PathRef PARENT_PATH = new PathRef("/" + DATASET_EXPORT_TYPE);
 
     public static final String NUXEO_FOLDER = "Folder";
 
@@ -141,7 +141,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         List<IOParam> featuresWithType = new ArrayList<>(inputs);
         featuresWithType.addAll(outputs);
-        AICorpus corpus = createCorpus(session, nxql, inputs, outputs, split, statsBlob);
+        DatasetExport dataset = createDataset(session, nxql, inputs, outputs, split, statsBlob);
 
         List<String> featuresList = new ArrayList<>(inputProperties);
         featuresList.addAll(outputProperties);
@@ -155,9 +155,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                 .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
 
         String bulkId = Framework.getService(BulkService.class).submit(bulkCommand);
-        corpus.setJobId(bulkId);
+        dataset.setJobId(bulkId);
 
-        DocumentModel document = corpus.getDocument();
+        DocumentModel document = dataset.getDocument();
         if (modelParams != null) {
             for (String key : modelParams.keySet()) {
                 document.setPropertyValue(key, modelParams.get(key));
@@ -186,11 +186,11 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Create a corpus document for the data export.
      */
-    public AICorpus createCorpus(CoreSession session, String query,
-                                 List<IOParam> inputs, List<IOParam> outputs, int split,
-                                 Blob statsBlob) {
-        DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", CORPUS_TYPE);
-        AICorpus adapter = doc.getAdapter(AICorpus.class);
+    public DatasetExport createDataset(CoreSession session, String query,
+                                       List<IOParam> inputs, List<IOParam> outputs, int split,
+                                       Blob statsBlob) {
+        DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", DATASET_EXPORT_TYPE);
+        DatasetExport adapter = doc.getAdapter(DatasetExport.class);
         adapter.setQuery(query);
         adapter.setSplit(split);
         adapter.setInputs(inputs);
@@ -201,10 +201,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
-    public DocumentModel getCorpusDocument(CoreSession session, String id) {
+    public DocumentModel getDatasetExportDocument(CoreSession session, String id) {
         List<DocumentModel> docs = session.query(QUERY + NXQL.escapeString(id), 1);
         if (docs.isEmpty()) {
-            log.warn("Could not find any AI_Corpus documents for id: {}", id);
+            log.warn("Could not find any DatasetExport documents for id: {}", id);
         } else {
             return docs.get(0);
         }
@@ -216,7 +216,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      */
     protected String getRootFolder(CoreSession session) {
         if (!session.exists(PARENT_PATH)) {
-            DocumentModel doc = session.createDocumentModel("/", CORPUS_TYPE, NUXEO_FOLDER);
+            DocumentModel doc = session.createDocumentModel("/", DATASET_EXPORT_TYPE, NUXEO_FOLDER);
             doc.addFacet(HIDDEN_IN_NAVIGATION);
             session.createDocument(doc);
         }

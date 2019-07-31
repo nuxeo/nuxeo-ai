@@ -3,11 +3,11 @@
 <component name="org.nuxeo.ai.model.custom.documents" version="1.0.0">
   <require>org.nuxeo.ecm.core.CoreExtensions</require>
   <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
-    <schema name="ai_corpus" prefix="ai_corpus" override="true" src="data/schemas/ai_corpus.xsd"/>
+    <schema name="dataset_export" prefix="dataset_export" override="true" src="data/schemas/dataset_export.xsd"/>
   </extension>
   <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
-    <doctype name="AI_Corpus" extends="Document">
-      <schema name="ai_corpus"/>
+    <doctype name="DatasetExport" extends="Document">
+      <schema name="dataset_export"/>
       <schema name="dublincore"/>
       <schema name="common"/>
       <schema name="uid"/>
@@ -17,12 +17,12 @@
     </doctype>
     <doctype name="Folder" append="true">
       <subtypes>
-        <type>AI_Corpus</type>
+        <type>DatasetExport</type>
       </subtypes>
     </doctype>
     <doctype name="Workspace" append="true">
       <subtypes>
-        <type>AI_Corpus</type>
+        <type>DatasetExport</type>
       </subtypes>
     </doctype>
   </extension>

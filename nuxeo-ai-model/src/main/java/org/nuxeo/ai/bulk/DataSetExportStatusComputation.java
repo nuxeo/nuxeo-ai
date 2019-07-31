@@ -19,9 +19,9 @@
 package org.nuxeo.ai.bulk;
 
 import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_EVALUATION_DATA;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TRAINING_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
 import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatus;
 
@@ -104,7 +104,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                         blob.ifPresent(theBlob -> {
 
                             if (command != null) {
-                                updateCorpusDocument(exportStatus, command, theBlob, isTraining(name));
+                                updateDatasetDocument(exportStatus, command, theBlob, isTraining(name));
                             } else {
                                 log.warn(String.format(
                                         "The bulk command with id %s is missing.  Unable to save blob info for %s %s.",
@@ -133,18 +133,18 @@ public class DataSetExportStatusComputation extends AbstractComputation {
     /**
      * Set the blob on the corpus document
      */
-    protected void updateCorpusDocument(ExportBulkProcessed exportStatus, BulkCommand command, Blob theBlob, boolean isTraining) {
+    protected void updateDatasetDocument(ExportBulkProcessed exportStatus, BulkCommand command, Blob theBlob, boolean isTraining) {
         TransactionHelper.runInTransaction(
                 () -> {
                     try (CloseableCoreSession session =
                                  CoreInstance.openCoreSession(command.getRepository(), command.getUsername())) {
                         DocumentModel document = Framework.getService(DatasetExportService.class)
-                                                          .getCorpusDocument(session, command.getId());
+                                                          .getDatasetExportDocument(session, command.getId());
                         if (document != null) {
-                            document.setPropertyValue(CORPUS_DOCUMENTS_COUNT,
+                            document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT,
                                                       exportStatus.getProcessed() +
                                                               getCount(exportStatus.getCommandId()));
-                            document.setPropertyValue(isTraining ? CORPUS_TRAINING_DATA : CORPUS_EVALUATION_DATA,
+                            document.setPropertyValue(isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA,
                                                       (Serializable) theBlob);
                             session.saveDocument(document);
                         } else {
