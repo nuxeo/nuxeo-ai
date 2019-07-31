@@ -19,18 +19,18 @@
  */
 package org.nuxeo.ai.adapters.factories;
 
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 
-import org.nuxeo.ai.adapters.AICorpus;
+import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.adapter.DocumentAdapterFactory;
 
-public class AICorpusFactory implements DocumentAdapterFactory {
+public class DatasetExportFactory implements DocumentAdapterFactory {
 
     @Override
     public Object getAdapter(DocumentModel doc, Class<?> aClass) {
-        if (CORPUS_TYPE.equals(doc.getType())) {
-            return new AICorpus(doc);
+        if (DATASET_EXPORT_TYPE.equals(doc.getType())) {
+            return new DatasetExport(doc);
         }
 
         return null;

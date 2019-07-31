@@ -20,10 +20,10 @@ package org.nuxeo.ai.model.export;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.bulk.DataSetBulkAction.ExportingComputation.DEFAULT_SPLIT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_END_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_NAME;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_START_DATE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_END_DATE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_NAME;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -74,26 +74,26 @@ public class DatasetExportOperation {
 
     @OperationMethod
     public String run() {
-        HashMap<String, Serializable> params = buildCorpusParameters();
+        HashMap<String, Serializable> params = buildDatasetParameters();
         return service.export(session, query, inputs, outputs, split, params);
     }
 
-    protected HashMap<String, Serializable> buildCorpusParameters() {
+    protected HashMap<String, Serializable> buildDatasetParameters() {
         HashMap<String, Serializable> params = new HashMap<>();
         if (isNotEmpty(modelId)) {
-            params.put(CORPUS_MODEL_ID, modelId);
+            params.put(DATASET_EXPORT_MODEL_ID, modelId);
         }
 
         if (isNotEmpty(modelName)) {
-            params.put(CORPUS_MODEL_NAME, modelName);
+            params.put(DATASET_EXPORT_MODEL_NAME, modelName);
         }
 
         if (start != null) {
-            params.put(CORPUS_MODEL_START_DATE, start);
+            params.put(DATASET_EXPORT_MODEL_START_DATE, start);
         }
 
         if (end != null) {
-            params.put(CORPUS_MODEL_END_DATE, end);
+            params.put(DATASET_EXPORT_MODEL_END_DATE, end);
         }
 
         return params;

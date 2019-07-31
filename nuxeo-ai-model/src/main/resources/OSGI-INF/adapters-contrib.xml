@@ -2,7 +2,7 @@
 <component name="org.nuxeo.ai.model.adapters">
   
   <extension target="org.nuxeo.ecm.core.api.DocumentAdapterService" point="adapters">
-    <adapter class="org.nuxeo.ai.adapters.AICorpus" factory="org.nuxeo.ai.adapters.factories.AICorpusFactory"/>
+    <adapter class="org.nuxeo.ai.adapters.DatasetExport" factory="org.nuxeo.ai.adapters.factories.DatasetExportFactory"/>
   </extension>
 
 </component>

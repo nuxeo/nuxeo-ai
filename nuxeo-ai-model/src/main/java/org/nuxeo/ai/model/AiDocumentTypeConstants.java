@@ -19,40 +19,40 @@
 package org.nuxeo.ai.model;
 
 /**
- * Simple class to store constants related to AI Document Types: Ai_Model and Ai_Corpus
+ * Simple class to store constants related to AI Document Types: Ai_Model and DatasetExport
  */
 public class AiDocumentTypeConstants {
 
     // corpus type constants
-    public static final String CORPUS_TYPE = "AI_Corpus";
+    public static final String DATASET_EXPORT_TYPE = "DatasetExport";
 
-    public static final String CORPUS_SCHEMA = "ai_corpus";
+    public static final String DATASET_EXPORT_SCHEMA = "dataset_export";
 
-    public static final String CORPUS_MODEL_ID = CORPUS_SCHEMA + ":model_id";
+    public static final String DATASET_EXPORT_MODEL_ID = DATASET_EXPORT_SCHEMA + ":model_id";
 
-    public static final String CORPUS_MODEL_NAME = CORPUS_SCHEMA + ":model_name";
+    public static final String DATASET_EXPORT_MODEL_NAME = DATASET_EXPORT_SCHEMA + ":model_name";
 
-    public static final String CORPUS_MODEL_START_DATE = CORPUS_SCHEMA + ":model_start_date";
+    public static final String DATASET_EXPORT_MODEL_START_DATE = DATASET_EXPORT_SCHEMA + ":model_start_date";
 
-    public static final String CORPUS_MODEL_END_DATE = CORPUS_SCHEMA + ":model_end_date";
+    public static final String DATASET_EXPORT_MODEL_END_DATE = DATASET_EXPORT_SCHEMA + ":model_end_date";
 
-    public static final String CORPUS_JOBID = CORPUS_SCHEMA + ":job_id";
+    public static final String DATASET_EXPORT_JOB_ID = DATASET_EXPORT_SCHEMA + ":job_id";
 
-    public static final String CORPUS_QUERY = CORPUS_SCHEMA + ":query";
+    public static final String DATASET_EXPORT_QUERY = DATASET_EXPORT_SCHEMA + ":query";
 
-    public static final String CORPUS_SPLIT = CORPUS_SCHEMA + ":split";
+    public static final String DATASET_EXPORT_SPLIT = DATASET_EXPORT_SCHEMA + ":split";
 
-    public static final String CORPUS_DOCUMENTS_COUNT = CORPUS_SCHEMA + ":documents_count";
+    public static final String DATASET_EXPORT_DOCUMENTS_COUNT = DATASET_EXPORT_SCHEMA + ":documents_count";
 
-    public static final String CORPUS_INPUTS = CORPUS_SCHEMA + ":inputs";
+    public static final String DATASET_EXPORT_INPUTS = DATASET_EXPORT_SCHEMA + ":inputs";
 
-    public static final String CORPUS_OUTPUTS = CORPUS_SCHEMA + ":outputs";
+    public static final String DATASET_EXPORT_OUTPUTS = DATASET_EXPORT_SCHEMA + ":outputs";
 
-    public static final String CORPUS_TRAINING_DATA = CORPUS_SCHEMA + ":training_data";
+    public static final String DATASET_EXPORT_TRAINING_DATA = DATASET_EXPORT_SCHEMA + ":training_data";
 
-    public static final String CORPUS_EVALUATION_DATA = CORPUS_SCHEMA + ":evaluation_data";
+    public static final String DATASET_EXPORT_EVALUATION_DATA = DATASET_EXPORT_SCHEMA + ":evaluation_data";
 
-    public static final String CORPUS_STATS = CORPUS_SCHEMA + ":statistics";
+    public static final String DATASET_EXPORT_STATS = DATASET_EXPORT_SCHEMA + ":statistics";
 
     private AiDocumentTypeConstants() {
         // just Constants

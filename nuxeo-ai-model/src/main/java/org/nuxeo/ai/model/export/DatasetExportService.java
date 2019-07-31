@@ -65,5 +65,5 @@ public interface DatasetExportService {
     /**
      * Get the Corpus document by id or return null
      */
-    DocumentModel getCorpusDocument(CoreSession session, String id);
+    DocumentModel getDatasetExportDocument(CoreSession session, String id);
 }
