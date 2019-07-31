@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class CloudClientTest {
 
         assertFalse(client.isAvailable());
         // Doesn't do anything because its not configured.
-        assertNull(client.uploadedDataset(session.createDocumentModel("/", "not_used", CORPUS_TYPE)));
+        assertNull(client.uploadedDataset(session.createDocumentModel("/", "not_used", DATASET_EXPORT_TYPE)));
 
         try {
             ((NuxeoCloudClient) client).configureClient(new CloudConfigDescriptor());
@@ -109,25 +109,25 @@ public class CloudClientTest {
         ManagedBlob managedBlob = createTestBlob(manager);
 
         // Create a document
-        DocumentModel doc = session.createDocumentModel("/", "corpora", CORPUS_TYPE);
+        DocumentModel doc = session.createDocumentModel("/", "corpora", DATASET_EXPORT_TYPE);
         doc = session.createDocument(doc);
         String jobId = "testing1";
         String query = "SELECT * FROM Document WHERE ecm:primaryType = 'Note'";
         Long split = 77L;
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_JOBID, jobId);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_SPLIT, split);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID, jobId);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_SPLIT, split);
         Map<String, Object> fields = new HashMap<>();
         fields.put("name", "dc:title");
         fields.put("type", "txt");
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_INPUTS, (Serializable) Collections.singletonList(fields));
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_INPUTS, (Serializable) Collections.singletonList(fields));
         fields.put("name", "dc:creator");
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_OUTPUTS, (Serializable) Collections.singletonList(fields));
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_QUERY, query);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_TRAINING_DATA, (Serializable) managedBlob);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_EVALUATION_DATA, (Serializable) managedBlob);
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_STATS, (Serializable) managedBlob);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS, (Serializable) Collections.singletonList(fields));
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_QUERY, query);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA, (Serializable) managedBlob);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA, (Serializable) managedBlob);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_STATS, (Serializable) managedBlob);
         Long documentsCountValue = 1000L;
-        doc.setPropertyValue(AiDocumentTypeConstants.CORPUS_DOCUMENTS_COUNT, documentsCountValue);
+        doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT, documentsCountValue);
         doc = session.createDocument(doc);
         txFeature.nextTransaction();
         return doc;

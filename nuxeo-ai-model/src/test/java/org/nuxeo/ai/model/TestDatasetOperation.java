@@ -23,14 +23,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_INPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_JOBID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_MODEL_START_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_OUTPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_QUERY;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_SPLIT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.CORPUS_TYPE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
@@ -109,23 +109,23 @@ public class TestDatasetOperation {
         String returned = (String) automationService.run(ctx, chain);
         assertNotNull(returned);
 
-        DocumentModel doc = getCorpusDoc(returned);
-        assertEquals(TEST_QUERY, doc.getPropertyValue(CORPUS_QUERY));
-        assertEquals((long) split, doc.getPropertyValue(CORPUS_SPLIT));
-        assertEquals("fake_id", doc.getPropertyValue(CORPUS_MODEL_ID));
-        Calendar startDate = (Calendar) doc.getPropertyValue(CORPUS_MODEL_START_DATE);
+        DocumentModel doc = getDatasetDoc(returned);
+        assertEquals(TEST_QUERY, doc.getPropertyValue(DATASET_EXPORT_QUERY));
+        assertEquals((long) split, doc.getPropertyValue(DATASET_EXPORT_SPLIT));
+        assertEquals("fake_id", doc.getPropertyValue(DATASET_EXPORT_MODEL_ID));
+        Calendar startDate = (Calendar) doc.getPropertyValue(DATASET_EXPORT_MODEL_START_DATE);
 
         assertNotNull(startDate);
         assertThat(startDate.getTime()).isInSameDayAs(new Date());
     }
 
-    protected DocumentModel getCorpusDoc(String returned) {
+    protected DocumentModel getDatasetDoc(String returned) {
         txFeature.nextTransaction();
         List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
-                                                               CORPUS_TYPE,
-                                                               CORPUS_JOBID,
+                DATASET_EXPORT_TYPE,
+                DATASET_EXPORT_JOB_ID,
                                                                returned));
-        assertEquals("A corpus document must be created.", 1, docs.size());
+        assertEquals("A dataset document must be created.", 1, docs.size());
         return docs.get(0);
     }
 
@@ -186,17 +186,17 @@ public class TestDatasetOperation {
         String returned = (String) automationService.run(ctx, chain);
         assertNotNull(returned);
 
-        DocumentModel doc = getCorpusDoc(returned);
-        assertEquals(TEST_QUERY, doc.getPropertyValue(CORPUS_QUERY));
+        DocumentModel doc = getDatasetDoc(returned);
+        assertEquals(TEST_QUERY, doc.getPropertyValue(DATASET_EXPORT_QUERY));
 
         @SuppressWarnings("unchecked")
-        List<Map> inputs = (List<Map>) doc.getPropertyValue(CORPUS_INPUTS);
+        List<Map> inputs = (List<Map>) doc.getPropertyValue(DATASET_EXPORT_INPUTS);
         assertEquals(2, inputs.size());
         assertTrue(inputs.stream().anyMatch(
                 p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
 
         @SuppressWarnings("unchecked")
-        List<Map> outputs = (List<Map>) doc.getPropertyValue(CORPUS_OUTPUTS);
+        List<Map> outputs = (List<Map>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
         assertEquals(2, outputs.size());
 
         ctx = new OperationContext(session);
