@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:nxs="http://www.nuxeo.org/ai/model/schemas/ai_corpus"
+           xmlns:nxs="http://www.nuxeo.org/ai/model/schemas/dataset_export"
            xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
            xmlns:ref="http://www.nuxeo.org/ecm/schemas/core/external-references/"
-           targetNamespace="http://www.nuxeo.org/ai/model/schemas/ai_corpus">
+           targetNamespace="http://www.nuxeo.org/ai/model/schemas/dataset_export">
   <xs:complexType name="content">
     <xs:sequence>
       <xs:element name="encoding" type="xs:string"/>
@@ -23,12 +23,12 @@
   <xs:element name="job_id" type="xs:string"/>
   <xs:element name="split" type="xs:integer"/>
   <xs:element name="documents_count" type="xs:integer"/>
-  <xs:complexType name="ai_corpus_featureListType">
+  <xs:complexType name="dataset_export_featureListType">
     <xs:sequence>
-      <xs:element name="item" type="nxs:ai_corpus_feature" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="item" type="nxs:dataset_export_feature" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
-  <xs:complexType name="ai_corpus_feature">
+  <xs:complexType name="dataset_export_feature">
     <xs:sequence>
       <xs:element name="name" type="xs:string" nillable="false" nxsv:nillable="false"/>
       <xs:element name="type" nillable="false" nxsv:nillable="false">
@@ -39,8 +39,8 @@
       </xs:element>
     </xs:sequence>
   </xs:complexType>
-  <xs:element name="inputs" type="nxs:ai_corpus_featureListType"/>
-  <xs:element name="outputs" type="nxs:ai_corpus_featureListType"/>
+  <xs:element name="inputs" type="nxs:dataset_export_featureListType"/>
+  <xs:element name="outputs" type="nxs:dataset_export_featureListType"/>
   <xs:element name="training_data" type="nxs:content"/>
   <xs:element name="evaluation_data" type="nxs:content"/>
   <xs:element name="statistics" type="nxs:content"/>
