@@ -82,8 +82,8 @@ public class BulkEnrichmentTest {
 
         DocumentModel testRoot = setupTestData();
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
-        String user = session.getPrincipal().getName();
-        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql, user)
+        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql)
+                .user(session.getPrincipal().getName())
                 .repository(session.getRepositoryName())
                 .build();
         bulkService.submit(command);
