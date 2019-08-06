@@ -19,26 +19,25 @@
 package org.nuxeo.ai.model.serving;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.common.utils.Path;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
@@ -47,6 +46,9 @@ import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentNotFoundException;
+import org.nuxeo.ecm.core.api.DocumentRef;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -54,6 +56,7 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -62,8 +65,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
  * Tests the Suggestion Operation.
  */
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml" })
 public class TestSuggestionOp {
 
     @Rule
@@ -78,13 +81,50 @@ public class TestSuggestionOp {
     @Inject
     protected BlobManager manager;
 
+    @Test(expected = OperationException.class)
+    public void shouldThrowExceptionWhenInputIsNull() throws OperationException {
+        OperationContext ctx = new OperationContext(session);
+        ctx.setInput(null);
+        automationService.run(ctx, SuggestionOp.ID);
+    }
+
+    @Test(expected = DocumentNotFoundException.class)
+    public void shouldThrowExceptionWhenDocRefIsInvalid() throws OperationException {
+        OperationContext ctx = new OperationContext(session);
+        DocumentRef docRef = new IdRef("invalidId");
+        ctx.setInput(docRef);
+        automationService.run(ctx, SuggestionOp.ID);
+    }
+
+    @Test
+    public void shouldNotPersistDocumentPropertiesWhenTheyAreProvided() throws OperationException {
+        DocumentModel document = session.createDocumentModel("/", "My Doc", "FileRefDoc");
+        document.setPropertyValue("dc:title", "my document");
+        document.setPropertyValue("dc:description", "some description");
+        document = session.createDocument(document);
+        session.save();
+
+        DocumentModel updatedDocument = session.getDocument(document.getRef());
+        updatedDocument.setPropertyValue("dc:description", "updated description here");
+
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("updatedDocument", updatedDocument);
+
+        OperationContext ctx = new OperationContext(session);
+        ctx.setInput(document);
+        ctx.putChainParameters(parameters);
+        automationService.run(ctx, SuggestionOp.ID); // Result is not the aim of this test
+
+        DocumentModel returnedDocument = session.getDocument(document.getRef());
+        assertEquals("some description", returnedDocument.getPropertyValue("dc:description"));
+    }
+
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldCall() throws OperationException, IOException {
-
-        DocumentModel referencedDoc = new DocumentModelImpl(null, "File", "123456", new Path("referenced doc"), null, null,
-                                                            null, null, null, null, null);
-        session.importDocuments(Arrays.asList(referencedDoc));
+        DocumentModel referencedDoc = new DocumentModelImpl(null, "File", "123456", new Path("referenced doc"), null,
+                null, null, null, null, null, null);
+        session.importDocuments(List.of(referencedDoc));
 
         String title = "My document suggestion";
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "FileRefDoc");
@@ -93,17 +133,11 @@ public class TestSuggestionOp {
         testDoc = session.createDocument(testDoc);
         session.save();
 
-        OperationContext ctx = new OperationContext(session);
-        ctx.setInput(null);
-        OperationChain chain = new OperationChain("testSuggestChain1");
-        chain.add(SuggestionOp.ID);
-        assertEmptyList((JSONBlob) automationService.run(ctx, chain));
-
         Map<String, Object> resolveParams = new HashMap<>();
         resolveParams.put("references", true);
-        ctx = new OperationContext(session);
+        OperationContext ctx = new OperationContext(session);
         ctx.setInput(testDoc);
-        chain = new OperationChain("testSuggestChain2");
+        OperationChain chain = new OperationChain("testSuggestChain2");
         chain.add(SuggestionOp.ID).from(resolveParams);
         assertSuggestionList((JSONBlob) automationService.run(ctx, chain));
 
@@ -123,8 +157,9 @@ public class TestSuggestionOp {
         testDoc = session.createDocument(testDoc);
         session.save();
         ctx = new OperationContext(session);
+        ctx.setInput(testDoc);
         chain = new OperationChain("testSuggestChain3");
-        chain.add(SuggestionOp.ID).set("document", testDoc);
+        chain.add(SuggestionOp.ID);
         // should fail because of the Note document type
         assertEmptyList((JSONBlob) automationService.run(ctx, chain));
     }
