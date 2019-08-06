@@ -190,7 +190,7 @@ public class TestModelServing {
     @Test
     public void testModelListing() throws IOException {
         Collection<ModelDescriptor> models = modelServingService.listModels();
-        assertEquals(4, models.size());
+        assertEquals(3, models.size());
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "FileRefDoc");
         Set<String> inputs = modelServingService.getInputs(testDoc);

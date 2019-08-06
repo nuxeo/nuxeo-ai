@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.model.bulk.enrich.test" version="1.0">
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="basicBulkModel">
+      <filter primaryType="File"/>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
+      <info name="modelName">mockBulkModel</info>
+      <info name="modelLabel">testing</info>
+    </model>
+  </extension>
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="descBulkModel">
+      <filter primaryType="File"/>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
+      <info name="modelName">descModel</info>
+      <info name="modelLabel">other</info>
+    </model>
+  </extension>
+  
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="basicProcessor" logConfig="bulk" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">bulk.enrich</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">basicBulkModel</option>
+    </streamProcessor>
+  </extension>
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="descProcessor" logConfig="bulk" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">bulk.enrich</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">descBulkModel</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="saveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     logConfig="bulk"
+                     class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
+      <option name="source">enrichment.in</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+    </streamProcessor>
+  </extension>
+</component>

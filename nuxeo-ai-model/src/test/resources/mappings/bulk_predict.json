@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/ai/mockTestProject/model/mockBulkModel/testing/predict"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "results": [{
+        "output_names": ["dc:nature", "dc:creator"],
+        "dc:nature_logits": [-6.193885803222656, -8.201645851135254, 4.885586738586426, -10.66231632232666, -0.757978081703186, 6.506073474884033],
+        "dc:nature_prob": [2.545878714954597e-06, 3.418835206048243e-07, 0.1650407910346985, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
+        "dc:nature_labels": ["LOC", "HUM", "worksheet", "ABBR", "ENTY", "report"],
+        "dc:nature_class_ids": [5],
+        "dc:creator_logits": [-6.193885803222656, -10.66231632232666],
+        "dc:creator_prob": [0.952817481607199, 0.8343720436096191],
+        "dc:creator_labels": ["me", "Administrator"],
+        "dc:creator_class_ids": [2]
+      }]
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

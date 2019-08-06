@@ -80,7 +80,7 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         }
 
         @Override
-        protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> map) {
+        protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> options) {
             ModelServingService modelServingService = Framework.getService(ModelServingService.class);
             for (String id : ids) {
                 try {

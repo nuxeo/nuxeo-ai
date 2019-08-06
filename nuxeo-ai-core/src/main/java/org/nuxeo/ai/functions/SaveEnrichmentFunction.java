@@ -24,6 +24,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.validation.DocumentValidationException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
@@ -41,7 +42,11 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
                     DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
                     DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
                     if (doc != null) {
-                        session.saveDocument(doc);
+                        try {
+                            session.saveDocument(doc);
+                        } catch (DocumentValidationException e) {
+                            log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
+                        }
                     } else {
                         log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);
                     }

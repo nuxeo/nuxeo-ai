@@ -224,7 +224,7 @@ public class TestConfiguredStreamProcessors {
      * Wait until there is no lag or timesout.
      * This is a temporary solution until this logic is available in the framework.
      */
-    protected void waitForNoLag(LogManager manager, String name, String group, Duration timeout) throws InterruptedException {
+    public static void waitForNoLag(LogManager manager, String name, String group, Duration timeout) throws InterruptedException {
 
         final long deadline = System.currentTimeMillis() + timeout.toMillis();
         while (System.currentTimeMillis() < deadline) {
