@@ -4,6 +4,7 @@
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
     <action name="bulkDatasetExport" bucketSize="100" batchSize="20"/>
     <action name="bulkEnrich" bucketSize="100" batchSize="50"/>
+    <action name="bulkEnrichRemove" bucketSize="100" batchSize="50"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
@@ -16,6 +17,10 @@
                      defaultConcurrency="2" defaultPartitions="2">
       <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
       <option name="streamName">bulk.enrich</option>
+    </streamProcessor>
+    <streamProcessor name="bulkEnrichRemove" class="org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction" logConfig="bulk"
+                     defaultConcurrency="2" defaultPartitions="2">
+      <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
     </streamProcessor>
   </extension>
 </component>

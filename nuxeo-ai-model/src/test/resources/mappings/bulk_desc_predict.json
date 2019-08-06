@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/ai/mockTestProject/model/descModel/other/predict"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "results": [{
+        "output_names": ["dc:description", "dc:title"],
+        "dc:description_logits": [4.885586738586426, -10.66231632232666, -0.757978081703186, 6.506073474884033],
+        "dc:description_prob": [0.1650407910346985, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
+        "dc:description_labels": ["big thing", "small", "nice", "Great work"],
+        "dc:description_class_ids": [4],
+        "dc:title_logits": [-6.193885803222656, -10.66231632232666],
+        "dc:title_prob": [0.952817481607199, 0.8343720436096191],
+        "dc:title_labels": ["you", "Administrator"],
+        "dc:title_class_ids": [2]
+      }]
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

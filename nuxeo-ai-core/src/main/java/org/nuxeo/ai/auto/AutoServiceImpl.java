@@ -24,6 +24,7 @@ import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
 import static org.nuxeo.ai.enrichment.EnrichmentService.UNSET;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,6 +36,8 @@ import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
+import org.nuxeo.ecm.automation.core.util.DocumentHelper;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
@@ -81,10 +84,11 @@ public class AutoServiceImpl implements AutoService {
             // Impossible threshold
             return;
         }
+        DocumentModel doc = docMetadata.getDoc();
         Property property;
         boolean alreadyAutofilled = docMetadata.isAutoFilled(xpath);
         try {
-            property = docMetadata.getDoc().getProperty(xpath);
+            property = doc.getProperty(xpath);
             if (!alreadyAutofilled && property.getValue() != null) {
                 // Can't set a non null value
                 log.debug("Unable to autofill property {} for doc {} because it has a value.", xpath,
@@ -98,7 +102,8 @@ public class AutoServiceImpl implements AutoService {
 
         AIMetadata.Label max = calculateMaxLabel(docMetadata.getSuggestionsByProperty(xpath), threshold);
         if (max != null) {
-            if (setProperty(property, max.getName())) {
+
+            if (setProperty(doc.getCoreSession(), doc, xpath, null, max.getName())) {
                 String comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)",
                                                xpath, max.getConfidence(), threshold);
                 log.debug(comment);
@@ -127,10 +132,11 @@ public class AutoServiceImpl implements AutoService {
         }
 
         DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
+        DocumentModel doc = docMetadata.getDoc();
         Property property;
         boolean alreadyAutoCorrected = docMetadata.isAutoCorrected(xpath);
         try {
-            property = docMetadata.getDoc().getProperty(xpath);
+            property = doc.getProperty(xpath);
         } catch (PropertyNotFoundException e) {
             log.warn("Unknown auto correct property {} ", xpath);
             return;
@@ -139,7 +145,7 @@ public class AutoServiceImpl implements AutoService {
         AIMetadata.Label max = calculateMaxLabel(docMetadata.getSuggestionsByProperty(xpath), threshold);
         if (max != null) {
             Serializable oldValue = property.getValue();
-            if (setProperty(property, max.getName())) {
+            if (setProperty(doc.getCoreSession(), doc, xpath, oldValue, max.getName())) {
                 String comment = String.format("Auto corrected %s. (Confidence %s , Threshold %s)",
                                                xpath, max.getConfidence(), threshold);
                 log.debug(comment);
@@ -157,11 +163,14 @@ public class AutoServiceImpl implements AutoService {
         }
     }
 
-    protected boolean setProperty(Property property, String newValue) {
-        Serializable currentValue = property.getValue();
+    protected boolean setProperty(CoreSession session, DocumentModel doc, String key, Serializable currentValue, String newValue) {
         if (!newValue.equals(currentValue)) {
-            property.setValue(newValue);
-            return true;
+            try {
+                DocumentHelper.setProperty(session, doc, key, newValue);
+                return true;
+            } catch (IOException e) {
+                log.debug("Failed to set property " + key, e);
+            }
         }
         return false;
     }
