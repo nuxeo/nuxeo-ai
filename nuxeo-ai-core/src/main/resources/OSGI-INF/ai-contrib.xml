@@ -23,13 +23,6 @@
     <object class="org.nuxeo.ai.bulk.RecordWriterDescriptor"/>
   </extension-point>
 
-  <extension-point name="thresholdConfiguration">
-    <documentation>
-      Configures threshold for given Document types
-    </documentation>
-    <object class="org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor"/>
-  </extension-point>
-
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
     <operation class="org.nuxeo.ai.enrichment.EnrichmentOp"/>
   </extension>

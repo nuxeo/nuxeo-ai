@@ -83,7 +83,7 @@ public class TestTextractService {
         assertNotNull(metadata);
         List<Block> blocks = AWSHelper.getInstance().getTextractBlocks(metadata);
         assertNotNull(blocks);
-        assertTrue(blocks.size() > 100);
+        assertTrue(blocks.size() > 75);
     }
 
     @Test
