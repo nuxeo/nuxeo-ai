@@ -22,15 +22,18 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -52,14 +55,14 @@ import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.ListType;
 import org.nuxeo.ecm.core.schema.types.Schema;
+
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * Suggests metadata for the specified document.
  */
-@Operation(id = SuggestionOp.ID, category = Constants.CAT_DOCUMENT, label = "Ask for a suggestion.",
-        description = "Calls intelligent services on the provided document and returns suggested metadata.")
+@Operation(id = SuggestionOp.ID, category = Constants.CAT_DOCUMENT, label = "Ask for a suggestion.", description = "Calls intelligent services on the provided document and returns suggested metadata.")
 public class SuggestionOp {
 
     public static final String ID = "AI.Suggestion";
@@ -77,29 +80,42 @@ public class SuggestionOp {
     @Context
     protected MarshallerRegistry registry;
 
-    @Param(name = "document", description = "A document", required = false)
-    protected DocumentModel documentModel;
+    @Param(name = "updatedDocument", description = "Document with changes done on client side before saving", required = false)
+    protected DocumentModel updatedDocument;
 
     @Param(name = "references", description = "Should the entity references be resolved?", required = false)
     protected boolean references = false;
 
     @OperationMethod
-    public Blob run(DocumentModel doc) {
+    public Blob run(DocumentRef docRef) {
+        DocumentModel docModel = coreSession.getDocument(docRef);
+        return run(docModel);
+    }
 
-        List<EnrichmentMetadata> suggestions;
-        if (doc == null || (suggestions = modelServingService.predict(doc)) == null || suggestions.isEmpty()) {
+    @OperationMethod
+    public Blob run(DocumentModel doc) {
+        if (updatedDocument != null) {
+            Arrays.stream(doc.getSchemas())
+                    .flatMap(schema -> updatedDocument.getProperties(schema).entrySet().stream())
+                    .forEach(entry -> doc.setPropertyValue(entry.getKey(), (Serializable) entry.getValue()));
+        }
+
+        List<EnrichmentMetadata> suggestions = modelServingService.predict(doc);
+        if (suggestions == null || suggestions.isEmpty()) {
             return Blobs.createJSONBlob(EMPTY_JSON_LIST);
         }
 
         ByteArrayOutputStream outWriter = new ByteArrayOutputStream();
-        DocumentPropertyJsonWriter writer = references ? registry
-                .getInstance(RenderingContext.CtxBuilder.fetchInDoc("properties").get(),
-                             DocumentPropertyJsonWriter.class) : null;
+        DocumentPropertyJsonWriter writer = references
+                ? registry.getInstance(RenderingContext.CtxBuilder.fetchInDoc("properties").get(),
+                DocumentPropertyJsonWriter.class)
+                : null;
         try (JsonGenerator jg = MAPPER.getFactory().createGenerator(outWriter)) {
             List<SuggestionsAsJson> suggestionsAsJson = suggestions.stream()
-                                                                   .map(metadata -> writeJson(metadata, doc, writer, outWriter, jg))
-                                                                   .filter(Objects::nonNull)
-                                                                   .collect(Collectors.toList());
+                    .map(metadata -> writeJson(metadata, doc, writer,
+                            outWriter, jg))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
             return Blobs.createJSONBlob(MAPPER.writeValueAsString(suggestionsAsJson));
         } catch (IOException e) {
             throw new NuxeoException("Unable to turn data into a json String", e);
@@ -110,8 +126,7 @@ public class SuggestionOp {
      * Write property information alongside suggestions.
      */
     protected SuggestionsAsJson writeJson(EnrichmentMetadata metadata, DocumentModel input,
-                                          DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter,
-                                          JsonGenerator jg) {
+                                          DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter, JsonGenerator jg) {
         try {
             List<SuggestionListAsJson> suggestionList = new ArrayList<>();
             for (LabelSuggestion labelSuggestion : metadata.getLabels()) {
@@ -152,17 +167,6 @@ public class SuggestionOp {
             prop.setValue(label.getName());
         }
         return prop;
-    }
-
-    @OperationMethod
-    public Blob run(DocumentRef docRef) {
-        DocumentModel docModel = coreSession.getDocument(docRef);
-        return run(docModel);
-    }
-
-    @OperationMethod
-    public Blob run() {
-        return run(documentModel);
     }
 
     /**
