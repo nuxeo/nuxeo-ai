@@ -32,7 +32,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.bulk.RecordWriter;
 import org.nuxeo.ai.bulk.RecordWriterDescriptor;
-import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentService;
 import org.nuxeo.ai.enrichment.EnrichmentSupport;
@@ -56,8 +55,6 @@ public class AIComponent extends DefaultComponent {
 
     public static final String RECORDWRITER_XP = "recordWriter";
 
-    public static final String THRESHOLD_CONFIGURATION_XP = "thresholdConfiguration";
-
     private static final Log log = LogFactory.getLog(AIComponent.class);
 
     protected final Map<String, EnrichmentDescriptor> enrichmentConfigs = new HashMap<>();
@@ -78,8 +75,6 @@ public class AIComponent extends DefaultComponent {
         } else if (RECORDWRITER_XP.equals(extensionPoint)) {
             RecordWriterDescriptor descriptor = (RecordWriterDescriptor) contribution;
             recordWriterDescriptors.add(descriptor);
-        } else if (THRESHOLD_CONFIGURATION_XP.equals(extensionPoint)) {
-            ThresholdConfiguratorDescriptor descriptor = (ThresholdConfiguratorDescriptor) contribution;
         }
     }
 

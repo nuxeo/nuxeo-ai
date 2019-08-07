@@ -42,7 +42,7 @@ public class ImageHelperWithS3 {
                 new com.amazonaws.services.rekognition.model
                         .S3Object()
                         .withName(key)
-                        .withBucket(s3BinaryManager.bucketName));
+                        .withBucket(s3BinaryManager.getBucketName()));
         if (s3Object != null) {
             return new Image().withS3Object(s3Object);
         }

@@ -22,5 +22,5 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata
 
 EnrichmentMetadata metadata = context.properties["enrichmentMetadata"]
 def doc = context.sourceDocument
-doc.setPropertyValue("dc:title", metadata.labels.collect({ it.name }).join(" "))
+doc.setPropertyValue("dc:title", metadata.labels.collect({ it.values.collect { it.name }.join(" ") }).first())
 context.coreSession.saveDocument(doc)
