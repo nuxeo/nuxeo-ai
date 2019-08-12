@@ -30,15 +30,20 @@ import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
 import static org.nuxeo.client.ConstantsV1.API_PATH;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.function.Supplier;
 import javax.validation.constraints.NotNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.joda.time.DateTime;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.client.NuxeoClient;
@@ -60,24 +65,13 @@ import okhttp3.Response;
  */
 public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
-    public static final String XP_CONFIG = "config";
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
-    public static final String DATASET_TEMPLATE = "{\n" +
-            "  \"entity-type\": \"document\",\n" +
-            "  \"name\": \"%s\",\n" +
-            "  \"type\": \"AI_Corpus\",\n" +
-            "  \"properties\": {\n" +
-            "    \"dc:title\": \"%s\",\n" +
-            "    \"ai_corpus:documents_count\": %s,\n" +
-            "    \"ai_corpus:evaluation_documents_count\": %s,\n" +
-            "    \"ai_corpus:query\": \"%s\",\n" +
-            "    \"ai_corpus:split\": \"%s\",\n" +
-            "    \"ai_corpus:fields\": %s,\n" +
-            "    \"ai_corpus:training_data\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"0\" },\n" +
-            "    \"ai_corpus:evaluation_data\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"1\" },\n" +
-            "    \"ai_corpus:statistics\" : { \"upload-batch\": \"%s\", \"upload-fileId\": \"2\" }\n" +
-            "  }\n" +
-            "}";
+    static {
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
+    public static final String XP_CONFIG = "config";
 
     public static final String API_AI = "ai/";
 
@@ -131,7 +125,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     protected NuxeoClient getClient() {
         if (client == null) {
             throw new IllegalArgumentException("Nuxeo cloud client has no configuration." +
-                                                       " You should call client.isAvailable() first.");
+                    " You should call client.isAvailable() first.");
         }
         return client;
     }
@@ -160,14 +154,18 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
             if (trainingData != null && evalData != null && statsData != null) {
                 try {
+                    DateTime start = DateTime.now();
                     BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
                     batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
-                                                     TFRECORD_MIME_TYPE, trainingData.getLength());
+                            TFRECORD_MIME_TYPE, trainingData.getLength());
                     batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getFilename(),
-                                                     TFRECORD_MIME_TYPE, evalData.getLength());
+                            TFRECORD_MIME_TYPE, evalData.getLength());
                     batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
-                                                     statsData.getMimeType(), statsData.getLength());
-                    return createDataset(dataset, batchUpload.getBatchId());
+                            statsData.getMimeType(), statsData.getLength());
+
+                    DateTime end = DateTime.now();
+
+                    return createDataset(dataset, batchUpload.getBatchId(), start, end);
                 } catch (NuxeoClientException e) {
                     log.error("Failed to upload dataset. ", e);
                 }
@@ -191,14 +189,15 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         return false;
     }
 
-    protected String createDataset(DocumentModel datasetDoc, String batchId) {
+    protected String createDataset(DocumentModel datasetDoc, String batchId, DateTime start, DateTime end) {
         String jobId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID);
         String query = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_QUERY);
         Long docCount = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT);
-        Long split = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_SPLIT);
+        Long splitProp = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_SPLIT);
         long trainingCount = 0;
         long evalCount = 0;
-        if (docCount != null && docCount > 0 && split != null && split > 0) {
+        int split = splitProp == null ? 0 : splitProp.intValue();
+        if (docCount != null && docCount > 0 && split > 0) {
             // Estimate counts
             trainingCount = Math.round(docCount * split / 100.f);
             evalCount = Math.round(docCount * (100 - split) / 100.f);
@@ -213,10 +212,31 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                     AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS);
             List<Map<String, Object>> fields = new ArrayList<>(inputs);
             fields.addAll(outputs);
+
             String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
-            String fieldsAsJson = MAPPER.writeValueAsString(fields);
-            String payload = String.format(DATASET_TEMPLATE, jobId, title, trainingCount, evalCount, query, split,
-                    fieldsAsJson, batchId, batchId, batchId);
+
+            AICorpus.Properties props = new AICorpus.Properties();
+            props.setTitle(title);
+            props.setDocCount(trainingCount);
+            props.setEvaluationDocCount(evalCount);
+            props.setQuery(query);
+            props.setSplit(split);
+            props.setFields(fields);
+
+            props.setTrainData(new AICorpus.Batch("0", batchId));
+            props.setEvalData(new AICorpus.Batch("1", batchId));
+            props.setStats(new AICorpus.Batch("2", batchId));
+
+
+            props.setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())));
+
+            AICorpus corpus = new AICorpus(jobId, props);
+
+            String payload;
+            try (StringWriter writer = new StringWriter()) {
+                MAPPER.writeValue(writer, corpus);
+                payload = writer.toString();
+            }
 
             log.debug("Uploading to cloud project: {}, payload {}", projectId, payload);
 
@@ -309,6 +329,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
      */
     protected String makeTitle(long trainingCount, long evalCount, String suffix, int numberOfFields) {
         return String.format("%s features, %s Training, %s Evaluation, Export id %s",
-                             numberOfFields, trainingCount, evalCount, suffix);
+                numberOfFields, trainingCount, evalCount, suffix);
     }
 }
