@@ -22,11 +22,9 @@ limitations under the License.
 -->
 <dom-module id="nuxeo-ai-bulk-add-button">
     <template>
-        <nuxeo-operation-button id="btn" operation="Bulk.RunAction" input="[[provider]]"
-                                params="[[_params(provider)]]"
-                                icon="icons:speaker-notes" label="ai.bulkAddButton.label" show-label$=[[showLabel]]
-                                poll-interval="[[pollInterval]]" error-label="ai.bulkAddButton.action.error"
-                                async download>
+        <nuxeo-operation-button id="aiBulkAddOpBtn" operation="Bulk.RunAction" input="[[provider]]"
+            params="[[_params(provider)]]" icon="icons:speaker-notes" label="ai.bulkAddButton.label"
+            show-label$=[[showLabel]] error-label="ai.bulkAddButton.action.error" on-response="_responseReceived">
         </nuxeo-operation-button>
     </template>
     <script>
@@ -39,13 +37,6 @@ limitations under the License.
                  */
                 provider: {
                     type: Object,
-                },
-                /**
-                 * The interval to poll for the result, in milliseconds.
-                 */
-                pollInterval: {
-                    type: Number,
-                    value: 1000,
                 },
                 /**
                  * `true` if the action should display the label, `false` otherwise.
@@ -64,12 +55,7 @@ limitations under the License.
                 }
             },
 
-            ready: function() {
-                this.$.btn.addEventListener('poll-start', this._onPollStart.bind(this));
-                this.$.btn.addEventListener('response', this._onResponse.bind(this));
-            },
-
-            _params: function() {
+            _params: function () {
                 var actionParams = {};
                 return {
                     action: 'bulkEnrich',
@@ -77,14 +63,9 @@ limitations under the License.
                 };
             },
 
-            _onPollStart: function() {
+            _responseReceived: function () {
                 this.fire('notify', { message: this.i18n('ai.bulkAddButton.action.poll') });
-            },
-
-            _onResponse: function() {
-                this.fire('notify', { message: this.i18n('ai.bulkAddButton.action.completed') });
             }
-
         });
     </script>
 </dom-module>

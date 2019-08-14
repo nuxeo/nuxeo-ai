@@ -22,11 +22,10 @@ limitations under the License.
 -->
 <dom-module id="nuxeo-ai-bulk-remove-button">
     <template>
-        <nuxeo-operation-button id="btn" operation="Bulk.RunAction" input="[[provider]]"
-                                params="[[_params(provider, modelId, xpaths)]]"
-                                icon="icons:speaker-notes-off" label="ai.bulkRemoveButton.label" show-label$=[[showLabel]]
-                                poll-interval="[[pollInterval]]" error-label="ai.bulkRemoveButton.action.error"
-                                async download>
+        <nuxeo-operation-button id="aiBulkRemoveOpBtn" operation="Bulk.RunAction" input="[[provider]]"
+            params="[[_params(provider, modelId, xpaths)]]" icon="icons:speaker-notes-off"
+            label="ai.bulkRemoveButton.label" show-label$=[[showLabel]] error-label="ai.bulkRemoveButton.action.error"
+            on-response="_responseReceived">
         </nuxeo-operation-button>
     </template>
     <script>
@@ -39,13 +38,6 @@ limitations under the License.
                  */
                 provider: {
                     type: Object,
-                },
-                /**
-                 * The interval to poll for the result, in milliseconds.
-                 */
-                pollInterval: {
-                    type: Number,
-                    value: 1000,
                 },
                 /**
                  * A custom modelId for which all suggestions will be removed.
@@ -76,18 +68,13 @@ limitations under the License.
                 }
             },
 
-            ready: function() {
-                this.$.btn.addEventListener('poll-start', this._onPollStart.bind(this));
-                this.$.btn.addEventListener('response', this._onResponse.bind(this));
-            },
-
-            _params: function() {
+            _params: function () {
                 var actionParams = {};
                 if (this.modelId) {
-                    actionParams.modelId = this.modelId.split(',').map(function(s) { return s.trim(); });
+                    actionParams.modelId = this.modelId.split(',').map(function (s) { return s.trim(); });
                 }
                 if (this.xpaths) {
-                    actionParams.xpaths = this.xpaths.split(',').map(function(s) { return s.trim(); });
+                    actionParams.xpaths = this.xpaths.split(',').map(function (s) { return s.trim(); });
                 }
                 return {
                     action: 'bulkEnrichRemove',
@@ -95,14 +82,9 @@ limitations under the License.
                 };
             },
 
-            _onPollStart: function() {
+            _responseReceived: function () {
                 this.fire('notify', { message: this.i18n('ai.bulkRemoveButton.action.poll') });
-            },
-
-            _onResponse: function() {
-                this.fire('notify', { message: this.i18n('ai.bulkRemoveButton.action.completed') });
             }
-
         });
     </script>
 </dom-module>
