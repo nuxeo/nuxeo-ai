@@ -21,6 +21,7 @@ package org.nuxeo.ai.bulk;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.split;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 import static org.nuxeo.ai.AIConstants.EXPORT_FEATURES_PARAM;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
@@ -39,14 +40,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentNotFoundException;
-import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -129,26 +130,31 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             List<String> customProperties = asList(split((String) properties.get(EXPORT_FEATURES_PARAM), ","));
             int percentSplit = Integer.parseInt((String) properties.getOrDefault(EXPORT_SPLIT_PARAM, DEFAULT_SPLIT));
             ThreadLocalRandom random = ThreadLocalRandom.current();
-            for (String id : ids) {
-                try {
-                    DocumentModel doc = coreSession.getDocument(new IdRef(id));
-                    BlobTextFromDocument subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(customProperties));
-                    boolean isTraining = random.nextInt(1, 101) <= percentSplit;
-                    if (subDoc != null) {
-                        if (log.isTraceEnabled()) {
-                            log.trace((isTraining ? "training " : "validate ") + subDoc);
-                        }
-                        Record record = toRecord(command.getId(), subDoc);
-                        if (isTraining) {
-                            training.add(record);
-                        } else {
-                            validation.add(record);
-                        }
-                    } else {
-                        discarded++;
+            for (DocumentModel doc : loadDocuments(coreSession, ids)) {
+                BlobTextFromDocument subDoc = null;
+                List<String> targetProperties = new ArrayList<>();
+                targetProperties.addAll(customProperties);
+                boolean isTraining = random.nextInt(1, 101) <= percentSplit;
+
+                if (doc.hasFacet(ENRICHMENT_FACET)) {
+                    SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
+                    targetProperties.removeAll(wrapper.getAutoFilled());
+                    targetProperties.removeAll(wrapper.getAutoCorrected());
+                }
+                if (!targetProperties.isEmpty()) {
+                    subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(targetProperties));
+                }
+                if (subDoc != null) {
+                    if (log.isTraceEnabled()) {
+                        log.trace((isTraining ? "training " : "validate ") + subDoc);
                     }
-                } catch (DocumentNotFoundException e) {
-                    log.error("DocumentNotFoundException: " + id);
+                    Record record = toRecord(command.getId(), subDoc);
+                    if (isTraining) {
+                        training.add(record);
+                    } else {
+                        validation.add(record);
+                    }
+                } else {
                     discarded++;
                 }
             }
@@ -158,7 +164,8 @@ public class DataSetBulkAction implements StreamProcessorTopology {
         @Override
         public void endBucket(ComputationContext context, BulkStatus ignored) {
             if (discarded > 0) {
-                updateExportStatusProcessed(context, command.getId(), 0, discarded);
+                // Error records are for information only, they still need to be counted as "processed"
+                updateExportStatusProcessed(context, command.getId(), discarded, discarded);
                 discarded = 0;
             }
             training.forEach(record -> context.produceRecord(OUTPUT_2, record));
