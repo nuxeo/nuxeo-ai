@@ -144,6 +144,14 @@ public class SuggestionMetadataWrapper {
         return autoProperties;
     }
 
+    public Set<String> getAutoFilled() {
+        return autoFilled;
+    }
+
+    public Set<String> getAutoCorrected() {
+        return autoCorrected;
+    }
+
     public boolean isAutoFilled(String propertyName) {
         return autoFilled.contains(propertyName);
     }

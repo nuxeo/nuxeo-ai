@@ -38,8 +38,6 @@ import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentNotFoundException;
-import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -82,18 +80,13 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         @Override
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> options) {
             ModelServingService modelServingService = Framework.getService(ModelServingService.class);
-            for (String id : ids) {
-                try {
-                    DocumentModel doc = coreSession.getDocument(new IdRef(id));
-                    Set<String> inputs = modelServingService.getInputs(doc);
-                    if (!inputs.isEmpty()) {
-                        BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputs);
-                        if (blobTextFromDocument != null) {
-                            outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));
-                        }
+            for (DocumentModel doc : loadDocuments(coreSession, ids)) {
+                Set<String> inputs = modelServingService.getInputs(doc);
+                if (!inputs.isEmpty()) {
+                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputs);
+                    if (blobTextFromDocument != null) {
+                        outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));
                     }
-                } catch (DocumentNotFoundException e) {
-                    log.error("DocumentNotFoundException: " + id);
                 }
             }
         }
