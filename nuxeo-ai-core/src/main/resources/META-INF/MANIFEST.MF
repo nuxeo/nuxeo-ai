@@ -11,4 +11,5 @@ Nuxeo-Component: OSGI-INF/ai-contrib.xml,
  OSGI-INF/ai-metadata-service.xml,
  OSGI-INF/ai-auto-contrib.xml,
  OSGI-INF/ai-auto-threshold.xml,
+ OSGI-INF/ai-web-ui-properties.xml,
  OSGI-INF/enrichment-core-types-contrib.xml

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.web.ui.properties.contrib">
+
+  <require>org.nuxeo.web.ui.properties.contrib</require>
+
+  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+    <!-- enrichers -->
+    <property name="org.nuxeo.web.ui.enrichers.document" list="true">aiModels</property>
+  </extension>
+
+</component>
