@@ -83,7 +83,7 @@ limitations under the License.
     let op = null;
     function _clearSuggestions(model) {
       Object.values(model).forEach((element) => {
-        const suggestionWidget = _getSuggestionWidget(element);
+        const suggestionWidget = _getSuggestionWidget(element, false);
         if (suggestionWidget) {
           suggestionWidget.suggestions = [];
         }
@@ -112,8 +112,8 @@ limitations under the License.
       }
       return model;
     }
-    function _getSuggestionWidget(element) {
-      if (!_map.has(element)) {
+    function _getSuggestionWidget(element, createIfNotExists = true) {
+      if (!_map.has(element) && createIfNotExists) {
         const suggestionWidget = document.createElement('nuxeo-ai-suggestions');;
         suggestionWidget.style.marginBottom = '8px';
         element.parentNode.insertBefore(suggestionWidget, element.nextElementSibling);
@@ -143,20 +143,23 @@ limitations under the License.
        * 2) add a suggestion widget to each field that has suggestions (if no widget was added yet)
        * 3) update suggestions on suggestion widgets
        */
-      updateWidgetSuggestions: (layout) => {
+      updateWidgetSuggestions: (layout, path) => {
         if (!layout || !layout.document) {
           return;
         }
-        _updateDebouncer = Polymer.Debouncer.debounce(
+        const aiModels = layout.document.contextParameters && layout.document.contextParameters.aiModels;
+        const isModelInput = path && aiModels && aiModels.inputs.includes(path.replace('document.properties.', ''));
+
+        const model = _getBoundElements(layout, 'document.properties');
+        const widget = _getSuggestionWidget(path && model[path], false);
+        if (widget && Array.isArray(widget.suggestions) && widget.suggestions.length > 0) {
+          widget._matchInput();
+        }
+        if (!path || isModelInput) {
+          _updateDebouncer = Polymer.Debouncer.debounce(
             _updateDebouncer, Polymer.Async.timeOut.after(500),
             () => {
-              const model = _getBoundElements(layout, 'document.properties');
               _getSuggestions(layout.document).then((response) => {
-                /*
-                 * Inefficient approach that should be changed as soon as the response from server includes more information (e.g. all output fields) 
-                 * to only clear the elements in need.
-                 * Ticket created to analyse and tackle this need: NXP-26314
-                 */
                 _clearSuggestions(model);
                 response.forEach((service) => {
                   service.suggestions.forEach((suggestion) => {
@@ -184,6 +187,7 @@ limitations under the License.
               });
             },
         );
+        }
       },
     };
   })();
@@ -196,7 +200,7 @@ limitations under the License.
       return;
     }
     customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
-      layout.__aiDocumentChanged = () => AISuggestionManager.updateWidgetSuggestions(layout);
+      layout.__aiDocumentChanged = (event) => AISuggestionManager.updateWidgetSuggestions(layout, event.path);
       layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
       AISuggestionManager.updateWidgetSuggestions(e.detail.element);
     });
