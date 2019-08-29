@@ -1,0 +1,299 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AI Cloud resources
+Parameters:
+#  K8sRoleName:
+#    Type: String
+#    Description: |
+#      Name of the instance role of the Openshift worker nodes (let empty-instance-role if no role)
+#    Default: empty-instance-role
+  BillingCategory:
+    Type: String
+    Default: internal
+    AllowedValues:
+      - internal
+      - customers
+      - presales
+  BillingSubCategory:
+    Type: String
+    Default: ai
+  Project:
+    Type: String
+    Default: ai
+  Contact:
+    Type: String
+    Default: dmetzler@nuxeo.com
+  Environment:
+    Default: dev
+    AllowedValues:
+      - dev
+      - uat
+      - preprod
+      - prod
+    Type: String
+
+Resources:
+  SageMakerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ai-${Environment}-sagemaker
+
+
+  AIAccessBucketPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Description: Access to bucket policy
+    Properties:
+      ManagedPolicyName: !Sub "ai-${Environment}-${AWS::Region}-access-buckets"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+            - s3:ListAllMyBuckets
+            - s3:HeadBucket
+            - sts:*
+          Resource: ["*"]
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource:
+            - !Sub arn:aws:s3:::${NuxeoS3Bucket}
+            - !Sub arn:aws:s3:::${NuxeoS3Bucket}/*
+            - !Sub arn:aws:s3:::${SageMakerS3Bucket}
+            - !Sub arn:aws:s3:::${SageMakerS3Bucket}/*
+            - !Sub arn:aws:s3:::${BackupS3Bucket}
+            - !Sub arn:aws:s3:::${BackupS3Bucket}/*
+
+  AIECRList:
+    Type: AWS::IAM::ManagedPolicy
+    Description: Allow access to ECR resources for AI
+    Properties:
+      ManagedPolicyName: !Sub "ai-${Environment}-${AWS::Region}-ecr-list"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+            - ecr:GetDownloadUrlForLayer
+            - ecr:BatchGetImage
+            - ecr:DescribeImages
+            - ecr:GetAuthorizationToken
+            - ecr:DescribeRepositories
+            - ecr:ListImages
+            - ecr:BatchCheckLayerAvailability
+            - ecr:GetRepositoryPolicy
+          Resource: !GetAtt SageMakerRepository.Arn
+
+  AIRole:
+    Description: Global role for the AI environment
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "ai-${Environment}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Statement:
+        # Allows developpoers coming from Okta to assume this role
+        - Effect: Allow
+          Principal:
+            Federated: !Sub arn:aws:iam::${AWS::AccountId}:saml-provider/Okta
+          Action: sts:AssumeRoleWithSAML
+          Condition:
+            StringEquals:
+              "SAML:aud": https://signin.aws.amazon.com/saml
+        - Effect: Allow
+          Principal:
+            Service:
+              - sagemaker.amazonaws.com
+          Action: sts:AssumeRole
+        # Allows kube2IAM to assume this role
+        #- Effect: Allow
+        #  Principal:
+        #    AWS: !Sub arn:aws:iam::${AWS::AccountId}:role/${K8sRoleName}
+        #  Action: sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+              - ec2.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Ref AIAccessBucketPolicy
+        - !Ref AIECRList
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+
+  AIRoleTrainer:
+    Description: Global role for the AI environment
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "ai-${Environment}-${AWS::Region}-trainer"
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+          Action: sts:AssumeRole
+        - Effect: Allow
+          Principal:
+            Service:
+              - sagemaker.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Ref AIAccessBucketPolicy
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+
+  NuxeoS3Bucket:
+    Description: Store the binaries of the Nuxeo based AI Service
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "ai-${Environment}-${AWS::Region}-nuxeo"
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: billing-category
+          Value: !Ref BillingCategory
+        - Key: billing-subcategory
+          Value: !Ref BillingSubCategory
+        - Key: project
+          Value: !Ref Project
+        - Key: contact
+          Value: !Ref Contact
+        - Key: environment
+          Value: !Ref Environment
+
+  NuxeoS3ArtifactBucketPolicy:
+    DependsOn: [NuxeoS3Bucket]
+    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref NuxeoS3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: SSEAndSSLPolicy
+        Statement:
+        - Sid: DenyInsecureConnections
+          Effect: Deny
+          Principal: "*"
+          Action: s3:*
+          Resource: !Sub "arn:aws:s3:::${NuxeoS3Bucket}/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+
+  SageMakerS3Bucket:
+    Description: Store the data for SageMaker
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "ai-${Environment}-${AWS::Region}-sagemaker"
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: billing-category
+          Value: !Ref BillingCategory
+        - Key: billing-subcategory
+          Value: !Ref BillingSubCategory
+        - Key: project
+          Value: !Ref Project
+        - Key: contact
+          Value: !Ref Contact
+        - Key: environment
+          Value: !Ref Environment
+
+  SageMakerS3ArtifactBucketPolicy:
+    DependsOn: [SageMakerS3Bucket]
+    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SageMakerS3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: SSEAndSSLPolicy
+        Statement:
+        - Sid: DenyInsecureConnections
+          Effect: Deny
+          Principal: "*"
+          Action: s3:*
+          Resource: !Sub "arn:aws:s3:::${SageMakerS3Bucket}/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+
+  BackupS3Bucket:
+    Description: Store the MongoDB Backup of the Nuxeo base AI Service
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "ai-${Environment}-${AWS::Region}-mongodb-backup"
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: billing-category
+          Value: !Ref BillingCategory
+        - Key: billing-subcategory
+          Value: !Ref BillingSubCategory
+        - Key: project
+          Value: !Ref Project
+        - Key: contact
+          Value: !Ref Contact
+        - Key: environment
+          Value: !Ref Environment
+
+
+  BackupS3ArtifactBucketPolicy:
+    DependsOn: [BackupS3Bucket]
+    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BackupS3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: SSEAndSSLPolicy
+        Statement:
+        - Sid: DenyInsecureConnections
+          Effect: Deny
+          Principal: "*"
+          Action: s3:*
+          Resource: !Sub "arn:aws:s3:::${BackupS3Bucket}/*"
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+
+  AIUser:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      UserName: !Sub "ai-${Environment}-${AWS::Region}"
+      ManagedPolicyArns:
+      - !Ref AIAccessBucketPolicy
+      - !Ref AIECRList
+      - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
+
+  AIUserKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Serial: 1
+      UserName: !Ref AIUser
+
+Outputs:
+  AIRole:
+    Description: Developer role to access the resources
+    Value: !GetAtt AIRole.Arn
+  AIRoleTrainer:
+    Description: Trainer role
+    Value: !GetAtt AIRoleTrainer.Arn
+  NuxeoS3Bucket:
+    Description: Bucket for the Nuxeo application
+    Value: !Ref NuxeoS3Bucket
+  SageMakerS3Bucket:
+    Description: Bucket for the Nuxeo application
+    Value: !Ref SageMakerS3Bucket
+  BackupS3Bucket:
+    Description: Bucket for the Nuxeo application
+    Value: !Ref BackupS3Bucket
+  ECRRepository:
+    Description: ECR Repository
+    Value: !GetAtt SageMakerRepository.Arn
+  AIUserAccessId:
+    Value: !Ref AIUserKeys
+    Description: AWSAccessKeyId of AI user
+  AIUserSecretKey:
+    Value: !GetAtt [AIUserKeys, SecretAccessKey]
+    Description: AWSSecretKey of AI user
+
