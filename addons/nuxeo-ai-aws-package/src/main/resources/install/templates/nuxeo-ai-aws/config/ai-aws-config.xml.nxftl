@@ -194,4 +194,56 @@
     </extension>
 </#if>
 
+<#if "${nuxeo.enrichment.aws.video}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="videoLabelsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">videos</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.videoLabels</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="videoUnsafeProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">videos</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.unsafeVideo</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="videoFaceProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">videos</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentServiceName">aws.videoFaceDetection</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
+
+    <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+      <streamProcessor name="videoCelebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
+                       logConfig="${nuxeo.ai.stream.config.name}"
+                       class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+        <option name="source">videos</option>
+        <option name="sink">enrichment.in</option>
+        <option name="enrichmentServiceName">aws.videoCelebrityDetection</option>
+        <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+      </streamProcessor>
+    </extension>
+
+  <extension target="org.nuxeo.ai.sns.NotificationService" point="topics">
+      <topic name="${nuxeo.enrichment.aws.sns.video.topic}"
+             type="detect"
+             path="/nuxeo/site/ai/rekognition/callback/labels"/>
+  </extension>
+</#if>
+
 </component>
