@@ -24,6 +24,7 @@ import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.Video;
 import com.amazonaws.services.textract.model.Document;
 
 /**
@@ -45,6 +46,21 @@ public class ImageHelperWithS3 {
                         .withBucket(s3BinaryManager.getBucketName()));
         if (s3Object != null) {
             return new Image().withS3Object(s3Object);
+        }
+        return null;
+    }
+
+    /**
+     * Gets the image from the S3BinaryManager as a reference to an S3 object
+     */
+    public Video getVideo(ManagedBlob blob) {
+        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (s3BinaryManager, key) ->
+                new com.amazonaws.services.rekognition.model
+                        .S3Object()
+                        .withName(key)
+                        .withBucket(s3BinaryManager.getBucketName()));
+        if (s3Object != null) {
+            return new Video().withS3Object(s3Object);
         }
         return null;
     }

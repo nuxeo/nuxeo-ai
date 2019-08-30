@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.sns.test">
+
+  <extension target="org.nuxeo.ai.sns.NotificationService" point="topics">
+    <topic name="ai_dev_test_topic"
+           type="detect"
+           path="/ai/test/endpoint"/>
+  </extension>
+
+</component>

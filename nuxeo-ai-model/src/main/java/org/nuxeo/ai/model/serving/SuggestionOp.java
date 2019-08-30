@@ -96,8 +96,8 @@ public class SuggestionOp {
     public Blob run(DocumentModel doc) {
         if (updatedDocument != null) {
             Arrays.stream(doc.getSchemas())
-                  .flatMap(schema -> updatedDocument.getProperties(schema).entrySet().stream())
-                  .forEach(entry -> doc.setPropertyValue(entry.getKey(), (Serializable) entry.getValue()));
+                    .flatMap(schema -> updatedDocument.getProperties(schema).entrySet().stream())
+                    .forEach(entry -> doc.setPropertyValue(entry.getKey(), (Serializable) entry.getValue()));
         }
 
         List<EnrichmentMetadata> suggestions = modelServingService.predict(doc);
@@ -108,14 +108,14 @@ public class SuggestionOp {
         ByteArrayOutputStream outWriter = new ByteArrayOutputStream();
         DocumentPropertyJsonWriter writer = references
                 ? registry.getInstance(RenderingContext.CtxBuilder.fetchInDoc("properties").get(),
-                        DocumentPropertyJsonWriter.class)
+                DocumentPropertyJsonWriter.class)
                 : null;
         try (JsonGenerator jg = MAPPER.getFactory().createGenerator(outWriter)) {
             List<SuggestionsAsJson> suggestionsAsJson = suggestions.stream()
-                                                                   .map(metadata -> writeJson(metadata, doc, writer,
-                                                                           outWriter, jg))
-                                                                   .filter(Objects::nonNull)
-                                                                   .collect(Collectors.toList());
+                    .map(metadata -> writeJson(metadata, doc, writer,
+                            outWriter, jg))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
             return Blobs.createJSONBlob(MAPPER.writeValueAsString(suggestionsAsJson));
         } catch (IOException e) {
             throw new NuxeoException("Unable to turn data into a json String", e);
@@ -126,7 +126,7 @@ public class SuggestionOp {
      * Write property information alongside suggestions.
      */
     protected SuggestionsAsJson writeJson(EnrichmentMetadata metadata, DocumentModel input,
-            DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter, JsonGenerator jg) {
+                                          DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter, JsonGenerator jg) {
         try {
             List<SuggestionListAsJson> suggestionList = new ArrayList<>();
             for (LabelSuggestion labelSuggestion : metadata.getLabels()) {

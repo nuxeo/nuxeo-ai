@@ -176,11 +176,25 @@ public abstract class AIMetadata implements Serializable {
 
         private final float confidence;
 
+        private final long timestamp;
+
+        public Label(String name, float confidence) {
+            this(name, confidence, 0L);
+        }
+
         @JsonCreator
-        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
+        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence, @JsonProperty("timestamp") long timestamp) {
             this.name = name;
             this.confidence = confidence;
+            this.timestamp = timestamp;
         }
+
+//        @JsonCreator
+//        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
+//            this.name = name;
+//            this.confidence = confidence;
+//            this.timestamp = 0L;
+//        }
 
         public String getName() {
             return name;
@@ -188,6 +202,10 @@ public abstract class AIMetadata implements Serializable {
 
         public float getConfidence() {
             return confidence;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
         }
 
         @Override

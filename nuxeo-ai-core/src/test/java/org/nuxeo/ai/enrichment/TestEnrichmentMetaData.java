@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +41,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.TagSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -81,7 +79,7 @@ public class TestEnrichmentMetaData {
     @Test
     public void testJson() {
         List<EnrichmentMetadata.Label> labels = Stream.of("label1", "l2", "lab3")
-                                                      .map(l -> new EnrichmentMetadata.Label(l, 1))
+                                                      .map(l -> new EnrichmentMetadata.Label(l, 1, 0L))
                                                       .collect(Collectors.toList());
 
         List<EnrichmentMetadata.Tag> tags =
@@ -90,7 +88,7 @@ public class TestEnrichmentMetaData {
                                                            "t1",
                                                            "myref" + l,
                                                            new AIMetadata.Box(0.5f, 0.3f, -0.2f, 2f),
-                                                           singletonList(new EnrichmentMetadata.Label("f" + l, 1)),
+                                                           singletonList(new EnrichmentMetadata.Label("f" + l, 1, 0L)),
                                                            0.65f))
                       .collect(Collectors.toList());
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);

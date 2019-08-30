@@ -23,6 +23,7 @@
     <xs:sequence>
       <xs:element name="label" type="xs:string" nillable="false" nxsv:nillable="false"/>
       <xs:element name="confidence" type="xs:float"  nillable="false" nxsv:nillable="false"/>
+      <xs:element name="timestamp" type="xs:long" nillable="true" nxsv:nillable="true"/>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="labelSuggestionsListType">

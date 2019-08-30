@@ -19,12 +19,18 @@
 package org.nuxeo.ai.rekognition;
 
 import java.util.function.BiFunction;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.sns.NotificationService;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.amazonaws.AmazonWebServiceResult;
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
@@ -37,16 +43,27 @@ import com.amazonaws.services.rekognition.model.DetectModerationLabelsRequest;
 import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
 import com.amazonaws.services.rekognition.model.DetectTextRequest;
 import com.amazonaws.services.rekognition.model.DetectTextResult;
+import com.amazonaws.services.rekognition.model.FaceAttributes;
 import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.NotificationChannel;
 import com.amazonaws.services.rekognition.model.RecognizeCelebritiesRequest;
 import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
+import com.amazonaws.services.rekognition.model.StartCelebrityRecognitionRequest;
+import com.amazonaws.services.rekognition.model.StartCelebrityRecognitionResult;
+import com.amazonaws.services.rekognition.model.StartContentModerationRequest;
+import com.amazonaws.services.rekognition.model.StartContentModerationResult;
+import com.amazonaws.services.rekognition.model.StartFaceDetectionRequest;
+import com.amazonaws.services.rekognition.model.StartFaceDetectionResult;
+import com.amazonaws.services.rekognition.model.StartLabelDetectionRequest;
+import com.amazonaws.services.rekognition.model.StartLabelDetectionResult;
+import com.amazonaws.services.rekognition.model.Video;
 
 /**
  * Implementation of RekognitionService
  */
 public class RekognitionServiceImpl extends DefaultComponent implements RekognitionService {
 
-    private static final Log log = LogFactory.getLog(RekognitionServiceImpl.class);
+    private static final Logger log = LogManager.getLogger(RekognitionServiceImpl.class);
 
     protected volatile AmazonRekognition client;
 
@@ -58,6 +75,21 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
                     .withMinConfidence(minConfidence)
                     .withImage(image);
             return rekognitionClient.detectLabels(detectLabelsRequest);
+        });
+    }
+
+    @Override
+    public String startDetectLabels(ManagedBlob blob, float minConfidence) {
+        NotificationChannel nc = getChannel();
+        return startDetectWith(blob, (cl, video) -> {
+            StartLabelDetectionRequest request = new StartLabelDetectionRequest()
+                    .withMinConfidence(minConfidence)
+                    .withNotificationChannel(nc)
+                    .withVideo(video);
+            StartLabelDetectionResult result = getClient().startLabelDetection(request);
+
+            log.debug("Start label detection status code {}", result.getSdkHttpMetadata().getHttpStatusCode());
+            return result.getJobId();
         });
     }
 
@@ -78,10 +110,37 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     }
 
     @Override
+    public String startDetectFaces(ManagedBlob blob, FaceAttributes attributes) {
+        NotificationChannel nc = getChannel();
+        return startDetectWith(blob, (cl, video) -> {
+            StartFaceDetectionRequest request = new StartFaceDetectionRequest()
+                    .withFaceAttributes(attributes)
+                    .withNotificationChannel(nc)
+                    .withVideo(video);
+
+            StartFaceDetectionResult result = getClient().startFaceDetection(request);
+            return result.getJobId();
+        });
+    }
+
+    @Override
     public RecognizeCelebritiesResult detectCelebrityFaces(ManagedBlob blob) {
         return detectWithClient(blob, (rekognitionClient, image) -> {
             RecognizeCelebritiesRequest request = new RecognizeCelebritiesRequest().withImage(image);
             return rekognitionClient.recognizeCelebrities(request);
+        });
+    }
+
+    @Override
+    public String startDetectCelebrityFaces(ManagedBlob blob) {
+        NotificationChannel nc = getChannel();
+        return startDetectWith(blob, (cl, video) -> {
+            StartCelebrityRecognitionRequest request = new StartCelebrityRecognitionRequest()
+                    .withNotificationChannel(nc)
+                    .withVideo(video);
+
+            StartCelebrityRecognitionResult result = getClient().startCelebrityRecognition(request);
+            return result.getJobId();
         });
     }
 
@@ -93,8 +152,21 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         });
     }
 
+    @Override
+    public String startDetectUnsafe(ManagedBlob blob) {
+        NotificationChannel nc = getChannel();
+        return startDetectWith(blob, (cl, video) -> {
+            StartContentModerationRequest request = new StartContentModerationRequest()
+                    .withNotificationChannel(nc)
+                    .withVideo(video);
+
+            StartContentModerationResult result = getClient().startContentModeration(request);
+            return result.getJobId();
+        });
+    }
+
     /**
-     * Sets up the Client and Image, then calls AWS using the supplied BiFunction.
+     * Sets up the Client and Image, then calls AWS using the supplied {@link BiFunction<>}.
      */
     protected <T extends AmazonWebServiceResult> T detectWithClient(ManagedBlob blob, BiFunction<AmazonRekognition, Image, T> func) {
         Image image = AWSHelper.getInstance().getImage(blob);
@@ -102,6 +174,21 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             T result = func.apply(getClient(), image);
             if (log.isDebugEnabled()) {
                 log.debug("Result of call to AWS " + result);
+            }
+            return result;
+        }
+        return null;
+    }
+
+    /**
+     * Sets up the Client and Image, then calls AWS using the supplied {@link BiFunction<>}
+     */
+    protected String startDetectWith(ManagedBlob blob, BiFunction<AmazonRekognition, Video, String> func) {
+        Video video = AWSHelper.getInstance().getVideo(blob);
+        if (video != null) {
+            String result = func.apply(getClient(), video);
+            if (log.isDebugEnabled()) {
+                log.debug("Result JobId " + result);
             }
             return result;
         }
@@ -119,7 +206,8 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         client = null;
     }
 
-    protected AmazonRekognition getClient() {
+    @Override
+    public AmazonRekognition getClient() {
         AmazonRekognition localClient = client;
         if (localClient == null) {
             synchronized (this) {
@@ -127,12 +215,24 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
                 if (localClient == null) {
                     AmazonRekognitionClientBuilder builder =
                             AmazonRekognitionClientBuilder.standard()
-                                                          .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
-                                                          .withRegion(AWSHelper.getInstance().getRegion());
+                                    .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
+                                    .withRegion(AWSHelper.getInstance().getRegion());
                     client = localClient = builder.build();
                 }
             }
         }
         return localClient;
+    }
+
+    protected NotificationChannel getChannel() {
+        NotificationService ns = Framework.getService(NotificationService.class);
+        String arn = (String) Framework.getProperties().get("nuxeo.ai.aws.rekognition.role.arn");
+        if (StringUtils.isEmpty(arn)) {
+            throw new NuxeoException("Missing Role ARN; Add `nuxeo.ai.aws.rekognition.role.arn` to nuxeo.conf");
+        }
+
+        return new NotificationChannel()
+                .withSNSTopicArn(ns.getTopicArnFor(DETECT_SNS_TOPIC))
+                .withRoleArn(arn);
     }
 }

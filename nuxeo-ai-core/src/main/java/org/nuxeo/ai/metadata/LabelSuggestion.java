@@ -24,6 +24,11 @@ import static java.util.Collections.unmodifiableList;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -39,7 +44,7 @@ public class LabelSuggestion implements Serializable {
 
     protected final String property;
 
-    protected final List<AIMetadata.Label> values;
+    protected List<AIMetadata.Label> values;
 
     @JsonCreator
     public LabelSuggestion(@JsonProperty("property") String property, @JsonProperty("values") List<AIMetadata.Label> values) {
@@ -53,6 +58,17 @@ public class LabelSuggestion implements Serializable {
 
     public List<AIMetadata.Label> getValues() {
         return values;
+    }
+
+    public void keepUniqueOnly() {
+        values = getValues().stream()
+                .filter(distinctByKey(AIMetadata.Label::getName))
+                .collect(Collectors.toList());
+    }
+
+    public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
+        Set<Object> seen = ConcurrentHashMap.newKeySet();
+        return t -> seen.add(keyExtractor.apply(t));
     }
 
     @Override

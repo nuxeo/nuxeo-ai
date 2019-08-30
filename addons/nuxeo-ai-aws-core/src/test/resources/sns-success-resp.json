@@ -1,0 +1,11 @@
+{
+  "Type": "Notification",
+  "MessageId": "f3412f68-83f0-58e1-8572-7a8862e5550e",
+  "TopicArn": "arn:aws:sns:us-east-1:783725821734:ai-test-local",
+  "Message": "{\"JobId\":\"732f9b52193617309f4329af62370ac507119bdc0736ade4377e652620a1bbfa\",\"Status\":\"SUCCEEDED\",\"API\":\"StartLabelDetection\",\"Timestamp\":1567022805695,\"Video\":{\"S3ObjectName\":\"545e11bab5aa685bb6f8f5092be87199\",\"S3Bucket\":\"ai-dev\"}}",
+  "Timestamp" : "2019-08-28T20:06:45.826Z",
+  "SignatureVersion" : "1",
+  "Signature" : "X9/D4pV77rgOYIURLIhSpYLsp/+A8jrwwBVBEVHJ6RnE2B83Os52pgCp9J+q1/31AbeL+TjoOVJILYcGRQg9h/kgkKXC+fjhHQr/qZwX18Pfw0fX57vTRtr4xtBZWZ14FwweNX7SgO2DPPlCqd123VcIlw+EghWMsZplG2R2FcZY+VsA1lMMmmIfkT+E+p7G4vzH65TWTAsFpIVhdzDDmVkVMu3BgaeisiZH3dzCDsimNtv3a8u/1d6RDrz4FNgjsmoKHTrrcByQASFDtZmmUF7yjLIKaT/4rOK5wPumiQbVK8FbfaPZ+W0sOAhINew1olZgJ7WUrSCTyUim26nmHA==",
+  "SigningCertURL" : "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-6aad65c2f9911b05cd53efda11f913f9.pem",
+  "UnsubscribeURL" : "https://sns.us-east-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-east-1:783725821734:ai-local:eb913fdc-780b-49cd-96dd-7dea891e794f"
+}

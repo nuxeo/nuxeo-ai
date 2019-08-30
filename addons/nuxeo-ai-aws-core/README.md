@@ -1,4 +1,3 @@
-
 # Nuxeo AI AWS integration
 
 Currently provides the following enrichment services:
@@ -11,6 +10,10 @@ Currently provides the following enrichment services:
   * aws.translate.* - Calls AWS Translate to translate text
   * aws.documentText - Calls AWS Textract to detect text in a document image
   * aws.documentAnalyze - Calls AWS Textract to analyze text that's detected in a document image
+  * aws.videoLabels - Calls AWS Rekognition for object detection in videos
+  * aws.unsafeVideo - Calls AWS Rekognition to detect unsafe videos
+  * aws.videoFaceDetection - Calls AWS Rekognition to detect faces in videos
+  * aws.videoCelebrityDetection - Calls AWS Rekognition to detect celebrity faces in videos
   
 #### Credentials
 Credentials are discovered using `nuxeo-runtime-aws`.
@@ -56,17 +59,63 @@ nuxeo.enrichment.save.facets=true
 nuxeo.enrichment.raiseEvent=true
 ```
 
-    For AWS Textract only, the correct parameters are:
-    ```
-    nuxeo.ai.images.enabled=true
-    nuxeo.enrichment.aws.document.text=true
-    nuxeo.enrichment.aws.document.analyze=false
-    nuxeo.enrichment.save.facets=true
-    ```
+For AWS Textract only, the correct parameters are:
+```
+nuxeo.ai.images.enabled=true
+nuxeo.enrichment.aws.document.text=true
+nuxeo.enrichment.aws.document.analyze=false
+nuxeo.enrichment.save.facets=true
+```
+
+For AWS Rekognition video analysis:
+Video analysis relies on AWS SNS. Make sure the used role has permissions to create SNS topics.
+SNS will send a notification upon completion to the defined endpoint at
+ `https://your_host/nuxeo/site/ai/rekognition/callback/labels`
+
+To be able resolving HOST `nuxeo.url` must be provided in `nuxeo.conf` with pattern matches `http[s]://host:[port]`
+
+Create a service role that will be able to push to an SNS topic.
+Example:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "RandomSidValue",
+            "Effect": "Allow",
+            "Action": "SNS:Publish",
+            "Resource": "arn:aws:sns:*:*:*"
+        }
+    ]
+}
+```
+
+Given role allows to publish to any topic.
+`ai-dev-rekognition-sns` - was created for Nuxeo developers under `test-role` 
+
+ARN of the role must be a part of `nuxeo.conf`
+```yaml
+nuxeo.ai.aws.rekognition.role.arn=arn:aws:iam::your_profile:role/role_name
+```
+
+To enable video add 
+```yaml
+ nuxeo.ai.video.enabled=true
+ nuxeo.enrichment.aws.sns.video.topic=ai-topic-name
+```
+Where `nuxeo.enrichment.aws.sns.video.topic` is the topic name to be dynamically created and subscribed
+upon platform start
+
+##### Video analysis limitation
+AWS Rekognition supports only MOV and MP4 files
+Size limitation is 8GB
+
+SNS will try to reach the endpoint 3 more times on unsuccessful delivery with timeout of 20 seconds
 
 3. Set your AWS credentials [AWS credentials](#credentials).
 4. Start Nuxeo and upload an image.
 5. Wait 10 seconds then look at the document tags and document json `enrichment:items` facet
+
 ### Configuration Parameters
 You can set these in your `nuxeo.conf`.
 <div class="table-scroll">
@@ -81,13 +130,13 @@ You can set these in your `nuxeo.conf`.
 <tr>
 <tr>
 <td colspan="1">`nuxeo.enrichment.aws.images`</td>
-<td colspan="1">Run AWS enrichiment services on images.</td>
+<td colspan="1">Run AWS enrichment services on images.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
 <td colspan="1">`nuxeo.enrichment.aws.text`</td>
-<td colspan="1">Run AWS enrichiment services on text.</td>
+<td colspan="1">Run AWS enrichment services on text.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
@@ -102,6 +151,12 @@ You can set these in your `nuxeo.conf`.
 <td colspan="1">Run AWS Textract Analyze Document API on document images.</td>
 <td colspan="1">`false`</td>
 <td colspan="1">Since 2.1.2</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.enrichment.aws.video`</td>
+<td colspan="1">Run AWS enrichment service on video.</td>
+<td colspan="1">`false`</td>
+<td colspan="1">Since 2.2.0</td>
 </tr>
 </tbody>
 </table>

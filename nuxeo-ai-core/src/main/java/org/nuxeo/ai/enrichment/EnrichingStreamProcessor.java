@@ -166,6 +166,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                                  .map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
                     writeToStreams(context, results);
+
                 }
             } else {
                 metrics.unsupported();
