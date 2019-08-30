@@ -62,7 +62,7 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
 
         try {
             MAPPER.readTree(content).fieldNames()
-                  .forEachRemaining(s -> labels.add(new EnrichmentMetadata.Label(s, 1)));
+                  .forEachRemaining(s -> labels.add(new EnrichmentMetadata.Label(s, 1, 0L)));
         } catch (IOException e) {
             log.warn(String.format("Unable to read the json response: %s", content), e);
         }

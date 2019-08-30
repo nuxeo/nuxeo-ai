@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,11 +41,13 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
 import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
 import org.nuxeo.runtime.services.config.ConfigurationService;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.logs.model.UnrecognizedClientException;
 import com.amazonaws.services.rekognition.model.AccessDeniedException;
 import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.Video;
 import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
 import com.amazonaws.services.textract.model.Block;
 import com.amazonaws.services.textract.model.Document;
@@ -166,6 +169,17 @@ public class AWSHelper {
         }
         ByteBuffer byteBuffer = getBlobAsBytes(managedBlob);
         return byteBuffer != null ? new Image().withBytes(byteBuffer) : null;
+    }
+
+    /**
+     * Gets the AWS Rekognition Video using a managed blob.
+     */
+    public Video getVideo(ManagedBlob managedBlob) {
+        if (s3Helper != null) {
+            return s3Helper.getVideo(managedBlob);
+        }
+
+        return null;
     }
 
     /**

@@ -173,7 +173,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentSe
                         for (int i = 0; i < outputLabels.size(); i++) {
                             float confidence = outputProbabilities.get(i).floatValue();
                             if (confidence > minConfidence) {
-                                labels.add(new EnrichmentMetadata.Label(outputLabels.get(i).asText(), confidence));
+                                labels.add(new EnrichmentMetadata.Label(outputLabels.get(i).asText(), confidence, 0L));
                             }
                         }
                     }

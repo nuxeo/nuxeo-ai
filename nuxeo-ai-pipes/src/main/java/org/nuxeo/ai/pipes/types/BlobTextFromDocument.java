@@ -18,20 +18,25 @@
  */
 package org.nuxeo.ai.pipes.types;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * A POJO representation used to transfer data in a stream.
  * The main subject of this class is usually either a blob or a piece of text taken from a Nuxeo Document.
  */
-public class BlobTextFromDocument implements Partitionable {
+public class BlobTextFromDocument implements Partitionable, Serializable {
+
+    private static final long serialVersionUID = 201920081233428L;
 
     private final Map<String, String> properties = new HashMap<>();
 

@@ -23,6 +23,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import javax.inject.Inject;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,12 +51,6 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})

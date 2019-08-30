@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.rekognition.RekognitionService" version="1.0">
 
-  <implementation class="org.nuxeo.ai.rekognition.RekognitionServiceImpl" />
+  <implementation class="org.nuxeo.ai.rekognition.RekognitionServiceImpl"/>
 
   <service>
-    <provide interface="org.nuxeo.ai.rekognition.RekognitionService" />
+    <provide interface="org.nuxeo.ai.rekognition.RekognitionService"/>
   </service>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.imageLabels" kind="/classification/imageLabels"
                 class="org.nuxeo.ai.enrichment.LabelsEnrichmentService" maxSize="10000000">
       <mimeTypes>
-        <mimeType name="image/jpeg" normalized="true" />
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
       </mimeTypes>
       <option name="maxResults">55</option>
       <option name="minConfidence">75</option>
@@ -23,8 +23,8 @@
     <enrichment name="aws.textDetection" kind="/tagging/imageText"
                 class="org.nuxeo.ai.enrichment.DetectTextEnrichmentService">
       <mimeTypes>
-        <mimeType name="image/jpeg" normalized="true" />
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
       </mimeTypes>
       <option name="textTypes">LINE,WORD</option>
       <option name="minConfidence">75</option>
@@ -35,8 +35,8 @@
     <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
                 class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentService">
       <mimeTypes>
-        <mimeType name="image/jpeg" normalized="true" />
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
       </mimeTypes>
       <option name="minConfidence">75</option>
     </enrichment>
@@ -46,8 +46,8 @@
     <enrichment name="aws.faceDetection" kind="/tagging/face"
                 class="org.nuxeo.ai.enrichment.DetectFacesEnrichmentService">
       <mimeTypes>
-        <mimeType name="image/jpeg" normalized="true" />
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
       </mimeTypes>
       <option name="attribute">ALL</option>
     </enrichment>
@@ -57,8 +57,55 @@
     <enrichment name="aws.celebrityDetection" kind="/tagging/celebrity"
                 class="org.nuxeo.ai.enrichment.DetectCelebritiesEnrichmentService">
       <mimeTypes>
-        <mimeType name="image/jpeg" normalized="true" />
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+    </enrichment>
+  </extension>
+
+  <!--  Async Enrichment for Video -->
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.videoLabels" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.enrichment.async.LabelsEnrichmentService"
+                maxSize="8589934592">
+      <mimeTypes>
+        <mimeType name="video/mp4" normalized="true"/>
+        <mimeType name="video/mov" normalized="true"/>
+        <mimeType name="video/quicktime" normalized="true"/>
+      </mimeTypes>
+      <option name="maxResults">55</option>
+      <option name="minConfidence">75</option>
+    </enrichment>
+
+    <enrichment name="aws.unsafeVideo" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentService"
+                maxSize="8589934592">
+      <mimeTypes>
+        <mimeType name="video/mp4" normalized="true"/>
+        <mimeType name="video/mov" normalized="true"/>
+        <mimeType name="video/quicktime" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">75</option>
+    </enrichment>
+
+    <enrichment name="aws.videoFaceDetection" kind="/tagging/face"
+                class="org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentService"
+                maxSize="8589934592">
+      <mimeTypes>
+        <mimeType name="video/mp4" normalized="true"/>
+        <mimeType name="video/mov" normalized="true"/>
+        <mimeType name="video/quicktime" normalized="true"/>
+      </mimeTypes>
+      <option name="attribute">ALL</option>
+    </enrichment>
+
+    <enrichment name="aws.videoCelebrityDetection" kind="/tagging/celebrity"
+                class="org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentService"
+                maxSize="8589934592">
+      <mimeTypes>
+        <mimeType name="video/mp4" normalized="true"/>
+        <mimeType name="video/mov" normalized="true"/>
+        <mimeType name="video/quicktime" normalized="true"/>
       </mimeTypes>
     </enrichment>
   </extension>

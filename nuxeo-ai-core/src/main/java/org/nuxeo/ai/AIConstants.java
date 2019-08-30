@@ -39,6 +39,7 @@ public class AIConstants {
     public static final String SUGGESTION_SUGGESTIONS = "suggestions";
     public static final String SUGGESTION_LABEL = "label";
     public static final String SUGGESTION_CONFIDENCE = "confidence";
+    public static final String SUGGESTION_TIMESTAMP = "timestamp";
     public static final String SUGGESTION_LABELS = "labels";
     public static final String AUTO_FILLED = "filled";
     public static final String AUTO_CORRECTED = "corrected";

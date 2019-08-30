@@ -41,7 +41,7 @@ public class BasicEnrichmentService extends AbstractEnrichmentService implements
         String labelsList = descriptor.options.getOrDefault("labels", "king,kong");
         if (StringUtils.isNotBlank(labelsList)) {
             String[] theLabels = labelsList.split(",");
-            labels = Arrays.stream(theLabels).map(l -> new EnrichmentMetadata.Label(l, 0.8f))
+            labels = Arrays.stream(theLabels).map(l -> new EnrichmentMetadata.Label(l, 0.8f, 0L))
                            .collect(Collectors.toList());
             tags = Collections
                     .singletonList(new EnrichmentMetadata.Tag(name, "/classification/custom", null, null, labels, 0.75f));

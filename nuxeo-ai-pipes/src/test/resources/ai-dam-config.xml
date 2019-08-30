@@ -104,7 +104,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">video</option>
       <option name="sink">video.enrichment.in</option>
-      <option name="enrichmentServiceName">aws.imageLabels</option>
+      <option name="enrichmentServiceName">aws.videoLabels</option>
       <option name="cache">true</option>
       <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
     </streamProcessor>

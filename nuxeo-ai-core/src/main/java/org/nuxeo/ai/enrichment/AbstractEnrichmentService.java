@@ -18,16 +18,26 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.TagSuggestion;
 import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueService;
+import org.nuxeo.runtime.kv.KeyValueStore;
 
 /**
  * Basic implementation of an enrichment service with mimetype and max file size support.
@@ -100,5 +110,20 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
 
     protected List<TagSuggestion> asTags(List<AIMetadata.Tag> tags) {
         return Collections.singletonList(new TagSuggestion(suggestionProperty, tags));
+    }
+
+    protected KeyValueStore getStore() {
+        KeyValueService kvs = Framework.getService(KeyValueService.class);
+        return kvs.getKeyValueStore(transientStoreName);
+    }
+
+    protected void storeCallback(KeyValueStore store, String jobId, Map<String, Serializable> params) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(params);
+            store.put(jobId, baos.toByteArray(), TimeUnit.DAYS.toMillis(1));
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
     }
 }

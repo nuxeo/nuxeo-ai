@@ -32,6 +32,7 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_TIMESTAMP;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
 
@@ -48,11 +49,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -68,6 +71,7 @@ import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -141,7 +145,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
      * Create a enrichment Map using the enrichment metadata
      */
     protected Map<String, Object> createEnrichment(EnrichmentMetadata metadata) {
-
         List<Map<String, Object>> suggestions = new ArrayList<>(metadata.getLabels().size());
         metadata.getLabels().forEach(suggestion -> {
             Map<String, Object> anEntry = new HashMap<>();
@@ -151,6 +154,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                 Map<String, Object> val = new HashMap<>(2);
                 val.put(SUGGESTION_LABEL, value.getName());
                 val.put(SUGGESTION_CONFIDENCE, value.getConfidence());
+                val.put(SUGGESTION_TIMESTAMP, value.getTimestamp());
                 values.add(val);
             });
             anEntry.put(SUGGESTION_LABELS, values);
@@ -168,6 +172,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             if (StringUtils.isNotEmpty(metadata.getRawKey())) {
                 TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(
                         metadata.getModelName());
+
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlobs.get(0));
@@ -176,7 +181,10 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                                                    + "A single raw blob is expected.", metadata.getModelName()));
                 }
             }
-            Blob metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(metadata));
+
+            EnrichmentMetadata clone = (EnrichmentMetadata) metadata.clone();
+            clone.getLabels().forEach(LabelSuggestion::keepUniqueOnly);
+            Blob metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(clone));
             anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
         } catch (IOException e) {
             throw new NuxeoException("Unable to process metadata blob", e);

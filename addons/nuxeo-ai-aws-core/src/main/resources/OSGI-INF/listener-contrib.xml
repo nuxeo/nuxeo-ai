@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.rekognition.listener">
+
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <listener name="rekognitionLabelResultListener"
+              async="true"
+              postCommit="true"
+              priority="99"
+              class="org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener">
+      <event>asyncRekognitionLabelSuccess</event>
+      <event>asyncRekognitionLabelFailure</event>
+    </listener>
+
+    <listener name="rekognitionFaceResultListener"
+              async="true"
+              postCommit="true"
+              priority="99"
+              class="org.nuxeo.ai.rekognition.listeners.AsyncFaceResultListener">
+      <event>asyncRekognitionFaceSuccess</event>
+      <event>asyncRekognitionFaceFailure</event>
+    </listener>
+
+    <listener name="rekognitionUnsafeResultListener"
+              async="true"
+              postCommit="true"
+              priority="999"
+              class="org.nuxeo.ai.rekognition.listeners.AsyncUnsafeResultListener">
+      <event>asyncRekognitionUnsafeSuccess</event>
+      <event>asyncRekognitionUnsafeFailure</event>
+    </listener>
+
+    <listener name="rekognitionUnsafeResultListener"
+              async="true"
+              postCommit="true"
+              priority="999"
+              class="org.nuxeo.ai.rekognition.listeners.AsyncUnsafeResultListener">
+      <event>asyncRekognitionCelebritiesSuccess</event>
+      <event>asyncRekognitionCelebritiesFailure</event>
+    </listener>
+  </extension>
+</component>
