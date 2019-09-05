@@ -27,7 +27,7 @@ import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -63,7 +63,7 @@ public class TestTranslateService {
     }
 
     protected void assertTranslation(String serviceName, String sourceText, String translatedText) {
-        EnrichmentService service = aiComponent.getEnrichmentService(serviceName);
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider(serviceName);
         assertNotNull(service);
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");

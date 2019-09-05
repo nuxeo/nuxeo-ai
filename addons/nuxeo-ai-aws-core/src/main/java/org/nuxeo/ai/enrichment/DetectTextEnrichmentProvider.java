@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ import com.amazonaws.services.rekognition.model.TextDetection;
 /**
  * Detects words and lines in an image.
  */
-public class DetectTextEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String TEXT_TYPES = "textTypes";
 

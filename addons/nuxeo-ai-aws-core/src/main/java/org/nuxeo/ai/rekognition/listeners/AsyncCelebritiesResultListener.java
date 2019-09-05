@@ -19,15 +19,15 @@
  */
 package org.nuxeo.ai.rekognition.listeners;
 
-import static org.nuxeo.ai.enrichment.AbstractEnrichmentService.MAX_RESULTS;
-import static org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentService.ENRICHMENT_NAME;
+import static org.nuxeo.ai.enrichment.AbstractEnrichmentProvider.MAX_RESULTS;
+import static org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider.ENRICHMENT_NAME;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentService;
+import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
@@ -66,7 +66,7 @@ public class AsyncCelebritiesResultListener extends BaseAsyncResultListener {
         GetCelebrityRecognitionResult result = rs.getClient().getCelebrityRecognition(request);
 
         AIComponent service = Framework.getService(AIComponent.class);
-        DetectCelebritiesEnrichmentService es = (DetectCelebritiesEnrichmentService) service.getEnrichmentService(ENRICHMENT_NAME);
+        DetectCelebritiesEnrichmentProvider es = (DetectCelebritiesEnrichmentProvider) service.getEnrichmentProvider(ENRICHMENT_NAME);
         return es.processResults((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
     }
 }

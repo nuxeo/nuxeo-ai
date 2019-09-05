@@ -45,7 +45,7 @@ public class EnrichmentDescriptor {
     protected boolean enabled = true;
 
     @XNode("@class")
-    protected Class<? extends EnrichmentService> service;
+    protected Class<? extends EnrichmentProvider> service;
 
     @XNode("@transientStore")
     protected String transientStoreName = DEFAULT_STORE_NAME;
@@ -74,15 +74,15 @@ public class EnrichmentDescriptor {
         return transientStoreName;
     }
 
-    public EnrichmentService getService() {
+    public EnrichmentProvider getProvider() {
         try {
-            EnrichmentService serviceInstance = service.newInstance();
+            EnrichmentProvider serviceInstance = service.newInstance();
             if (serviceInstance instanceof EnrichmentSupport) {
                 ((EnrichmentSupport) serviceInstance).init(this);
             }
             return serviceInstance;
         } catch (IllegalAccessException | NullPointerException | InstantiationException e) {
-            throw new NuxeoException(String.format("EnrichmentDescriptor for %s must define a valid EnrichmentService", name), e);
+            throw new NuxeoException(String.format("EnrichmentDescriptor for %s must define a valid EnrichmentProvider", name), e);
         }
     }
 

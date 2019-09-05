@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -61,7 +61,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 /**
  * A runtime model that calls TensorFlow Serving rest api
  */
-public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentService {
+public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentProvider {
 
     public static final String VERB_CLASSIFY = "classify";
 

@@ -29,7 +29,7 @@ import net.jodah.failsafe.RetryPolicy;
 /**
  * An enricher that throws errors
  */
-public class ErroringEnrichmentService extends AbstractEnrichmentService {
+public class ErroringEnrichmentProvider extends AbstractEnrichmentProvider {
 
     private RuntimeException exception;
 
@@ -39,10 +39,10 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
 
     private int attempts = 0;
 
-    public ErroringEnrichmentService() {
+    public ErroringEnrichmentProvider() {
     }
 
-    public ErroringEnrichmentService(RuntimeException exception, int numFailures, int numRetries) {
+    public ErroringEnrichmentProvider(RuntimeException exception, int numFailures, int numRetries) {
         super();
         this.exception = exception;
         this.numFailures = numFailures;
@@ -64,7 +64,7 @@ public class ErroringEnrichmentService extends AbstractEnrichmentService {
                                                     descriptor.name, numFailures, numRetries));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException
                 | ClassNotFoundException | NoSuchMethodException e) {
-            throw new NuxeoException("Failed to configure ErroringEnrichmentService", e);
+            throw new NuxeoException("Failed to configure ErroringEnrichmentProvider", e);
         }
     }
 

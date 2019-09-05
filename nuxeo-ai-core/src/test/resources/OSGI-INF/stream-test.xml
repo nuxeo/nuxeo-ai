@@ -2,7 +2,7 @@
 <component name="org.nuxeo.enrichment.stream.test" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="simpleTest" kind="/tagging/imageLabels" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
+    <enrichment name="simpleTest" kind="/tagging/imageLabels" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
@@ -19,7 +19,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">test_images</option>
       <option name="sink">test_images.out</option>
-      <option name="enrichmentServiceName">simpleTest</option>
+      <option name="enrichmentProviderName">simpleTest</option>
     </streamProcessor>
   </extension>
 
@@ -89,7 +89,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">test_images</option>
       <option name="sink">test_suggestion_out</option>
-      <option name="enrichmentServiceName">simpleTest</option>
+      <option name="enrichmentProviderName">simpleTest</option>
       <option name="suggest">true</option>
     </streamProcessor>
   </extension>

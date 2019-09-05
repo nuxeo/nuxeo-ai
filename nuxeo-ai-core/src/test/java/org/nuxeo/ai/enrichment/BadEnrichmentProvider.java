@@ -23,9 +23,9 @@ import java.util.Collections;
 
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
-public class BadEnrichmentService extends AbstractEnrichmentService {
+public class BadEnrichmentProvider extends AbstractEnrichmentProvider {
 
-    public BadEnrichmentService(String name) {
+    public BadEnrichmentProvider(String name) {
         super();
     }
 

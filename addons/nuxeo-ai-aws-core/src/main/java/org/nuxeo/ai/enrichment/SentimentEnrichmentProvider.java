@@ -39,9 +39,9 @@ import com.amazonaws.services.comprehend.model.SentimentType;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * An enrichment service for sentiment analysis
+ * An enrichment provider for sentiment analysis
  */
-public class SentimentEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String LANGUAGE_CODE = "language";
 

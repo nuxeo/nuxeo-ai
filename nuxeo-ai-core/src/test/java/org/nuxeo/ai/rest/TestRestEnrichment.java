@@ -33,7 +33,7 @@ import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -58,7 +58,7 @@ public class TestRestEnrichment {
     @Test
     public void testCallService() throws IOException {
         assertNotNull(aiComponent);
-        EnrichmentService service = aiComponent.getEnrichmentService("rest1");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("rest1");
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
         blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
@@ -67,14 +67,14 @@ public class TestRestEnrichment {
         EnrichmentMetadata metadata = results.iterator().next();
         assertNotNull(metadata.getRawKey());
 
-        TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(metadata.getModelName());
+        TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentProvider(metadata.getModelName());
         List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
         assertEquals(1, rawBlobs.size());
         String raw = rawBlobs.get(0).getString();
         JsonNode jsonTree = JacksonUtil.MAPPER.readTree(raw);
         assertNotNull(jsonTree);
 
-        service = aiComponent.getEnrichmentService("rest2");
+        service = aiComponent.getEnrichmentProvider("rest2");
         results = service.enrich(blobTextFromDoc);
         assertEquals("Called unsuccessfully so the error must be handled and an empty result returned",
                      0, results.size());

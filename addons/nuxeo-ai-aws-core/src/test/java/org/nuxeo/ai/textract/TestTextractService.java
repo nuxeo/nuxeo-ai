@@ -39,7 +39,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -75,7 +75,7 @@ public class TestTextractService {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/harddrive.jpg", "image/jpeg");
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.documentText");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.documentText");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
@@ -91,7 +91,7 @@ public class TestTextractService {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/text.png", "image/jpeg");
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.documentAnalyze");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.documentAnalyze");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());

@@ -38,14 +38,17 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
+import org.nuxeo.runtime.services.config.ConfigurationService;
 
 /**
- * Basic implementation of an enrichment service with mimetype and max file size support.
+ * Basic implementation of an enrichment provider with mimetype and max file size support.
  * <p>
  * It is the responsibility of the implementing class to save any raw data, however, helper methods are provided by this
  * class. You can specify your own <code>TransientStore</code> name on the descriptor using <code>transientStore</code>.
  */
-public abstract class AbstractEnrichmentService implements EnrichmentService, EnrichmentSupport {
+public abstract class AbstractEnrichmentProvider implements EnrichmentProvider, EnrichmentSupport {
+
+    public static final String CALLBACK_KVS_TTL = "nuxeo.enrichment.aws.video.kvs.ttl.ms";
 
     public static final String MAX_RESULTS = "maxResults";
 
@@ -98,7 +101,7 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
     }
 
     /**
-     * Save the rawJson String as a blob using the configured TransientStore for this service and returns the blob key.
+     * Save the rawJson String as a blob using the configured TransientStore for this provider and returns the blob key.
      */
     public String saveJsonAsRawBlob(String rawJson) {
         return EnrichmentUtils.saveRawBlob(Blobs.createJSONBlob(rawJson), transientStoreName);
@@ -118,10 +121,12 @@ public abstract class AbstractEnrichmentService implements EnrichmentService, En
     }
 
     protected void storeCallback(KeyValueStore store, String jobId, Map<String, Serializable> params) {
+        ConfigurationService cs = Framework.getService(ConfigurationService.class);
+        long duration = cs.getLong(CALLBACK_KVS_TTL, TimeUnit.DAYS.toMillis(1));
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(params);
-            store.put(jobId, baos.toByteArray(), TimeUnit.DAYS.toMillis(1));
+            store.put(jobId, baos.toByteArray(), duration);
         } catch (IOException e) {
             throw new NuxeoException(e);
         }

@@ -28,10 +28,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -42,47 +43,58 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
 import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.GetContentModerationResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
+import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
+import com.amazonaws.services.rekognition.model.Label;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * Detect unsafe content in images.
+ * Finds items in an image and labels them
  */
-public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
-    public static final String ASYNC_ACTION_NAME = "StartContentModeration";
+    private static final Logger log = LogManager.getLogger(LabelsEnrichmentProvider.class);
 
-    public static final String ENRICHMENT_NAME = "aws.unsafeVideo";
+    public static final String ASYNC_ACTION_NAME = "StartLabelDetection";
+
+    public static final String ENRICHMENT_NAME = "aws.videoLabels";
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 
+    public static final String DEFAULT_MAX_RESULTS = "200";
+
     public static final String DEFAULT_CONFIDENCE = "70";
+
+    protected int maxResults;
 
     protected float minConfidence;
 
-    protected EnrichmentMetadata.Label newLabel(ModerationLabel l, long timestamp) {
-        if (l.getConfidence() >= minConfidence) {
-            return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100, timestamp);
-        } else {
-            return null;
-        }
+    protected static EnrichmentMetadata.Label newLabel(Label l, long timestamp) {
+        return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100, timestamp);
     }
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         Map<String, String> options = descriptor.options;
+        maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
         minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+    }
+
+    @Override
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(SdkClientException.class);
     }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
         RekognitionService rs = Framework.getService(RekognitionService.class);
+        log.debug("Starting async enrichment for doc: {}", doc.getId());
         KeyValueStore store = getStore();
         for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-            String jobId = rs.startDetectUnsafe(blob.getValue());
+            String jobId = rs.startDetectLabels(blob.getValue(), minConfidence);
+            log.debug("Start detect labels Job {} scheduled", jobId);
             HashMap<String, Serializable> params = new HashMap<>();
+            params.put(MAX_RESULTS, maxResults);
             params.put("doc", doc);
             params.put("key", blob.getKey());
 
@@ -92,21 +104,14 @@ public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentServi
         return Collections.emptyList();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
-    }
-
     public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                        GetContentModerationResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
+                                                        GetLabelDetectionResult result) {
+        List<EnrichmentMetadata.Label> labels = result.getLabels()
                 .stream()
-                .map(l -> newLabel(l.getModerationLabel(), l.getTimestamp()))
-                .filter(Objects::nonNull)
+                .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
                 .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
+        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getLabels()));
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)

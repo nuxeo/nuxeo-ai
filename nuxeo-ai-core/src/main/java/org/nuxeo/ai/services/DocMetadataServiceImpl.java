@@ -170,7 +170,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
         try {
             if (StringUtils.isNotEmpty(metadata.getRawKey())) {
-                TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentService(
+                TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentProvider(
                         metadata.getModelName());
 
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());

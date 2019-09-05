@@ -28,7 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -59,20 +59,20 @@ public class TestImageQualityService {
 
     @Test(expected = IllegalArgumentException.class)
     public void basicServiceTest() {
-        EnrichmentService service = aiComponent.getEnrichmentService("ai.imagequality.bad");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("ai.imagequality.bad");
         assertNotNull(service);
     }
 
     @Test
     public void enrichmentTest() throws IOException {
-        EnrichmentService service = aiComponent.getEnrichmentService("ai.imagequality.mock.fail");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("ai.imagequality.mock.fail");
         assertNotNull(service);
 
         List<EnrichmentMetadata> metadata = (List<EnrichmentMetadata>)
                 service.enrich(EnrichmentTestFeature.blobTestImage(manager));
         assertEquals("Service must fail gracefully.", 0, metadata.size());
 
-        service = aiComponent.getEnrichmentService("ai.imagequality.mock");
+        service = aiComponent.getEnrichmentProvider("ai.imagequality.mock");
         metadata = (List<EnrichmentMetadata>) service.enrich(EnrichmentTestFeature.blobTestImage(manager));
         assertEquals(1, metadata.size());
         assertEquals(17, metadata.get(0).getLabels().stream().mapToInt(l -> l.getValues().size()).sum());
@@ -87,7 +87,7 @@ public class TestImageQualityService {
      *  It is ignored so it doesn't run on Jenkins.
      */
     public void realServiceTest() throws IOException {
-        EnrichmentService service = aiComponent.getEnrichmentService("ai.imagequality.real");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("ai.imagequality.real");
         assertNotNull(service);
 
         Collection<EnrichmentMetadata> metadata = service.enrich(EnrichmentTestFeature.blobTestImage(manager));

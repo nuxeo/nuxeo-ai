@@ -30,9 +30,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.enrichment.SentimentEnrichmentService;
+import org.nuxeo.ai.enrichment.SentimentEnrichmentProvider;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -58,7 +58,7 @@ public class TestComprehendService {
     @Test
     public void testSentiment() {
         AWS.assumeCredentials();
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.textSentiment");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textSentiment");
         assertNotNull(service);
         DetectSentimentResult results = Framework.getService(ComprehendService.class)
                                                  .detectSentiment("I am happy", "en");
@@ -82,8 +82,8 @@ public class TestComprehendService {
     @Test
     public void testGetLabel() throws IOException {
         AWS.assumeCredentials();
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.textSentiment");
-        SentimentEnrichmentService sentimentService = (SentimentEnrichmentService) service;
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textSentiment");
+        SentimentEnrichmentProvider sentimentService = (SentimentEnrichmentProvider) service;
         try {
             sentimentService.getSentimentLabel(new DetectSentimentResult().withSentiment("snowy"));
             fail();

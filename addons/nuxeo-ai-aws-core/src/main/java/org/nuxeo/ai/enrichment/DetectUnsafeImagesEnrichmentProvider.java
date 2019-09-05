@@ -44,7 +44,7 @@ import net.jodah.failsafe.RetryPolicy;
 /**
  * Detect unsafe content in images.
  */
-public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 

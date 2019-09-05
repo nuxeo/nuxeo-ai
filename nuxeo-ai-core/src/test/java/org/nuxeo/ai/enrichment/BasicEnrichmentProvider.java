@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
-public class BasicEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class BasicEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     protected List<EnrichmentMetadata.Label> labels = new ArrayList<>();
 

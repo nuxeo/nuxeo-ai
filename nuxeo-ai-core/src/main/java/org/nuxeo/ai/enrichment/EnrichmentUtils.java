@@ -152,7 +152,7 @@ public class EnrichmentUtils {
         try {
             if (isNotBlank(metadata.getRawKey())) {
                 TransientStore transientStore = Framework.getService(AIComponent.class)
-                                                         .getTransientStoreForEnrichmentService(metadata.getModelName());
+                                                         .getTransientStoreForEnrichmentProvider(metadata.getModelName());
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     return rawBlobs.get(0).getString();

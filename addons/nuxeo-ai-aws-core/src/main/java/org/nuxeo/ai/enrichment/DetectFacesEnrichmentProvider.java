@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import com.amazonaws.services.rekognition.model.FaceDetail;
 /**
  * Detects faces in an image.
  */
-public class DetectFacesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String ATTRIBUTES_OPTION = "attribute";
 

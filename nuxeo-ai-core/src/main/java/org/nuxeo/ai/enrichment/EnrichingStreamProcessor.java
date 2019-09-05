@@ -54,11 +54,11 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * A StreamProcessor that uses an EnrichmentService to process the records in stream
+ * A StreamProcessor that uses an EnrichmentProvider to process the records in stream
  */
 public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
-    public static final String ENRICHER_NAME = "enrichmentServiceName";
+    public static final String ENRICHER_NAME = "enrichmentProviderName";
 
     public static final String USE_CACHE = "cache";
 
@@ -83,7 +83,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
     }
 
     /**
-     * A Computation that uses an EnrichmentService to transform the Record.
+     * A Computation that uses an EnrichmentProvider to transform the Record.
      */
     public static class EnrichmentComputation extends AbstractComputation {
 
@@ -93,7 +93,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected final String enricherName;
 
-        protected EnrichmentService service;
+        protected EnrichmentProvider service;
 
         protected EnrichmentSupport enrichmentSupport;
 
@@ -112,13 +112,13 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         @Override
         public void init(ComputationContext context) {
             log.debug(String.format("Starting enrichment computation for %s", metadata.name()));
-            EnrichmentService enrichmentService = Framework.getService(AIComponent.class)
-                                                           .getEnrichmentService(enricherName);
-            if (enrichmentService == null) {
+            EnrichmentProvider enrichmentProvider = Framework.getService(AIComponent.class)
+                                                           .getEnrichmentProvider(enricherName);
+            if (enrichmentProvider == null) {
                 log.error(String.format("Invalid enricher name %s", enricherName));
                 throw new IllegalArgumentException("Unknown enrichment service " + enricherName);
             }
-            this.service = enrichmentService;
+            this.service = enrichmentProvider;
             if (service instanceof EnrichmentSupport) {
                 this.enrichmentSupport = (EnrichmentSupport) service;
             } else {
