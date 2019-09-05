@@ -9,8 +9,8 @@ Currently there are the following AI Addons:
 
 Each addon has a `-core` project for the Java code and a `-package` project to create a marketplace package.  
 
-An addon must define one or more implementations of an `EnrichmentService` (normally by extending [AbstractEnrichmentService](
-https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-core/src/main/java/org/nuxeo/ai/enrichment/AbstractEnrichmentService.java)).  The `EnrichmentService` must be registered as an extension with the `AIComponent`.  See [Custom enrichment services](https://github.com/nuxeo/nuxeo-ai#custom-enrichment-services).
+An addon must define one or more implementations of an `EnrichmentProvider` (normally by extending [AbstractEnrichmentProvider](
+https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-core/src/main/java/org/nuxeo/ai/enrichment/AbstractEnrichmentProvider.java)).  The `EnrichmentProvider` must be registered as an extension with the `AIComponent`.  See [Custom enrichment services](https://github.com/nuxeo/nuxeo-ai#custom-enrichment-services).
 
 To enrich documents in a nuxeo-stream the enrichment service needs to be registered as a Stream processor.  See [Enrichment stream processor](https://github.com/nuxeo/nuxeo-ai#enrichment-stream-processing).
 

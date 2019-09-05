@@ -27,32 +27,32 @@ import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * Enriches something using a service (usually an external service)
- * AbstractEnrichmentService provides a general implementation.
+ * Enriches something using a provider (usually an external provider)
+ * AbstractEnrichmentProvider provides a general implementation.
  *
- * @see AbstractEnrichmentService
+ * @see AbstractEnrichmentProvider
  */
-public interface EnrichmentService {
+public interface EnrichmentProvider {
 
     String UNSET = "UNSET_";
 
     /**
-     * The name of the service
+     * The name of the provider
      */
     String getName();
 
     /**
-     * The kind of service. The kind must match an id of an entry in the "aikind" vocabulary.
+     * The kind of provider. The kind must match an id of an entry in the "aikind" vocabulary.
      */
     String getKind();
 
     /**
-     * The main enrich method for the service to implement.  Enriching the blob or text and returning a result.
+     * The main enrich method for the provider to implement.  Enriching the blob or text and returning a result.
      */
     Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc);
 
     /**
-     * The retry policy for the service
+     * The retry policy for the provider
      */
     @SuppressWarnings("unchecked")
     default RetryPolicy getRetryPolicy() {
@@ -63,7 +63,7 @@ public interface EnrichmentService {
     }
 
     /**
-     * The circuit breaker for the service
+     * The circuit breaker for the provider
      */
     default CircuitBreaker getCircuitBreaker() {
         return new CircuitBreaker()

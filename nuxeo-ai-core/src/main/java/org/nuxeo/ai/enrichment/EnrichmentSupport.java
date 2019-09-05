@@ -21,9 +21,9 @@ package org.nuxeo.ai.enrichment;
 import java.util.Collection;
 
 /**
- * Additional information about an EnrichmentService and what it supports.
+ * Additional information about an EnrichmentProvider and what it supports.
  *
- * @see EnrichmentService
+ * @see EnrichmentProvider
  */
 public interface EnrichmentSupport {
 

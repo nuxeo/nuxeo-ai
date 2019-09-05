@@ -11,7 +11,7 @@
   </extension>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="e1" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentService">
+    <enrichment name="e1" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
@@ -19,15 +19,15 @@
       <option name="maxResults">50</option>
       <option name="features">all</option>
     </enrichment>
-    <enrichment name="e2" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentService" maxSize="45">
+    <enrichment name="e2" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider" maxSize="45">
       <mimeTypes>
         <mimeType name="image/png" normalized="true" />
       </mimeTypes>
       <option name="maxResults">100</option>
     </enrichment>
-    <enrichment name="e3" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentService" />
-    <enrichment name="logging" kind="/classification/sentiment" class="org.nuxeo.ai.enrichment.LoggingEnrichmentService" />
-    <enrichment name="reverse" kind="/classification/sentiment" transientStore="myTransient" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentService" />
+    <enrichment name="e3" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider" />
+    <enrichment name="logging" kind="/classification/sentiment" class="org.nuxeo.ai.enrichment.LoggingEnrichmentProvider" />
+    <enrichment name="reverse" kind="/classification/sentiment" transientStore="myTransient" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentProvider" />
   </extension>
 
 </component>

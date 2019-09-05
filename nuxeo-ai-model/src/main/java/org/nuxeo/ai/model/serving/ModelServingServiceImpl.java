@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.services.AIComponent;
@@ -95,8 +95,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
         log.debug("Registering a custom model as {}, info is {}.", descriptor.id, descriptor.info);
         RuntimeModel model = descriptor.getModel();
-        if (model instanceof EnrichmentService) {
-            Framework.getService(AIComponent.class).addEnrichmentService(descriptor.id, (EnrichmentService) model);
+        if (model instanceof EnrichmentProvider) {
+            Framework.getService(AIComponent.class).addEnrichmentProvider(descriptor.id, (EnrichmentProvider) model);
         }
         models.put(descriptor.id, model);
         predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter.get()));

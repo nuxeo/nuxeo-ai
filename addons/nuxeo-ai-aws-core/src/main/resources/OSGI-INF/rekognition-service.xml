@@ -9,7 +9,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.imageLabels" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.enrichment.LabelsEnrichmentService" maxSize="10000000">
+                class="org.nuxeo.ai.enrichment.LabelsEnrichmentProvider" maxSize="10000000">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -21,7 +21,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.textDetection" kind="/tagging/imageText"
-                class="org.nuxeo.ai.enrichment.DetectTextEnrichmentService">
+                class="org.nuxeo.ai.enrichment.DetectTextEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -33,7 +33,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentService">
+                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -44,7 +44,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.faceDetection" kind="/tagging/face"
-                class="org.nuxeo.ai.enrichment.DetectFacesEnrichmentService">
+                class="org.nuxeo.ai.enrichment.DetectFacesEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -55,7 +55,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.celebrityDetection" kind="/tagging/celebrity"
-                class="org.nuxeo.ai.enrichment.DetectCelebritiesEnrichmentService">
+                class="org.nuxeo.ai.enrichment.DetectCelebritiesEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -66,7 +66,7 @@
   <!--  Async Enrichment for Video -->
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.videoLabels" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.enrichment.async.LabelsEnrichmentService"
+                class="org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider"
                 maxSize="8589934592">
       <mimeTypes>
         <mimeType name="video/mp4" normalized="true"/>
@@ -78,7 +78,7 @@
     </enrichment>
 
     <enrichment name="aws.unsafeVideo" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentService"
+                class="org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider"
                 maxSize="8589934592">
       <mimeTypes>
         <mimeType name="video/mp4" normalized="true"/>
@@ -89,7 +89,7 @@
     </enrichment>
 
     <enrichment name="aws.videoFaceDetection" kind="/tagging/face"
-                class="org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentService"
+                class="org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider"
                 maxSize="8589934592">
       <mimeTypes>
         <mimeType name="video/mp4" normalized="true"/>
@@ -100,7 +100,7 @@
     </enrichment>
 
     <enrichment name="aws.videoCelebrityDetection" kind="/tagging/celebrity"
-                class="org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentService"
+                class="org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider"
                 maxSize="8589934592">
       <mimeTypes>
         <mimeType name="video/mp4" normalized="true"/>

@@ -23,6 +23,16 @@ import static java.util.Collections.emptyList;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,25 +49,16 @@ import org.nuxeo.ai.imagequality.pojo.Faces;
 import org.nuxeo.ai.imagequality.pojo.ImageProperties;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rest.RestEnrichmentService;
+import org.nuxeo.ai.rest.RestEnrichmentProvider;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
- * An implementation of an EnrichmentService with Sightengine.
+ * An implementation of an {@link org.nuxeo.ai.enrichment.EnrichmentProvider} with Sightengine.
  * <p>
- * The api call is json based, it extends RestEnrichmentService to benefit from the RestClient methods.
+ * The api call is json based, it extends RestEnrichmentProvider to benefit from the RestClient methods.
  * Response parsing is done with Jackson and the classes in the pojo directory.
  */
-public class ImageQualityEnrichmentService extends RestEnrichmentService {
+public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
 
     /**
      * Your API secret
@@ -104,7 +105,7 @@ public class ImageQualityEnrichmentService extends RestEnrichmentService {
 
     public static final String DEFAULT_CONFIDENCE = "0.7";
 
-    private static final Log log = LogFactory.getLog(ImageQualityEnrichmentService.class);
+    private static final Log log = LogFactory.getLog(ImageQualityEnrichmentProvider.class);
 
     protected String apiKey;
 

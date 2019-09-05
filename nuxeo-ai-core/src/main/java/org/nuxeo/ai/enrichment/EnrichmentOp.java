@@ -90,7 +90,7 @@ public class EnrichmentOp {
         List<AIMetadata> results = new ArrayList<>();
         if (!docs.isEmpty()) {
 
-            EnrichmentService service = aiComponent.getEnrichmentService(enrichmentName);
+            EnrichmentProvider service = aiComponent.getEnrichmentProvider(enrichmentName);
             if (service == null) {
                 throw new NuxeoException("Unknown enrichment service " + enrichmentName);
             }

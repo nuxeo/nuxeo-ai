@@ -31,7 +31,7 @@ import org.nuxeo.ecm.core.api.security.SecurityConstants;
 /**
  * Reverse a text field and add it to the raw response
  */
-public class TextReversingEnrichmentService extends AbstractEnrichmentService {
+public class TextReversingEnrichmentProvider extends AbstractEnrichmentProvider {
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {

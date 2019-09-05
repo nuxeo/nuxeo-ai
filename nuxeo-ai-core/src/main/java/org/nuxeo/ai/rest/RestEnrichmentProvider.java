@@ -37,20 +37,19 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
+import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
- * An enrichment service that calls a Rest api.
+ * An enrichment provider that calls a Rest api.
  * It uses a RestClient for most of the logic to call and responds to an api.
  * Options can be passed in the init() method via the descriptor.
  */
-public abstract class RestEnrichmentService extends AbstractEnrichmentService {
+public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider {
 
-    protected static final Log log = LogFactory.getLog(RestEnrichmentService.class);
+    protected static final Log log = LogFactory.getLog(RestEnrichmentProvider.class);
     protected RestClient client;
 
     @Override

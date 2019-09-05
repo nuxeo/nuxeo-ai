@@ -9,7 +9,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentService">
+                class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true" />
         <mimeType name="image/png" normalized="true" />

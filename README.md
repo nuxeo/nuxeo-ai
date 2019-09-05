@@ -203,9 +203,9 @@ Nuxeo AI Core provides 3 Java modules:
 ### Features
  * Provides an `AIComponent` to register services.  eg. An enrichment service.
  * Interfaces and helper classes for building services.
- * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentService`.
- * An Operation called `EnrichmentOp` to call an `EnrichmentService` and return the result.
- * Provides a `RestClient` and `RestEnrichmentService` for easily calling a custom json rest api.
+ * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentProvider`.
+ * An Operation called `EnrichmentOp` to call an `EnrichmentProvider` and return the result.
+ * Provides a `RestClient` and `RestEnrichmentProvider` for easily calling a custom json rest api.
  * Provides a `ThresholdComponents` to register type/facet based thresholds. 
  ```xml
 <extension target="org.nuxeo.ai.configuration.ThresholdComponent"
@@ -273,13 +273,13 @@ For example to send `MY_EVENT` to a stream called `mystream` you would use the f
 Transforming an input Event into an output stream is done using a function specified by the `function` parameter. Functions are explained below.
 
 ##### Custom enrichment services
- New enrichment services can be added by implementing `EnrichmentService`.  `AbstractEnrichmentService` is a good starting point.
- If you wish to call a custom rest api then extending `RestEnrichmentService` would allow access to the various `RestClient`
+ New enrichment services can be added by implementing `EnrichmentProvider`.  `AbstractEnrichmentProvider` is a good starting point.
+ If you wish to call a custom rest api then extending `RestEnrichmentProvider` would allow access to the various `RestClient`
  helper methods. To register your extension you would use configuration similar to this.
  ```xml
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="custom1" kind="/classification/custom"
-                class="org.nuxeo.ai.custom.CustomModelEnrichmentService" maxSize="10000000">
+                class="org.nuxeo.ai.custom.CustomModelEnrichmentProvider" maxSize="10000000">
       <option name="minConfidence">0.75</option>
     </enrichment>
   </extension>
@@ -318,7 +318,7 @@ it runs the `custom1` enrichment service on each record and sends the result to 
                  class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
   <option name="source">images</option>
   <option name="sink">enrichment.in</option>
-  <option name="enrichmentServiceName">custom1</option>
+  <option name="enrichmentProviderName">custom1</option>
 </streamProcessor>
 </extension>
 ```
@@ -330,15 +330,15 @@ Nuxeo AI adds additional metrics to the standard [Nuxeo Metrics reporting](https
 | --- | --- |
 |nuxeo.ai.streams.[eventListener].events| Count of events received.|
 |nuxeo.ai.streams.[eventListener].consumed| Count of events that matched the filter condition and were processed.|
-| nuxeo.ai.enrichment.[enrichmentService].called| Count of stream records received. |
-| nuxeo.ai.enrichment.[enrichmentService].errors| Count of errors.|
-| nuxeo.ai.enrichment.[enrichmentService].produced| How many records were produced after calling the service.|
-| nuxeo.ai.enrichment.[enrichmentService].retries| Count of retries.|
-| nuxeo.ai.enrichment.[enrichmentService].cacheHit| Count of times the result was returned from the cache rather than calling the enrichment service.|
-| nuxeo.ai.enrichment.[enrichmentService].unsupported| Count of unprocessable records, perhaps due to mime-type or size.|
-| nuxeo.ai.enrichment.[enrichmentService].success| Count of successful calls.|
-| nuxeo.ai.enrichment.[enrichmentService].circuitbreaker| Incremented when the circuilt breaker is open, stopping the stream from any more processing.|
-| nuxeo.ai.enrichment.[enrichmentService].fatal| Incremented when a fatal error occurs stopping the stream from any more processing.|
+| nuxeo.ai.enrichment.[enrichmentProvider].called| Count of stream records received. |
+| nuxeo.ai.enrichment.[enrichmentProvider].errors| Count of errors.|
+| nuxeo.ai.enrichment.[enrichmentProvider].produced| How many records were produced after calling the service.|
+| nuxeo.ai.enrichment.[enrichmentProvider].retries| Count of retries.|
+| nuxeo.ai.enrichment.[enrichmentProvider].cacheHit| Count of times the result was returned from the cache rather than calling the enrichment service.|
+| nuxeo.ai.enrichment.[enrichmentProvider].unsupported| Count of unprocessable records, perhaps due to mime-type or size.|
+| nuxeo.ai.enrichment.[enrichmentProvider].success| Count of successful calls.|
+| nuxeo.ai.enrichment.[enrichmentProvider].circuitbreaker| Incremented when the circuilt breaker is open, stopping the stream from any more processing.|
+| nuxeo.ai.enrichment.[enrichmentProvider].fatal| Incremented when a fatal error occurs stopping the stream from any more processing.|
 | nuxeo.ai.streams.func.[functionName].called| Count of stream records received.|
 | nuxeo.ai.streams.func.[functionName].errors| Count of errors.|
 | nuxeo.ai.streams.func.[functionName].produced| How many records were produced by the function.|

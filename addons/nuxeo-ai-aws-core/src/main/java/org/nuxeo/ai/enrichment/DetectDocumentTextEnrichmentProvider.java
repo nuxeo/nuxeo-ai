@@ -19,9 +19,8 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentService.processWithProcessors;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
@@ -30,48 +29,60 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.textract.TextractProcessor;
 import org.nuxeo.ai.textract.TextractService;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.DocumentRef;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.amazonaws.services.textract.model.Block;
+import com.amazonaws.services.textract.model.DetectDocumentTextResult;
 
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * Analyzes text in a document using AWS TextractService.
+ * Detects text in a document.
  * @since 2.1.2
  */
-public class AnalyzeDocumentEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
-
-    public static final String FEATURES_OPTION = "features";
+public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
-    public static final String DEFAULT_FEATURES = "TABLES,FORMS";
-
-    private static final Logger log = LogManager.getLogger(DetectDocumentTextEnrichmentService.class);
+    private static final Logger log = LogManager.getLogger(DetectDocumentTextEnrichmentProvider.class);
 
     protected float minConfidence;
 
-    protected String[] features;
+    /**
+     * Process the Textract response with any available processors.
+     */
+    protected static void processWithProcessors(BlobTextFromDocument blobTextFromDoc, List<Block> blocks, EnrichmentMetadata.Builder builder, String name) {
+        List<TextractProcessor> processors = Framework.getService(TextractService.class).getProcessors(name);
+        if (!processors.isEmpty()) {
+            TransactionHelper.runInTransaction(
+                    () -> CoreInstance.doPrivileged(blobTextFromDoc.getRepositoryName(), session -> {
+                        DocumentRef documentRef = new IdRef(blobTextFromDoc.getId());
+                        for (TextractProcessor processor : processors) {
+                            try {
+                                processor.process(blocks, session, documentRef, builder);
+                            } catch (NuxeoException e) {
+                                log.warn("Textract processing error.", e);
+                            }
+                        }
+                    })
+            );
+        }
+    }
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        String featuresList = descriptor.options.getOrDefault(FEATURES_OPTION, DEFAULT_FEATURES);
-        if (StringUtils.isNotBlank(featuresList)) {
-            features = featuresList.split(",");
-        }
         minConfidence = Float.parseFloat(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
     }
 
@@ -85,8 +96,8 @@ public class AnalyzeDocumentEnrichmentService extends AbstractEnrichmentService 
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                AnalyzeDocumentResult result =
-                        Framework.getService(TextractService.class).analyzeDocument(blob.getValue(), features);
+                DetectDocumentTextResult result =
+                        Framework.getService(TextractService.class).detectText(blob.getValue());
                 if (result != null && !result.getBlocks().isEmpty()) {
                     enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
                 }

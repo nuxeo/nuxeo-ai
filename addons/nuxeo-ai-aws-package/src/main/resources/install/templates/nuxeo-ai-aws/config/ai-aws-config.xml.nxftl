@@ -9,7 +9,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.imageLabels</option>
+      <option name="enrichmentProviderName">aws.imageLabels</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -20,7 +20,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.textDetection</option>
+      <option name="enrichmentProviderName">aws.textDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -31,7 +31,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.faceDetection</option>
+      <option name="enrichmentProviderName">aws.faceDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -42,7 +42,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.celebrityDetection</option>
+      <option name="enrichmentProviderName">aws.celebrityDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -53,7 +53,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.unsafeImages</option>
+      <option name="enrichmentProviderName">aws.unsafeImages</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -66,7 +66,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">text</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.textSentiment</option>
+      <option name="enrichmentProviderName">aws.textSentiment</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -79,7 +79,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.documentText</option>
+      <option name="enrichmentProviderName">aws.documentText</option>
     </streamProcessor>
   </extension>
 </#if>
@@ -91,7 +91,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.documentAnalyze</option>
+      <option name="enrichmentProviderName">aws.documentAnalyze</option>
     </streamProcessor>
   </extension>
 </#if>
@@ -114,7 +114,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">videos</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.videoLabels</option>
+      <option name="enrichmentProviderName">aws.videoLabels</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -125,7 +125,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">videos</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.unsafeVideo</option>
+      <option name="enrichmentProviderName">aws.unsafeVideo</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -136,7 +136,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">videos</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">aws.videoFaceDetection</option>
+      <option name="enrichmentProviderName">aws.videoFaceDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
@@ -147,7 +147,7 @@
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
         <option name="source">videos</option>
         <option name="sink">enrichment.in</option>
-        <option name="enrichmentServiceName">aws.videoCelebrityDetection</option>
+        <option name="enrichmentProviderName">aws.videoCelebrityDetection</option>
         <option name="cache">${nuxeo.enrichment.aws.cache}</option>
       </streamProcessor>
     </extension>

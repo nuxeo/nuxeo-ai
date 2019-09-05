@@ -5,7 +5,7 @@
   <!-- Define a sightengine enrichment service -->
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="ai.imagequality" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -22,7 +22,7 @@
     <!-- Define an enrichment service that uses all the sightengine models -->
     <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
         <enrichment name="ai.imagequality.all" kind="/classification/imageLabels"
-                    class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+                    class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentProvider">
           <mimeTypes>
             <mimeType name="image/jpeg" normalized="true"/>
             <mimeType name="image/png" normalized="true"/>
@@ -46,7 +46,7 @@
         <!-- The output stream to write out enrichment metadata -->
         <option name="sink">enrichment.in</option>
         <!-- The name matches the enrichment service name defined above -->
-        <option name="enrichmentServiceName">ai.imagequality.all</option>
+        <option name="enrichmentProviderName">ai.imagequality.all</option>
       </streamProcessor>
     </extension>
 </#if>

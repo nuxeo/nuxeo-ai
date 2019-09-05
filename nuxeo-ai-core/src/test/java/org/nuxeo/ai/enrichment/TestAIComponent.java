@@ -61,8 +61,8 @@ public class TestAIComponent {
     @Test
     public void testBasicComponent() {
         assertNotNull(aiComponent);
-        assertEquals(5, aiComponent.getEnrichmentServices().size());
-        EnrichmentService service = aiComponent.getEnrichmentService("e1");
+        assertEquals(5, aiComponent.getEnrichmentProviders().size());
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("e1");
         assertEquals("e1", service.getName());
 
         ComputationContext testContext = new ComputationContextImpl(null);
@@ -80,7 +80,7 @@ public class TestAIComponent {
         assertEquals(0, metrics.success);
         assertEquals("PDF isn't a supported mimetype", 1, metrics.unsupported);
 
-        service = aiComponent.getEnrichmentService("logging");
+        service = aiComponent.getEnrichmentProvider("logging");
         service.enrich(blobTextFromDoc);
     }
 
@@ -221,13 +221,13 @@ public class TestAIComponent {
     public void testBadConfig() {
         assertNotNull(aiComponent);
         try {
-            aiComponent.getEnrichmentService("b1");
+            aiComponent.getEnrichmentProvider("b1");
             fail();
         } catch (NuxeoException e) {
-            assertTrue(e.getMessage().contains("must define a valid EnrichmentService"));
+            assertTrue(e.getMessage().contains("must define a valid EnrichmentProvider"));
         }
 
-        EnrichmentService service = aiComponent.getEnrichmentService("ok1");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("ok1");
         assertNotNull(service);
 
         EnrichmentDescriptor descriptor = new EnrichmentDescriptor();
@@ -236,15 +236,15 @@ public class TestAIComponent {
         aiComponent.registerContribution(descriptor, ENRICHMENT_XP, null);
 
         try {
-            aiComponent.getEnrichmentService(badService);
+            aiComponent.getEnrichmentProvider(badService);
             fail();
         } catch (NuxeoException e) {
-            assertTrue(e.getMessage().contains("must define a valid EnrichmentService"));
+            assertTrue(e.getMessage().contains("must define a valid EnrichmentProvider"));
         }
 
-        descriptor.service = BasicEnrichmentService.class;
+        descriptor.service = BasicEnrichmentProvider.class;
         try {
-            aiComponent.getEnrichmentService(badService);
+            aiComponent.getEnrichmentProvider(badService);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("service must be configured with a name bad service and kind null"));
@@ -252,7 +252,7 @@ public class TestAIComponent {
 
         descriptor.kind = "/NOT_ME";
         try {
-            aiComponent.getEnrichmentService(badService);
+            aiComponent.getEnrichmentProvider(badService);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage()
@@ -260,10 +260,10 @@ public class TestAIComponent {
         }
 
         descriptor.kind = "/classification/sentiment";
-        service = aiComponent.getEnrichmentService(badService);
+        service = aiComponent.getEnrichmentProvider(badService);
         assertNotNull(service);
 
-        assertNull(aiComponent.getEnrichmentService("IDONTEXIST"));
+        assertNull(aiComponent.getEnrichmentProvider("IDONTEXIST"));
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("badMetrics");
         EnrichingStreamProcessor.EnrichmentComputation computation

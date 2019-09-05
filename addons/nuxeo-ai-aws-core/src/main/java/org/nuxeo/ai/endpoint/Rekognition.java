@@ -40,10 +40,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentService;
-import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentService;
-import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentService;
-import org.nuxeo.ai.enrichment.async.LabelsEnrichmentService;
+import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider;
 import org.nuxeo.ai.rekognition.listeners.AsyncCelebritiesResultListener;
 import org.nuxeo.ai.rekognition.listeners.AsyncFaceResultListener;
 import org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener;
@@ -75,10 +75,10 @@ public class Rekognition {
     /**
      * Generic Endpoint responsible for delegating tasks among enrichment services
      * Runs as an asynchronous dispatcher sending success/failure events to the following services:
-     * - {@link LabelsEnrichmentService} for label processing
-     * - {@link DetectFacesEnrichmentService} for faces tracking
-     * - {@link DetectCelebritiesEnrichmentService} for celebrity detection
-     * - {@link DetectUnsafeImagesEnrichmentService} for unsafe content detection
+     * - {@link LabelsEnrichmentProvider} for label processing
+     * - {@link DetectFacesEnrichmentProvider} for faces tracking
+     * - {@link DetectCelebritiesEnrichmentProvider} for celebrity detection
+     * - {@link DetectUnsafeImagesEnrichmentProvider} for unsafe content detection
      * @param request of a Notification service
      * @return {@link Response}
      */
@@ -110,22 +110,22 @@ public class Rekognition {
         String event;
         boolean succeeded = message.isSucceeded();
         switch (message.getApi()) {
-            case LabelsEnrichmentService
+            case LabelsEnrichmentProvider
                     .ASYNC_ACTION_NAME:
                 event = succeeded ? AsyncLabelResultListener.SUCCESS_EVENT
                         : AsyncLabelResultListener.FAILURE_EVENT;
                 break;
-            case DetectFacesEnrichmentService
+            case DetectFacesEnrichmentProvider
                     .ASYNC_ACTION_NAME:
                 event = succeeded ? AsyncFaceResultListener.SUCCESS_EVENT
                         : AsyncFaceResultListener.FAILURE_EVENT;
                 break;
-            case DetectCelebritiesEnrichmentService
+            case DetectCelebritiesEnrichmentProvider
                     .ASYNC_ACTION_NAME:
                 event = succeeded ? AsyncCelebritiesResultListener.SUCCESS_EVENT
                         : AsyncCelebritiesResultListener.FAILURE_EVENT;
                 break;
-            case DetectUnsafeImagesEnrichmentService
+            case DetectUnsafeImagesEnrichmentProvider
                     .ASYNC_ACTION_NAME:
                 event = succeeded ? AsyncUnsafeResultListener.SUCCESS_EVENT
                         : AsyncUnsafeResultListener.FAILURE_EVENT;

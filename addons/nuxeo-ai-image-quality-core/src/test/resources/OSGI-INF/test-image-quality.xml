@@ -3,7 +3,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="ai.imagequality.mock" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -17,19 +17,19 @@
     </enrichment>
 
     <enrichment name="ai.imagequality.mock.fail" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentProvider">
       <option name="uri">http://localhost:5078/1.0/check_fail.json</option>
       <option name="nuxeo.ai.sightengine.apiKey">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
       <option name="nuxeo.ai.sightengine.apiSecret">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
     </enrichment>
 
     <enrichment name="ai.imagequality.bad" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentProvider">
       <option name="uri">http://localhost:5078/1.0/check_fail.json</option>
     </enrichment>
 
     <enrichment name="ai.imagequality.real" kind="/classification/imageLabels"
-                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentService">
+                class="org.nuxeo.ai.imagequality.ImageQualityEnrichmentProvider">
       <option name="uri">https://api.sightengine.com/1.0/check.json</option>
       <option name="headers.default">false</option>
       <option name="minConfidence">0.75</option>

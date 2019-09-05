@@ -43,7 +43,7 @@ import net.jodah.failsafe.RetryPolicy;
 /**
  * Finds items in an image and labels them
  */
-public class LabelsEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 
@@ -94,7 +94,7 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService implement
                                                            DetectLabelsResult result) {
         List<EnrichmentMetadata.Label> labels = result.getLabels()
                 .stream()
-                .map(LabelsEnrichmentService::newLabel)
+                .map(LabelsEnrichmentProvider::newLabel)
                 .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> {

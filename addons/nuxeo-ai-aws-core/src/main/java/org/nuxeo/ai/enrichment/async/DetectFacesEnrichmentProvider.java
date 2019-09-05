@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment.async;
 
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
+import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -53,7 +53,7 @@ import com.amazonaws.services.rekognition.model.GetFaceDetectionResult;
 /**
  * Detects faces in an image.
  */
-public class DetectFacesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String ASYNC_ACTION_NAME = "StartFaceDetection";
 

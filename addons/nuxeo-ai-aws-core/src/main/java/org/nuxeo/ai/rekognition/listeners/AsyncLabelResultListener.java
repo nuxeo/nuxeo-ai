@@ -19,8 +19,8 @@
  */
 package org.nuxeo.ai.rekognition.listeners;
 
-import static org.nuxeo.ai.enrichment.AbstractEnrichmentService.MAX_RESULTS;
-import static org.nuxeo.ai.enrichment.async.LabelsEnrichmentService.ENRICHMENT_NAME;
+import static org.nuxeo.ai.enrichment.AbstractEnrichmentProvider.MAX_RESULTS;
+import static org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider.ENRICHMENT_NAME;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -29,7 +29,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.async.LabelsEnrichmentService;
+import org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
@@ -71,7 +71,7 @@ public class AsyncLabelResultListener extends BaseAsyncResultListener {
         GetLabelDetectionResult result = rs.getClient().getLabelDetection(request);
 
         AIComponent service = Framework.getService(AIComponent.class);
-        LabelsEnrichmentService es = (LabelsEnrichmentService) service.getEnrichmentService(ENRICHMENT_NAME);
+        LabelsEnrichmentProvider es = (LabelsEnrichmentProvider) service.getEnrichmentProvider(ENRICHMENT_NAME);
         return es.processResult((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
     }
 }

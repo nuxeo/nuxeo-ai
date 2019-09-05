@@ -19,15 +19,15 @@
  */
 package org.nuxeo.ai.rekognition.listeners;
 
-import static org.nuxeo.ai.enrichment.AbstractEnrichmentService.MAX_RESULTS;
-import static org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentService.ENRICHMENT_NAME;
+import static org.nuxeo.ai.enrichment.AbstractEnrichmentProvider.MAX_RESULTS;
+import static org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider.ENRICHMENT_NAME;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentService;
+import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
@@ -65,7 +65,7 @@ public class AsyncUnsafeResultListener extends BaseAsyncResultListener {
         RekognitionService rs = Framework.getService(RekognitionService.class);
         GetContentModerationResult result = rs.getClient().getContentModeration(request);
         AIComponent service = Framework.getService(AIComponent.class);
-        DetectUnsafeImagesEnrichmentService es = (DetectUnsafeImagesEnrichmentService) service.getEnrichmentService(ENRICHMENT_NAME);
+        DetectUnsafeImagesEnrichmentProvider es = (DetectUnsafeImagesEnrichmentProvider) service.getEnrichmentProvider(ENRICHMENT_NAME);
         return es.processResult((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
     }
 }

@@ -20,6 +20,7 @@ package org.nuxeo.ai.enrichment.async;
 
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
@@ -28,73 +29,51 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.AbstractEnrichmentService;
+import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
-import com.amazonaws.services.rekognition.model.Label;
-import net.jodah.failsafe.RetryPolicy;
+import com.amazonaws.services.rekognition.model.BoundingBox;
+import com.amazonaws.services.rekognition.model.CelebrityDetail;
+import com.amazonaws.services.rekognition.model.CelebrityRecognition;
+import com.amazonaws.services.rekognition.model.GetCelebrityRecognitionResult;
 
 /**
- * Finds items in an image and labels them
+ * Detects celebrity faces in an image
  */
-public class LabelsEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
-    private static final Logger log = LogManager.getLogger(LabelsEnrichmentService.class);
+    public static final String ASYNC_ACTION_NAME = "StartCelebrityRecognition";
 
-    public static final String ASYNC_ACTION_NAME = "StartLabelDetection";
-
-    public static final String ENRICHMENT_NAME = "aws.videoLabels";
-
-    public static final String MINIMUM_CONFIDENCE = "minConfidence";
-
-    public static final String DEFAULT_MAX_RESULTS = "200";
+    public static final String ENRICHMENT_NAME = "aws.videoCelebrityDetection";
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
-    protected int maxResults;
-
     protected float minConfidence;
-
-    protected static EnrichmentMetadata.Label newLabel(Label l, long timestamp) {
-        return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100, timestamp);
-    }
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        Map<String, String> options = descriptor.options;
-        maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
-        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
-    }
-
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
+        minConfidence = Float.parseFloat(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
     }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
         RekognitionService rs = Framework.getService(RekognitionService.class);
-        log.debug("Starting async enrichment for doc: {}", doc.getId());
         KeyValueStore store = getStore();
         for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-            String jobId = rs.startDetectLabels(blob.getValue(), minConfidence);
-            log.debug("Start detect labels Job {} scheduled", jobId);
+            String jobId = rs.startDetectCelebrityFaces(blob.getValue());
             HashMap<String, Serializable> params = new HashMap<>();
-            params.put(MAX_RESULTS, maxResults);
             params.put("doc", doc);
             params.put("key", blob.getKey());
 
@@ -104,21 +83,43 @@ public class LabelsEnrichmentService extends AbstractEnrichmentService implement
         return Collections.emptyList();
     }
 
-    public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                        GetLabelDetectionResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getLabels()
-                .stream()
-                .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
+    /**
+     * Processes the result of the call to AWS
+     */
+    public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
+                                                            GetCelebrityRecognitionResult result) {
+        List<AIMetadata.Tag> tags = result.getCelebrities().stream()
+                .map(c -> newCelebrityTag(c.getCelebrity(), c.getTimestamp()))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getLabels()));
+        String raw = toJsonString(jg -> {
+            jg.writeObjectField("celebrityFaces", result.getCelebrities().stream()
+                    .map(CelebrityRecognition::getCelebrity));
+            jg.writeObjectField("unrecognizedFaces", Collections.emptyList());
+        });
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                .withLabels(asLabels(labels))
+                .withTags(asTags(tags))
                 .withRawKey(rawKey)
                 .withDocumentProperties(singleton(propName))
                 .build());
+    }
+
+    /**
+     * Create a AI Tag based on the celebrity face.
+     */
+    protected AIMetadata.Tag newCelebrityTag(CelebrityDetail celebrity, long timestamp) {
+        BoundingBox box = celebrity.getFace().getBoundingBox();
+        if (celebrity.getFace().getConfidence() >= minConfidence) {
+            return new AIMetadata.Tag(celebrity.getName(), kind, celebrity.getId(),
+                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
+                    Collections.singletonList(new AIMetadata.Label(null, 0, timestamp)),
+                    celebrity.getFace().getConfidence() / 100
+            );
+        }
+        return null;
     }
 
     @Override

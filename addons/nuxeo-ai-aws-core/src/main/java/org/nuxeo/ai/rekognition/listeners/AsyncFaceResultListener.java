@@ -19,14 +19,14 @@
  */
 package org.nuxeo.ai.rekognition.listeners;
 
-import static org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentService.ENRICHMENT_NAME;
+import static org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider.ENRICHMENT_NAME;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentService;
+import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
@@ -63,7 +63,7 @@ public class AsyncFaceResultListener extends BaseAsyncResultListener {
         GetFaceDetectionResult result = rs.getClient().getFaceDetection(request);
 
         AIComponent service = Framework.getService(AIComponent.class);
-        DetectFacesEnrichmentService es = (DetectFacesEnrichmentService) service.getEnrichmentService(ENRICHMENT_NAME);
+        DetectFacesEnrichmentProvider es = (DetectFacesEnrichmentProvider) service.getEnrichmentProvider(ENRICHMENT_NAME);
         return es.processResults((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
     }
 }

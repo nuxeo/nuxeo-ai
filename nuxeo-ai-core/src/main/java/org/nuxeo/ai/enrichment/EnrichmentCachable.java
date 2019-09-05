@@ -21,9 +21,9 @@ package org.nuxeo.ai.enrichment;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
- * Indicates the EnrichmentService is cachable
+ * Indicates the EnrichmentProvider is cachable
  *
- * @see EnrichmentService
+ * @see EnrichmentProvider
  */
 public interface EnrichmentCachable {
 
