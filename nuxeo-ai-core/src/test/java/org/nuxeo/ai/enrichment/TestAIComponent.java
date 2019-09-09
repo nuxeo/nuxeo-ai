@@ -231,12 +231,12 @@ public class TestAIComponent {
         assertNotNull(service);
 
         EnrichmentDescriptor descriptor = new EnrichmentDescriptor();
-        String badService = "bad service";
-        descriptor.name = badService;
+        String badProvider = "bad provider";
+        descriptor.name = badProvider;
         aiComponent.registerContribution(descriptor, ENRICHMENT_XP, null);
 
         try {
-            aiComponent.getEnrichmentProvider(badService);
+            aiComponent.getEnrichmentProvider(badProvider);
             fail();
         } catch (NuxeoException e) {
             assertTrue(e.getMessage().contains("must define a valid EnrichmentProvider"));
@@ -244,23 +244,23 @@ public class TestAIComponent {
 
         descriptor.service = BasicEnrichmentProvider.class;
         try {
-            aiComponent.getEnrichmentProvider(badService);
+            aiComponent.getEnrichmentProvider(badProvider);
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("service must be configured with a name bad service and kind null"));
+            assertTrue(e.getMessage().contains("provider must be configured with a name bad provider and kind null"));
         }
 
         descriptor.kind = "/NOT_ME";
         try {
-            aiComponent.getEnrichmentProvider(badService);
+            aiComponent.getEnrichmentProvider(badProvider);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage()
-                        .contains("The /NOT_ME kind for service bad service must be defined in the aikind vocabulary"));
+                        .contains("The /NOT_ME kind for provider bad provider must be defined in the aikind vocabulary"));
         }
 
         descriptor.kind = "/classification/sentiment";
-        service = aiComponent.getEnrichmentProvider(badService);
+        service = aiComponent.getEnrichmentProvider(badProvider);
         assertNotNull(service);
 
         assertNull(aiComponent.getEnrichmentProvider("IDONTEXIST"));
@@ -272,7 +272,7 @@ public class TestAIComponent {
             computation.init(null);
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Unknown enrichment service IDONTEXIST"));
+            assertTrue(e.getMessage().contains("Unknown enrichment provider IDONTEXIST"));
         }
 
     }

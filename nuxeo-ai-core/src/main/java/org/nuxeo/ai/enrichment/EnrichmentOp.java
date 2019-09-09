@@ -41,10 +41,10 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 
 /**
- * Calls an enrichment service.
+ * Calls an enrichment provider.
  */
-@Operation(id = EnrichmentOp.ID, category = Constants.CAT_DOCUMENT, label = "Directly call an enrichment service",
-        description = "Calls an enrichment service on the provided document(s)")
+@Operation(id = EnrichmentOp.ID, category = Constants.CAT_DOCUMENT, label = "Directly call an enrichment provider",
+        description = "Calls an enrichment provider on the provided document(s)")
 public class EnrichmentOp {
 
     public static final String ID = "AI.Enrichment";
@@ -60,7 +60,7 @@ public class EnrichmentOp {
     @Context
     protected AIComponent aiComponent;
 
-    @Param(name = "enrichmentName", description = "The name of the enrichment service to call")
+    @Param(name = "enrichmentName", description = "The name of the enrichment provider to call")
     protected String enrichmentName;
 
     @Param(name = "blobProperties", required = false)
@@ -90,9 +90,9 @@ public class EnrichmentOp {
         List<AIMetadata> results = new ArrayList<>();
         if (!docs.isEmpty()) {
 
-            EnrichmentProvider service = aiComponent.getEnrichmentProvider(enrichmentName);
-            if (service == null) {
-                throw new NuxeoException("Unknown enrichment service " + enrichmentName);
+            EnrichmentProvider provider = aiComponent.getEnrichmentProvider(enrichmentName);
+            if (provider == null) {
+                throw new NuxeoException("Unknown enrichment provider " + enrichmentName);
             }
             if (blobProperties == null && textProperties == null) {
                 throw new NuxeoException("You must specify either a blob or text property to use");
@@ -104,9 +104,9 @@ public class EnrichmentOp {
                 blobTexts.forEach(b -> {
                     Collection<EnrichmentMetadata> result = null;
                     try {
-                        result = service.enrich(b);
+                        result = provider.enrich(b);
                     } catch (NuxeoException e) {
-                        log.warn(String.format("Call to enrichment service %s failed.", enrichmentName), e);
+                        log.warn(String.format("Call to enrichment provider %s failed.", enrichmentName), e);
                     }
                     if (result != null) {
                         results.addAll(result);

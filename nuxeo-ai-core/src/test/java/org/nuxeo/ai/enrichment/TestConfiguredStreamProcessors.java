@@ -114,7 +114,7 @@ public class TestConfiguredStreamProcessors {
         Map<String, Gauge> gauges = getMetrics(METRICS_PREFIX);
         Gauge called = gauges.get(METRICS_PREFIX + "called");
         Gauge produced = gauges.get(METRICS_PREFIX + "produced");
-        assertEquals("The service should not be called yet.", 0L, called.getValue());
+        assertEquals("The provider should not be called yet.", 0L, called.getValue());
         assertEquals(0L, produced.getValue());
 
         //Now check and append a Record to the "test_images" stream

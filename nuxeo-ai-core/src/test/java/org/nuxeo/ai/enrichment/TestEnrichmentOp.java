@@ -88,7 +88,7 @@ public class TestEnrichmentOp {
         assertEquals(reversed, EnrichmentUtils.getRawBlob(resultMetadata));
         assertNotNull(resultMetadata.context.documentRef);
         assertEquals(new HashSet<>(Arrays.asList("dc:title")), resultMetadata.context.inputProperties);
-        assertTrue("reverse service sets the username so must be true", resultMetadata.isHuman());
+        assertTrue("reverse provider sets the username so must be true", resultMetadata.isHuman());
 
         try {
             params.put("enrichmentName", "I_DONT_EXIST");
@@ -98,7 +98,7 @@ public class TestEnrichmentOp {
             automationService.run(ctx, chain2);
             fail();
         } catch (NuxeoException e) {
-            assertTrue(e.getMessage().contains("Unknown enrichment service"));
+            assertTrue(e.getMessage().contains("Unknown enrichment provider"));
         }
 
         try {
