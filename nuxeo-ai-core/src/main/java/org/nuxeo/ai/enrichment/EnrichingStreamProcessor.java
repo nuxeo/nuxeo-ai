@@ -93,7 +93,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected final String enricherName;
 
-        protected EnrichmentProvider service;
+        protected EnrichmentProvider provider;
 
         protected EnrichmentSupport enrichmentSupport;
 
@@ -116,16 +116,16 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                                            .getEnrichmentProvider(enricherName);
             if (enrichmentProvider == null) {
                 log.error(String.format("Invalid enricher name %s", enricherName));
-                throw new IllegalArgumentException("Unknown enrichment service " + enricherName);
+                throw new IllegalArgumentException("Unknown enrichment provider " + enricherName);
             }
-            this.service = enrichmentProvider;
-            if (service instanceof EnrichmentSupport) {
-                this.enrichmentSupport = (EnrichmentSupport) service;
+            this.provider = enrichmentProvider;
+            if (provider instanceof EnrichmentSupport) {
+                this.enrichmentSupport = (EnrichmentSupport) provider;
             } else {
                 this.enrichmentSupport = null;
             }
-            this.retryPolicy = service.getRetryPolicy();
-            this.circuitBreaker = service.getCircuitBreaker();
+            this.retryPolicy = provider.getRetryPolicy();
+            this.circuitBreaker = provider.getCircuitBreaker();
         }
 
         @Override
@@ -134,7 +134,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 log.debug("Processing record " + record);
             }
             BlobTextFromDocument blobTextFromDoc = fromRecord(record, BlobTextFromDocument.class);
-            Callable<Collection<AIMetadata>> callable = getService(blobTextFromDoc);
+            Callable<Collection<AIMetadata>> callable = getProvider(blobTextFromDoc);
 
             if (callable != null) {
                 metrics.called();
@@ -143,7 +143,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 }
                 Collection<AIMetadata> result = null;
                 try {
-                    result = callService(record, callable);
+                    result = callProvider(record, callable);
                 } catch (CircuitBreakerOpenException cboe) {
                     metrics.circuitBreaker();
                     // The circuit break is open, throw NuxeoException so it doesn't continue processing.
@@ -158,9 +158,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     // The error is logged by onFailedAttempt so just move on to the next record.
                 }
                 if (result != null) {
-                    if (useCache && service instanceof EnrichmentCachable) {
-                        EnrichmentCachable cachingService = (EnrichmentCachable) service;
-                        cachePut(cachingService.getCacheKey(blobTextFromDoc), result, cachingService.getTimeToLive());
+                    if (useCache && provider instanceof EnrichmentCachable) {
+                        EnrichmentCachable cachable = (EnrichmentCachable) provider;
+                        cachePut(cachable.getCacheKey(blobTextFromDoc), result, cachable.getTimeToLive());
                     }
                     List<Record> results = result.stream()
                                                  .map(meta -> toRecord(meta.context.documentRef, meta))
@@ -193,9 +193,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         /**
-         * Calls the service using the retryPolicy
+         * Calls the provider using the retryPolicy
          */
-        protected Collection<AIMetadata> callService(Record record, Callable<Collection<AIMetadata>> callable) {
+        protected Collection<AIMetadata> callProvider(Record record, Callable<Collection<AIMetadata>> callable) {
             return Failsafe.with(retryPolicy).onSuccess(r -> {
                 metrics.success();
                 if (log.isDebugEnabled()) {
@@ -213,12 +213,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         /**
-         * Try to get a reference to an enrichment service if the BlobTextFromDocument meets the requirements, otherwise
+         * Try to get a reference to an enrichment provider if the BlobTextFromDocument meets the requirements, otherwise
          * return null,
          */
-        protected Callable<Collection<AIMetadata>> getService(BlobTextFromDocument blobTextFromDoc) {
-            if (useCache && service instanceof EnrichmentCachable) {
-                String cacheKey = ((EnrichmentCachable) service).getCacheKey(blobTextFromDoc);
+        protected Callable<Collection<AIMetadata>> getProvider(BlobTextFromDocument blobTextFromDoc) {
+            if (useCache && provider instanceof EnrichmentCachable) {
+                String cacheKey = ((EnrichmentCachable) provider).getCacheKey(blobTextFromDoc);
                 Collection<AIMetadata> metadata = cacheGet(cacheKey);
                 if (!metadata.isEmpty()) {
                     metrics.cacheHit();
@@ -242,7 +242,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         protected Collection<AIMetadata> getAiMetadata(BlobTextFromDocument blobTextFromDoc) {
-            return service.enrich(blobTextFromDoc).stream().map(m -> (AIMetadata) m).collect(Collectors.toList());
+            return provider.enrich(blobTextFromDoc).stream().map(m -> (AIMetadata) m).collect(Collectors.toList());
         }
 
         @Override
@@ -264,7 +264,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
     }
 
     /**
-     * Metrics about enrichment services.
+     * Metrics about enrichment providers.
      */
     public static class EnrichmentMetrics extends NuxeoMetricSet {
 

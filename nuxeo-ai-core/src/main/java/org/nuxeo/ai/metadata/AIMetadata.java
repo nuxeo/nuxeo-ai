@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * A normalized view of metadata returned by an intelligent service
+ * A normalized view of metadata returned by an intelligent provider
  */
 public abstract class AIMetadata implements Serializable {
 
