@@ -21,7 +21,7 @@ package org.nuxeo.ai.auto;
 import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
 import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
-import static org.nuxeo.ai.enrichment.EnrichmentService.UNSET;
+import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
 
 import java.io.IOException;

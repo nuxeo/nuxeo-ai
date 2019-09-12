@@ -1,11 +1,15 @@
 ## Edit this file to customize your configuration ##
 #nuxeo-ai-aws.target=
 
+## AWS Role ARN; will be used to push a notification into SNS upon Rekognition completion
+#nuxeo.ai.aws.rekognition.role.arn=
+
 # Set list of templates to include, comma separated values.
 nuxeo.template.includes=aws
 
 # org.nuxeo.ecm.instance.description=Nuxeo ECM customized with nuxeo-ai-aws
 nuxeo.enrichment.aws.images=false
+nuxeo.enrichment.aws.video=false
 nuxeo.enrichment.aws.text=false
 nuxeo.enrichment.aws.cache=true
 

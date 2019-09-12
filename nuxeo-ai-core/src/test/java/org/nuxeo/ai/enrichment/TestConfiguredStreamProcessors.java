@@ -114,7 +114,7 @@ public class TestConfiguredStreamProcessors {
         Map<String, Gauge> gauges = getMetrics(METRICS_PREFIX);
         Gauge called = gauges.get(METRICS_PREFIX + "called");
         Gauge produced = gauges.get(METRICS_PREFIX + "produced");
-        assertEquals("The service should not be called yet.", 0L, called.getValue());
+        assertEquals("The provider should not be called yet.", 0L, called.getValue());
         assertEquals(0L, produced.getValue());
 
         //Now check and append a Record to the "test_images" stream
@@ -198,8 +198,8 @@ public class TestConfiguredStreamProcessors {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
         blobTextFromDoc.setId("mydocId");
         blobTextFromDoc.setRepositoryName("text");
-        List<EnrichmentMetadata.Label> labels = Arrays.asList(new AIMetadata.Label("girl", 0.5f),
-                new AIMetadata.Label("boy", 0.4f));
+        List<EnrichmentMetadata.Label> labels = Arrays.asList(new AIMetadata.Label("girl", 0.5f, 0L),
+                new AIMetadata.Label("boy", 0.4f, 0L));
         LabelSuggestion labelSuggestion = new LabelSuggestion("my:property", labels);
         EnrichmentMetadata EnrichmentMetadata = new EnrichmentMetadata.Builder(Instant.now(), "m1", "stest",
                 blobTextFromDoc).withLabels(Collections.singletonList(labelSuggestion))

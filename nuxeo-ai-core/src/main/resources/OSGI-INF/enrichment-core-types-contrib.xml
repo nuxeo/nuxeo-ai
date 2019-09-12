@@ -17,6 +17,10 @@
       <facet name="Enrichable" />
     </doctype>
 
+    <doctype name="Video" append="true">
+      <facet name="Enrichable" />
+    </doctype>
+
   </extension>
 
   <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">

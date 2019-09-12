@@ -19,9 +19,9 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentService.processWithProcessors;
+import static org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentProvider.processWithProcessors;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ import net.jodah.failsafe.RetryPolicy;
  * Analyzes text in a document using AWS TextractService.
  * @since 2.1.2
  */
-public class AnalyzeDocumentEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String FEATURES_OPTION = "features";
 
@@ -56,7 +56,7 @@ public class AnalyzeDocumentEnrichmentService extends AbstractEnrichmentService 
 
     public static final String DEFAULT_FEATURES = "TABLES,FORMS";
 
-    private static final Logger log = LogManager.getLogger(DetectDocumentTextEnrichmentService.class);
+    private static final Logger log = LogManager.getLogger(DetectDocumentTextEnrichmentProvider.class);
 
     protected float minConfidence;
 

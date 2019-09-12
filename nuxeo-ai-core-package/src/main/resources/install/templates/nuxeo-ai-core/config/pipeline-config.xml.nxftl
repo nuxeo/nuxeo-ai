@@ -56,27 +56,25 @@
 
   <pipe id="pipe.video" enabled="${nuxeo.ai.video.enabled}" function="org.nuxeo.ai.pipes.functions.PropertiesToStream">
     <supplier>
-      <event name="documentCreated">
+      <event name="videoConversionsDone">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+          <option name="includedFacets">Video</option>
+        </filter>
         <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
           <option name="mimePattern">video.*</option>
           <option name="properties">file:content</option>
-        </filter>
-      </event>
-      <event name="documentModified">
-        <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
-        <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
-        <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
-          <option name="mimePattern">video.*</option>
         </filter>
         <option name="properties">file:content</option>
       </event>
     </supplier>
     <consumer>
-      <stream name="video"/>
+      <stream name="videos"/>
     </consumer>
     <transformer>
-      <option name="blobProperties">file:content</option>
+      <option name="blobProperties">
+        file:content
+      </option>
     </transformer>
   </pipe>
 

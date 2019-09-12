@@ -31,13 +31,13 @@ import org.nuxeo.ecm.core.api.security.SecurityConstants;
 /**
  * Reverse a text field and add it to the raw response
  */
-public class TextReversingEnrichmentService extends AbstractEnrichmentService {
+public class TextReversingEnrichmentProvider extends AbstractEnrichmentProvider {
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         String reversedText = StringUtils.reverse(blobTextFromDoc.getProperties().values().iterator().next());
         List<EnrichmentMetadata.Label> labels = Stream.of(reversedText)
-                                                      .map(l -> new EnrichmentMetadata.Label(l, 1))
+                                                      .map(l -> new EnrichmentMetadata.Label(l, 1, 0L))
                                                       .collect(Collectors.toList());
 
         String rawKey = saveJsonAsRawBlob(reversedText);

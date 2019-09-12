@@ -33,7 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.bulk.RecordWriter;
 import org.nuxeo.ai.bulk.RecordWriterDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentSupport;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
@@ -61,7 +61,7 @@ public class AIComponent extends DefaultComponent {
 
     protected final List<RecordWriterDescriptor> recordWriterDescriptors = new ArrayList<>();
 
-    protected final Map<String, EnrichmentService> enrichmentServices = new HashMap<>();
+    protected final Map<String, EnrichmentProvider> enrichmentProviders = new HashMap<>();
 
     protected final Map<String, RecordWriter> writers = new HashMap<>();
 
@@ -83,7 +83,7 @@ public class AIComponent extends DefaultComponent {
         super.start(context);
         getKindResolver();
         enrichmentConfigs.values().forEach(descriptor -> {
-            if (!enrichmentServices.containsKey(descriptor.name)) {
+            if (!enrichmentProviders.containsKey(descriptor.name)) {
                 initialize(descriptor);
             }
         });
@@ -100,22 +100,22 @@ public class AIComponent extends DefaultComponent {
      * Initialize an enrichment descriptor
      */
     public synchronized void initialize(EnrichmentDescriptor descriptor) {
-        if (!enrichmentServices.containsKey(descriptor.name)) {
+        if (!enrichmentProviders.containsKey(descriptor.name)) {
             MimetypeRegistry mimeRegistry = Framework.getService(MimetypeRegistry.class);
-            EnrichmentService enrichmentService = descriptor.getService();
-            if (StringUtils.isEmpty(enrichmentService.getName()) || StringUtils.isEmpty(enrichmentService.getKind())) {
+            EnrichmentProvider enrichmentProvider = descriptor.getProvider();
+            if (StringUtils.isEmpty(enrichmentProvider.getName()) || StringUtils.isEmpty(enrichmentProvider.getKind())) {
                 throw new IllegalArgumentException(
-                        String.format("An enrichment service must be configured with a name %s and kind %s",
+                        String.format("An enrichment provider must be configured with a name %s and kind %s",
                                       descriptor.name, descriptor.getKind()));
             }
 
             if (!getKindResolver().validate(descriptor.getKind())) {
                 throw new IllegalArgumentException(
-                        String.format("The %s kind for service %s must be defined in the %s vocabulary",
+                        String.format("The %s kind for provider %s must be defined in the %s vocabulary",
                                       descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY));
             }
 
-            if (enrichmentService instanceof EnrichmentSupport) {
+            if (enrichmentProvider instanceof EnrichmentSupport) {
                 List<String> mimeTypes = new ArrayList<>();
                 descriptor.getMimeTypes().forEach(mimeType -> {
                     if (mimeType.normalized) {
@@ -125,33 +125,33 @@ public class AIComponent extends DefaultComponent {
                         mimeTypes.add(mimeType.name);
                     }
                 });
-                ((EnrichmentSupport) enrichmentService).addMimeTypes(mimeTypes);
+                ((EnrichmentSupport) enrichmentProvider).addMimeTypes(mimeTypes);
             }
-            addEnrichmentService(descriptor.name, enrichmentService);
+            addEnrichmentProvider(descriptor.name, enrichmentProvider);
         }
     }
 
     /**
      * Returns the names of all the enrichment services that are configured
      */
-    public Set<String> getEnrichmentServices() {
-        return enrichmentServices.keySet();
+    public Set<String> getEnrichmentProviders() {
+        return enrichmentProviders.keySet();
     }
 
     /**
-     * Returns an enrichment service
+     * Returns an enrichment provider
      *
-     * @param serviceName the name of the service
-     * @return EnrichmentService, an implementation of EnrichmentService or null if not found
+     * @param provider the name of the provider
+     * @return EnrichmentProvider, an implementation of EnrichmentProvider or null if not found
      */
-    public EnrichmentService getEnrichmentService(String serviceName) {
-        EnrichmentService service = enrichmentServices.get(serviceName);
+    public EnrichmentProvider getEnrichmentProvider(String provider) {
+        EnrichmentProvider service = enrichmentProviders.get(provider);
         if (service != null) {
             return service;
         } else {
-            if (enrichmentConfigs.containsKey(serviceName)) {
-                initialize(enrichmentConfigs.get(serviceName));
-                return enrichmentServices.get(serviceName);
+            if (enrichmentConfigs.containsKey(provider)) {
+                initialize(enrichmentConfigs.get(provider));
+                return enrichmentProviders.get(provider);
             }
         }
 
@@ -159,26 +159,26 @@ public class AIComponent extends DefaultComponent {
     }
 
     /**
-     * Add an enrichment service
+     * Add an enrichment provider
      *
-     * @param serviceName the name of the service
+     * @param providerName the name of the provider
      */
-    public void addEnrichmentService(String serviceName, EnrichmentService service) {
-        enrichmentServices.put(serviceName, service);
+    public void addEnrichmentProvider(String providerName, EnrichmentProvider provider) {
+        enrichmentProviders.put(providerName, provider);
         if (log.isDebugEnabled()) {
-            log.debug("Adding enrichment service " + serviceName);
+            log.debug("Adding enrichment provider " + providerName);
         }
     }
 
     /**
-     * Gets a TransientStore for the specified enrichment service.
+     * Gets a TransientStore for the specified enrichment provider.
      */
-    public TransientStore getTransientStoreForEnrichmentService(String serviceName) {
-        EnrichmentDescriptor descriptor = enrichmentConfigs.get(serviceName);
+    public TransientStore getTransientStoreForEnrichmentProvider(String providerName) {
+        EnrichmentDescriptor descriptor = enrichmentConfigs.get(providerName);
         if (descriptor != null) {
             return Framework.getService(TransientStoreService.class).getStore(descriptor.getTransientStoreName());
         }
-        throw new IllegalArgumentException("Unknown enrichment service " + serviceName);
+        throw new IllegalArgumentException("Unknown enrichment provider " + providerName);
     }
 
     /**

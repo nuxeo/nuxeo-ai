@@ -100,9 +100,9 @@ public class SuggestionMetadataWrapper {
                 String property = (String) suggestion.get(SUGGESTION_PROPERTY);
                 List<Map<String, Object>> values = (List<Map<String, Object>>) suggestion.get(SUGGESTION_LABELS);
                 List<AIMetadata.Label> labels = values.stream()
-                                                      .map(v -> new AIMetadata.Label((String) v
-                                                              .get(SUGGESTION_LABEL), ((Double) v
-                                                              .get(SUGGESTION_CONFIDENCE)).floatValue()))
+                                                      .map(v -> new AIMetadata.Label((String) v.get(SUGGESTION_LABEL),
+                                                              ((Double) v.get(SUGGESTION_CONFIDENCE)).floatValue(),
+                                                              0L))
                                                       .collect(Collectors.toList());
                 LabelSuggestion label = new LabelSuggestion(property, labels);
                 models.add(modelId);

@@ -2,22 +2,22 @@
 <component name="org.nuxeo.enrichment.test.bad" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="error1" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="error1" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">java.util.NoSuchElementException</option>
       <option name="failures">3</option>
       <option name="retries">3</option>
     </enrichment>
-    <enrichment name="error2" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="error2" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">java.util.NoSuchElementException</option>
       <option name="failures">0</option>
       <option name="retries">0</option>
     </enrichment>
-    <enrichment name="error3" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="error3" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">java.util.NoSuchElementException</option>
       <option name="failures">1</option>
       <option name="retries">0</option>
     </enrichment>
-    <enrichment name="error4" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="error4" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">java.util.NoSuchElementException</option>
       <option name="failures">1</option>
       <option name="retries">1</option>
@@ -25,17 +25,17 @@
   </extension>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="circ1" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="circ1" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">java.util.NoSuchElementException</option>
       <option name="failures">2</option>
       <option name="retries">1</option>
     </enrichment>
-    <enrichment name="circ2" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="circ2" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">java.util.NoSuchElementException</option>
       <option name="failures">8</option>
       <option name="retries">3</option>
     </enrichment>
-    <enrichment name="circ3" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentService">
+    <enrichment name="circ3" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <option name="exception">org.nuxeo.ai.enrichment.FatalEnrichmentError</option>
       <option name="failures">1</option>
       <option name="retries">1</option>

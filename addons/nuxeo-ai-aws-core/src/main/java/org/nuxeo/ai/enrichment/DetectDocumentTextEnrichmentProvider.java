@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
@@ -51,11 +51,11 @@ import net.jodah.failsafe.RetryPolicy;
  * Detects text in a document.
  * @since 2.1.2
  */
-public class DetectDocumentTextEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
-    private static final Logger log = LogManager.getLogger(DetectDocumentTextEnrichmentService.class);
+    private static final Logger log = LogManager.getLogger(DetectDocumentTextEnrichmentProvider.class);
 
     protected float minConfidence;
 

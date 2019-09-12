@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.service.config">
+
+  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+    <!--  1 Day  -->
+    <property name="nuxeo.enrichment.aws.video.kvs.ttl.ms">86400000</property>
+  </extension>
+
+</component>

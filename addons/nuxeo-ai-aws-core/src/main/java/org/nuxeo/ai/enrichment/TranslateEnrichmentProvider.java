@@ -41,9 +41,9 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.translate.model.TranslateTextResult;
 
 /**
- * An enrichment service using AWS Translate.
+ * An enrichment provider using AWS Translate.
  */
-public class TranslateEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String SOURCE_LANGUAGE_CODE = "sourceLanguage";
 

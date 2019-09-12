@@ -27,85 +27,87 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
 
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.DetectLabelsResult;
+import com.amazonaws.services.rekognition.model.Label;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * Detect unsafe content in images.
+ * Finds items in an image and labels them
  */
-public class DetectUnsafeImagesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 
+    public static final String DEFAULT_MAX_RESULTS = "200";
+
     public static final String DEFAULT_CONFIDENCE = "70";
+
+    protected int maxResults;
 
     protected float minConfidence;
 
-    protected EnrichmentMetadata.Label newLabel(ModerationLabel l) {
-        if (l.getConfidence() >= minConfidence) {
-            return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100);
-        } else {
-            return null;
-        }
+    protected static EnrichmentMetadata.Label newLabel(Label l) {
+        return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100);
     }
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         Map<String, String> options = descriptor.options;
+        maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
         minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(SdkClientException.class);
+    }
+
+    @Override
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
+        RekognitionService rs = Framework.getService(RekognitionService.class);
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                DetectModerationLabelsResult result = Framework.getService(RekognitionService.class)
-                                                               .detectUnsafeImages(blob.getValue());
-                if (result != null && !result.getModerationLabels().isEmpty()) {
-                    enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
+            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
+                DetectLabelsResult result = rs.detectLabels(blob.getValue(), maxResults, minConfidence);
+                if (result != null && !result.getLabels().isEmpty()) {
+                    enriched.addAll(processResult(doc, blob.getKey(), result));
                 }
             }
             return enriched;
         });
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
-    }
-
     /**
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                           DetectModerationLabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
-                                                      .stream()
-                                                      .map(this::newLabel)
-                                                      .filter(Objects::nonNull)
-                                                      .collect(Collectors.toList());
+                                                           DetectLabelsResult result) {
+        List<EnrichmentMetadata.Label> labels = result.getLabels()
+                .stream()
+                .map(LabelsEnrichmentProvider::newLabel)
+                .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
+        String raw = toJsonString(jg -> {
+            jg.writeObjectField("labels", result.getLabels());
+            jg.writeStringField("orientationCorrection", result.getOrientationCorrection());
+        });
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withLabels(asLabels(labels))
-                                                 .withRawKey(rawKey)
-                                                 .withDocumentProperties(singleton(propName))
-                                                 .build());
+                .withLabels(asLabels(labels))
+                .withRawKey(rawKey)
+                .withDocumentProperties(singleton(propName))
+                .build());
     }
 
     @Override

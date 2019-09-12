@@ -42,7 +42,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * A normalized view of the result of an Enrichment Service. This class is designed to be serialized as JSON.
  */
 @JsonDeserialize(builder = EnrichmentMetadata.Builder.class)
-public class EnrichmentMetadata extends AIMetadata {
+public class EnrichmentMetadata extends AIMetadata implements Cloneable {
 
     private static final long serialVersionUID = -8838535848960975096L;
 
@@ -97,6 +97,18 @@ public class EnrichmentMetadata extends AIMetadata {
                                         .append("kind", kind)
                                         .append("rawKey", rawKey)
                                         .toString();
+    }
+
+    @Override
+    public Object clone() {
+        try {
+            return (EnrichmentMetadata) super.clone();
+        } catch (CloneNotSupportedException e) {
+            Context ctx = this.getContext();
+            return new EnrichmentMetadata(
+                    new Builder(this.kind, this.modelName, ctx.inputProperties, ctx.repositoryName, ctx.documentRef, ctx.digests)
+            );
+        }
     }
 
     public static class Builder extends AbstractMetaDataBuilder {

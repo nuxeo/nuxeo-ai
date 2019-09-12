@@ -21,14 +21,14 @@ package org.nuxeo.ai.enrichment;
 import java.util.Collection;
 
 /**
- * Additional information about an EnrichmentService and what it supports.
+ * Additional information about an EnrichmentProvider and what it supports.
  *
- * @see EnrichmentService
+ * @see EnrichmentProvider
  */
 public interface EnrichmentSupport {
 
     /**
-     * Initialize the service based on the descriptor
+     * Initialize the provider based on the descriptor
      */
     void init(EnrichmentDescriptor descriptor);
 
@@ -38,13 +38,13 @@ public interface EnrichmentSupport {
     void addMimeTypes(Collection<String> mimeTypes);
 
     /**
-     * Does the service support the mimeType.
-     * If the service doesn't declare what it supports then this method will return true.
+     * Does the provider support the mimeType.
+     * If the provider doesn't declare what it supports then this method will return true.
      */
     boolean supportsMimeType(String mimeType);
 
     /**
-     * Does the service support a file of this size (in bytes).
+     * Does the provider support a file of this size (in bytes).
      */
     boolean supportsSize(long size);
 }

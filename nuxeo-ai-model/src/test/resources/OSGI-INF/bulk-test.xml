@@ -34,7 +34,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">bulk.enrich</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">basicBulkModel</option>
+      <option name="enrichmentProviderName">basicBulkModel</option>
     </streamProcessor>
   </extension>
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
@@ -42,7 +42,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">bulk.enrich</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentServiceName">descBulkModel</option>
+      <option name="enrichmentProviderName">descBulkModel</option>
     </streamProcessor>
   </extension>
 

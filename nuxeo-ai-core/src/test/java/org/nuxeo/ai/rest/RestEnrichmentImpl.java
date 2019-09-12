@@ -34,9 +34,9 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
- * An implementation of a service that calls a rest api
+ * An implementation of {@link org.nuxeo.ai.enrichment.EnrichmentProvider} that calls a rest api
  */
-public class RestEnrichmentImpl extends RestEnrichmentService {
+public class RestEnrichmentImpl extends RestEnrichmentProvider {
 
     @Override
     protected RestClient createClient(Map<String, String> options) {
@@ -62,7 +62,7 @@ public class RestEnrichmentImpl extends RestEnrichmentService {
 
         try {
             MAPPER.readTree(content).fieldNames()
-                  .forEachRemaining(s -> labels.add(new EnrichmentMetadata.Label(s, 1)));
+                  .forEachRemaining(s -> labels.add(new EnrichmentMetadata.Label(s, 1, 0L)));
         } catch (IOException e) {
             log.warn(String.format("Unable to read the json response: %s", content), e);
         }

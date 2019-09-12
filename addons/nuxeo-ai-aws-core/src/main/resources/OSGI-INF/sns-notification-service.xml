@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.sns.NotificationService" version="1.0">
+
+  <implementation class="org.nuxeo.ai.sns.NotificationComponent"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.sns.NotificationService"/>
+  </service>
+
+  <extension-point name="topics">
+    <documentation>
+      Creates a topic for AWS SNS
+      <extension target="org.nuxeo.ai.sns.NotificationService" point="topics">
+        <topic name="ai_topic"
+               type="detect"
+               path="/ai/test/endpoint"/>
+      </extension>
+    </documentation>
+    <object class="org.nuxeo.ai.sns.TopicDescriptor"/>
+  </extension-point>
+
+  <extension target="org.nuxeo.ecm.platform.ui.web.auth.service.PluggableAuthenticationService" point="openUrl">
+    <openUrl name="OpenSNSEndpoint">
+      <method>POST</method>
+      <grantPattern>/nuxeo/site/ai/rekognition/callback/.*</grantPattern>
+    </openUrl>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.web.common.requestcontroller.service.RequestControllerService" point="corsConfig">
+    <corsConfig name="sns_cors" supportedMethods ="GET,POST,HEAD,OPTIONS,DELETE,PUT">
+      <pattern>/nuxeo/.*</pattern>
+    </corsConfig>
+  </extension>
+
+</component>

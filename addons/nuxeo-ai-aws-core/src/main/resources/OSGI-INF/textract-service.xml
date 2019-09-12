@@ -16,7 +16,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.documentText" kind="/classification/imageText"
-                class="org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentService">
+                class="org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
@@ -26,7 +26,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.documentAnalyze" kind="/classification/imageText"
-                class="org.nuxeo.ai.enrichment.AnalyzeDocumentEnrichmentService">
+                class="org.nuxeo.ai.enrichment.AnalyzeDocumentEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>

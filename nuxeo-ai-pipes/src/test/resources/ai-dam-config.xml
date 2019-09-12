@@ -32,7 +32,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">images.enrichment.in</option>
-      <option name="enrichmentServiceName">aws.celebrityDetection</option>
+      <option name="enrichmentProviderName">aws.celebrityDetection</option>
       <option name="cache">true</option>
       <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
     </streamProcessor>
@@ -104,7 +104,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">video</option>
       <option name="sink">video.enrichment.in</option>
-      <option name="enrichmentServiceName">aws.imageLabels</option>
+      <option name="enrichmentProviderName">aws.videoLabels</option>
       <option name="cache">true</option>
       <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
     </streamProcessor>

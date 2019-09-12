@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.textract;
 
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 
 import java.util.List;
 import java.util.Map;

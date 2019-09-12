@@ -23,12 +23,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import javax.inject.Inject;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentService;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
@@ -44,12 +51,6 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -67,7 +68,7 @@ public class TestRekognitionService {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("plane.jpg");
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.imageLabels");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.imageLabels");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
@@ -85,7 +86,7 @@ public class TestRekognitionService {
     public void testFaceDetectionService() throws IOException {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.faceDetection");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.faceDetection");
         assertNotNull(service);
         List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
@@ -97,7 +98,7 @@ public class TestRekognitionService {
     public void testCelebrityDetectionService() throws IOException {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons2.jpg");
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.celebrityDetection");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.celebrityDetection");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
@@ -115,7 +116,7 @@ public class TestRekognitionService {
     public void testUnsafeImagesService() throws IOException {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("creative_commons3.jpg");
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.unsafeImages");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.unsafeImages");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(0, metadataCollection.size());
@@ -131,7 +132,7 @@ public class TestRekognitionService {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobTextFromDocument("plane.jpg");
 
-        EnrichmentService service = aiComponent.getEnrichmentService("aws.textDetection");
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textDetection");
         assertNotNull(service);
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());

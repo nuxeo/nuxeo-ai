@@ -20,7 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentService.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
@@ -31,12 +31,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
+
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.Celebrity;
 import com.amazonaws.services.rekognition.model.ComparedFace;
@@ -45,7 +47,7 @@ import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
 /**
  * Detects celebrity faces in an image
  */
-public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentService implements EnrichmentCachable {
+public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
@@ -58,15 +60,15 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
+        RekognitionService rs = Framework.getService(RekognitionService.class);
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                RecognizeCelebritiesResult result =
-                        Framework.getService(RekognitionService.class).detectCelebrityFaces(blob.getValue());
+            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
+                RecognizeCelebritiesResult result = rs.detectCelebrityFaces(blob.getValue());
                 if (result != null &&
                         (!result.getCelebrityFaces().isEmpty() || !result.getUnrecognizedFaces().isEmpty())) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
+                    enriched.addAll(processResults(doc, blob.getKey(), result));
                 }
             }
             return enriched;
@@ -91,10 +93,10 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withTags(asTags(tags))
-                                                 .withRawKey(rawKey)
-                                                 .withDocumentProperties(singleton(propName))
-                                                 .build());
+                .withTags(asTags(tags))
+                .withRawKey(rawKey)
+                .withDocumentProperties(singleton(propName))
+                .build());
     }
 
     /**
@@ -104,9 +106,9 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
         BoundingBox box = celebrity.getFace().getBoundingBox();
         if (celebrity.getMatchConfidence() >= minConfidence) {
             return new AIMetadata.Tag(celebrity.getName(), kind, celebrity.getId(),
-                                      new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
-                                      null,
-                                      celebrity.getMatchConfidence() / 100
+                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
+                    null,
+                    celebrity.getMatchConfidence() / 100
             );
         }
         return null;
@@ -119,9 +121,9 @@ public class DetectCelebritiesEnrichmentService extends AbstractEnrichmentServic
         BoundingBox box = faceDetail.getBoundingBox();
         if (faceDetail.getConfidence() >= minConfidence) {
             return new AIMetadata.Tag("face", "/tagging/face", null,
-                                      new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
-                                      null,
-                                      faceDetail.getConfidence() / 100
+                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
+                    null,
+                    faceDetail.getConfidence() / 100
             );
         }
         return null;
