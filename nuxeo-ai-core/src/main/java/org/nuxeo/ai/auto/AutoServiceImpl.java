@@ -85,18 +85,10 @@ public class AutoServiceImpl implements AutoService {
             return;
         }
         DocumentModel doc = docMetadata.getDoc();
-        Property property;
         boolean alreadyAutofilled = docMetadata.isAutoFilled(xpath);
-        try {
-            property = doc.getProperty(xpath);
-            if (!alreadyAutofilled && property.getValue() != null) {
-                // Can't set a non null value
-                log.debug("Unable to autofill property {} for doc {} because it has a value.", xpath,
-                          docMetadata.getDoc().getId());
-                return;
-            }
-        } catch (PropertyNotFoundException e) {
-            log.warn("Unknown autofill property {} ", xpath);
+        if (!alreadyAutofilled && docMetadata.hasValue(xpath)) {
+            log.debug("Unable to autofill property {} for doc {} because it has a value.", xpath,
+                      docMetadata.getDoc().getId());
             return;
         }
 
