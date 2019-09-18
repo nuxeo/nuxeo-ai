@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.metadata;
 
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
 import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
@@ -30,6 +31,7 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,12 +41,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
+import org.nuxeo.ecm.core.schema.types.Type;
+import org.nuxeo.ecm.core.schema.types.primitives.StringType;
 
 /**
  * An wrapper around suggestion metadata that pre-processes the data to make it easier to use.
  */
 public class SuggestionMetadataWrapper {
+
+    private static final Logger log = LogManager.getLogger(SuggestionMetadataWrapper.class);
 
     protected final DocumentModel doc;
 
@@ -161,13 +171,34 @@ public class SuggestionMetadataWrapper {
     }
 
     /**
+     * Indicates if a property has a value.
+     */
+    public boolean hasValue(String xpath) {
+
+        try {
+            Property property = doc.getProperty(xpath);
+            Serializable propValue = property.getValue();
+            if (propValue == null) {
+                return false;
+            }
+            Type propertyType = property.getType();
+            if (StringType.INSTANCE.equals(propertyType)) {
+                return isNotEmpty((String) propValue);
+            }
+            return true;
+        } catch (PropertyNotFoundException e) {
+            log.warn("Unknown auto property {} ", xpath);
+            return true;
+        }
+    }
+
+    /**
      * The property is not null and it was not auto-filled or auto-corrected.
      *
      * @param propertyName the property to check
      * @return true if the value was entered by a human.
      */
     public boolean hasHumanValue(String propertyName) {
-        return (doc.getPropertyValue(propertyName) != null)
-                && !(isAutoFilled(propertyName) || isAutoCorrected(propertyName));
+        return hasValue(propertyName) && !(isAutoFilled(propertyName) || isAutoCorrected(propertyName));
     }
 }

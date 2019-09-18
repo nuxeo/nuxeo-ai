@@ -274,4 +274,32 @@ public class TestAutoServices {
         assertTrue("dc:title must be AutoFilled.", wrapper.isAutoFilled("dc:title"));
         assertTrue("dc:format must be AutoFilled.", wrapper.isAutoFilled("dc:format"));
     }
+
+    @Test
+    public void testhasValue() {
+        DocumentModel testDoc = session.createDocumentModel("/", "My Auto Value Doc", "File");
+        testDoc = session.createDocument(testDoc);
+        session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+        SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse(wrapper.hasHumanValue("dc:title"));
+
+        testDoc.setPropertyValue("dc:title", "");
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse("Must allow empty strings", wrapper.hasHumanValue("dc:title"));
+
+        testDoc.setPropertyValue("dc:title", "my title");
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue(wrapper.hasHumanValue("dc:title"));
+
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse("Must allow empty strings[]", wrapper.hasHumanValue("dc:subjects"));
+
+        testDoc.setPropertyValue("dc:subjects", new String[]{"sciences", "art/cinema"});
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertTrue(wrapper.hasHumanValue("dc:subjects"));
+
+        wrapper = new SuggestionMetadataWrapper(testDoc);
+        assertFalse("Must allow empty dates", wrapper.hasHumanValue("dc:issued"));
+    }
 }
