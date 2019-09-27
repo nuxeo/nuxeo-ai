@@ -21,7 +21,7 @@
       <fileset dir="src/main/resources"/>
       <filterset>
         <filter token="VERSION" value="${maven.project.version}"/>
-        <filter token="DISTRIB_VERSION" value="${nuxeo.target.version}"/>
+        <filter token="DISTRIB_VERSION" value="${nuxeo.platform.version}"/>
       </filterset>
     </copy>
     <copy file="${outdir}/nuxeo-ai-aws-artifacts.properties" todir="${outdir}/marketplace/install"/>
@@ -70,11 +70,13 @@
     <nx:rmdups dir="${outdir}/nxr/lib"/>
     <!-- Temporary ZIP Nuxeo NXR to compare with base distribution NXR -->
     <zip destfile="${outdir}/nxr-${maven.project.version}.zip" basedir="${outdir}/nxr"/>
+    <!-- Optionally attach the NXR for later use by other modules -->
+    <artifact:attach file="${outdir}/nxr-${maven.project.version}.zip" classifier="nxr" type="zip"/>
 
     <!-- Your MP only needs to include files not already provided by the base distribution -->
     <nx:zipdiff
       file1="${outdir}/nxr-${maven.project.version}.zip"
-      file2="${outdir}/nuxeo-nxr-server-${nuxeo.distribution.version}.zip"
+      file2="${outdir}/nuxeo-nxr-server-${nuxeo.platform.version}.zip"
       includesfile="${outdir}/includes"
       excludesfile="${outdir}/excludesfile"
       patternsetid="nxr.versus.distribution"
