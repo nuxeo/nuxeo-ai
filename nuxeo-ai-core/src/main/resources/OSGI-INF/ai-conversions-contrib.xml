@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.conversions.contrib" version="1.0">
+
+  <extension target="org.nuxeo.ecm.platform.commandline.executor.service.CommandLineExecutorComponent"
+             point="command">
+
+    <command name="ffmpeg-to-wav16k" enabled="true">
+      <commandLine>ffmpeg</commandLine>
+      <parameterString>-i #{inFilePath} -c:a pcm_s16le -ac 1 -ar 16000 #{outFilePath}</parameterString>
+      <installationDirective>
+        You need to install FFmpeg from http://ffmpeg.org (apt-get install ffmpeg)
+      </installationDirective>
+    </command>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl"
+             point="converter">
+    <converter name="convertToWAV16K" class="org.nuxeo.ecm.platform.video.convert.VideoConversionConverter">
+      <sourceMimeType>video/mpeg</sourceMimeType>
+      <sourceMimeType>video/mp4</sourceMimeType>
+      <sourceMimeType>video/webm</sourceMimeType>
+      <sourceMimeType>video/quicktime</sourceMimeType>
+      <sourceMimeType>video/ogg</sourceMimeType>
+      <sourceMimeType>video/x-ms-asf</sourceMimeType>
+      <sourceMimeType>video/x-msvideo</sourceMimeType>
+      <sourceMimeType>video/flv</sourceMimeType>
+      <destinationMimeType>audio/wav</destinationMimeType>
+      <parameters>
+        <parameter name="CommandLineName">ffmpeg-to-wav16k</parameter>
+        <parameter name="videoMimeType">audio/wav</parameter>
+        <parameter name="videoExtension">wav</parameter>
+        <parameter name="tmpDirectoryPrefix">convertToWAV16K</parameter>
+        <parameter name="converterTmpPath">convertToWAV16K</parameter>
+      </parameters>
+    </converter>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+             point="videoConversions">
+    <videoConversion name="WAV 16K"
+                     converter="convertToWAV16K"
+                     rendition="true"/>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+             point="automaticVideoConversions">
+
+    <automaticVideoConversion name="WAV 16K" order="20"/>
+
+  </extension>
+
+</component>

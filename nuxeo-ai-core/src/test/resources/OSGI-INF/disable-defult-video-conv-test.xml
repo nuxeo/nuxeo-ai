@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.video.conversion.disable.test" version="1.0">
+
+  <require>org.nuxeo.ecm.platform.video.service.contrib</require>
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+             point="videoConversions">
+
+    <videoConversion name="MP4 480p" enabled="false"/>
+    <videoConversion name="WebM 480p" enabled="false"/>
+    <videoConversion name="Ogg 480p" enabled="false"/>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+             point="automaticVideoConversions">
+
+    <automaticVideoConversion name="MP4 480p" enabled="false" />
+    <automaticVideoConversion name="WebM 480p" enabled="false" />
+
+  </extension>
+
+</component>

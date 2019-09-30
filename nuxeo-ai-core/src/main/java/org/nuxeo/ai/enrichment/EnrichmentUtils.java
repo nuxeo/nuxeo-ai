@@ -77,7 +77,7 @@ public class EnrichmentUtils {
 
     public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
 
-    protected static final TypeReference<List<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE = new TypeReference<List<EnrichmentMetadata>>() {
+    protected static final TypeReference<Collection<AIMetadata>> ENRICHMENT_LIST_TYPE = new TypeReference<>() {
     };
 
     private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
@@ -217,6 +217,7 @@ public class EnrichmentUtils {
 
     /**
      * Get an entry from the enrichment cache
+     * @return
      */
     public static Collection<AIMetadata> cacheGet(String cacheKey) {
         if (isNotBlank(cacheKey)) {
