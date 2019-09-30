@@ -1,11 +1,18 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.conversions.contrib" version="1.0">
 
+<<<<<<< HEAD
   <require>org.nuxeo.ecm.platform.commandline.executor.service.defaultContrib</require>
   <extension target="org.nuxeo.ecm.platform.commandline.executor.service.CommandLineExecutorComponent"
              point="command">
 
     <command name="ffmpegToWAV16k" enabled="true">
+=======
+  <extension target="org.nuxeo.ecm.platform.commandline.executor.service.CommandLineExecutorComponent"
+             point="command">
+
+    <command name="ffmpeg-to-wav16k" enabled="true">
+>>>>>>> e51f3b9... NXP-27915 video to audio contribution
       <commandLine>ffmpeg</commandLine>
       <parameterString>-i #{inFilePath} -c:a pcm_s16le -ac 1 -ar 16000 #{outFilePath}</parameterString>
       <installationDirective>
@@ -28,7 +35,11 @@
       <sourceMimeType>video/flv</sourceMimeType>
       <destinationMimeType>audio/wav</destinationMimeType>
       <parameters>
+<<<<<<< HEAD
         <parameter name="CommandLineName">ffmpegToWAV16k</parameter>
+=======
+        <parameter name="CommandLineName">ffmpeg-to-wav16k</parameter>
+>>>>>>> e51f3b9... NXP-27915 video to audio contribution
         <parameter name="videoMimeType">audio/wav</parameter>
         <parameter name="videoExtension">wav</parameter>
         <parameter name="tmpDirectoryPrefix">convertToWAV16K</parameter>

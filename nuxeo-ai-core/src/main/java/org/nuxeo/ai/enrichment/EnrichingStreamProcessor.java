@@ -187,6 +187,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         /**
          * Get an entry from the enrichment cache
+         * @return
          */
         protected Collection<AIMetadata> cacheGet(String cacheKey) {
             return EnrichmentUtils.cacheGet(cacheKey);
