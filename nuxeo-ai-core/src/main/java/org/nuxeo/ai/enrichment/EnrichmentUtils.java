@@ -219,7 +219,7 @@ public class EnrichmentUtils {
      * Get an entry from the enrichment cache
      * @return
      */
-    public static Collection<AIMetadata> cacheGet(String cacheKey) {
+    public static Collection<? extends AIMetadata> cacheGet(String cacheKey) {
         if (isNotBlank(cacheKey)) {
             KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(ENRICHMENT_CACHE_KV);
             byte[] result = kvStore.get(cacheKey);

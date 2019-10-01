@@ -189,7 +189,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * Get an entry from the enrichment cache
          * @return
          */
-        protected Collection<AIMetadata> cacheGet(String cacheKey) {
+        protected Collection<? extends AIMetadata> cacheGet(String cacheKey) {
             return EnrichmentUtils.cacheGet(cacheKey);
         }
 
@@ -220,7 +220,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         protected Callable<Collection<AIMetadata>> getProvider(BlobTextFromDocument blobTextFromDoc) {
             if (useCache && provider instanceof EnrichmentCachable) {
                 String cacheKey = ((EnrichmentCachable) provider).getCacheKey(blobTextFromDoc);
-                Collection<AIMetadata> metadata = cacheGet(cacheKey);
+                @SuppressWarnings("unchecked")
+                Collection<AIMetadata> metadata = (Collection<AIMetadata>) cacheGet(cacheKey);
                 if (!metadata.isEmpty()) {
                     metrics.cacheHit();
                     return () -> EnrichmentUtils.copyEnrichmentMetadata(metadata, blobTextFromDoc);
