@@ -159,9 +159,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                     BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
                     batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
                             TFRECORD_MIME_TYPE, trainingData.getLength());
-                    batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getFilename(),
+                    batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getDigest(),
                             TFRECORD_MIME_TYPE, evalData.getLength());
-                    batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getFilename(),
+                    batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getDigest(),
                             statsData.getMimeType(), statsData.getLength());
 
                     DateTime end = DateTime.now();
