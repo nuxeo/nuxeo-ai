@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.transcribe.TranscribeService" version="1.0">
+
+  <implementation class="org.nuxeo.ai.transcribe.TranscribeServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.transcribe.TranscribeService"/>
+  </service>
+
+</component>

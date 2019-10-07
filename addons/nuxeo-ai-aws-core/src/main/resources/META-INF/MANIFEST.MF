@@ -14,4 +14,6 @@ Nuxeo-Component: OSGI-INF/aws-service-config.xml,
  OSGI-INF/textract-service.xml,
  OSGI-INF/translate-service.xml,
  OSGI-INF/sns-notification-service.xml,
- OSGI-INF/listener-contrib.xml
+ OSGI-INF/listener-contrib.xml,
+ OSGI-INF/transcribe-service.xml,
+ OSGI-INF/worker-queues-contrib.xml
