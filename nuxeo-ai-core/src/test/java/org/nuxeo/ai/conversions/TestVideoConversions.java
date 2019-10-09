@@ -21,6 +21,7 @@ package org.nuxeo.ai.conversions;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ecm.platform.video.VideoConstants.INFO_PROPERTY;
 
 import java.io.File;
@@ -38,6 +39,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
+import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.work.api.WorkManager;
@@ -69,6 +71,9 @@ public class TestVideoConversions {
     protected VideoService vs;
 
     @Inject
+    protected ConversionService cs;
+
+    @Inject
     protected EventService es;
 
     @Inject
@@ -81,13 +86,14 @@ public class TestVideoConversions {
     public void shouldContainCustomContribution() {
         assertThat(vs.getAvailableVideoConversions()).hasSize(4);
         assertThat(vs.getVideoConversion("WAV 16K")).isNotNull();
+        assertTrue(cs.isConverterAvailable("convertToWAV16K").isAvailable());
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-core-test:OSGI-INF/disable-defult-video-conv-test.xml")
     @SuppressWarnings("unchecked")
     public void shouldRetrieveAudio() throws InterruptedException {
-        File vf = FileUtils.getResourceFileFromContext("files/video240.mp4");
+        File vf = FileUtils.getResourceFileFromContext("files/video240_short.mp4");
         DocumentModel dm = session.createDocumentModel("/", "testVideo", "Video");
         dm.setPropertyValue("dc:title", "testVideo");
         FileBlob blob = new FileBlob(vf);
@@ -108,7 +114,7 @@ public class TestVideoConversions {
         DocumentModel resDoc = session.getDocument(new IdRef(dm.getId()));
 
         Map<String, Serializable> info = (Map<String, Serializable>) resDoc.getPropertyValue(INFO_PROPERTY);
-        assertThat(info.get("duration")).isEqualTo(292.88);
+        assertThat(info.get("duration")).isEqualTo(30.03);
 
         VideoDocument adapter = resDoc.getAdapter(VideoDocument.class);
         adapter.getVideo();
