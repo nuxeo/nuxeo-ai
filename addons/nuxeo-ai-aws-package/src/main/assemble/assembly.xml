@@ -70,8 +70,6 @@
     <nx:rmdups dir="${outdir}/nxr/lib"/>
     <!-- Temporary ZIP Nuxeo NXR to compare with base distribution NXR -->
     <zip destfile="${outdir}/nxr-${maven.project.version}.zip" basedir="${outdir}/nxr"/>
-    <!-- Optionally attach the NXR for later use by other modules -->
-    <artifact:attach file="${outdir}/nxr-${maven.project.version}.zip" classifier="nxr" type="zip"/>
 
     <!-- Your MP only needs to include files not already provided by the base distribution -->
     <nx:zipdiff

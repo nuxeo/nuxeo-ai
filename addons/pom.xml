@@ -9,64 +9,82 @@
   <name>Nuxeo AI Addons parent POM</name>
   <packaging>pom</packaging>
   <description>Nuxeo AI Addons parent POM</description>
+
   <properties>
     <ai-core.version>${project.version}</ai-core.version>
+    <wiremock.version>2.18.0</wiremock.version>
   </properties>
+
   <modules>
     <module>nuxeo-ai-image-quality-core</module>
     <module>nuxeo-ai-image-quality-package</module>
     <module>nuxeo-ai-aws-core</module>
     <module>nuxeo-ai-aws-package</module>
   </modules>
-  <dependencies>
-    <dependency>
-      <groupId>org.nuxeo.ecm.automation</groupId>
-      <artifactId>nuxeo-automation-core</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.ai</groupId>
-      <artifactId>nuxeo-ai-pipes</artifactId>
-      <version>${ai-core.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.ai</groupId>
-      <artifactId>nuxeo-ai-core</artifactId>
-      <version>${ai-core.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.ai</groupId>
-      <artifactId>nuxeo-ai-core</artifactId>
-      <version>${ai-core.version}</version>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.runtime</groupId>
-      <artifactId>nuxeo-runtime-test</artifactId>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.nuxeo.runtime</groupId>
-          <artifactId>nuxeo-runtime-jetty-adapter</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.ecm.platform</groupId>
-      <artifactId>nuxeo-platform-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.ecm.platform</groupId>
-      <artifactId>nuxeo-platform-default-config</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-pipes</artifactId>
+        <version>${ai-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-core</artifactId>
+        <version>${ai-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-core</artifactId>
+        <version>${ai-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-rekognition</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-comprehend</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-textract</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-translate</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-logs</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-sns</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-java-sdk-transcribe</artifactId>
+        <version>${aws.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.tomakehurst</groupId>
+        <artifactId>wiremock-standalone</artifactId>
+        <version>${wiremock.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-core</artifactId>
+        <version>${ai-core.version}</version>
+        <classifier>tests</classifier>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>

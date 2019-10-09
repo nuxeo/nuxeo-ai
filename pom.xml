@@ -17,6 +17,7 @@
     <nuxeo.target.version>10.10</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
   </properties>
+
   <modules>
     <module>nuxeo-ai-pipes</module>
     <module>nuxeo-ai-core</module>
@@ -25,6 +26,7 @@
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
   </modules>
+
   <repositories>
     <repository>
       <id>public</id>
@@ -73,6 +75,7 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
+
   <dependencyManagement>
     <dependencies>
       <dependency>

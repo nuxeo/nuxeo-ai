@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.work.queues">
+
+  <extension point="queues" target="org.nuxeo.ecm.core.work.service">
+    <queue id="transcribeWork">
+      <name>transcribeWork</name>
+      <maxThreads>1</maxThreads>
+      <category>transcribeWork</category>
+    </queue>
+  </extension>
+
+</component>
