@@ -21,10 +21,7 @@ package org.nuxeo.ai.conversions;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
-<<<<<<< HEAD
 import static org.junit.Assert.assertTrue;
-=======
->>>>>>> e51f3b9... NXP-27915 video to audio contribution
 import static org.nuxeo.ecm.platform.video.VideoConstants.INFO_PROPERTY;
 
 import java.io.File;
@@ -42,10 +39,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
-<<<<<<< HEAD
 import org.nuxeo.ecm.core.convert.api.ConversionService;
-=======
->>>>>>> e51f3b9... NXP-27915 video to audio contribution
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.work.api.WorkManager;
@@ -77,12 +71,9 @@ public class TestVideoConversions {
     protected VideoService vs;
 
     @Inject
-<<<<<<< HEAD
     protected ConversionService cs;
 
     @Inject
-=======
->>>>>>> e51f3b9... NXP-27915 video to audio contribution
     protected EventService es;
 
     @Inject
@@ -95,21 +86,14 @@ public class TestVideoConversions {
     public void shouldContainCustomContribution() {
         assertThat(vs.getAvailableVideoConversions()).hasSize(4);
         assertThat(vs.getVideoConversion("WAV 16K")).isNotNull();
-<<<<<<< HEAD
         assertTrue(cs.isConverterAvailable("convertToWAV16K").isAvailable());
-=======
->>>>>>> e51f3b9... NXP-27915 video to audio contribution
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-core-test:OSGI-INF/disable-defult-video-conv-test.xml")
     @SuppressWarnings("unchecked")
     public void shouldRetrieveAudio() throws InterruptedException {
-<<<<<<< HEAD
         File vf = FileUtils.getResourceFileFromContext("files/video240_short.mp4");
-=======
-        File vf = FileUtils.getResourceFileFromContext("files/video240.mp4");
->>>>>>> e51f3b9... NXP-27915 video to audio contribution
         DocumentModel dm = session.createDocumentModel("/", "testVideo", "Video");
         dm.setPropertyValue("dc:title", "testVideo");
         FileBlob blob = new FileBlob(vf);
@@ -130,11 +114,7 @@ public class TestVideoConversions {
         DocumentModel resDoc = session.getDocument(new IdRef(dm.getId()));
 
         Map<String, Serializable> info = (Map<String, Serializable>) resDoc.getPropertyValue(INFO_PROPERTY);
-<<<<<<< HEAD
         assertThat(info.get("duration")).isEqualTo(30.03);
-=======
-        assertThat(info.get("duration")).isEqualTo(292.88);
->>>>>>> e51f3b9... NXP-27915 video to audio contribution
 
         VideoDocument adapter = resDoc.getAdapter(VideoDocument.class);
         adapter.getVideo();
