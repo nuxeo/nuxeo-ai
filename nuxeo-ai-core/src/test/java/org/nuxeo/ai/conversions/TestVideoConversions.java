@@ -121,7 +121,7 @@ public class TestVideoConversions {
         TranscodedVideo convert = vs.convert(adapter.getVideo(), "WAV 16K");
         assertNotNull(convert);
         assertThat(convert.getBlob()).isNotNull()
-                .is(new Condition<>() {
+                .is(new Condition<Blob>() {
                     @Override
                     public boolean matches(Blob value) {
                         String ext = FileUtils.getFileExtension(value.getFilename()).toLowerCase();
