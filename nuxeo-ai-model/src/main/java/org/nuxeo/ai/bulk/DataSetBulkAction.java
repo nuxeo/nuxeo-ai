@@ -132,8 +132,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             ThreadLocalRandom random = ThreadLocalRandom.current();
             for (DocumentModel doc : loadDocuments(coreSession, ids)) {
                 BlobTextFromDocument subDoc = null;
-                List<String> targetProperties = new ArrayList<>();
-                targetProperties.addAll(customProperties);
+                List<String> targetProperties = new ArrayList<>(customProperties);
                 boolean isTraining = random.nextInt(1, 101) <= percentSplit;
 
                 if (doc.hasFacet(ENRICHMENT_FACET)) {

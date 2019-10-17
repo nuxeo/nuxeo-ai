@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.ai.cron.continues.export.contrib">
+
+  <extension target="org.nuxeo.ecm.core.scheduler.SchedulerService" point="schedule">
+    <schedule id="continues_export_default">
+      <eventId>startContinuesExport</eventId>
+      <!-- Every week at midnight -->
+      <cronExpression>0 0 0 1/7 * ?</cronExpression>
+    </schedule>
+  </extension>
+
+</component>

@@ -27,8 +27,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,7 +43,9 @@ import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
+import org.nuxeo.ai.model.export.CorpusDelta;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
@@ -114,6 +118,7 @@ public class CloudClientTest {
         String jobId = "testing1";
         String query = "SELECT * FROM Document WHERE ecm:primaryType = 'Note'";
         Long split = 77L;
+        doc.setPropertyValue(DATASET_EXPORT_MODEL_ID, "8476148b-1313-410d-8351-a04e8324822c");
         doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID, jobId);
         doc.setPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_SPLIT, split);
         Map<String, Object> fields = new HashMap<>();
@@ -153,15 +158,29 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldGetModelsFromCloud() throws IOException {
-        JSONBlob models = client.getCloudAIModels(session);
+        JSONBlob models = client.getCloudAIModels();
         assertThat(models.toString()).isNotEmpty();
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldGetCorpusFromCloud() throws IOException {
-        JSONBlob models = client.getCloudAIModels(session);
+        JSONBlob models = client.getCloudAIModels();
         assertThat(models.toString()).isNotEmpty();
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void shouldRetrieveDeltaCorpus() throws IOException {
+        DocumentModel datasetDoc = testDocument();
+        DatasetExport dataset = datasetDoc.getAdapter(DatasetExport.class);
+        JSONBlob corpusDelta = client.getCorpusDelta(dataset.getModelId());
+        assertNotNull(corpusDelta);
+
+        CorpusDelta delta = MAPPER.readValue(corpusDelta.getStream(), CorpusDelta.class);
+        assertNotNull(delta);
+        assertThat(delta.getInputs()).hasSize(1).contains("file:content");
+        assertThat(delta.getOutputs()).hasSize(1).contains("dc:title");
     }
 
     @Test
