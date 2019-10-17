@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/api/v1/ai/mockTestProject/model/(([a-z0-9]*)-([a-z0-9]*)-([a-z0-9]*)-([a-z0-9]*)-([a-z0-9]*))/corpusdelta"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "query": "SELECT * FROM Document WHERE dc:title IS NOT NULL",
+      "inputs": [
+        {
+          "name": "file:content",
+          "type": "img"
+        }
+      ],
+      "outputs": [
+        {
+          "output_name": null,
+          "name": "dc:title",
+          "multi_class": true,
+          "categories": [
+            "8476148b-1313-450d-8351-a04e8324822c",
+            "06f7015e-7e7d-4994-91de-a6a984e9be32",
+            "dc790ee2-443a-44ab-a3f0-140351d1a85e",
+            "f8e74e39-7986-4480-ae08-8c868d31d98a"
+          ],
+          "type": "cat"
+        }
+      ],
+      "modelId": null,
+      "start": null,
+      "end": 1571155442461
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
