@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.ai.listeners">
+
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <listener name="continuesExportListener" async="true" postCommit="true" priority="99"
+              class="org.nuxeo.ai.listeners.ContinuesExportListener">
+      <event>startContinuesExport</event>
+    </listener>
+  </extension>
+
+</component>

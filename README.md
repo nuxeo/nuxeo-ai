@@ -221,6 +221,24 @@ Nuxeo AI Core provides 3 Java modules:
     </thresholdConfiguration>
 </extension>
 ```
+  * Continues Export - Once a week a Cron scheduler fires `startContinuesExport` event.
+  On such event the system will retrieve all AI Model defined under
+  configured project and perform evaluation of the current data to check if it needs to be uploaded.
+  ```xml
+  <extension target="org.nuxeo.ecm.core.scheduler.SchedulerService" point="schedule">
+    <schedule id="continues_export_default">
+      <eventId>startContinuesExport</eventId>
+      <!-- Every week at midnight -->
+      <cronExpression>0 0 0 1/7 * ?</cronExpression>
+    </schedule>
+  </extension>
+  ```
+
+  To override the frequency of events require the original extension 
+  ```xml
+    <require>org.nuxeo.ecm.ai.cron.continues.export.contrib</require>
+  ```
+  
 
 
 ## Nuxeo Pipes

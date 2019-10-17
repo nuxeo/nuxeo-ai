@@ -49,7 +49,7 @@ public class DatasetGetModelOperation {
     @OperationMethod
     public JSONBlob run() throws OperationException {
         try {
-            return client.getCloudAIModels(session);
+            return client.getCloudAIModels();
         } catch (IOException e) {
             throw new OperationException("Could not retrieve AI Models");
         }

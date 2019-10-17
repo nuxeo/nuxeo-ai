@@ -19,10 +19,8 @@
 package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
-
 import javax.validation.constraints.NotNull;
 
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 
@@ -53,11 +51,16 @@ public interface CloudClient {
     boolean addDatasetToModel(@NotNull DocumentModel doc, String corpusId);
 
     /**
-     * @param session session of acting user
      * @return a list of AI Models retrieved from AI Cloud
      * @throws IOException
      */
-    JSONBlob getCloudAIModels(CoreSession session) throws IOException;
+    JSONBlob getCloudAIModels() throws IOException;
+
+    /**
+     * @param modelId of AI_Model
+     * @return JSON representation of corpora delta
+     */
+    JSONBlob getCorpusDelta(String modelId) throws IOException;
 
     /*
      * Make a http POST request to the cloud using the provided parameters.
