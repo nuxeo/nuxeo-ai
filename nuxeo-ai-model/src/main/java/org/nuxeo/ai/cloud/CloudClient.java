@@ -62,13 +62,6 @@ public interface CloudClient {
      */
     JSONBlob getCorpusDelta(String modelId) throws IOException;
 
-    /**
-     * @param session session of acting user
-     * @return a list of AI Models retrieved from AI Cloud
-     * @throws IOException
-     */
-    JSONBlob getCloudAIModels(CoreSession session) throws IOException;
-
     /*
      * Make a http POST request to the cloud using the provided parameters.
      */

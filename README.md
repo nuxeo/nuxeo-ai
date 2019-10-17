@@ -284,7 +284,6 @@ Nuxeo AI Core provides 3 Java modules:
   ```xml
     <require>org.nuxeo.ecm.ai.cron.continues.export.contrib</require>
   ```
-  
 
 
 ## Nuxeo Pipes

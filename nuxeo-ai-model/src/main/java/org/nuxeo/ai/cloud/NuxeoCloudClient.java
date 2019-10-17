@@ -58,7 +58,6 @@ import org.nuxeo.client.objects.upload.BatchUpload;
 import org.nuxeo.client.spi.NuxeoClientException;
 import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
@@ -346,12 +345,35 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public JSONBlob getCloudAIModels(CoreSession session) throws IOException {
+    public JSONBlob getCloudAIModels() throws IOException {
         Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, "models?properties=ai_model");
         Response response = getClient().get(modelsPath.toString());
         if (response.body() == null) {
             log.warn("Could not resolve any AI Models");
             return new JSONBlob("{}");
+        }
+
+        String body = response.body().string();
+        return new JSONBlob(body);
+    }
+
+    @Nullable
+    @Override
+    public JSONBlob getCorpusDelta(String modelId) throws IOException {
+        if (StringUtils.isEmpty(modelId)) {
+            throw new NuxeoException("Model Id cannot be empty");
+        }
+
+        Path path = Paths.get(getApiUrl(), API_AI, projectId, "model", modelId, "corpusdelta");
+        Response response = getClient().get(path.toString());
+        if (!response.isSuccessful()) {
+            log.error("Failed to obtain Corpus delta of {}. Status code {}", modelId, response.code());
+            return null;
+        }
+
+        if (response.body() == null) {
+            log.warn("Corpus Delta is empty; Model Id {}", modelId);
+            return null;
         }
 
         String body = response.body().string();
