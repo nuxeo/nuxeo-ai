@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.streams.Initializable;
@@ -44,6 +45,8 @@ import org.nuxeo.runtime.kv.KeyValueStore;
 public abstract class AbstractRecordWriter implements RecordWriter, Initializable {
 
     public static final int DEFAULT_BUFFER_SIZE = 524288;  //512K
+
+    public static final int DEFAULT_BLOB_TTL_SEC = 60 * 30; // 30 min
 
     public static final String BUFFER_SIZE_OPT = "bufferSize";
 
@@ -123,7 +126,8 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
             }
             try {
                 File tempFile = Framework.createTempFile(id, name);
-                kvStore.put(key, tempFile.getAbsolutePath());
+                Framework.trackFile(tempFile, this);
+                kvStore.put(key, tempFile.getAbsolutePath(), DEFAULT_BLOB_TTL_SEC);
                 if (log.isDebugEnabled()) {
                     log.debug("New file is " + tempFile.getAbsolutePath());
                 }
