@@ -29,11 +29,11 @@
       <event>asyncRekognitionUnsafeFailure</event>
     </listener>
 
-    <listener name="rekognitionUnsafeResultListener"
+    <listener name="rekognitionCelebritiesResultListener"
               async="true"
               postCommit="true"
               priority="999"
-              class="org.nuxeo.ai.rekognition.listeners.AsyncUnsafeResultListener">
+              class="org.nuxeo.ai.rekognition.listeners.AsyncCelebritiesResultListener">
       <event>asyncRekognitionCelebritiesSuccess</event>
       <event>asyncRekognitionCelebritiesFailure</event>
     </listener>
