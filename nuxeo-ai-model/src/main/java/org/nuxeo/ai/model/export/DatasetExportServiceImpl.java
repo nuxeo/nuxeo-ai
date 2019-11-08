@@ -47,6 +47,10 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+import javax.transaction.Status;
+import javax.transaction.Synchronization;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,6 +75,7 @@ import org.nuxeo.elasticsearch.api.EsResult;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * Exports data
@@ -154,8 +159,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                 .param(EXPORT_FEATURES_PARAM, String.join(",", featuresList))
                 .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
 
-        String bulkId = Framework.getService(BulkService.class).submit(bulkCommand);
-        dataset.setJobId(bulkId);
+        dataset.setJobId(bulkCommand.getId());
 
         DocumentModel document = dataset.getDocument();
         if (modelParams != null) {
@@ -166,7 +170,32 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         session.createDocument(document);
 
-        return bulkId;
+        TransactionHelper.registerSynchronization(new DatasetSynchronization(bulkCommand));
+        return bulkCommand.getId();
+    }
+
+    /**
+     * JTA Synchronization for ensuring DatasetExport existence at BAF
+     */
+    protected static class DatasetSynchronization implements Synchronization {
+
+        protected final BulkCommand command;
+
+        public DatasetSynchronization(BulkCommand command) {
+            this.command = command;
+        }
+
+        @Override
+        public void beforeCompletion() {
+            /* NOP */
+        }
+
+        @Override
+        public void afterCompletion(int status) {
+            if (status == Status.STATUS_COMMITTED) {
+                Framework.getService(BulkService.class).submit(command);
+            }
+        }
     }
 
     /**
@@ -201,13 +230,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
-    public DocumentModel getDatasetExportDocument(CoreSession session, String id) {
+    public DocumentModel getDatasetExportDocument(CoreSession session, @Nonnull String id) {
         List<DocumentModel> docs = session.query(QUERY + NXQL.escapeString(id), 1);
         if (docs.isEmpty()) {
             log.warn("Could not find any DatasetExport documents for id: {}", id);
         } else {
             return docs.get(0);
         }
+
         return null;
     }
 

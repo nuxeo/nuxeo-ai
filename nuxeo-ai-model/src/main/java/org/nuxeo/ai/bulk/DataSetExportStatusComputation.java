@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.export.DatasetExportService;
@@ -133,25 +134,26 @@ public class DataSetExportStatusComputation extends AbstractComputation {
     /**
      * Set the blob on the corpus document
      */
-    protected void updateDatasetDocument(ExportBulkProcessed exportStatus, BulkCommand command, Blob theBlob, boolean isTraining) {
-        TransactionHelper.runInTransaction(
-                () -> {
-                    try (CloseableCoreSession session =
-                                 CoreInstance.openCoreSession(command.getRepository(), command.getUsername())) {
+    protected void updateDatasetDocument(ExportBulkProcessed exportStatus, BulkCommand cmd, Blob theBlob, boolean isTraining) {
+        TransactionHelper.commitOrRollbackTransaction();
+        TransactionHelper.runInTransaction(() -> {
+                    try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
                         DocumentModel document = Framework.getService(DatasetExportService.class)
-                                                          .getDatasetExportDocument(session, command.getId());
+                                .getDatasetExportDocument(session, cmd.getId());
                         if (document != null) {
                             document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT,
-                                                      exportStatus.getProcessed() +
-                                                              getCount(exportStatus.getCommandId()));
+                                    exportStatus.getProcessed() +
+                                            getCount(exportStatus.getCommandId()));
                             document.setPropertyValue(isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA,
-                                                      (Serializable) theBlob);
+                                    (Serializable) theBlob);
                             session.saveDocument(document);
                         } else {
                             log.warn(String.format("Unable to save blob %s for command id %s.",
-                                                   theBlob.getDigest(), exportStatus.getCommandId()));
+                                    theBlob.getDigest(), exportStatus.getCommandId()));
                         }
                     }
+
+                    return null;
                 }
         );
     }
@@ -171,7 +173,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
             counters.put(exportStatus.getCommandId(), processed);
         }
         log.debug("Checking end of batch for {}, count processed {}, export processed {} and total of {}",
-                  exportStatus.getCommandId(), processed, exportStatus.getProcessed(), status.getTotal());
+                exportStatus.getCommandId(), processed, exportStatus.getProcessed(), status.getTotal());
         return processed + exportStatus.getProcessed() >= status.getTotal();
     }
 }
