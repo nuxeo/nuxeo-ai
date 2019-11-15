@@ -177,43 +177,4 @@ public class TestDatasetOperation {
         String result = (String) automationService.run(ctx, DatasetExportRestartOperation.ID, params);
         assertNotNull(result);
     }
-
-    @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void shouldRetrieveAIModels() throws OperationException {
-        OperationContext ctx = new OperationContext(session);
-        JSONBlob result = (JSONBlob) automationService.run(ctx, DatasetGetModelOperation.ID);
-        assertNotNull(result);
-    }
-
-    @Test
-    public void shouldRunInterruptOperation() throws OperationException {
-        OperationContext ctx = new OperationContext(session);
-        HashMap<String, Serializable> params = new HashMap<>();
-        params.put("commandId", "fakeOne");
-        boolean result = (boolean) automationService.run(ctx, DatasetExportInterruptOperation.ID, params);
-        assertTrue(result);
-    }
-
-    @Test
-    public void shouldRunRestartOperation() throws OperationException {
-        OperationContext ctx = new OperationContext(session);
-        Map<String, Object> params = new HashMap<>();
-
-        int split = 60;
-        params.put("query", TEST_QUERY);
-        params.put("inputs", "dc:title,dc:description");
-        params.put("outputs", "dc:nature");
-        params.put("split", split);
-        OperationChain chain = new OperationChain("testChain1");
-        chain.add(DatasetExportOperation.ID).from(params);
-        String returned = (String) automationService.run(ctx, chain);
-        assertNotNull(returned);
-
-        ctx = new OperationContext(session);
-        params = new HashMap<>();
-        params.put("commandId", returned);
-        String result = (String) automationService.run(ctx, DatasetExportRestartOperation.ID, params);
-        assertNotNull(result);
-    }
 }
