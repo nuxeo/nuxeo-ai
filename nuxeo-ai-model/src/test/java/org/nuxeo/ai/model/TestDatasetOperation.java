@@ -245,6 +245,8 @@ public class TestDatasetOperation {
         String returned = (String) automationService.run(ctx, chain);
         assertNotNull(returned);
 
+        txFeature.nextTransaction();
+
         ctx = new OperationContext(session);
         params = new HashMap<>();
         params.put("commandId", returned);

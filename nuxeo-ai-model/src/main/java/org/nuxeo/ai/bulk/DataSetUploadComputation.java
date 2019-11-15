@@ -28,6 +28,7 @@ import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
@@ -51,16 +52,16 @@ public class DataSetUploadComputation extends AbstractComputation {
 
     @Override
     public void processRecord(ComputationContext context, String inputStreamName, Record record) {
-
         BulkStatus status = BulkCodecs.getStatusCodec().decode(record.getData());
+        log.debug("Processing record id: {}; with action name: {}", status.getId(), status.getAction());
         if (EXPORT_ACTION_NAME.equals(status.getAction())
                 && BulkStatus.State.COMPLETED.equals(status.getState())) {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
             if (cmd != null) {
-                TransactionHelper.runInTransaction(
-                        () -> {
+                TransactionHelper.runInTransaction(() -> {
+                            log.debug("Opening a session with Repository {} and User {}", cmd.getRepository(), cmd.getUsername());
                             try (CloseableCoreSession session =
-                                         CoreInstance.openCoreSession(cmd.getRepository(), cmd.getUsername())) {
+                                         CoreInstance.openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
                                 DocumentModel document = Framework.getService(DatasetExportService.class)
                                         .getDatasetExportDocument(session, cmd.getId());
                                 if (document != null) {
@@ -80,9 +81,18 @@ public class DataSetUploadComputation extends AbstractComputation {
                                         log.warn("Upload to cloud not possible for export command {}," +
                                                         " dataset doc {} and client {}",
                                                 cmd.getId(), document.getId(), client.isAvailable());
+                                        throw new NuxeoException("Upload to cloud not possible for export command "
+                                                + cmd.getId() + ","
+                                                + " dataset doc "
+                                                + document.getId()
+                                                + " and client " + client.isAvailable());
                                     }
+                                } else {
+                                    throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
                                 }
                             }
+
+                            return null;
                         }
                 );
             } else {

@@ -127,22 +127,25 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
         @Override
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> properties) {
-            List<String> customProperties = asList(split((String) properties.get(EXPORT_FEATURES_PARAM), ","));
-            int percentSplit = Integer.parseInt((String) properties.getOrDefault(EXPORT_SPLIT_PARAM, DEFAULT_SPLIT));
+            String[] props = split((String) properties.get(EXPORT_FEATURES_PARAM), ",");
+            String split = (String) properties.getOrDefault(EXPORT_SPLIT_PARAM, String.valueOf(DEFAULT_SPLIT));
+
+            int percentSplit = Integer.parseInt(split);
             ThreadLocalRandom random = ThreadLocalRandom.current();
             for (DocumentModel doc : loadDocuments(coreSession, ids)) {
-                BlobTextFromDocument subDoc = null;
-                List<String> targetProperties = new ArrayList<>(customProperties);
-                boolean isTraining = random.nextInt(1, 101) <= percentSplit;
-
+                List<String> targetProperties = new ArrayList<>(asList(props));
                 if (doc.hasFacet(ENRICHMENT_FACET)) {
                     SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
                     targetProperties.removeAll(wrapper.getAutoFilled());
                     targetProperties.removeAll(wrapper.getAutoCorrected());
                 }
+
+                BlobTextFromDocument subDoc = null;
                 if (!targetProperties.isEmpty()) {
                     subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(targetProperties));
                 }
+
+                boolean isTraining = random.nextInt(1, 101) <= percentSplit;
                 if (subDoc != null) {
                     if (log.isTraceEnabled()) {
                         log.trace((isTraining ? "training " : "validate ") + subDoc);

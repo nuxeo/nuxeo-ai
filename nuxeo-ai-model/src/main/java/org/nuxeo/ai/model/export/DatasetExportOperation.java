@@ -29,6 +29,8 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -39,6 +41,8 @@ import org.nuxeo.ecm.core.api.CoreSession;
 
 @Operation(id = DatasetExportOperation.ID, category = Constants.CAT_SERVICES, label = "Bulk export a dataset", description = "Run a bulk export on a set of documents expressed by a NXQL query.")
 public class DatasetExportOperation {
+
+    private static final Logger log = LogManager.getLogger(DatasetExportOperation.class);
 
     public static final String ID = "AI.DatasetExport";
 
@@ -75,7 +79,9 @@ public class DatasetExportOperation {
     @OperationMethod
     public String run() {
         HashMap<String, Serializable> params = buildDatasetParameters();
-        return service.export(session, query, inputs, outputs, split, params);
+        String exportId = service.export(session, query, inputs, outputs, split, params);
+        log.debug("Running Export Operation with id: " + exportId);
+        return exportId;
     }
 
     protected HashMap<String, Serializable> buildDatasetParameters() {

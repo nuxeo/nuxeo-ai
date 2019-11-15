@@ -18,22 +18,25 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
 import javax.inject.Inject;
 
 import org.junit.Rule;
@@ -50,7 +53,7 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.test.CoreFeature;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -199,6 +202,12 @@ public class BulkEnrichmentTest {
 
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang).user(
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
+
+        DocumentModel fakeDE = session.createDocumentModel("/", "FakeDE", DATASET_EXPORT_TYPE);
+        fakeDE.setPropertyValue(DATASET_EXPORT_JOB_ID, command.getId());
+        fakeDE = session.createDocument(fakeDE);
+        session.save();
+
         bulkService.submit(command);
         assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(30)));
         waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
@@ -209,14 +218,22 @@ public class BulkEnrichmentTest {
 
         String commandId = Framework.getService(DatasetExportService.class)
                                     .export(session, nxql,
-                                            Arrays.asList("dc:creator"),
-                                            Arrays.asList("dc:title"), 60, null);
+                                            Collections.singletonList("dc:creator"),
+                                            Collections.singletonList("dc:title"), 60, null);
+
+        txFeature.nextTransaction();
+
+        DocumentModelList datasetExports = session.query(QUERY + NXQL.escapeString(commandId));
+        assertThat(datasetExports).isNotEmpty();
         assertTrue("Bulk action didn't finish", bulkService.await(commandId, Duration.ofSeconds(10)));
         BulkStatus status = bulkService.getStatus(commandId);
         assertEquals(COMPLETED, status.getState());
         assertEquals(100, status.getProcessed());
         // 20 were skipped because they were already auto-corrected
         assertEquals(20, status.getErrorCount());
+
+        datasetExports = session.query(QUERY + NXQL.escapeString(commandId));
+        assertThat(datasetExports).isNotEmpty();
     }
 
     protected void submitAndAssert(BulkCommand command) throws InterruptedException {
