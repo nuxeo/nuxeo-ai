@@ -39,6 +39,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +116,7 @@ public class DatasetExportTest {
         String commandId = Framework.getService(DatasetExportService.class)
                                     .export(session, nxql,
                                             Arrays.asList("dc:title", "file:content"),
-                                            Arrays.asList("dc:description"), 60, null);
+                                            Collections.singletonList("dc:description"), 60, null);
         txFeature.nextTransaction();
         assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
 
@@ -133,7 +134,7 @@ public class DatasetExportTest {
         int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
         int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
         assertTrue(trainingCount > validationCount);
-        assertEquals("We should have disguarded 50 bad blobs.", 400, trainingCount + validationCount);
+        assertEquals("We should have discarded 50 bad blobs.", 400, trainingCount + validationCount);
         assertEquals("50 bad blobs.", 50, status.getErrorCount());
     }
 
