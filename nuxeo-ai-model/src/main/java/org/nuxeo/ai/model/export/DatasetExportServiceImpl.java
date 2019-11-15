@@ -47,6 +47,10 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
+import javax.transaction.Status;
+import javax.transaction.Synchronization;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,14 +75,20 @@ import org.nuxeo.elasticsearch.api.EsResult;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * Exports data
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
-    public static final String QUERY = "SELECT * FROM " + DATASET_EXPORT_TYPE
-            + " WHERE ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
+    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
+
+    protected static final Properties EMPTY_PROPS = new Properties();
+
+    public static final String QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE)
+            + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
             + DATASET_EXPORT_JOB_ID + " = ";
 
     public static final PathRef PARENT_PATH = new PathRef("/" + DATASET_EXPORT_TYPE);
@@ -92,10 +102,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public static final String DEFAULT_NUM_TERMS = "200";
 
     public static final String DEFAULT_MIN_TERMS = "15";
-
-    protected static final Properties EMPTY_PROPS = new Properties();
-
-    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
 
     /**
      * Make an Aggregate using AggregateFactory.
@@ -154,8 +160,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                 .param(EXPORT_FEATURES_PARAM, String.join(",", featuresList))
                 .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
 
-        String bulkId = Framework.getService(BulkService.class).submit(bulkCommand);
-        dataset.setJobId(bulkId);
+        dataset.setJobId(bulkCommand.getId());
 
         DocumentModel document = dataset.getDocument();
         if (modelParams != null) {
@@ -164,9 +169,41 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             }
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("DatasetExport doc created id: {}", document.getId());
+        }
+
         session.createDocument(document);
 
-        return bulkId;
+        TransactionHelper.registerSynchronization(new DatasetSynchronization(bulkCommand));
+        return bulkCommand.getId();
+    }
+
+    /**
+     * JTA Synchronization for ensuring DatasetExport existence at BAF
+     */
+    protected static class DatasetSynchronization implements Synchronization {
+
+        protected final BulkCommand command;
+
+        public DatasetSynchronization(BulkCommand command) {
+            this.command = command;
+        }
+
+        @Override
+        public void beforeCompletion() {
+            /* NOP */
+        }
+
+        @Override
+        public void afterCompletion(int status) {
+            if (status == Status.STATUS_COMMITTED) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Submitting command id: {}, for action {}", command.getId(), command.getAction());
+                }
+                Framework.getService(BulkService.class).submit(command);
+            }
+        }
     }
 
     /**
@@ -189,6 +226,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public DatasetExport createDataset(CoreSession session, String query,
                                        List<IOParam> inputs, List<IOParam> outputs, int split,
                                        Blob statsBlob) {
+        log.debug("Creating DatasetExport with Repository {} and User {}",
+                session.getRepositoryName(), session.getPrincipal().getActingUser());
         DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", DATASET_EXPORT_TYPE);
         DatasetExport adapter = doc.getAdapter(DatasetExport.class);
         adapter.setQuery(query);
@@ -201,13 +240,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
-    public DocumentModel getDatasetExportDocument(CoreSession session, String id) {
+    public DocumentModel getDatasetExportDocument(CoreSession session, @Nonnull String id) {
         List<DocumentModel> docs = session.query(QUERY + NXQL.escapeString(id), 1);
         if (docs.isEmpty()) {
             log.warn("Could not find any DatasetExport documents for id: {}", id);
         } else {
             return docs.get(0);
         }
+
         return null;
     }
 
