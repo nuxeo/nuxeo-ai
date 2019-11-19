@@ -21,6 +21,8 @@ package org.nuxeo.ai.model.export;
 
 import static org.nuxeo.ecm.automation.core.Constants.CAT_SERVICES;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
@@ -28,11 +30,10 @@ import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 
-@Operation(id = DatasetExportInterruptOperation.ID,
-        category = CAT_SERVICES,
-        label = "Interrupt AI Dataset Export",
-        description = "Interrupts a running dataset export")
+@Operation(id = DatasetExportInterruptOperation.ID, category = CAT_SERVICES, label = "Interrupt AI Dataset Export", description = "Interrupts a running dataset export")
 public class DatasetExportInterruptOperation {
+
+    private static final Logger log = LogManager.getLogger(DatasetExportInterruptOperation.class);
 
     public static final String ID = "AI.ExportInterrupt";
 
@@ -44,6 +45,7 @@ public class DatasetExportInterruptOperation {
 
     @OperationMethod
     public boolean run() {
+        log.debug("{} dataset has been cancelled.", commandId);
         BulkStatus status = bulkService.abort(commandId);
         return BulkStatus.State.ABORTED.equals(status.getState());
     }
