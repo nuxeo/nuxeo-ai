@@ -73,7 +73,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         return Framework.getService(CodecService.class).getCodec(DEFAULT_CODEC, ExportBulkProcessed.class);
     }
 
-    public static void updateExportStatusProcessed(ComputationContext context, String commandId, long processed, long errored) {
+    public static void updateExportStatusProcessed(ComputationContext context, String commandId, long processed,
+            long errored) {
         ExportBulkProcessed exportStatus = new ExportBulkProcessed(commandId, processed, errored);
         context.produceRecord(OUTPUT_1, commandId, getExportStatusCodec().encode(exportStatus));
     }
@@ -93,6 +94,10 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         }
         if (isEndOfBatch(exportStatus, bulkStatus)) {
             BulkCommand command = service.getCommand(exportStatus.getCommandId());
+            if (command == null) {
+                log.warn(String.format("The bulk command with id %s is missing. Unable to save blobs info.",
+                        exportStatus.getCommandId()));
+            }
             log.debug("Ending batch for {}", exportStatus.getCommandId());
             for (String name : writerNames) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
@@ -103,13 +108,8 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                     try {
                         Optional<Blob> blob = writer.complete(exportStatus.getCommandId());
                         blob.ifPresent(theBlob -> {
-
                             if (command != null) {
                                 updateDatasetDocument(exportStatus, command, theBlob, isTraining(name));
-                            } else {
-                                log.warn(String.format(
-                                        "The bulk command with id %s is missing.  Unable to save blob info for %s %s.",
-                                        exportStatus.getCommandId(), name, theBlob.getDigest()));
                             }
                         });
                     } catch (IOException e) {
@@ -134,30 +134,31 @@ public class DataSetExportStatusComputation extends AbstractComputation {
     /**
      * Set the blob on the corpus document
      */
-    protected void updateDatasetDocument(ExportBulkProcessed exportStatus, BulkCommand cmd, Blob theBlob, boolean isTraining) {
+    protected void updateDatasetDocument(ExportBulkProcessed exportStatus, BulkCommand cmd, Blob theBlob,
+            boolean isTraining) {
         TransactionHelper.runInTransaction(() -> {
-                    log.debug("Opening a session with Repository {} and User {}", cmd.getRepository(), cmd.getUsername());
-                    try (CloseableCoreSession session =
-                                 CoreInstance.openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
-                        DocumentModel document = Framework.getService(DatasetExportService.class)
-                                .getDatasetExportDocument(session, cmd.getId());
-                        if (document != null) {
-                            document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT,
-                                    exportStatus.getProcessed() +
-                                            getCount(exportStatus.getCommandId()));
-                            document.setPropertyValue(isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA,
-                                    (Serializable) theBlob);
-                            session.saveDocument(document);
-                        } else {
-                            log.warn(String.format("Unable to save blob %s for command id %s.",
-                                    theBlob.getDigest(), exportStatus.getCommandId()));
-                            throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
-                        }
-                    }
-
-                    return null;
+            log.debug("Opening a session with Repository {} and originating User {}", cmd.getRepository(),
+                    cmd.getUsername());
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
+                    cmd.getUsername())) {
+                DocumentModel document = Framework.getService(DatasetExportService.class)
+                                                  .getDatasetExportDocument(session, cmd.getId());
+                if (document != null) {
+                    document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT,
+                            exportStatus.getProcessed() + getCount(exportStatus.getCommandId()));
+                    document.setPropertyValue(
+                            isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA,
+                            (Serializable) theBlob);
+                    session.saveDocument(document);
+                } else {
+                    log.warn(String.format("Unable to save blob %s for command id %s.", theBlob.getDigest(),
+                            exportStatus.getCommandId()));
+                    throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
                 }
-        );
+            }
+
+            return null;
+        });
     }
 
     protected Long getCount(String commandId) {

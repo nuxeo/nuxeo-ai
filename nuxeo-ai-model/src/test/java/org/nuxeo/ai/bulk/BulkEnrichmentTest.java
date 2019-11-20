@@ -69,6 +69,9 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
 @Deploy("org.nuxeo.ai.ai-model")
+@Deploy("org.nuxeo.ecm.platform.video.convert")
+@Deploy("org.nuxeo.ecm.platform.video.core")
+@Deploy("org.nuxeo.ai.ai-core")
 @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml"})
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class BulkEnrichmentTest {
@@ -120,6 +123,7 @@ public class BulkEnrichmentTest {
 
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
         waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
+        txFeature.nextTransaction();
 
         List<DocumentModel> docs = getSomeDocuments(nxql);
         for (DocumentModel aDoc : docs) {
@@ -138,6 +142,7 @@ public class BulkEnrichmentTest {
                 .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
+
         docs = getSomeDocuments(nxql);
         for (DocumentModel aDoc : docs) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(aDoc);
@@ -155,6 +160,7 @@ public class BulkEnrichmentTest {
                 .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
+
         docs = getSomeDocuments(nxql);
         for (DocumentModel aDoc : docs) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(aDoc);
@@ -169,6 +175,7 @@ public class BulkEnrichmentTest {
                 .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
+
         docs = getSomeDocuments(nxql);
         for (DocumentModel aDoc : docs) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(aDoc);
@@ -183,6 +190,7 @@ public class BulkEnrichmentTest {
         submitAndAssert(command);
         waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
         txFeature.nextTransaction();
+
         docs = getSomeDocuments(nxql);
         for (DocumentModel aDoc : docs) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(aDoc);
@@ -205,13 +213,14 @@ public class BulkEnrichmentTest {
 
         DocumentModel fakeDE = session.createDocumentModel("/", "FakeDE", DATASET_EXPORT_TYPE);
         fakeDE.setPropertyValue(DATASET_EXPORT_JOB_ID, command.getId());
-        fakeDE = session.createDocument(fakeDE);
+        session.createDocument(fakeDE);
         session.save();
 
         bulkService.submit(command);
         assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(30)));
         waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
         txFeature.nextTransaction();
+
         DocumentModelList someDoc = session.query(nxql);
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);

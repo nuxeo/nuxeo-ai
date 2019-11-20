@@ -37,5 +37,4 @@ public class BadRecordWriter extends AbstractRecordWriter {
         return 99;
     }
 
-
 }
