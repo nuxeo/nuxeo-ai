@@ -54,47 +54,45 @@ public class DataSetUploadComputation extends AbstractComputation {
     public void processRecord(ComputationContext context, String inputStreamName, Record record) {
         BulkStatus status = BulkCodecs.getStatusCodec().decode(record.getData());
         log.debug("Processing record id: {}; with action name: {}", status.getId(), status.getAction());
-        if (EXPORT_ACTION_NAME.equals(status.getAction())
-                && BulkStatus.State.COMPLETED.equals(status.getState())) {
+        if (EXPORT_ACTION_NAME.equals(status.getAction()) && BulkStatus.State.COMPLETED.equals(status.getState())) {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
             if (cmd != null) {
                 TransactionHelper.runInTransaction(() -> {
-                            log.debug("Opening a session with Repository {} and User {}", cmd.getRepository(), cmd.getUsername());
-                            try (CloseableCoreSession session =
-                                         CoreInstance.openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
-                                DocumentModel document = Framework.getService(DatasetExportService.class)
-                                        .getDatasetExportDocument(session, cmd.getId());
-                                if (document != null) {
-                                    CloudClient client = Framework.getService(CloudClient.class);
-                                    if (client.isAvailable()) {
-                                        log.info("Uploading dataset to cloud for command {}," +
-                                                " dataset doc {}", cmd.getId(), document.getId());
+                    log.debug("Opening a session with Repository {} and originating User {}", cmd.getRepository(),
+                            cmd.getUsername());
+                    try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
+                            cmd.getUsername())) {
+                        DocumentModel document = Framework.getService(DatasetExportService.class)
+                                                          .getDatasetExportDocument(session, cmd.getId());
+                        if (document != null) {
+                            CloudClient client = Framework.getService(CloudClient.class);
+                            if (client.isAvailable()) {
+                                log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", cmd.getId(),
+                                        document.getId());
 
-                                        String uid = client.uploadedDataset(document);
-                                        log.info("Upload of dataset to cloud for command {} {}.", cmd.getId(),
-                                                isNotEmpty(uid) ? "successful" : "failed");
+                                String uid = client.uploadedDataset(document);
+                                log.info("Upload of dataset to cloud for command {} {}.", cmd.getId(),
+                                        isNotEmpty(uid) ? "successful" : "failed");
 
-                                        boolean success = client.addDatasetToModel(document, uid);
-                                        log.info("Added dataset to AI_Model {} for command {} {}.", uid, cmd.getId(),
-                                                success ? "successful" : "failed");
-                                    } else {
-                                        log.warn("Upload to cloud not possible for export command {}," +
-                                                        " dataset doc {} and client {}",
-                                                cmd.getId(), document.getId(), client.isAvailable());
-                                        throw new NuxeoException("Upload to cloud not possible for export command "
-                                                + cmd.getId() + ","
-                                                + " dataset doc "
-                                                + document.getId()
-                                                + " and client " + client.isAvailable());
-                                    }
-                                } else {
-                                    throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
-                                }
+                                boolean success = client.addDatasetToModel(document, uid);
+                                log.info("Added dataset to AI_Model {} for command {} {}.", uid, cmd.getId(),
+                                        success ? "successful" : "failed");
+                            } else {
+                                log.warn(
+                                        "Upload to cloud not possible for export command {},"
+                                                + " dataset doc {} and client {}",
+                                        cmd.getId(), document.getId(), client.isAvailable());
+                                throw new NuxeoException(String.format(
+                                        "Upload to cloud not possible for export command %s, dataset doc %s and client %s",
+                                        cmd.getId(), document.getId(), client.isAvailable()));
                             }
-
-                            return null;
+                        } else {
+                            throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
                         }
-                );
+                    }
+
+                    return null;
+                });
             } else {
                 log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", status.getId());
             }
