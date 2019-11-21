@@ -41,7 +41,7 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.export.CorpusDelta;
 import org.nuxeo.ai.model.export.DatasetExportService;
-import org.nuxeo.common.utils.DateUtils;
+import org.nuxeo.ai.utils.DateUtils;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -60,11 +60,9 @@ import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.runtime.api.Framework;
 
 /**
- * Asynchronous listener acting upon `startContinuesExport` event
- * Performs REST Calls via {@link CloudClient} to obtain all AI models
- * and their corpora.
- * The processing includes NXQL query modification for excluding previously exported documents
- * {@link DatasetExportService} will be called if and only if minimum documents were found in the repository
+ * Asynchronous listener acting upon `startContinuesExport` event Performs REST Calls via {@link CloudClient} to obtain
+ * all AI models and their corpora. The processing includes NXQL query modification for excluding previously exported
+ * documents {@link DatasetExportService} will be called if and only if minimum documents were found in the repository
  */
 public class ContinuesExportListener implements PostCommitEventListener {
 
@@ -76,7 +74,8 @@ public class ContinuesExportListener implements PostCommitEventListener {
 
     private static final String DEFAULT_REPO = "default";
 
-    private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ, new IntegerLiteral(0));
+    private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ,
+            new IntegerLiteral(0));
 
     @Override
     public void handleEvent(EventBundle eb) {
@@ -96,7 +95,6 @@ public class ContinuesExportListener implements PostCommitEventListener {
     }
 
     /**
-     *
      * @param client {@link CloudClient} Nuxeo Insight Cloud Client for REST communication
      * @return A {@link List} of AI_Model ids
      */
@@ -108,9 +106,7 @@ public class ContinuesExportListener implements PostCommitEventListener {
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {
                 List<Map<String, Serializable>> entries = (List<Map<String, Serializable>>) resp.get(ENTRIES_KEY);
-                uids = entries.stream()
-                        .map(entry -> (String) entry.get("uid"))
-                        .collect(Collectors.toList());
+                uids = entries.stream().map(entry -> (String) entry.get("uid")).collect(Collectors.toList());
             } else {
                 log.debug("Could not find any entries in " + models.getString());
             }
@@ -123,6 +119,7 @@ public class ContinuesExportListener implements PostCommitEventListener {
 
     /**
      * Initiates export of data defined by Corpus Delta of each AI_Model
+     *
      * @param client {@link CloudClient} Nuxeo Insight Cloud Client for REST communication
      * @param uids a {@link List} of AI_Model ids
      * @param repository Nuxeo repository to use for System Session
@@ -144,7 +141,8 @@ public class ContinuesExportListener implements PostCommitEventListener {
                     String original = delta.getQuery();
                     String modified = modifyQuery(original, delta.getEnd());
                     if (checkMinimum(session, modified, delta.getMinSize())) {
-                        String jobId = exportService.export(session, modified, delta.getInputs(), delta.getOutputs(), DEFAULT_SPLIT);
+                        String jobId = exportService.export(session, modified, delta.getInputs(), delta.getOutputs(),
+                                DEFAULT_SPLIT);
                         log.info("Initiating continues export for " + uid + " with job id " + jobId);
                     } else {
                         log.info("Not enough documents to export; skipping");
@@ -157,7 +155,6 @@ public class ContinuesExportListener implements PostCommitEventListener {
     }
 
     /**
-     *
      * @param original NXQL Query used for exporting documents
      * @param calendar {@link Calendar} instance to exclude all models modified before the given date
      * @return A modified query
@@ -175,16 +172,8 @@ public class ContinuesExportListener implements PostCommitEventListener {
             where = exclusive;
         }
 
-        return new SQLQuery(
-                query.select,
-                query.from,
-                new WhereClause(where),
-                query.groupBy,
-                query.having,
-                query.orderBy,
-                query.limit,
-                query.offset
-        ).toString();
+        return new SQLQuery(query.select, query.from, new WhereClause(where), query.groupBy, query.having,
+                query.orderBy, query.limit, query.offset).toString();
     }
 
     protected boolean checkMinimum(CoreSession session, String query, int min) {
@@ -194,8 +183,8 @@ public class ContinuesExportListener implements PostCommitEventListener {
 
     protected String getRepositoryName(EventBundle eb) {
         Optional<Event> event = StreamSupport.stream(eb.spliterator(), false)
-                .filter(e -> Objects.nonNull(e.getContext()))
-                .findFirst();
+                                             .filter(e -> Objects.nonNull(e.getContext()))
+                                             .findFirst();
 
         String repository = DEFAULT_REPO;
         if (event.isPresent()) {
