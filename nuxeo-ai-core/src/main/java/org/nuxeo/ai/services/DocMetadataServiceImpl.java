@@ -104,11 +104,11 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                 doc.addFacet(ENRICHMENT_FACET);
             }
             @SuppressWarnings("unchecked")
-            List<Map<String, Object>> enrichmentList = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+            List<Map<String, Object>> enrichmentList = (List<Map<String, Object>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
             if (enrichmentList == null) {
                 enrichmentList = new ArrayList<>(1);
             }
-            Collection allEnriched = updateEnrichment(enrichmentList, anItem);
+            Collection<Map<String, Object>> allEnriched = updateEnrichment(enrichmentList, anItem);
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, allEnriched);
             doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
             raiseEvent(doc, ENRICHMENT_MODIFIED, null, metadata.getModelName());
@@ -215,7 +215,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             List<AutoHistory> history = existingHistory.stream()
                                                        .filter(h -> !xPath.equals(h.getProperty()))
                                                        .collect(Collectors.toList());
-            history.add(new AutoHistory(xPath, String.valueOf(oldValue)));
+            history.add(new AutoHistory(xPath, oldValue));
             setAutoHistory(doc, history);
         }
         raiseEvent(doc, AUTO_ADDED + autoField.toUpperCase(), Collections.singleton(xPath), comment);
@@ -225,7 +225,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     @Override
     public DocumentModel resetAuto(DocumentModel doc, String autoField, String xPath, boolean resetValue) {
         Set<String> autoProps = getAutoPropAsSet(doc, autoField);
-        Serializable previousValue = null;
+        Object previousValue = null;
         if (autoProps.contains(xPath)) {
             autoProps.remove(xPath);
 
@@ -243,7 +243,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             //Set the value
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField, autoProps);
             if (resetValue) {
-                doc.setPropertyValue(xPath, previousValue);
+                doc.setPropertyValue(xPath, (Serializable) previousValue);
             }
         }
         return doc;
