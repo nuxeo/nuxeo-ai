@@ -18,12 +18,14 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
+import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
@@ -46,6 +48,7 @@ import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -194,6 +197,11 @@ public class TestAutoServices {
         docMetadataService.setAutoHistory(testDoc, Collections.singletonList(hist));
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
+
+        Blob histBlob = (Blob) testDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY);
+        assertNotNull(histBlob);
+        assertThat(histBlob.getFilename()).isNotEmpty().endsWith(".json");
+
         history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(1, history.size());
         assertEquals("History must have been saved and returned correctly.", hist, history.get(0));

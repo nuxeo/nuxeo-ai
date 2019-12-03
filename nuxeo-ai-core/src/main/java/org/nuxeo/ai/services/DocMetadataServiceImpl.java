@@ -373,6 +373,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             if (!doc.hasFacet(ENRICHMENT_FACET)) {
                 doc.addFacet(ENRICHMENT_FACET);
             }
+            autoBlob.setFilename(AUTO_HISTORY + "_" + doc.getName() + ".json");
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY, autoBlob);
         } catch (IOException e) {
             log.warn("Failed to set auto history blob", e);
