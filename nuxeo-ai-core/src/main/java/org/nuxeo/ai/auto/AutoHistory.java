@@ -33,17 +33,17 @@ public class AutoHistory {
 
     protected final String property;
 
-    protected final String previousValue;
+    protected final Object previousValue;
 
     @JsonCreator
     public AutoHistory(@JsonProperty("id") long id, @JsonProperty("property") String property,
-                       @JsonProperty("previousValue") String previousValue) {
+                       @JsonProperty("previousValue") Object previousValue) {
         this.id = id;
         this.property = property;
         this.previousValue = previousValue;
     }
 
-    public AutoHistory(String property, String previousValue) {
+    public AutoHistory(String property, Object previousValue) {
         this(new Date().getTime(), property, previousValue);
     }
 
@@ -55,7 +55,7 @@ public class AutoHistory {
         return property;
     }
 
-    public String getPreviousValue() {
+    public Object getPreviousValue() {
         return previousValue;
     }
 
