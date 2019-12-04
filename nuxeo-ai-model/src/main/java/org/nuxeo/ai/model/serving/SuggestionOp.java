@@ -22,10 +22,9 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,7 @@ public class SuggestionOp {
     protected MarshallerRegistry registry;
 
     @Param(name = "updatedDocument", description = "Document with changes done on client side before saving", required = false)
-    protected DocumentModel updatedDocument;
+    protected DocumentModel updatedDoc;
 
     @Param(name = "references", description = "Should the entity references be resolved?", required = false)
     protected boolean references = false;
@@ -94,10 +93,15 @@ public class SuggestionOp {
 
     @OperationMethod
     public Blob run(DocumentModel doc) {
-        if (updatedDocument != null) {
-            Arrays.stream(doc.getSchemas())
-                    .flatMap(schema -> updatedDocument.getProperties(schema).entrySet().stream())
-                    .forEach(entry -> doc.setPropertyValue(entry.getKey(), (Serializable) entry.getValue()));
+        if (updatedDoc != null) {
+            for (String schema : doc.getSchemas()) {
+                if (!updatedDoc.hasSchema(schema)) {
+                    continue;
+                }
+                for (Map.Entry<String, Object> prop : updatedDoc.getProperties(schema).entrySet()) {
+                    doc.setProperty(schema, prop.getKey(), prop.getValue());
+                }
+            }
         }
 
         List<EnrichmentMetadata> suggestions = modelServingService.predict(doc);
