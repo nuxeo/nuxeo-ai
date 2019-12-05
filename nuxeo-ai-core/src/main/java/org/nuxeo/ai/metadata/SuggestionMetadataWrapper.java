@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -78,9 +79,8 @@ public class SuggestionMetadataWrapper {
     /**
      * Process the document
      */
+    @SuppressWarnings("unchecked")
     protected void init() {
-
-
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             return;
         }
@@ -97,7 +97,7 @@ public class SuggestionMetadataWrapper {
             autoCorrected.addAll(Arrays.asList(autoVals));
         }
 
-        List<Map<String, Object>> suggestList = (List) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        List<Map<String, Object>> suggestList = (List<Map<String, Object>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         if (suggestList == null) {
             return;
         }
@@ -184,6 +184,13 @@ public class SuggestionMetadataWrapper {
             Type propertyType = property.getType();
             if (StringType.INSTANCE.equals(propertyType)) {
                 return isNotEmpty((String) propValue);
+            } else if (property.isList()) {
+                if (propValue instanceof Object[]) {
+                    return ((Object[]) propValue).length != 0;
+                } else {
+                    List list = (List) propValue;
+                    return !list.isEmpty();
+                }
             }
             return true;
         } catch (PropertyNotFoundException e) {

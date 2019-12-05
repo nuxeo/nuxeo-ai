@@ -34,7 +34,9 @@ import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichment
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.auto.AutoHistory;
@@ -81,12 +83,19 @@ public class TestAutoServices {
     protected TransactionalFeature txFeature;
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/core-types-test.xml")
     public void testAutofill() {
         assertNotNull(docMetadataService);
-        DocumentModel testDoc = session.createDocumentModel("/", "My Auto Doc", "File");
+        DocumentModel testDoc = session.createDocumentModel("/", "My Auto Doc", "MultiFile");
         testDoc = session.createDocument(testDoc);
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
+
+        for (String schema : testDoc.getSchemas()) {
+            for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
+                System.out.println(schema + " prop " + entry.getKey() + " is list " + testDoc.getPropertyObject(schema, entry.getKey()).isList());
+            }
+        }
 
         EnrichmentMetadata suggestionMetadata = setupTestEnrichmentMetadata(testDoc);
         testDoc = docMetadataService.saveEnrichment(session, suggestionMetadata);
@@ -97,8 +106,15 @@ public class TestAutoServices {
         assertTrue(wrapper.getModels().contains("stest"));
         assertTrue("dc:title must be auto filled.", wrapper.isAutoFilled("dc:title"));
         assertTrue("dc:format must be auto filled.", wrapper.isAutoFilled("dc:format"));
+        assertTrue("complexTest:testList must be auto filled.", wrapper.isAutoFilled("complexTest:testList"));
+
         assertFalse("Doesn't have a human value", wrapper.hasHumanValue("dc:title"));
         assertFalse("Doesn't have a human value", wrapper.hasHumanValue("dc:format"));
+        assertFalse("Doesn't have a human value", wrapper.hasHumanValue("complexTest:testList"));
+
+        String[] list = (String[]) testDoc.getPropertyValue("complexTest:testList");
+        assertThat(list).hasSize(3);
+
         autoService.calculateProperties(testDoc, FILL);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();

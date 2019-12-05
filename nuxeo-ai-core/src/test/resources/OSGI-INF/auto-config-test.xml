@@ -6,6 +6,15 @@
       <thresholds>
         <threshold xpath="dc:title" autofill="0.4" autocorrect="0.7"/>
         <threshold xpath="dc:format" autocorrect="0.9"/>
+        <threshold xpath="complexTest:testList" autofill="0.5" autocorrect="0.9"/>
+      </thresholds>
+    </thresholdConfiguration>
+
+    <thresholdConfiguration type="MultiFile" global="0.88">
+      <thresholds>
+        <threshold xpath="dc:title" autofill="0.4" autocorrect="0.7"/>
+        <threshold xpath="dc:format" autocorrect="0.9"/>
+        <threshold xpath="complexTest:testList" autofill="0.5" autocorrect="0.9"/>
       </thresholds>
     </thresholdConfiguration>
   </extension>
