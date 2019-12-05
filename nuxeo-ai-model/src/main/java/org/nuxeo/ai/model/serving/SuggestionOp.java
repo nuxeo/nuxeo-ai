@@ -95,9 +95,6 @@ public class SuggestionOp {
     public Blob run(DocumentModel doc) {
         if (updatedDoc != null) {
             for (String schema : doc.getSchemas()) {
-                if (!updatedDoc.hasSchema(schema)) {
-                    continue;
-                }
                 for (Map.Entry<String, Object> prop : updatedDoc.getProperties(schema).entrySet()) {
                     doc.setProperty(schema, prop.getKey(), prop.getValue());
                 }
