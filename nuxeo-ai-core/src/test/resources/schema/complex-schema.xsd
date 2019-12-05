@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           targetNamespace="http://www.nuxeo.org/ecm/schemas/mycustomschema/"
+           xmlns:testm="http://www.nuxeo.org/ecm/schemas/mycustomschema/">
+
+  <xs:simpleType name="testList">
+    <xs:list itemType="xs:string" />
+  </xs:simpleType>
+
+  <xs:element name="testList" type="testm:testList"/>
+
+</xs:schema>

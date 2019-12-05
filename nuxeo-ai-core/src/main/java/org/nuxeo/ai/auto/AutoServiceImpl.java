@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdService;
@@ -92,22 +94,45 @@ public class AutoServiceImpl implements AutoService {
             return;
         }
 
-        AIMetadata.Label max = calculateMaxLabel(docMetadata.getSuggestionsByProperty(xpath), threshold);
-        if (max != null) {
+        boolean autofilled = false;
+        float maxConfidence = 0.0f;
 
-            if (setProperty(doc.getCoreSession(), doc, xpath, null, max.getName())) {
-                String comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)",
-                                               xpath, max.getConfidence(), threshold);
-                log.debug(comment);
-                Framework.getService(DocMetadataService.class)
-                         .updateAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, null, comment);
+        List<AIMetadata.Label> suggestions = docMetadata.getSuggestionsByProperty(xpath);
+        Property property = doc.getProperty(xpath);
+        if (property.isList()) {
+            List<String> values = suggestions.stream()
+                    .filter(suggestion -> suggestion.getConfidence() >= threshold)
+                    .map(AIMetadata.Label::getName)
+                    .collect(Collectors.toList());
+            if (!values.isEmpty()) {
+                doc.setPropertyValue(xpath, (Serializable) values);
+                autofilled = true;
             }
         } else {
-            if (alreadyAutofilled) {
-                // We autofilled but now the value didn't autofill so lets reset it
-                Framework.getService(DocMetadataService.class)
-                         .resetAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, true);
+            AIMetadata.Label max = calculateMaxLabel(suggestions, threshold);
+            if (max != null) {
+               autofilled = setProperty(doc.getCoreSession(), doc, xpath, null, max.getName());
+               maxConfidence = max.getConfidence();
             }
+        }
+
+        if (autofilled) {
+            String comment;
+            if (property.isList()) {
+                comment = String.format("Auto filled a list %s. (Threshold %s)",
+                        xpath, threshold);
+            } else {
+                comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)",
+                        xpath, maxConfidence, threshold);
+            }
+            log.debug(comment);
+
+            Framework.getService(DocMetadataService.class)
+                    .updateAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, null, comment);
+        } else if (alreadyAutofilled) {
+            // We autofilled but now the value didn't autofill so lets reset it
+            Framework.getService(DocMetadataService.class)
+                    .resetAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, true);
         }
     }
 
