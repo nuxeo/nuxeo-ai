@@ -41,7 +41,7 @@ import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.blob.BlobInfo;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -100,11 +100,11 @@ public class EnrichmentUtils {
      */
     public static Set<String> getDigests(BlobTextFromDocument blobtext) {
         return blobtext.getBlobs()
-                       .values()
-                       .stream()
-                       .map(Blob::getDigest)
-                       .filter(Objects::nonNull)
-                       .collect(Collectors.toSet());
+                .values()
+                .stream()
+                .map(Blob::getDigest)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -152,7 +152,7 @@ public class EnrichmentUtils {
         try {
             if (isNotBlank(metadata.getRawKey())) {
                 TransientStore transientStore = Framework.getService(AIComponent.class)
-                                                         .getTransientStoreForEnrichmentProvider(metadata.getModelName());
+                        .getTransientStoreForEnrichmentProvider(metadata.getModelName());
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     return rawBlobs.get(0).getString();
@@ -200,23 +200,25 @@ public class EnrichmentUtils {
      * Convert the provided image blob.
      */
     public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth,
-            String conversionFormat) {
+                                        String conversionFormat) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, width);
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_HEIGHT, height);
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_DEPTH, depth);
         parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, conversionFormat);
-        try {
-            return Framework.getService(ConversionService.class).convert(service, bh, parameters).getBlob();
-        } catch (NuxeoException | NullPointerException exception) {
-            log.warn("Unable to convert image blob.", exception);
+
+        ConversionService conversionService = Framework.getService(ConversionService.class);
+        if (!conversionService.isSourceMimeTypeSupported(service, blob.getMimeType())) {
             return null;
         }
+        BlobHolder result = conversionService.convert(service, bh, parameters);
+        return result == null ? null : result.getBlob();
     }
 
     /**
      * Get an entry from the enrichment cache
+     *
      * @return
      */
     public static Collection<? extends AIMetadata> cacheGet(String cacheKey) {
@@ -262,7 +264,7 @@ public class EnrichmentUtils {
      * Copy all the supplied metadata but using the BlobTextFromDocument as the context.
      */
     public static Collection<AIMetadata> copyEnrichmentMetadata(Collection<AIMetadata> metadata,
-            BlobTextFromDocument blobTextFromDoc) {
+                                                                BlobTextFromDocument blobTextFromDoc) {
         return metadata.stream().map(meta -> copyMetadata(meta, blobTextFromDoc)).collect(Collectors.toList());
     }
 
@@ -273,11 +275,11 @@ public class EnrichmentUtils {
         EnrichmentMetadata meta = (EnrichmentMetadata) metadata;
         return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.modelName,
                 blobTextFromDoc).withLabels(meta.getLabels())
-                                .withTags(meta.getTags())
-                                .withRawKey(meta.rawKey)
-                                .withDocumentProperties(meta.context.inputProperties)
-                                .withCreator(meta.creator)
-                                .build();
+                .withTags(meta.getTags())
+                .withRawKey(meta.rawKey)
+                .withDocumentProperties(meta.context.inputProperties)
+                .withCreator(meta.creator)
+                .build();
     }
 
     /**
