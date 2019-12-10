@@ -29,7 +29,9 @@ import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.ABORTED;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
@@ -46,6 +48,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -61,10 +66,10 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.work.api.WorkManager;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
@@ -74,6 +79,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -86,6 +92,8 @@ public class DatasetExportTest {
 
     public static final String TEST_MIME_TYPE = "image/png";
 
+    private static final String TEST_DIR_PATH = "/bulkexporttest";
+
     @Inject
     public BulkService service;
 
@@ -96,27 +104,89 @@ public class DatasetExportTest {
     protected TransactionalFeature txFeature;
 
     @Inject
-    protected EventService eventService;
-
-    @Inject
     protected AutomationService automationService;
 
     @Inject
     protected WorkManager workManager;
 
     @Inject
-    ElasticSearchAdmin esa;
+    protected ElasticSearchAdmin esa;
+
+    @Before
+    public void setUp() throws Exception {
+        setupTestData();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        session.removeChildren(new PathRef("/"));
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/bulk-export-test.xml")
+    @Ignore("Testing Stream concurrent cancel is not part of AI Addon")
+    public void shouldCancelOnlyOneTask() throws IOException, InterruptedException {
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
+
+        List<String> input = Arrays.asList("dc:title", "file:content");
+        List<String> output = Collections.singletonList("dc:description");
+
+
+        String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
+        String toAbort = Framework.getService(DatasetExportService.class)
+                .export(session, nxql, input, output, 60, null);
+
+        String toComplete = Framework.getService(DatasetExportService.class)
+                .export(session, nxql, input, output, 60, null);
+
+        TransactionHelper.commitOrRollbackTransaction();
+        TransactionHelper.startTransaction();
+
+        service.await(Duration.ofSeconds(1));
+
+        BulkStatus abortStatus = service.getStatus(toAbort);
+        assertEquals(RUNNING, abortStatus.getState());
+
+        assertEquals(ABORTED, service.abort(toAbort).getState());
+
+        BulkStatus status = service.getStatus(toComplete);
+        assertEquals(RUNNING, status.getState());
+
+        service.await(Duration.ofSeconds(10));
+
+        abortStatus = service.getStatus(toAbort);
+        assertEquals(ABORTED, abortStatus.getState());
+
+        status = service.getStatus(toComplete);
+        assertEquals(COMPLETED, status.getState());
+
+        String toRetryComplete = Framework.getService(DatasetExportService.class)
+                .export(session, nxql, input, output, 60, null);
+
+        TransactionHelper.commitOrRollbackTransaction();
+        TransactionHelper.startTransaction();
+
+        service.await(Duration.ofSeconds(1));
+
+        BulkStatus retryStatus = service.getStatus(toRetryComplete);
+        assertEquals(RUNNING, retryStatus.getState());
+
+        service.await(Duration.ofSeconds(10));
+
+        retryStatus = service.getStatus(toRetryComplete);
+        assertEquals(COMPLETED, retryStatus.getState());
+    }
 
     @Test
     public void testBulkExport() throws Exception {
 
-        DocumentModel testRoot = setupTestData();
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
 
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
         String commandId = Framework.getService(DatasetExportService.class)
-                                    .export(session, nxql,
-                                            Arrays.asList("dc:title", "file:content"),
-                                            Collections.singletonList("dc:description"), 60, null);
+                .export(session, nxql,
+                        Arrays.asList("dc:title", "file:content"),
+                        Collections.singletonList("dc:description"), 60, null);
         txFeature.nextTransaction();
         assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
 
@@ -152,12 +222,10 @@ public class DatasetExportTest {
         testRoot = session.createDocument(testRoot);
         session.saveDocument(testRoot);
 
-        Blob goodBlob = Blobs.createBlob(session.getClass().getResourceAsStream("/files/plane.jpg") , "image/jpeg");
+        Blob goodBlob = Blobs.createBlob(session.getClass().getResourceAsStream("/files/plane.jpg"), "image/jpeg");
         assertNotNull(goodBlob);
 
         DocumentModel test = session.getDocument(testRoot.getRef());
-        int goodBlobs = 0;
-        int badBlobs = 0;
 
         for (int i = 0; i < 500; ++i) {
             DocumentModel doc = session.createDocumentModel(test.getPathAsString(), "doc" + i, "File");
@@ -165,7 +233,7 @@ public class DatasetExportTest {
             doc.setPropertyValue("dc:description", "desc" + i % 4);
             if (i % 2 == 0) {
                 doc.setPropertyValue("dc:language", "en" + i);
-                doc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
+                doc.setPropertyValue("dc:subjects", new String[]{"sciences", "art/cinema"});
             }
             if (i % 10 != 0) {
                 // 50 bad blobs, 400 good ones
@@ -182,14 +250,14 @@ public class DatasetExportTest {
     @Test
     public void testBulkExportSubjects() throws Exception {
 
-        DocumentModel testRoot = setupTestData();
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
         waitForCompletion();
 
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
         String commandId = Framework.getService(DatasetExportService.class)
-                                    .export(session, nxql,
-                                            Arrays.asList("dc:title"),
-                                            Arrays.asList("dc:subjects"), 80);
+                .export(session, nxql,
+                        Arrays.asList("dc:title"),
+                        Arrays.asList("dc:subjects"), 80);
         txFeature.nextTransaction();
         assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
 
@@ -212,15 +280,15 @@ public class DatasetExportTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testStats() throws Exception {
-        DocumentModel testRoot = setupTestData();
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
         waitForCompletion();
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
         Collection<Statistic> statistics = Framework.getService(DatasetStatsService.class)
-                                                    .getStatistics(session, nxql,
-                                                                   Arrays.asList("dc:title", "file:content"),
-                                                                   Arrays.asList("dc:description", "dc:language"));
+                .getStatistics(session, nxql,
+                        Arrays.asList("dc:title", "file:content"),
+                        Arrays.asList("dc:description", "dc:language"));
         assertEquals("There should be 3 aggregates * 3 text fields + 1 agg content field + 2 totals = 12",
-                     12, statistics.size());
+                12, statistics.size());
         Map<String, List<Statistic>> byType = statistics.stream().collect(groupingBy(Statistic::getType));
         Map<String, List<Statistic>> byField = statistics.stream().collect(groupingBy(Statistic::getField));
         assertEquals("There should be 3 aggregates + 2 total = 5", 5, byType.size());
@@ -230,22 +298,22 @@ public class DatasetExportTest {
         assertEquals("There are 200 rows where all fields are not null.", 200, total.getNumericValue().intValue());
         assertEquals("There should be 4 fields + 2 total = 6", 6, byField.size());
         Statistic cardDesc = byType.get(AGG_CARDINALITY).stream()
-                                   .filter(a -> "dc:description".equals(a.getField())).findFirst().get();
+                .filter(a -> "dc:description".equals(a.getField())).findFirst().get();
         assertEquals(2, cardDesc.getNumericValue().intValue());
         Statistic termDesc = byType.get(AGG_TYPE_TERMS).stream()
-                                   .filter(a -> "dc:description".equals(a.getField())).findFirst().get();
+                .filter(a -> "dc:description".equals(a.getField())).findFirst().get();
         Statistic missingLang = byType.get(AGG_MISSING).stream()
-                                      .filter(a -> "dc:language".equals(a.getField())).findFirst().get();
+                .filter(a -> "dc:language".equals(a.getField())).findFirst().get();
         assertEquals(250, missingLang.getNumericValue().intValue());
         Statistic missingContent = byType.get(AGG_MISSING).stream()
-                                         .filter(a -> "file:content.length".equals(a.getField())).findFirst().get();
+                .filter(a -> "file:content.length".equals(a.getField())).findFirst().get();
         assertEquals(50, missingContent.getNumericValue().intValue());
 
     }
 
     @Test
     public void testStatsOperation() throws Exception {
-        DocumentModel testRoot = setupTestData();
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
         waitForCompletion();
 
         //Now test the operation
@@ -266,6 +334,6 @@ public class DatasetExportTest {
         jsonBlob = (Blob) automationService.run(ctx, chain);
         jsonTree = MAPPER.readTree(jsonBlob.getString());
         assertEquals("There should be 3 aggregates * 2 text fields + 1 agg content field + 2 totals = 9",
-                     9, jsonTree.size());
+                9, jsonTree.size());
     }
 }
