@@ -34,8 +34,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -47,6 +47,7 @@ import org.nuxeo.ecm.core.blob.BlobInfo;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.core.convert.api.ConversionException;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
@@ -80,7 +81,7 @@ public class EnrichmentUtils {
     protected static final TypeReference<Collection<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE = new TypeReference<Collection<EnrichmentMetadata>>() {
     };
 
-    private static final Log log = LogFactory.getLog(EnrichmentUtils.class);
+    private static final Logger log = LogManager.getLogger(EnrichmentUtils.class);
 
     // Static Utility class
     private EnrichmentUtils() {
@@ -200,19 +201,23 @@ public class EnrichmentUtils {
      * Convert the provided image blob.
      */
     public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth,
-                                        String conversionFormat) {
+                                        String format) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, width);
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_HEIGHT, height);
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_DEPTH, depth);
-        parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, conversionFormat);
+        parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, format);
 
         ConversionService conversionService = Framework.getService(ConversionService.class);
-        if (!conversionService.isSourceMimeTypeSupported(service, blob.getMimeType())) {
-            return null;
+        BlobHolder result;
+        try {
+            result = conversionService.convert(service, bh, parameters);
+        } catch (ConversionException e) {
+            result = null;
+            log.warn("Could not convert blob {} to format {}: Exception {}", blob.getDigest(), format, e.getLocalizedMessage());
         }
-        BlobHolder result = conversionService.convert(service, bh, parameters);
+
         return result == null ? null : result.getBlob();
     }
 
