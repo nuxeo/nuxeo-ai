@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<!--
+  ~ (C) Copyright 2018-2019 Nuxeo SA (http://nuxeo.com/).
+  ~   This is unpublished proprietary source code of Nuxeo SA. All rights reserved.
+  ~   Notice of copyright on this source code does not indicate publication.
+  ~
+  ~   Contributors:
+  ~       Nuxeo
+  -->
+
+<component name="org.nuxeo.ai.conversions.overrides.contrib" version="1.0">
+
+  <require>org.nuxeo.ecm.platform.picture.commandline.imagemagick</require>
+  <require>org.nuxeo.ecm.platform.picture.ImagingComponent.default.config</require>
+  <require>org.nuxeo.ecm.platform.picture.convert</require>
+
+  <extension target="org.nuxeo.ecm.platform.commandline.executor.service.CommandLineExecutorComponent"
+             point="command">
+
+    <command name="resizer" enabled="true">
+      <commandLine>convert</commandLine>
+      <parameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -quiet -depth #{targetDepth} #{inputFilePath}[0]
+        -resize #{targetWidth}x#{targetHeight} #{outputFilePath}
+      </parameterString>
+      <winParameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -quiet -depth #{targetDepth}
+        #{inputFilePath}[0] -resize #{targetWidth}x#{targetHeight} #{outputFilePath}
+      </winParameterString>
+      <installationDirective>You need to install ImageMagick.</installationDirective>
+    </command>
+
+    <command name="jpegResizer" enabled="true">
+      <commandLine>convert</commandLine>
+      <parameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -quiet -resize #{targetWidth}x#{targetHeight}
+        \(#{inputFilePath}[0] -background white -flatten -depth #{targetDepth}\) #{outputFilePath}
+      </parameterString>
+      <winParameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -quiet -resize #{targetWidth}x#{targetHeight}
+        \(#{inputFilePath}[0] -background white -flatten -depth #{targetDepth}\) #{outputFilePath}
+      </winParameterString>
+      <installationDirective>You need to install ImageMagick.</installationDirective>
+    </command>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.picture.ImagingComponent"
+             point="configuration">
+
+    <configuration>
+      <parameters>
+        <!-- global configuration variables -->
+        <parameter name="conversionFormat">png</parameter>
+      </parameters>
+    </configuration>
+  </extension>
+
+
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl"
+             point="converter">
+
+    <converter name="pictureRotation" class="org.nuxeo.ecm.platform.picture.convert.RotationPictureConverter">
+      <sourceMimeType>image/*</sourceMimeType>
+      <sourceMimeType>application/photoshop</sourceMimeType>
+      <sourceMimeType>application/illustrator</sourceMimeType>
+      <sourceMimeType>application/postscript</sourceMimeType>
+      <destinationMimeType>image/png</destinationMimeType>
+    </converter>
+
+    <converter name="pictureResize" class="org.nuxeo.ecm.platform.picture.convert.ResizePictureConverter">
+      <sourceMimeType>image/*</sourceMimeType>
+      <sourceMimeType>application/photoshop</sourceMimeType>
+      <sourceMimeType>application/illustrator</sourceMimeType>
+      <sourceMimeType>application/postscript</sourceMimeType>
+      <sourceMimeType>application/pdf</sourceMimeType>
+      <destinationMimeType>image/png</destinationMimeType>
+    </converter>
+
+    <converter name="pictureCrop" class="org.nuxeo.ecm.platform.picture.convert.CropPictureConverter">
+      <sourceMimeType>image/*</sourceMimeType>
+      <sourceMimeType>application/photoshop</sourceMimeType>
+      <sourceMimeType>application/illustrator</sourceMimeType>
+      <sourceMimeType>application/postscript</sourceMimeType>
+      <destinationMimeType>image/png</destinationMimeType>
+    </converter>
+
+    <converter name="pictureConvertToPDF" class="org.nuxeo.ecm.platform.picture.convert.ConvertToPDFPictureConverter">
+      <sourceMimeType>image/*</sourceMimeType>
+      <sourceMimeType>application/photoshop</sourceMimeType>
+      <sourceMimeType>application/illustrator</sourceMimeType>
+      <sourceMimeType>application/postscript</sourceMimeType>
+      <destinationMimeType>application/pdf</destinationMimeType>
+    </converter>
+
+  </extension>
+
+</component>

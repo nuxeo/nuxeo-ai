@@ -93,7 +93,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         this.imageHeight = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
         this.imageDepth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
         this.imageFormat = config
-                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
+                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSION_FORMAT);
         String transientStoreName = config.get("transientStore");
         if (StringUtils.isNotBlank(transientStoreName)) {
             this.transientStore = transientStoreName;

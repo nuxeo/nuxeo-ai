@@ -70,7 +70,7 @@ public class EnrichmentUtils {
 
     public static final int DEFAULT_IMAGE_DEPTH = 16;
 
-    public static final String DEFAULT_CONVERSATION_FORMAT = "jpg";
+    public static final String DEFAULT_CONVERSION_FORMAT = "png";
 
     public static final String CONVERSION_SERVICE = "conversionService";
 
