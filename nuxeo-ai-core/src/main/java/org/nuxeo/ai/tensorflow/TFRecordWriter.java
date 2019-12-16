@@ -124,7 +124,7 @@ public class TFRecordWriter extends AbstractRecordWriter {
         this.imageHeight = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
         this.imageDepth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
         this.imageFormat = options
-                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
+                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSION_FORMAT);
     }
 
     @Override

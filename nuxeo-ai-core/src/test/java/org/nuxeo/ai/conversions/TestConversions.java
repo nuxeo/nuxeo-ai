@@ -22,17 +22,24 @@ package org.nuxeo.ai.conversions;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERSION_FORMAT;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_IMAGE_DEPTH;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_IMAGE_HEIGHT;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_IMAGE_WIDTH;
 import static org.nuxeo.ecm.platform.video.VideoConstants.INFO_PROPERTY;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -52,7 +59,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 @RunWith(FeaturesRunner.class)
-@Features({CoreFeature.class})
+@Features({ CoreFeature.class })
 @Deploy("org.nuxeo.ecm.platform.commandline.executor")
 @Deploy("org.nuxeo.ecm.actions")
 @Deploy("org.nuxeo.ecm.platform.picture.api")
@@ -65,7 +72,7 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 @Deploy("org.nuxeo.ecm.platform.video.core")
 @Deploy("org.nuxeo.ecm.platform.tag")
 @Deploy("org.nuxeo.ai.ai-core")
-public class TestVideoConversions {
+public class TestConversions {
 
     @Inject
     protected VideoService vs;
@@ -120,13 +127,22 @@ public class TestVideoConversions {
         adapter.getVideo();
         TranscodedVideo convert = vs.convert(adapter.getVideo(), "WAV 16K");
         assertNotNull(convert);
-        assertThat(convert.getBlob()).isNotNull()
-                .is(new Condition<Blob>() {
-                    @Override
-                    public boolean matches(Blob value) {
-                        String ext = FileUtils.getFileExtension(value.getFilename()).toLowerCase();
-                        return value.getLength() > 0 && "wav".equals(ext);
-                    }
-                });
+        assertThat(convert.getBlob()).isNotNull().is(new Condition<Blob>() {
+            @Override
+            public boolean matches(Blob value) {
+                String ext = FileUtils.getFileExtension(value.getFilename()).toLowerCase();
+                return value.getLength() > 0 && "wav".equals(ext);
+            }
+        });
+    }
+
+    @Test
+    public void shouldConvertPictures() {
+        File vf = FileUtils.getResourceFileFromContext("files/plane.jpg");
+        FileBlob blob = new FileBlob(vf);
+        blob.setMimeType("image/jpeg");
+        Blob converted = EnrichmentUtils.convertImageBlob(DEFAULT_CONVERTER, blob, DEFAULT_IMAGE_WIDTH,
+                DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_DEPTH, DEFAULT_CONVERSION_FORMAT);
+        assertThat(converted).isNotNull();
     }
 }
