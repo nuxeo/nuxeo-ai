@@ -23,8 +23,11 @@ import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -39,6 +42,8 @@ import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.io.avro.AvroConstants;
 import org.nuxeo.ecm.core.schema.types.QName;
+import org.nuxeo.ecm.platform.picture.api.PictureView;
+import org.nuxeo.ecm.platform.picture.api.adapters.MultiviewPicture;
 
 /**
  * Utilities to work with document properties
@@ -84,8 +89,8 @@ public class PropertyUtils {
                 return (T) base64EncodeBlob((Blob) propVal);
             } else if (propVal instanceof Calendar && type.isAssignableFrom(String.class)) {
                 return (T) ((Calendar) propVal).toInstant().toString();
-            } else if (propVal.getClass().isArray() &&
-                    propVal.getClass().getComponentType().isAssignableFrom(String.class)) {
+            } else if (propVal.getClass().isArray()
+                    && propVal.getClass().getComponentType().isAssignableFrom(String.class)) {
                 return (T) serializeArray(propVal);
             } else if (type.isAssignableFrom(String.class)) {
                 return (T) propVal.toString();
@@ -111,8 +116,7 @@ public class PropertyUtils {
     }
 
     /**
-     * Get a property value.  Also handles 'ecm:' property types
-     * Returns null if not found.
+     * Get a property value. Also handles 'ecm:' property types Returns null if not found.
      */
     public static Serializable getPropertyValue(DocumentModel doc, String propertyName) {
         try {
@@ -121,48 +125,48 @@ public class PropertyUtils {
             QName qName = QName.valueOf(propertyName);
             if (AvroConstants.ECM.equals(qName.getPrefix())) {
                 switch (qName.getLocalName()) {
-                    case AvroConstants.UUID:
-                        return doc.getId();
-                    case AvroConstants.NAME:
-                        return doc.getName();
-                    case AvroConstants.TITLE:
-                        return doc.getTitle();
-                    case AvroConstants.PATH:
-                        return doc.getPathAsString();
-                    case AvroConstants.REPOSITORY_NAME:
-                        return doc.getRepositoryName();
-                    case AvroConstants.PRIMARY_TYPE:
-                        return doc.getType();
-                    case AvroConstants.MIXIN_TYPES:
-                        return String.join(LIST_DELIMITER, doc.getFacets());
-                    case AvroConstants.PARENT_ID:
-                        DocumentRef parentRef = doc.getParentRef();
-                        return parentRef != null ? parentRef.toString() : null;
-                    case AvroConstants.CURRENT_LIFE_CYCLE_STATE:
-                        return doc.getCurrentLifeCycleState();
-                    case AvroConstants.VERSION_LABEL:
-                        return doc.getVersionLabel();
-                    case AvroConstants.VERSION_VERSIONABLE_ID:
-                        return doc.getVersionSeriesId();
-                    case AvroConstants.POS:
-                        return doc.getPos();
-                    case AvroConstants.IS_PROXY:
-                        return doc.isProxy();
-                    case AvroConstants.IS_TRASHED:
-                        return doc.isTrashed();
-                    case AvroConstants.IS_VERSION:
-                        return doc.isVersion();
-                    case AvroConstants.IS_CHECKEDIN:
-                        return !doc.isCheckedOut();
-                    case AvroConstants.IS_LATEST_VERSION:
-                        return doc.isLatestVersion();
-                    case AvroConstants.IS_LATEST_MAJOR_VERSION:
-                        return doc.isLatestMajorVersion();
-                    case FULL_TEXT:
-                    case BINARY_TEXT:
-                    case BINARY_TEXT_SYS_PROP:
-                        Map<String, String> bmap = doc.getBinaryFulltext();
-                        return bmap.get(BINARY_TEXT);
+                case AvroConstants.UUID:
+                    return doc.getId();
+                case AvroConstants.NAME:
+                    return doc.getName();
+                case AvroConstants.TITLE:
+                    return doc.getTitle();
+                case AvroConstants.PATH:
+                    return doc.getPathAsString();
+                case AvroConstants.REPOSITORY_NAME:
+                    return doc.getRepositoryName();
+                case AvroConstants.PRIMARY_TYPE:
+                    return doc.getType();
+                case AvroConstants.MIXIN_TYPES:
+                    return String.join(LIST_DELIMITER, doc.getFacets());
+                case AvroConstants.PARENT_ID:
+                    DocumentRef parentRef = doc.getParentRef();
+                    return parentRef != null ? parentRef.toString() : null;
+                case AvroConstants.CURRENT_LIFE_CYCLE_STATE:
+                    return doc.getCurrentLifeCycleState();
+                case AvroConstants.VERSION_LABEL:
+                    return doc.getVersionLabel();
+                case AvroConstants.VERSION_VERSIONABLE_ID:
+                    return doc.getVersionSeriesId();
+                case AvroConstants.POS:
+                    return doc.getPos();
+                case AvroConstants.IS_PROXY:
+                    return doc.isProxy();
+                case AvroConstants.IS_TRASHED:
+                    return doc.isTrashed();
+                case AvroConstants.IS_VERSION:
+                    return doc.isVersion();
+                case AvroConstants.IS_CHECKEDIN:
+                    return !doc.isCheckedOut();
+                case AvroConstants.IS_LATEST_VERSION:
+                    return doc.isLatestVersion();
+                case AvroConstants.IS_LATEST_MAJOR_VERSION:
+                    return doc.isLatestMajorVersion();
+                case FULL_TEXT:
+                case BINARY_TEXT:
+                case BINARY_TEXT_SYS_PROP:
+                    Map<String, String> bmap = doc.getBinaryFulltext();
+                    return bmap.get(BINARY_TEXT);
                 }
             }
             if (log.isDebugEnabled()) {
@@ -186,11 +190,10 @@ public class PropertyUtils {
     public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<String> propertiesList) {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
         Map<String, String> properties = blobTextFromDoc.getProperties();
-
         propertiesList.forEach(propName -> {
             Serializable propVal = getPropertyValue(doc, propName);
             if (propVal instanceof ManagedBlob) {
-                blobTextFromDoc.addBlob(propName, (ManagedBlob) propVal);
+                blobTextFromDoc.addBlob(propName, getPictureConversion(doc, (ManagedBlob) propVal));
             } else if (propVal != null) {
                 if (propVal.getClass().isArray()) {
                     properties.put(propName, serializeArray(propVal));
@@ -202,11 +205,31 @@ public class PropertyUtils {
         });
 
         if (log.isDebugEnabled() && properties.size() + blobTextFromDoc.getBlobs().size() != propertiesList.size()) {
-            log.debug(String.format("Document %s one of the following properties is null. %s",
-                                    doc.getId(), propertiesList));
+            log.debug(String.format("Document %s one of the following properties is null. %s", doc.getId(),
+                    propertiesList));
         }
 
         return blobTextFromDoc;
+    }
+
+    /**
+     * Get the best conversion of the original blob if exist. If not return the original blob.
+     */
+    private static ManagedBlob getPictureConversion(DocumentModel doc, ManagedBlob originalContent) {
+        MultiviewPicture managedConversion = doc.getAdapter(MultiviewPicture.class);
+        // Check if multiview picture adapter can be accessible
+        if (managedConversion == null) {
+            return originalContent;
+        }
+        Optional<PictureView> pictureView = Arrays.stream(managedConversion.getViews())
+                                                  .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
+                                                  .filter(view -> !view.getFilename().startsWith("empty_picture"))
+                                                  .min(Comparator.comparingInt(PictureView::getWidth));
+        // Check we have a proper picture view
+        if (!pictureView.isPresent()) {
+            return originalContent;
+        }
+        return (ManagedBlob) pictureView.get().getBlob();
     }
 
     /**

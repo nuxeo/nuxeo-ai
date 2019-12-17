@@ -19,6 +19,7 @@
 package org.nuxeo.ai.pipes.functions;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -29,28 +30,49 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
 import static org.nuxeo.ecm.core.storage.FulltextExtractorWork.SYSPROP_FULLTEXT_BINARY;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
+@Deploy("org.nuxeo.ecm.platform.commandline.executor")
+@Deploy("org.nuxeo.ecm.actions")
+@Deploy("org.nuxeo.ecm.platform.picture.api")
+@Deploy("org.nuxeo.ecm.platform.picture.core")
+@Deploy("org.nuxeo.ecm.platform.picture.convert")
+@Deploy("org.nuxeo.ecm.automation.core")
+@Deploy("org.nuxeo.ecm.platform.rendition.api")
+@Deploy("org.nuxeo.ecm.platform.rendition.core")
+@Deploy("org.nuxeo.ecm.platform.video.convert")
+@Deploy("org.nuxeo.ecm.platform.video.core")
+@Deploy("org.nuxeo.ecm.platform.tag")
 public class PropertyUtilsTest {
 
     @Inject
@@ -58,6 +80,9 @@ public class PropertyUtilsTest {
 
     @Inject
     protected CoreFeature coreFeature;
+
+    @Inject
+    protected TransactionalFeature txFeature;
 
     protected static String stringProp(DocumentModel doc, String prop) {
         return getPropertyValue(doc, prop, String.class);
@@ -129,8 +154,8 @@ public class PropertyUtilsTest {
         doc.setPropertyValue("dc:subjects", (Serializable) subjects);
         doc = session.createDocument(doc);
         assertEquals("birds | flowers", stringProp(doc, "dc:subjects"));
-        assertEquals("Versionable | Publishable | Commentable | HasRelatedText | Downloadable",
-                     stringProp(doc, "ecm:mixinType"));
+        assertEquals("Versionable | NXTag | Publishable | Commentable | HasRelatedText | Downloadable",
+                stringProp(doc, "ecm:mixinType"));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -138,6 +163,41 @@ public class PropertyUtilsTest {
         DocumentModel doc = session.createDocumentModel("/", "Complex", "File");
         doc = session.createDocument(doc);
         getPropertyValue(doc, "ecm:isTrashed", Integer.class);
+    }
+
+    @Test
+    public void iCanSerializeDoc() {
+        // Test with blob text
+        Set<String> properties = new HashSet<>(Arrays.asList("dc:title", FILE_CONTENT));
+        DocumentModel doc = session.createDocumentModel("/", "Text", "File");
+        Blob textBlob = Blobs.createBlob("My text is not very long.", TEST_MIME_TYPE);
+        doc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
+        doc = session.createDocument(doc);
+        BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, properties);
+        assertThat(blobTextFromDocument).isNotNull();
+        ManagedBlob blobResult = blobTextFromDocument.getBlobs().get(FILE_CONTENT);
+        textBlob = (Blob) doc.getPropertyValue(FILE_CONTENT);
+        assertThat(blobResult).isNotNull();
+        assertThat(blobResult.getDigest()).isEqualTo(textBlob.getDigest());
+
+        // Test with pictures
+        doc = session.createDocumentModel("/", "picture", "Picture");
+        File file = FileUtils.getResourceFileFromContext("files/plane.jpg");
+        FileBlob imageBlob = new FileBlob(file);
+        doc.setPropertyValue(FILE_CONTENT, imageBlob);
+        doc = session.createDocument(doc);
+        session.save();
+
+        txFeature.nextTransaction();
+
+        blobTextFromDocument = PropertyUtils.docSerialize(doc, properties);
+        Blob image = (Blob) doc.getPropertyValue(FILE_CONTENT);
+        assertThat(blobTextFromDocument).isNotNull();
+        blobResult = blobTextFromDocument.getBlobs().get(FILE_CONTENT);
+        assertThat(blobResult).isNotNull();
+        // Confirm that we took a related picture view and not the original blob
+        assertThat(blobResult.getDigest()).isNotEqualTo(image.getDigest());
+        assertThat(blobResult.getFilename()).isEqualTo("Small_plane.jpg");
     }
 
 }
