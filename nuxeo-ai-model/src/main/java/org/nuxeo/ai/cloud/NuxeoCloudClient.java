@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Supplier;
+
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
@@ -50,6 +51,7 @@ import org.joda.time.DateTime;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.model.AiDocumentTypeConstants;
 import org.nuxeo.client.NuxeoClient;
+import org.nuxeo.client.objects.blob.FileBlob;
 import org.nuxeo.client.objects.upload.BatchUpload;
 import org.nuxeo.client.spi.NuxeoClientException;
 import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
@@ -61,6 +63,7 @@ import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
 import okhttp3.Response;
 
 /**
@@ -100,11 +103,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     protected void configureClient(CloudConfigDescriptor descriptor) {
-        NuxeoClient.Builder builder = new NuxeoClient.Builder()
-                .url(descriptor.url)
-                .readTimeout(descriptor.readTimeout.getSeconds())
-                .schemas("dublincore", "common")
-                .connectTimeout(descriptor.connectTimeout.getSeconds());
+        NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
+                                                               .readTimeout(descriptor.readTimeout.getSeconds())
+                                                               .schemas("dublincore", "common")
+                                                               .connectTimeout(descriptor.connectTimeout.getSeconds());
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
             builder.authentication(new TokenAuthInterceptor(auth.token));
@@ -114,7 +116,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
         }
         projectId = descriptor.projectId;
-        url = descriptor.url; //The client doesn't seem to export the URL to use
+        url = descriptor.url; // The client doesn't seem to export the URL to use
         if (isBlank(url) || isBlank(projectId)) {
             throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
         }
@@ -127,8 +129,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
      */
     protected NuxeoClient getClient() {
         if (client == null) {
-            throw new IllegalArgumentException("Nuxeo cloud client has no configuration." +
-                    " You should call client.isAvailable() first.");
+            throw new IllegalArgumentException(
+                    "Nuxeo cloud client has no configuration." + " You should call client.isAvailable() first.");
         }
         return client;
     }
@@ -158,13 +160,16 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             if (trainingData != null && evalData != null && statsData != null) {
                 try {
                     DateTime start = DateTime.now();
-                    BatchUpload batchUpload = getClient().batchUploadManager().createBatch();
-                    batchUpload = batchUpload.upload("0", trainingData.getFile(), trainingData.getDigest(),
-                            TFRECORD_MIME_TYPE, trainingData.getLength());
-                    batchUpload = batchUpload.upload("1", evalData.getFile(), evalData.getDigest(),
-                            TFRECORD_MIME_TYPE, evalData.getLength());
-                    batchUpload = batchUpload.upload("2", statsData.getFile(), statsData.getDigest(),
-                            statsData.getMimeType(), statsData.getLength());
+
+                    BatchUpload batchUpload = getClient().batchUploadManager().createBatch().enableChunk();
+
+                    FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
+                            TFRECORD_MIME_TYPE);
+                    FileBlob evalDataBlob = new FileBlob(evalData.getFile(), evalData.getDigest(), TFRECORD_MIME_TYPE);
+                    FileBlob statsDataBlob = new FileBlob(statsData.getFile(), statsData.getDigest(),
+                            TFRECORD_MIME_TYPE);
+
+                    batchUpload.upload("0", trainingDataBlob).upload("1", evalDataBlob).upload("2", statsDataBlob);
 
                     DateTime end = DateTime.now();
 
@@ -230,7 +235,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             props.setEvalData(new AICorpus.Batch("1", batchId));
             props.setStats(new AICorpus.Batch("2", batchId));
 
-
             props.setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())));
 
             AICorpus corpus = new AICorpus(jobId, props);
@@ -244,8 +248,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             log.debug("Uploading to cloud project: {}, payload {}", projectId, payload);
 
             String url = API_AI + byProjectId("");
-            JsonNode node = post(url, payload, resp ->
-                    MAPPER.readTree(resp.body() != null ? resp.body().byteStream() : null));
+            JsonNode node = post(url, payload,
+                    resp -> MAPPER.readTree(resp.body() != null ? resp.body().byteStream() : null));
 
             log.debug("Upload to cloud project: {}, finished.", projectId);
 
@@ -354,7 +358,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
      * Generate a title for the dataset.
      */
     protected String makeTitle(long trainingCount, long evalCount, String suffix, int numberOfFields) {
-        return String.format("%s features, %s Training, %s Evaluation, Export id %s",
-                numberOfFields, trainingCount, evalCount, suffix);
+        return String.format("%s features, %s Training, %s Evaluation, Export id %s", numberOfFields, trainingCount,
+                evalCount, suffix);
     }
 }
