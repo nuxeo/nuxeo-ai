@@ -21,6 +21,8 @@ package org.nuxeo.ai.bulk;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 
+import java.util.function.Supplier;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -46,6 +48,8 @@ public class DataSetUploadComputation extends AbstractComputation {
 
     private static final Logger log = LogManager.getLogger(DataSetUploadComputation.class);
 
+    private static final int TIMEOUT = 3600 * 24;
+
     public DataSetUploadComputation(String name) {
         super(name, 1, 0);
     }
@@ -57,7 +61,7 @@ public class DataSetUploadComputation extends AbstractComputation {
         if (EXPORT_ACTION_NAME.equals(status.getAction()) && BulkStatus.State.COMPLETED.equals(status.getState())) {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
             if (cmd != null) {
-                TransactionHelper.runInTransaction(() -> {
+                runInTransaction(() -> {
                     log.debug("Opening a session with Repository {} and originating User {}", cmd.getRepository(),
                             cmd.getUsername());
                     try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
@@ -90,13 +94,36 @@ public class DataSetUploadComputation extends AbstractComputation {
                             throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
                         }
                     }
-
                     return null;
-                });
+                }, TIMEOUT);
             } else {
                 log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", status.getId());
             }
         }
         context.askForCheckpoint();
     }
+
+    protected <R> R runInTransaction(Supplier<R> supplier, int timeout) {
+        if (TransactionHelper.isTransactionMarkedRollback()) {
+            throw new NuxeoException("Cannot run supplier when current transaction is marked rollback.");
+        }
+        boolean txActive = TransactionHelper.isTransactionActive();
+        boolean txStarted = false;
+        try {
+            if (txActive) {
+                TransactionHelper.commitOrRollbackTransaction();
+            }
+            txStarted = TransactionHelper.startTransaction(timeout);
+            return supplier.get();
+        } finally {
+            if (txStarted) {
+                TransactionHelper.commitOrRollbackTransaction();
+            }
+            if (txActive) {
+                // go back to default transaction timeout
+                TransactionHelper.startTransaction();
+            }
+        }
+    }
+
 }
