@@ -27,60 +27,61 @@ limitations under the License.
 <link rel="import" href="formatters/nuxeo-user-group-ai-suggestion-formatter.html">
 
 <nuxeo-slot-content name="adminAIMenuItem" slot="ADMINISTRATION_MENU" order="100">
-    <template>
-        <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
-            <template>
-                <nuxeo-menu-item name="aicore" label="app.title.admin.aicore" route="administration:aicore">
-                </nuxeo-menu-item>
-            </template>
-        </nuxeo-filter>
-    </template>
+  <template>
+    <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
+      <template>
+        <nuxeo-menu-item name="aicore" label="app.title.admin.aicore" route="administration:aicore">
+        </nuxeo-menu-item>
+      </template>
+    </nuxeo-filter>
+  </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="aiadminslot" slot="ADMINISTRATION_PAGES">
-    <template>
-        <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
-            <template>
-                <nuxeo-admin-ai name="aicore"></nuxeo-admin-ai>
-            </template>
-        </nuxeo-filter>
-    </template>
+  <template>
+    <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
+      <template>
+        <nuxeo-admin-ai name="aicore"></nuxeo-admin-ai>
+      </template>
+    </nuxeo-filter>
+  </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="adminAiExport" slot="AI_ITEMS" order="20">
-    <template>
-        <nuxeo-page-item name="export" label="Export"></nuxeo-page-item>
-    </template>
+  <template>
+    <nuxeo-page-item name="export" label="Export"></nuxeo-page-item>
+  </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="adminAiExportAdvanced" slot="AI_ITEMS" order="20">
-    <template>
-        <nuxeo-page-item name="advanced" label="Advanced"></nuxeo-page-item>
-    </template>
+  <template>
+    <nuxeo-page-item name="advanced" label="Advanced"></nuxeo-page-item>
+  </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="adminAiExportPage" slot="AI_PAGES" order="20">
-    <template>
-        <nuxeo-admin-ai-export name="export"></nuxeo-admin-ai-export>
-        <nuxeo-admin-ai-advanced-export name="advanced"></nuxeo-admin-ai-advanced-export>
-    </template>
+  <template>
+    <nuxeo-admin-ai-export name="export"></nuxeo-admin-ai-export>
+    <nuxeo-admin-ai-advanced-export name="advanced"></nuxeo-admin-ai-advanced-export>
+  </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="enrichmentRemoveAction" slot="RESULTS_ACTIONS" order="-90">
-    <template>
-        <nuxeo-ai-bulk-remove-button provider="[[nxProvider]]"></nuxeo-ai-bulk-remove-button>
-    </template>
+  <template>
+    <nuxeo-ai-bulk-remove-button provider="[[nxProvider]]"></nuxeo-ai-bulk-remove-button>
+  </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="enrichmentAddAction" slot="RESULTS_ACTIONS" order="-95">
-    <template>
-        <nuxeo-ai-bulk-add-button provider="[[nxProvider]]"></nuxeo-ai-bulk-add-button>
-    </template>
+  <template>
+    <nuxeo-ai-bulk-add-button provider="[[nxProvider]]"></nuxeo-ai-bulk-add-button>
+  </template>
 </nuxeo-slot-content>
 <script>
-  Nuxeo.AISuggestionFormatters.register(Nuxeo.DocumentAISuggestionFormatter.is, { type: 'document' });
-  Nuxeo.AISuggestionFormatters.register(Nuxeo.DirectoryAISuggestionFormatter.is, { type: 'directoryEntry' });
-  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, { type: 'user' });
-  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, { type: 'group' });
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.DocumentAISuggestionFormatter.is, {type: 'document'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.DirectoryAISuggestionFormatter.is, {type: 'directoryEntry'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, {type: 'user'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, {type: 'group'});
 
   AISuggestionManager = (() => {
     const _map = new WeakMap(); // store field elements and suggestion widgets without preventing gc
     let _updateDebouncer = null;
     let op = null;
+
     function _clearSuggestions(model) {
       Object.values(model).forEach((element) => {
         const suggestionWidget = _getSuggestionWidget(element, false);
@@ -89,32 +90,44 @@ limitations under the License.
         }
       });
     }
+
     function _getBoundElements(element, property) {
       const model = {};
       for (let i = 0; i < element.__templateInfo.nodeInfoList.length; i++) {
         const nodeInfo = element.__templateInfo.nodeInfoList[i];
         const node = element.__templateInfo.nodeList[i];
-        const field = node.hasAttribute('field') && node.getAttribute('field');
-        if (field && field.startsWith(property)) {
-          model[field] = model[part.source] || [];
-          model[field] = node;
-        }
-        nodeInfo.bindings.forEach((binding) => {
-          if (binding.kind === 'property') {
-            binding.parts.forEach((part) => {
-              if (part.mode === '{' && !part.signature && part.source.startsWith(property)) {
-                model[part.source] = model[part.source] || [];
-                model[part.source] = node;
-              }
-            });
+        // Checking if the node is introspectable
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // In case we're having other node use cases
+          if (typeof node.hasAttribute === 'undefined') {
+            console.error('An error occurs during the nodes introspection with node:');
+            console.dirxml(node);
+            break;
           }
-        });
+          const field = node.hasAttribute('field') && node.getAttribute('field');
+          if (field && field.startsWith(property)) {
+            model[field] = model[part.source] || [];
+            model[field] = node;
+          }
+          nodeInfo.bindings.forEach((binding) => {
+            if (binding.kind === 'property') {
+              binding.parts.forEach((part) => {
+                if (part.mode === '{' && !part.signature && part.source.startsWith(property)) {
+                  model[part.source] = model[part.source] || [];
+                  model[part.source] = node;
+                }
+              });
+            }
+          });
+        }
       }
       return model;
     }
+
     function _getSuggestionWidget(element, createIfNotExists = true) {
       if (!_map.has(element) && createIfNotExists) {
-        const suggestionWidget = document.createElement('nuxeo-ai-suggestions');;
+        const suggestionWidget = document.createElement('nuxeo-ai-suggestions');
+        ;
         suggestionWidget.style.marginBottom = '8px';
         element.parentNode.insertBefore(suggestionWidget, element.nextElementSibling);
         _map.set(element, suggestionWidget);
@@ -122,6 +135,7 @@ limitations under the License.
       }
       return _map.get(element);
     }
+
     function _getSuggestions(doc) {
       if (!op) {
         op = document.createElement('nuxeo-operation');
@@ -136,6 +150,7 @@ limitations under the License.
       };
       return op.execute();
     }
+
     return {
       /**
        * For a given layout:
@@ -187,7 +202,7 @@ limitations under the License.
                 });
               });
             },
-        );
+          );
         }
       },
     };
