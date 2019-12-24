@@ -249,20 +249,28 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 payload = writer.toString();
             }
 
-            log.debug("Uploading to cloud project: {}, payload {}", projectId, payload);
+            log.info("Creating/Uploading corpus to project {}, payload {}", projectId, payload);
 
             String url = API_AI + byProjectId("");
-            JsonNode node = post(url, payload,
-                    resp -> MAPPER.readTree(resp.body() != null ? resp.body().byteStream() : null));
-
-            log.debug("Upload to cloud project: {}, finished.", projectId);
+            JsonNode node = post(url, payload, (resp) -> {
+                if (resp.code() != 200) {
+                    log.error(
+                            "Failed to create/upload the corpus dataset to project {}, payload {}, url {}, code {} and reason {}",
+                            projectId, payload, url, resp.code(), resp.message());
+                    return null;
+                }
+                return MAPPER.readTree(resp.body() != null ? resp.body().byteStream() : null);
+            });
 
             if (node == null || !node.has("uid")) {
-                log.error("Failed to upload the corpus dataset.");
+                log.error("Failed to create/upload the corpus dataset to project {}, payload {} and response {}",
+                        projectId, payload, node);
                 return null;
             } else {
+                log.info("Upload to cloud project: {}, finished.", projectId);
                 return node.get("uid").toString();
             }
+
         } catch (IOException e) {
             log.error("Failed to process corpus dataset. ", e);
         }

@@ -62,8 +62,6 @@ public class DataSetUploadComputation extends AbstractComputation {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
             if (cmd != null) {
                 runInTransaction(() -> {
-                    log.debug("Opening a session with Repository {} and originating User {}", cmd.getRepository(),
-                            cmd.getUsername());
                     try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
                             cmd.getUsername())) {
                         DocumentModel document = Framework.getService(DatasetExportService.class)
@@ -73,7 +71,6 @@ public class DataSetUploadComputation extends AbstractComputation {
                             if (client.isAvailable()) {
                                 log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", cmd.getId(),
                                         document.getId());
-
                                 String uid = client.uploadedDataset(document);
                                 log.info("Upload of dataset to cloud for command {} {}.", cmd.getId(),
                                         isNotEmpty(uid) ? "successful" : "failed");
