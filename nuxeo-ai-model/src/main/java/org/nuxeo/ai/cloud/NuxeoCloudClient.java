@@ -71,6 +71,8 @@ import okhttp3.Response;
  */
 public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
+    public static final String NO_DROP_FLAG = "X-Batch-No-Drop";
+
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
     static {
@@ -106,6 +108,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
+                                                               .header(NO_DROP_FLAG, true)
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
@@ -253,7 +256,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             String url = API_AI + byProjectId("");
             JsonNode node = post(url, payload, (resp) -> {
-                if (resp.code() != 200) {
+                if (!resp.isSuccessful()) {
                     log.error(
                             "Failed to create/upload the corpus dataset to project {}, payload {}, url {}, code {} and reason {}",
                             projectId, payload, url, resp.code(), resp.message());
