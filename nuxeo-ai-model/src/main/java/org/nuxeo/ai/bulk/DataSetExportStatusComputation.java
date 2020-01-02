@@ -95,7 +95,7 @@ public class DataSetExportStatusComputation extends AbstractComputation {
         if (isEndOfBatch(exportStatus, bulkStatus)) {
             BulkCommand command = service.getCommand(exportStatus.getCommandId());
             if (command == null) {
-                log.warn(String.format("The bulk command with id %s is missing. Unable to save blobs info.",
+                log.warn(String.format("The bulk command %s is missing. Unable to save blobs info.",
                         exportStatus.getCommandId()));
             }
             log.debug("Ending batch for {}", exportStatus.getCommandId());
@@ -137,8 +137,6 @@ public class DataSetExportStatusComputation extends AbstractComputation {
     protected void updateDatasetDocument(ExportBulkProcessed exportStatus, BulkCommand cmd, Blob theBlob,
             boolean isTraining) {
         TransactionHelper.runInTransaction(() -> {
-            log.debug("Opening a session with Repository {} and originating User {}", cmd.getRepository(),
-                    cmd.getUsername());
             try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
                     cmd.getUsername())) {
                 DocumentModel document = Framework.getService(DatasetExportService.class)
@@ -151,9 +149,9 @@ public class DataSetExportStatusComputation extends AbstractComputation {
                             (Serializable) theBlob);
                     session.saveDocument(document);
                 } else {
-                    log.warn(String.format("Unable to save blob %s for command id %s.", theBlob.getDigest(),
+                    log.warn(String.format("Unable to save blob %s for command %s.", theBlob.getDigest(),
                             exportStatus.getCommandId()));
-                    throw new NuxeoException("Unable to find DatasetExport with job id " + cmd.getId());
+                    throw new NuxeoException("Unable to find DatasetExport with command " + cmd.getId());
                 }
             }
 
@@ -175,8 +173,6 @@ public class DataSetExportStatusComputation extends AbstractComputation {
             processed = 0L;
             counters.put(exportStatus.getCommandId(), processed);
         }
-        log.debug("Checking end of batch for {}, count processed {}, export processed {} and total of {}",
-                exportStatus.getCommandId(), processed, exportStatus.getProcessed(), status.getTotal());
         return processed + exportStatus.getProcessed() >= status.getTotal();
     }
 }

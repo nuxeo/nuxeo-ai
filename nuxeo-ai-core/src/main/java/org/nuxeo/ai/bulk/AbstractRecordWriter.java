@@ -27,8 +27,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -52,7 +53,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
 
     public static final String BLOB_PROVIDER_OPT = "blobProvider";
 
-    protected static final Log log = LogFactory.getLog(AbstractRecordWriter.class);
+    protected static final Logger log = LogManager.getLogger(AbstractRecordWriter.class);
 
     private static final String RECORD_STREAM_KV = "RECORD_STREAM_WRITER";
 
@@ -121,24 +122,18 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
         String key = makeKey(id, name);
         String existing = kvStore.getString(key);
         if (existing == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Creating a new file to write to for " + key);
-            }
             try {
                 File tempFile = Framework.createTempFile(id, name);
                 Framework.trackFile(tempFile, this);
                 kvStore.put(key, tempFile.getAbsolutePath(), DEFAULT_BLOB_TTL_SEC);
                 if (log.isDebugEnabled()) {
-                    log.debug("New file is " + tempFile.getAbsolutePath());
+                    log.debug("Tmp record file {} created ", tempFile.getAbsolutePath());
                 }
                 return tempFile;
             } catch (IOException e) {
                 throw new NuxeoException("Unable to create a temp file. ", e);
             }
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Existing file for " + key);
-            }
             return new File(existing);
         }
 
