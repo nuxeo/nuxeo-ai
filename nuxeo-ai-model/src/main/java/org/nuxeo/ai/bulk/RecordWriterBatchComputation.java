@@ -67,7 +67,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
     @Override
     public void batchFailure(ComputationContext context, String inputStream, List<Record> records) {
         String commandId = records.isEmpty() ? "" : records.get(0).getKey();
-        log.warn(String.format("Batch failure \"%s\" batch of %s records with command id: %s.",
+        log.warn(String.format("Batch failure \"%s\" batch of %s records with command %s.",
                                metadata.name(), records.size(), commandId));
     }
 

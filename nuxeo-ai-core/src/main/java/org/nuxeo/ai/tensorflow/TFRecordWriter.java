@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
@@ -53,6 +54,7 @@ import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
+
 import com.google.protobuf.ByteString;
 
 /**
@@ -154,8 +156,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
                 }
             }
             if (log.isDebugEnabled()) {
-                log.debug(String.format("%s writer had %d records, %d were written, %d were skipped.",
-                                        name, list.size(), written, skipped));
+                log.debug(String.format("%s writer had %d records, %d were written, %d were skipped.", name,
+                        list.size(), written, skipped));
             }
         }
         return skipped;
