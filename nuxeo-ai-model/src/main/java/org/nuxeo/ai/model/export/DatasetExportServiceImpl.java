@@ -169,11 +169,12 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("DatasetExport doc created id: {}", document.getId());
-        }
 
         session.createDocument(document);
+
+        if (log.isDebugEnabled()) {
+            log.debug("DatasetExport {} created.", document.getId());
+        }
 
         TransactionHelper.registerSynchronization(new DatasetSynchronization(bulkCommand));
         return bulkCommand.getId();
@@ -226,8 +227,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public DatasetExport createDataset(CoreSession session, String query,
                                        List<IOParam> inputs, List<IOParam> outputs, int split,
                                        Blob statsBlob) {
-        log.debug("Creating DatasetExport with Repository {} and User {}",
-                session.getRepositoryName(), session.getPrincipal().getActingUser());
+        if (log.isDebugEnabled()) {
+            log.debug("Creating DatasetExport with Repository {} and User {}", session.getRepositoryName(),
+                    session.getPrincipal().getActingUser());
+        }
         DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", DATASET_EXPORT_TYPE);
         DatasetExport adapter = doc.getAdapter(DatasetExport.class);
         adapter.setQuery(query);

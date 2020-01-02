@@ -19,6 +19,7 @@
 package org.nuxeo.ai.bulk;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
@@ -39,8 +40,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
@@ -48,6 +49,7 @@ import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -59,6 +61,8 @@ import org.nuxeo.runtime.stream.StreamProcessorTopology;
  * Bulk export data from Nuxeo to TFRecord Split the dataset in training and validation sets.
  */
 public class DataSetBulkAction implements StreamProcessorTopology {
+
+
 
     public static final String TRAINING_STREAM = "exp-training";
 
@@ -82,27 +86,27 @@ public class DataSetBulkAction implements StreamProcessorTopology {
     public Topology getTopology(Map<String, String> options) {
         return Topology.builder()
                        .addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME),
-                                       asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
-                                              OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
-                                              OUTPUT_2 + ":" + TRAINING_STREAM, //
-                                              OUTPUT_3 + ":" + VALIDATION_STREAM))
+                               asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
+                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
+                                       OUTPUT_2 + ":" + TRAINING_STREAM, //
+                                       OUTPUT_3 + ":" + VALIDATION_STREAM))
 
                        .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION),
-                                       asList(INPUT_1 + ":" + TRAINING_STREAM, //
-                                              OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+                               asList(INPUT_1 + ":" + TRAINING_STREAM, //
+                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
 
                        .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION),
-                                       asList(INPUT_1 + ":" + VALIDATION_STREAM, //
-                                              OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+                               asList(INPUT_1 + ":" + VALIDATION_STREAM, //
+                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
 
                        .addComputation(
                                () -> new DataSetExportStatusComputation(EXPORT_STATUS_COMPUTATION,
-                                                                        new HashSet<>(asList(TRAINING_COMPUTATION, VALIDATION_COMPUTATION))),
+                                       new HashSet<>(asList(TRAINING_COMPUTATION, VALIDATION_COMPUTATION))),
                                asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
-                                      OUTPUT_1 + ":" + STATUS_STREAM))
+                                       OUTPUT_1 + ":" + STATUS_STREAM))
 
                        .addComputation(() -> new DataSetUploadComputation(EXPORT_UPLOAD_COMPUTATION),
-                                       singletonList(INPUT_1 + ":" + DONE_STREAM))
+                               singletonList(INPUT_1 + ":" + DONE_STREAM))
                        .build();
     }
 
@@ -131,37 +135,54 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             String split = (String) properties.getOrDefault(EXPORT_SPLIT_PARAM, String.valueOf(DEFAULT_SPLIT));
 
             int percentSplit = Integer.parseInt(split);
-            ThreadLocalRandom random = ThreadLocalRandom.current();
-            for (DocumentModel doc : loadDocuments(coreSession, ids)) {
-                List<String> targetProperties = new ArrayList<>(asList(props));
 
-                if (doc.hasFacet(ENRICHMENT_FACET)) {
-                    SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
-                    targetProperties.removeAll(wrapper.getAutoFilled());
-                    targetProperties.removeAll(wrapper.getAutoCorrected());
-                }
+            // Split documents list into training and validation datasets
+            DocumentModelList docs = loadDocuments(coreSession, ids);
+            shuffle(docs);
+            List<List<DocumentModel>> datasets = ListUtils.partition(docs, (docs.size() - 1) * percentSplit / 100);
 
-                BlobTextFromDocument subDoc = null;
-                if (!targetProperties.isEmpty()) {
-                    subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(targetProperties));
+            for (DocumentModel doc : datasets.get(0)) {
+                Record record = createRecordFromDoc(props, doc);
+                if (record == null) {
+                    log.error("Couldn't create record from document {}", doc.getId());
+                    continue;
                 }
-
-                boolean isTraining = random.nextInt(1, 101) <= percentSplit;
-                if (subDoc != null) {
-                    if (log.isTraceEnabled()) {
-                        log.trace((isTraining ? "training " : "validate ") + subDoc);
-                    }
-                    Record record = toRecord(command.getId(), subDoc);
-                    if (isTraining) {
-                        training.add(record);
-                    } else {
-                        validation.add(record);
-                    }
-                } else {
-                    discarded++;
-                }
+                training.add(record);
             }
-            log.debug("{} ids to export.", ids.size());
+            for (DocumentModel doc : datasets.get(1)) {
+                Record record = createRecordFromDoc(props, doc);
+                if (record == null) {
+                    log.error("Couldn't create record from document {}", doc.getId());
+                    continue;
+                }
+                validation.add(record);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Training dataset size: {} - Validation dataset size: {} - Command {}", training.size(),
+                        validation.size(), command.getId());
+            }
+        }
+
+        protected Record createRecordFromDoc(String[] props, DocumentModel doc) {
+            List<String> targetProperties = new ArrayList<>(asList(props));
+
+            if (doc.hasFacet(ENRICHMENT_FACET)) {
+                SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
+                targetProperties.removeAll(wrapper.getAutoFilled());
+                targetProperties.removeAll(wrapper.getAutoCorrected());
+            }
+
+            BlobTextFromDocument subDoc = null;
+            if (!targetProperties.isEmpty()) {
+                subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(targetProperties));
+            }
+
+            if (subDoc != null) {
+                return toRecord(command.getId(), subDoc);
+            } else {
+                discarded++;
+                return null;
+            }
         }
 
         @Override

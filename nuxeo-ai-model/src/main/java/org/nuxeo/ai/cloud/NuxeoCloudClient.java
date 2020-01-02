@@ -19,7 +19,6 @@
 package org.nuxeo.ai.cloud;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
@@ -144,64 +143,59 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public String uploadedDataset(DocumentModel dataset) {
-        if (dataset != null) {
-            String jobId = (String) dataset.getPropertyValue(DATASET_EXPORT_JOB_ID);
-            Blob trainingData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_TRAINING_DATA);
-            Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
-            Blob statsData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_STATS);
+    public String uploadedDataset(@NotNull DocumentModel dataset) {
+        String jobId = (String) dataset.getPropertyValue(DATASET_EXPORT_JOB_ID);
+        Blob trainingData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_TRAINING_DATA);
+        Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
+        Blob statsData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_STATS);
 
-            if (trainingData == null) {
-                log.error("Job: {} has no training data.", jobId);
-            }
-            if (evalData == null) {
-                log.error("Job: {} has no evaluation data.", jobId);
-            }
-            if (statsData == null) {
-                log.error("Job: {} has no statistics data.", jobId);
-            }
-            if (trainingData != null && evalData != null && statsData != null) {
-                try {
-                    DateTime start = DateTime.now();
+        if (trainingData == null || trainingData.getLength() == 0) {
+            log.error("Job/Command: {} has no training data.", jobId);
+        } else if (evalData == null || evalData.getLength() == 0) {
+            log.error("Job/Command: {} has no evaluation data.", jobId);
+        } else if (statsData == null || statsData.getLength() == 0) {
+            log.error("Job/Command: {} has no statistics data.", jobId);
+        } else {
+            try {
+                DateTime start = DateTime.now();
 
-                    BatchUpload batchUpload = getClient().batchUploadManager().createBatch().enableChunk();
+                BatchUpload batchUpload = getClient().batchUploadManager().createBatch().enableChunk();
 
-                    FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
-                            TFRECORD_MIME_TYPE);
-                    FileBlob evalDataBlob = new FileBlob(evalData.getFile(), evalData.getDigest(), TFRECORD_MIME_TYPE);
-                    FileBlob statsDataBlob = new FileBlob(statsData.getFile(), statsData.getDigest(),
-                            TFRECORD_MIME_TYPE);
+                FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
+                        TFRECORD_MIME_TYPE);
+                FileBlob evalDataBlob = new FileBlob(evalData.getFile(), evalData.getDigest(), TFRECORD_MIME_TYPE);
+                FileBlob statsDataBlob = new FileBlob(statsData.getFile(), statsData.getDigest(), TFRECORD_MIME_TYPE);
 
-                    // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
-                    // test that truncates the batch id after a first call
-                    batchUpload.upload("0", trainingDataBlob);
-                    batchUpload.upload("1", evalDataBlob);
-                    batchUpload.upload("2", statsDataBlob);
+                // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
+                // test that truncates the batch id after a first call
+                batchUpload.upload("0", trainingDataBlob);
+                batchUpload.upload("1", evalDataBlob);
+                batchUpload.upload("2", statsDataBlob);
 
-                    DateTime end = DateTime.now();
+                DateTime end = DateTime.now();
 
-                    return createDataset(dataset, batchUpload.getBatchId(), start, end);
-                } catch (NuxeoClientException e) {
-                    log.error("Failed to upload dataset. ", e);
-                }
+                return createDataset(dataset, batchUpload.getBatchId(), start, end);
+            } catch (NuxeoClientException e) {
+                log.error("Failed to upload dataset. ", e);
             }
         }
         return null;
     }
 
     @Override
-    public boolean addDatasetToModel(@NotNull DocumentModel doc, String corpusId) {
-        if (isEmpty(corpusId)) {
-            return false;
-        }
-
+    public void addDatasetToModel(@NotNull DocumentModel doc, String corpusId, String ctxId) {
         DatasetExport dataset = doc.getAdapter(DatasetExport.class);
-        if (dataset != null && isNotEmpty(dataset.getModelId())) {
+        if (dataset != null && isNotEmpty(dataset.getModelId()) && isNotEmpty(corpusId)) {
             Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, dataset.getModelId(), corpusId);
             Response response = getClient().put(modelsPath.toString(), "{}");
-            return response.isSuccessful();
+            boolean success = response.isSuccessful();
+            if (success) {
+                log.info("Corpus {} added to model {} added - command or operation {}", corpusId, doc.getId(), ctxId);
+            } else {
+                log.error("Error when adding corpus {} to model {} - command or operation {} \n Response code {} - {}",
+                        corpusId, doc.getId(), ctxId, response.code(), response.message());
+            }
         }
-        return false;
     }
 
     protected String createDataset(DocumentModel datasetDoc, String batchId, DateTime start, DateTime end) {
@@ -252,8 +246,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 payload = writer.toString();
             }
 
-            log.info("Creating/Uploading corpus to project {}, payload {}", projectId, payload);
-
             String url = API_AI + byProjectId("");
             JsonNode node = post(url, payload, (resp) -> {
                 if (!resp.isSuccessful()) {
@@ -270,8 +262,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                         projectId, payload, node);
                 return null;
             } else {
-                log.info("Upload to cloud project: {}, finished.", projectId);
-                return node.get("uid").toString();
+                String corpusId = node.get("uid").toString();
+                log.info("Corpus {} added to project {}, payload {}", corpusId, projectId, payload);
+                return corpusId;
             }
 
         } catch (IOException e) {
