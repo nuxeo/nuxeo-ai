@@ -79,9 +79,7 @@ public class DatasetExportOperation {
     @OperationMethod
     public String run() {
         HashMap<String, Serializable> params = buildDatasetParameters();
-        String exportId = service.export(session, query, inputs, outputs, split, params);
-        log.debug("Running Export Operation with id: " + exportId);
-        return exportId;
+        return service.export(session, query, inputs, outputs, split, params);
     }
 
     protected HashMap<String, Serializable> buildDatasetParameters() {

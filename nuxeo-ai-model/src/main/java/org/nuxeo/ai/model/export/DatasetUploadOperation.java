@@ -56,14 +56,8 @@ public class DatasetUploadOperation {
             if (document != null && DATASET_EXPORT_TYPE.equals(document.getType())) {
                 if (client.isAvailable()) {
                     log.info("Uploading dataset to cloud for dataset doc {}", document.getId());
-
                     String uid = client.uploadedDataset(document);
-                    log.info("Upload of dataset to cloud for command {} {}.", document.getId(),
-                            isNotEmpty(uid) ? "successful" : "failed");
-
-                    boolean success = client.addDatasetToModel(document, uid);
-                    log.info("Added dataset to AI_Model {} for command {} {}.", uid, document.getId(),
-                            success ? "successful" : "failed");
+                    client.addDatasetToModel(document, uid, ID);
                 } else {
                     log.warn("Upload to cloud not possible for dataset doc {}, type {} and client {}",
                             document.getId(), document.getType(), client.isAvailable());

@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 
 import java.util.function.Supplier;
@@ -57,7 +56,6 @@ public class DataSetUploadComputation extends AbstractComputation {
     @Override
     public void processRecord(ComputationContext context, String inputStreamName, Record record) {
         BulkStatus status = BulkCodecs.getStatusCodec().decode(record.getData());
-        log.debug("Processing record id: {}; with action name: {}", status.getId(), status.getAction());
         if (EXPORT_ACTION_NAME.equals(status.getAction()) && BulkStatus.State.COMPLETED.equals(status.getState())) {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
             if (cmd != null) {
@@ -71,13 +69,8 @@ public class DataSetUploadComputation extends AbstractComputation {
                             if (client.isAvailable()) {
                                 log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", cmd.getId(),
                                         document.getId());
-                                String uid = client.uploadedDataset(document);
-                                log.info("Upload of dataset to cloud for command {} {}.", cmd.getId(),
-                                        isNotEmpty(uid) ? "successful" : "failed");
-
-                                boolean success = client.addDatasetToModel(document, uid);
-                                log.info("Added dataset to AI_Model {} for command {} {}.", uid, cmd.getId(),
-                                        success ? "successful" : "failed");
+                                String corpusId = client.uploadedDataset(document);
+                                client.addDatasetToModel(document, corpusId, cmd.getId());
                             } else {
                                 log.warn(
                                         "Upload to cloud not possible for export command {},"
@@ -92,7 +85,7 @@ public class DataSetUploadComputation extends AbstractComputation {
                         }
                     }
                     return null;
-                }, TIMEOUT);
+                });
             } else {
                 log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", status.getId());
             }
@@ -100,7 +93,7 @@ public class DataSetUploadComputation extends AbstractComputation {
         context.askForCheckpoint();
     }
 
-    protected <R> R runInTransaction(Supplier<R> supplier, int timeout) {
+    protected <R> R runInTransaction(Supplier<R> supplier) {
         if (TransactionHelper.isTransactionMarkedRollback()) {
             throw new NuxeoException("Cannot run supplier when current transaction is marked rollback.");
         }
@@ -110,7 +103,7 @@ public class DataSetUploadComputation extends AbstractComputation {
             if (txActive) {
                 TransactionHelper.commitOrRollbackTransaction();
             }
-            txStarted = TransactionHelper.startTransaction(timeout);
+            txStarted = TransactionHelper.startTransaction(TIMEOUT);
             return supplier.get();
         } finally {
             if (txStarted) {

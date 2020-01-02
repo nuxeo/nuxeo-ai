@@ -38,17 +38,17 @@ public interface CloudClient {
 
     /**
      * Upload the blobs to the cloud, using data from the corpus document.
-     * @return
+     * @return corpus id
      */
-    String uploadedDataset(DocumentModel dataset);
+    String uploadedDataset(@NotNull DocumentModel dataset);
 
     /**
      * Asks Cloud to add given AI_Corpus id to AI_Model
      * @param doc Local DatasetExport to get AI_Model uid
      * @param corpusId AI_Cloud's AI_Corpus uid
-     * @return success
+     * @param ctxId Context reference (either from Stream command or Automation operation)
      */
-    boolean addDatasetToModel(@NotNull DocumentModel doc, String corpusId);
+    void addDatasetToModel(@NotNull DocumentModel doc, String corpusId, String ctxId);
 
     /**
      * @return a list of AI Models retrieved from AI Cloud
