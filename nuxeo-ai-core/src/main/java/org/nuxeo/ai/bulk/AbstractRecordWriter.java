@@ -47,7 +47,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
 
     public static final int DEFAULT_BUFFER_SIZE = 524288;  //512K
 
-    public static final int DEFAULT_BLOB_TTL_SEC = 60 * 30; // 30 min
+    public static final int DEFAULT_BLOB_TTL_SEC = 7200; // 2 hours
 
     public static final String BUFFER_SIZE_OPT = "bufferSize";
 

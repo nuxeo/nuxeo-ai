@@ -155,9 +155,9 @@ public class TFRecordWriter extends AbstractRecordWriter {
                     }
                 }
             }
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("%s writer had %d records, %d were written, %d were skipped.", name,
-                        list.size(), written, skipped));
+            if (list.size() != written) {
+                log.warn(String.format("%s writer had %d records, %d were written, %d were skipped.", name, list.size(),
+                        written, skipped));
             }
         }
         return skipped;
