@@ -139,9 +139,11 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             // Split documents list into training and validation datasets
             DocumentModelList docs = loadDocuments(coreSession, ids);
             shuffle(docs);
-            List<List<DocumentModel>> datasets = ListUtils.partition(docs, (docs.size() - 1) * percentSplit / 100);
+            int splitIndex = new Double(Math.ceil((docs.size() - 1) * (float) percentSplit / 100)).intValue();
+            List<DocumentModel> trainingDocs = new ArrayList<>(docs.subList(0,splitIndex));
+            List<DocumentModel> validationDocs = new ArrayList<>(docs.subList(splitIndex,docs.size()));
 
-            for (DocumentModel doc : datasets.get(0)) {
+            for (DocumentModel doc : trainingDocs) {
                 Record record = createRecordFromDoc(props, doc);
                 if (record == null) {
                     log.error("Couldn't create record from document {}", doc.getId());
@@ -149,7 +151,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                 }
                 training.add(record);
             }
-            for (DocumentModel doc : datasets.get(1)) {
+            for (DocumentModel doc : validationDocs) {
                 Record record = createRecordFromDoc(props, doc);
                 if (record == null) {
                     log.error("Couldn't create record from document {}", doc.getId());

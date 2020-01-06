@@ -170,7 +170,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
 
 
-        session.createDocument(document);
+        document = session.createDocument(document);
 
         if (log.isDebugEnabled()) {
             log.debug("DatasetExport {} created.", document.getId());
