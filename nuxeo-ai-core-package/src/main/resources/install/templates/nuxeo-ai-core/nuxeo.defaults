@@ -19,3 +19,6 @@ nuxeo.ai.export.tensorflow=true
 nuxeo.ai.export.batch.size=
 nuxeo.ai.export.training.batch.size=
 nuxeo.ai.export.validation.batch.size=
+
+# Minimum amount of document required for continues export
+nuxeo.ai.export.min.docs=10

@@ -118,6 +118,12 @@ You can set these in your `nuxeo.conf`.
 <th width="150" colspan="1">Since</th>
 </tr>
 <tr>
+<td colspan="1">`nuxeo.ai.export.min.docs`</td>
+<td colspan="1">Set minimum amount of documents required for continues expoort</td>
+<td colspan="1">`10`</td>
+<td colspan="1">Since 2.1</td>
+</tr>
+<tr>
 <td colspan="1">`nuxeo.ai.images.enabled`</td>
 <td colspan="1">Create a stream for creation/modification of images.</td>
 <td colspan="1">`false`</td>
