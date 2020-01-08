@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,6 +39,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class CorpusDelta {
 
     private static final int MINIMUM_DOCS_DEFAULT = 10;
+
+    public static final String MINIMUM_DOCS_PROP = "nuxeo.ai.export.min.docs";
 
     protected String query;
 
@@ -80,7 +83,13 @@ public class CorpusDelta {
     }
 
     public int getMinSize() {
-        return minSize == 0 ? MINIMUM_DOCS_DEFAULT : minSize;
+        String prop = Framework.getProperty(MINIMUM_DOCS_PROP, "0");
+        int minDocs = Integer.parseInt(prop);
+        if (minDocs == 0) {
+            return minSize == 0 ? MINIMUM_DOCS_DEFAULT : minSize;
+        } else {
+            return minDocs;
+        }
     }
 
     public void setMinSize(int minSize) {
