@@ -159,7 +159,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             try {
                 DateTime start = DateTime.now();
 
-                BatchUpload batchUpload = getClient().batchUploadManager().createBatch().enableChunk();
+                BatchUpload batchUpload = getClient().batchUploadManager()
+                                                     .createBatch()
+                                                     .enableChunk()
+                                                     .chunkSize(1024 * 1024 * 50);
 
                 FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
                         TFRECORD_MIME_TYPE);
