@@ -108,7 +108,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
                                                                .header(NO_DROP_FLAG, true)
-                                                               .header("Connection", "close")
+                                                               .header("Accept-Encoding", "identity")
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
@@ -172,8 +172,11 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
                 // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
                 // test that truncates the batch id after a first call
+                log.info("Uploading Training Dataset of size {} MB", trainingDataBlob.getFile().length() / 1024);
                 batchUpload.upload("0", trainingDataBlob);
+                log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / 1024);
                 batchUpload.upload("1", evalDataBlob);
+                log.info("Uploading Stats Dataset of size {} MB", statsDataBlob.getFile().length() / 1024);
                 batchUpload.upload("2", statsDataBlob);
 
                 DateTime end = DateTime.now();
@@ -249,6 +252,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 MAPPER.writeValue(writer, corpus);
                 payload = writer.toString();
             }
+
+            log.info("Creating dataset document");
 
             String url = API_AI + byProjectId("");
             JsonNode node = post(url, payload, (resp) -> {
