@@ -110,6 +110,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                                .header(NO_DROP_FLAG, true)
                                                                .header("Accept-Encoding", "identity")
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
+        if (log.isDebugEnabled()) {
+            LogInterceptor logInterceptor = new LogInterceptor();
+            builder.interceptor(logInterceptor);
+        }
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
             builder.authentication(new TokenAuthInterceptor(auth.token));
@@ -172,11 +176,12 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
                 // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
                 // test that truncates the batch id after a first call
-                log.info("Uploading Training Dataset of size {} MB", trainingDataBlob.getFile().length() / 1024);
+                log.info("Uploading Training Dataset of size {} MB",
+                        trainingDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("0", trainingDataBlob);
-                log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / 1024);
+                log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("1", evalDataBlob);
-                log.info("Uploading Stats Dataset of size {} MB", statsDataBlob.getFile().length() / 1024);
+                log.info("Uploading Stats Dataset of size {} MB", statsDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("2", statsDataBlob);
 
                 DateTime end = DateTime.now();
