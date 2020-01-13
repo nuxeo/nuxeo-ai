@@ -152,7 +152,7 @@ public class TestTranscribeService {
         BlobProvider blobProvider = blobManager.getBlobProvider("test");
         Blob blob = Blobs.createBlob("A string blob here");
         String blobKey = blobProvider.writeBlob(blob);
-        ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(),blobKey ,
+        ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobKey,
                 blobKey, blob.getEncoding(), blob.getLength()
         );
         btfd.addBlob("file:content", managedBlob);
