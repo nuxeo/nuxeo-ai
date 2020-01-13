@@ -7,4 +7,16 @@
     <provide interface="org.nuxeo.ai.transcribe.TranscribeService"/>
   </service>
 
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="aws.transcribe" kind="/tagging/transcribe"
+                class="org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider"
+                maxSize="8589934592">
+      <mimeTypes>
+        <mimeType name="video/mp4" normalized="true"/>
+        <mimeType name="video/mov" normalized="true"/>
+        <mimeType name="video/quicktime" normalized="true"/>
+      </mimeTypes>
+    </enrichment>
+  </extension>
+
 </component>

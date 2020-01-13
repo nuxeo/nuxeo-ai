@@ -31,6 +31,7 @@ import org.nuxeo.runtime.api.Framework;
  * Listens to an enrichment event and calls a recompute on auto fields.
  */
 public class EnrichedEventListener implements EventListener {
+
     @Override
     public void handleEvent(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
