@@ -19,28 +19,57 @@
  */
 package org.nuxeo.ai.transcribe;
 
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
+import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_KIND;
+import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_NAME;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.enrichment.EnrichmentUtils;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ai.services.DocMetadataService;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({PlatformFeature.class, EnrichmentTestFeature.class})
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.runtime.aws")
 public class TestTranscribeService {
 
-    protected String json = "{\n" +
+    protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    protected static final String json = "{\n" +
             "    \"jobName\": \"EnUS_033178297efa75a1b0add2acaea8639e\",\n" +
             "    \"accountId\": \"783725821734\",\n" +
             "    \"results\": {\n" +
@@ -78,13 +107,75 @@ public class TestTranscribeService {
             "}";
 
     @Inject
+    protected AIComponent ai;
+
+    @Inject
+    protected CoreSession session;
+
+    @Inject
+    protected DocMetadataService dms;
+
+    @Inject
+    protected TransactionalFeature txf;
+
+    @Inject
+    protected BlobManager blobManager;
+
+    @Inject
     protected TranscribeService ts;
 
     @Test
     public void shouldTranscribeVideo() throws IOException {
-        ObjectMapper om = new ObjectMapper();
-        AmazonTranscription transcription = om.readValue(json, AmazonTranscription.class);
+        AudioTranscription transcription = OBJECT_MAPPER.readValue(json, AudioTranscription.class);
         assertNotNull(transcription);
         assertEquals(2, transcription.results.items.size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void shouldAddTranscribeAsEnrichment() throws IOException {
+        EnrichmentProvider provider = ai.getEnrichmentProvider("aws.transcribe");
+        assertNotNull(provider);
+
+        AudioTranscription transcription = OBJECT_MAPPER.readValue(json, AudioTranscription.class);
+        assertNotNull(transcription);
+        List<AIMetadata.Label> labels = ts.asLabels(transcription);
+
+        DocumentModel doc = session.createDocumentModel("/", "Test File", "File");
+        doc.addFacet(ENRICHMENT_FACET);
+        doc = session.createDocument(doc);
+        session.save();
+
+        String rawKey = EnrichmentUtils.saveRawBlob(Blobs.createJSONBlob(json), "default");
+        BlobTextFromDocument btfd = new BlobTextFromDocument(doc);
+
+        BlobProvider blobProvider = blobManager.getBlobProvider("test");
+        Blob blob = Blobs.createBlob("A string blob here");
+        String blobKey = blobProvider.writeBlob(blob);
+        ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(),blobKey ,
+                blobKey, blob.getEncoding(), blob.getLength()
+        );
+        btfd.addBlob("file:content", managedBlob);
+        AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME, new BlobTextFromDocument(doc))
+                .withLabels(Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
+                .withRawKey(rawKey)
+                .build();
+
+        doc = dms.saveEnrichment(session, (EnrichmentMetadata) metadata);
+        doc = session.saveDocument(doc);
+        session.save();
+
+        txf.nextTransaction();
+
+        doc = session.getDocument(doc.getRef());
+
+        List<Object> items = (List<Object>) doc.getPropertyValue("enrichment:items");
+        assertThat(items).isNotEmpty().hasSize(1);
+
+        Map<String, Serializable> map = (Map<String, Serializable>) items.get(0);
+        List<Serializable> suggestions = (List<Serializable>) map.get("suggestions");
+        assertThat(suggestions).isNotEmpty().hasSize(1);
+        List<Serializable> sLabels = (List<Serializable>) ((Map<String, Serializable>) suggestions.get(0)).get("labels");
+        assertThat(sLabels).hasSize(2);
     }
 }

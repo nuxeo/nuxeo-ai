@@ -9,3 +9,4 @@
 "custom","Custom Model Classification","classification","0"
 "custommodel","Prediction using a Custom Model","prediction","0"
 "imageText","Text Detection in Images","tagging","0"
+"transcribe","Video transcription","tagging","0"

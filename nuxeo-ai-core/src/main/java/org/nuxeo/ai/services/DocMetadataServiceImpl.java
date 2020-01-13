@@ -51,8 +51,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
@@ -84,7 +84,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     protected static final TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
     };
 
-    private static final Log log = LogFactory.getLog(DocMetadataServiceImpl.class);
+    private static final Logger log = LogManager.getLogger(DocMetadataServiceImpl.class);
 
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
@@ -129,16 +129,17 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     /**
      * Generate a unique key for a model/version/input combination
      */
+    @SuppressWarnings("unchecked")
     protected String uniqueKey(Map<String, Object> suggestion) {
         String input = "";
         Object inputs = suggestion.get(ENRICHMENT_INPUT_DOCPROP_PROPERTY);
         // This is a little big strange, but it adapts to the type and calls the correct join method.
         if (inputs instanceof Set) {
-            input = String.join(";", (Set) inputs);
+            input = String.join(";", (Set<String>) inputs);
         } else if (inputs instanceof String[]) {
             input = String.join(";", (String[]) inputs);
         }
-        return (String) suggestion.get(ENRICHMENT_MODEL) + input;
+        return suggestion.get(ENRICHMENT_MODEL) + input;
     }
 
     /**
@@ -177,8 +178,8 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlobs.get(0));
                 } else {
-                    log.warn(String.format("Unexpected transient store raw blob information for %s. "
-                                                   + "A single raw blob is expected.", metadata.getModelName()));
+                    log.warn("Unexpected transient store raw blob information for {}. "
+                                                   + "A single raw blob is expected.", metadata.getModelName());
                 }
             }
 
