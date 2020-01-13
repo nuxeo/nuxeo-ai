@@ -108,7 +108,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
                                                                .header(NO_DROP_FLAG, true)
-                                                               .header("Accept-Encoding", "identity")
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
         if (log.isDebugEnabled()) {
             LogInterceptor logInterceptor = new LogInterceptor();
