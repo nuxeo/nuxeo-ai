@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <xs:schema targetNamespace="http://www.nuxeo.org/ecm/schemas/enrichment/"
            xmlns:nxrich="http://www.nuxeo.org/ecm/schemas/enrichment/"
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
-           xmlns:ref="http://www.nuxeo.org/ecm/schemas/core/external-references/">
+           xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/">
 
   <xs:complexType name="content">
     <xs:sequence>

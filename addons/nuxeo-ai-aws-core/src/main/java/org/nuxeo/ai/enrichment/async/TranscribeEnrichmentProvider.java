@@ -58,13 +58,12 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
                     DocumentModel doc = session.getDocument(new IdRef(blobDoc.getId()));
                     VideoDocument video = doc.getAdapter(VideoDocument.class);
                     TranscodedVideo tv = video.getTranscodedVideo(DEFAULT_CONVERSION);
-                    if (tv == null) {
+                    if (tv != null) {
+                        TranscribeWork work = new TranscribeWork(doc.getRepositoryName(), doc.getId());
+                        Framework.getService(WorkManager.class).schedule(work);
+                    } else {
                         log.warn("WAV is not ready; doc id = " + doc.getId());
-                        return;
                     }
-
-                    TranscribeWork work = new TranscribeWork(doc.getRepositoryName(), doc.getId());
-                    Framework.getService(WorkManager.class).schedule(work);
                 })
         );
 
