@@ -19,6 +19,9 @@
  */
 package org.nuxeo.ai.transcribe;
 
+import java.util.List;
+
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
 
 import com.amazonaws.services.transcribe.AmazonTranscribe;
@@ -39,6 +42,12 @@ public interface TranscribeService {
      * @return {@link TranscriptionJob} of created request
      */
     StartTranscriptionJobResult transcribe(Blob blob, LanguageCode language);
+
+    /**
+     * @param transcription to convert to lables
+     * @return a {@link List} of {@link AIMetadata.Label}
+     */
+    List<AIMetadata.Label> asLabels(AudioTranscription transcription);
 
     String getJobName(Blob blob, LanguageCode code);
 
