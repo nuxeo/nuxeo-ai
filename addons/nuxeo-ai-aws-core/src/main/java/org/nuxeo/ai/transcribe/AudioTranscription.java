@@ -27,7 +27,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * A POJO for marshaling response from Amazon Transcribe
  */
-public class AmazonTranscription {
+public class AudioTranscription {
+
+    public enum Type {
+        PRONUNCIATION,
+        PUNCTUATION;
+
+        String realName() {
+            return super.name().toLowerCase();
+        }
+    }
 
     protected String jobName;
     protected String accountId;
@@ -40,10 +49,10 @@ public class AmazonTranscription {
                 .collect(Collectors.toList());
     }
 
-    public AmazonTranscription(@JsonProperty("jobName") String jobName,
-                               @JsonProperty("accountId") String accountId,
-                               @JsonProperty("results") Result results,
-                               @JsonProperty("status") String status) {
+    public AudioTranscription(@JsonProperty("jobName") String jobName,
+                              @JsonProperty("accountId") String accountId,
+                              @JsonProperty("results") Result results,
+                              @JsonProperty("status") String status) {
         this.jobName = jobName;
         this.accountId = accountId;
         this.results = results;
@@ -89,6 +98,13 @@ public class AmazonTranscription {
             this.endTime = endTime;
             this.alternatives = alternatives;
             this.type = type;
+        }
+
+        /**
+         * @return content of highest confidence {@link Alternative}
+         */
+        public String getContent() {
+            return alternatives.isEmpty() ? "" : alternatives.get(0).content;
         }
     }
 
