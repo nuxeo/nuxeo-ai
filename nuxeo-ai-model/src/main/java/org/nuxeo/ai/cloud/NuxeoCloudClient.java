@@ -70,8 +70,6 @@ import okhttp3.Response;
  */
 public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
-    public static final String NO_DROP_FLAG = "X-Batch-No-Drop";
-
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
     static {
@@ -107,9 +105,11 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
-                                                               .header(NO_DROP_FLAG, true)
-                                                               .header("Accept-Encoding", "identity")
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
+        if (log.isDebugEnabled()) {
+            LogInterceptor logInterceptor = new LogInterceptor();
+            builder.interceptor(logInterceptor);
+        }
         CloudConfigDescriptor.Authentication auth = descriptor.authentication;
         if (auth != null && isNotEmpty(auth.token)) {
             builder.authentication(new TokenAuthInterceptor(auth.token));
@@ -165,6 +165,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                      .enableChunk()
                                                      .chunkSize(1024 * 1024 * 100);
 
+                String batch1 = batchUpload.getBatchId();
+
                 FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
                         TFRECORD_MIME_TYPE);
                 FileBlob evalDataBlob = new FileBlob(evalData.getFile(), evalData.getDigest(), TFRECORD_MIME_TYPE);
@@ -172,16 +174,33 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
                 // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
                 // test that truncates the batch id after a first call
-                log.info("Uploading Training Dataset of size {} MB", trainingDataBlob.getFile().length() / 1024);
+                log.info("Uploading Training Dataset of size {} MB",
+                        trainingDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("0", trainingDataBlob);
-                log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / 1024);
+
+                batchUpload = getClient().batchUploadManager()
+                                         .createBatch()
+                                         .enableChunk()
+                                         .chunkSize(1024 * 1024 * 100);
+
+                String batch2 = batchUpload.getBatchId();
+
+                log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("1", evalDataBlob);
-                log.info("Uploading Stats Dataset of size {} MB", statsDataBlob.getFile().length() / 1024);
+
+                batchUpload = getClient().batchUploadManager()
+                                         .createBatch()
+                                         .enableChunk()
+                                         .chunkSize(1024 * 1024 * 100);
+
+                String batch3 = batchUpload.getBatchId();
+
+                log.info("Uploading Stats Dataset of size {} MB", statsDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("2", statsDataBlob);
 
                 DateTime end = DateTime.now();
 
-                return createDataset(dataset, batchUpload.getBatchId(), start, end);
+                return createDataset(dataset, batch1, batch2, batch3, start, end);
             } catch (NuxeoClientException e) {
                 log.error("Failed to upload dataset. ", e);
             }
@@ -205,7 +224,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         }
     }
 
-    protected String createDataset(DocumentModel datasetDoc, String batchId, DateTime start, DateTime end) {
+    protected String createDataset(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start,
+            DateTime end) {
         String jobId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID);
         String query = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_QUERY);
         Long docCount = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT);
@@ -239,9 +259,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             props.setSplit(split);
             props.setFields(fields);
 
-            props.setTrainData(new AICorpus.Batch("0", batchId));
-            props.setEvalData(new AICorpus.Batch("1", batchId));
-            props.setStats(new AICorpus.Batch("2", batchId));
+            props.setTrainData(new AICorpus.Batch("0", batch1));
+            props.setEvalData(new AICorpus.Batch("1", batch2));
+            props.setStats(new AICorpus.Batch("2", batch3));
 
             props.setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())));
 
