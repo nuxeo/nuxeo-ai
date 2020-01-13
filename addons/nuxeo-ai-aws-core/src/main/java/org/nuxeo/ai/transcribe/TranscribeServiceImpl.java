@@ -19,6 +19,7 @@
  */
 package org.nuxeo.ai.transcribe;
 
+import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
 import static org.nuxeo.ai.transcribe.TranscribeWork.DEFAULT_LANG_CODE;
 import static org.nuxeo.ecm.core.storage.sql.S3BinaryManager.BUCKET_NAME_PROPERTY;
 import static org.nuxeo.ecm.core.storage.sql.S3BinaryManager.BUCKET_PREFIX_PROPERTY;
@@ -26,12 +27,15 @@ import static org.nuxeo.ecm.core.storage.sql.S3BinaryManager.BUCKET_PREFIX_PROPE
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -82,6 +86,16 @@ public class TranscribeServiceImpl implements TranscribeService {
         }
 
         return result;
+    }
+
+    @Override
+    public List<AIMetadata.Label> asLabels(AudioTranscription transcription) {
+        return transcription.results.items.stream()
+                .filter(item -> PRONUNCIATION.realName().equals(item.type))
+                .map(item -> new AIMetadata.Label(item.getContent(),
+                        0.f,
+                        (long) (Float.parseFloat(item.startTime)) * 1000))
+                .collect(Collectors.toList());
     }
 
     @Override

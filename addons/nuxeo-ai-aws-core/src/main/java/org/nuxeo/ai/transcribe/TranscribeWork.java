@@ -21,10 +21,13 @@ package org.nuxeo.ai.transcribe;
 
 import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.FAILED;
 import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.IN_PROGRESS;
-import static org.nuxeo.ai.AIConstants.TRANSCRIBE_FACET;
+import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
+import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_KIND;
+import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_NAME;
 
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -34,7 +37,12 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentUtils;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -62,25 +70,7 @@ public class TranscribeWork extends AbstractWork {
 
     private static final long TIMEOUT = 1000 * 60 * 60 * 2; // 2h
 
-    private static final long WAIT_TIME = 1000 * 5; // 5sec
-
-    public static final String TRANSCRIBE_LABEL_PROP = "transcribe:label";
-
-    public static final String TRANSCRIBE_RAW_PROP = "transcribe:raw";
-
-    public static final String TRANSCRIBE_NORM_PROP = "transcribe:normalized";
-
-    public static final String START_TIME_FIELD = "start";
-
-    public static final String END_TIME_FIELD = "end";
-
-    public static final String TYPE_FIELD = "type";
-
-    public static final String CONTENT_FIELD = "content";
-
-    public static final String TRANSCRIPT_FIELD = "transcript";
-
-    public static final String ITEMS_FIELD = "items";
+    private static final long WAIT_TIME = 1000 * 5; // 5s
 
     public static final String DEFAULT_CONVERSION = "WAV 16K";
 
@@ -117,7 +107,6 @@ public class TranscribeWork extends AbstractWork {
 
         StartTranscriptionJobResult result;
         result = ts.transcribe(wav.getBlob(), DEFAULT_LANG_CODE);
-
 
         TranscriptionJob job = result.getTranscriptionJob();
         String jobName = job.getTranscriptionJobName();
@@ -157,12 +146,12 @@ public class TranscribeWork extends AbstractWork {
         String transcriptUri = job.getTranscript().getTranscriptFileUri();
         HttpGet req = new HttpGet(transcriptUri);
 
-        AmazonTranscription transcription;
+        AudioTranscription transcription;
         String json;
         try (CloseableHttpClient httpClient = HttpClients.createDefault(); CloseableHttpResponse resp = httpClient.execute(req)) {
             HttpEntity entity = resp.getEntity();
             json = EntityUtils.toString(entity);
-            transcription = OBJECT_MAPPER.readValue(json, AmazonTranscription.class);
+            transcription = OBJECT_MAPPER.readValue(json, AudioTranscription.class);
         } catch (IOException e) {
             log.error(e);
             throw new NuxeoException("Could not retrieve result for Job "
@@ -173,68 +162,19 @@ public class TranscribeWork extends AbstractWork {
         TransactionHelper.commitOrRollbackTransaction();
         TransactionHelper.startTransaction();
 
+        List<AIMetadata.Label> labels = ts.asLabels(transcription);
+
+        String rawKey = EnrichmentUtils.saveRawBlob(Blobs.createJSONBlob(json), "default");
         doc = session.getDocument(docRef);
-        if (!doc.hasFacet(TRANSCRIBE_FACET)) {
-            doc.addFacet(TRANSCRIBE_FACET);
-        }
+        AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME, new BlobTextFromDocument(doc))
+                .withLabels(Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
+                .withRawKey(rawKey)
+                .build();
 
-        Blob jsonBlob = Blobs.createJSONBlob(json);
-        doc.setPropertyValue(TRANSCRIBE_RAW_PROP, (Serializable) jsonBlob);
-        doc.setPropertyValue(TRANSCRIBE_LABEL_PROP, String.join(" ", transcription.getTranscripts()));
-        doc.setPropertyValue(TRANSCRIBE_NORM_PROP, (Serializable) jsonBlob);
-
+        DocMetadataService dms = Framework.getService(DocMetadataService.class);
+        doc = dms.saveEnrichment(session, (EnrichmentMetadata) metadata);
         session.saveDocument(doc);
     }
-
-//    protected Pair<String, Blob> getTranscribeResults(List<Alternative> alternatives) throws JsonProcessingException {
-//        StringBuilder builder = new StringBuilder();
-//        List<Map<String, Object>> items = new LinkedList<>();
-//        for (Alternative alter : alternatives) {
-//            String transcript = alter.transcript();
-//            builder.append(transcript)
-//                    .append("\n");
-//
-//            List<Map<String, Object>> elems = buildItems(alter);
-//            items.addAll(elems);
-//        }
-//
-//        String json = OBJECT_MAPPER.writeValueAsString(items);
-//        JSONBlob blob = new JSONBlob(json);
-//        return new ImmutablePair<>(builder.toString(), blob);
-//    }
-//
-//    protected Blob getRawData(List<Alternative> alternatives) throws JsonProcessingException {
-//        List<Map<String, Object>> alts = serializeAlternatives(alternatives);
-//        String json = OBJECT_MAPPER.writeValueAsString(alts);
-//        return new JSONBlob(json);
-//    }
-//
-//    private List<Map<String, Object>> serializeAlternatives(List<Alternative> alternatives) {
-//        List<Map<String, Object>> alts = new LinkedList<>();
-//        for (Alternative alter : alternatives) {
-//            Map<String, Object> alt = new HashMap<>();
-//            String transcript = alter.transcript();
-//            List<Map<String, Object>> items = buildItems(alter);
-//            alt.put(TRANSCRIPT_FIELD, transcript);
-//            alt.put(ITEMS_FIELD, items);
-//            alts.add(alt);
-//        }
-//        return alts;
-//    }
-//
-//    private List<Map<String, Object>> buildItems(Alternative alter) {
-//        return alter.items().stream()
-//                .map(i -> {
-//                    Map<String, Object> map = new HashMap<>();
-//                    map.put(START_TIME_FIELD, i.startTime());
-//                    map.put(END_TIME_FIELD, i.endTime());
-//                    map.put(TYPE_FIELD, i.typeAsString());
-//                    map.put(CONTENT_FIELD, i.content());
-//
-//                    return map;
-//                })
-//                .collect(Collectors.toList());
-//    }
 
     @Override
     public String getTitle() {
