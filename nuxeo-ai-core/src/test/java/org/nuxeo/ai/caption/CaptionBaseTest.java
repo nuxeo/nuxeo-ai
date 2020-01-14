@@ -22,9 +22,11 @@ package org.nuxeo.ai.caption;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +53,11 @@ public class CaptionBaseTest {
     @Test
     public void shouldBeAbleToAddCaptions2Doc() {
         DocumentModel doc = session.createDocumentModel("/", "MyDoc", "File");
-        doc.addFacet("Captionable");
+        doc.addFacet(CAPTIONABLE_FACET);
         doc = session.createDocument(doc);
         assertNotNull(doc);
 
-        assertTrue(doc.hasFacet("Captionable"));
+        assertTrue(doc.hasFacet(CAPTIONABLE_FACET));
         Object captionable = doc.getProperties("caption").get("cap:captions");
         assertNotNull(captionable);
         assertTrue(captionable.getClass().isAssignableFrom(ArrayList.class));
@@ -64,7 +66,7 @@ public class CaptionBaseTest {
         enUS.put("vtt", new StringBlob("Let's pretend it is an en_US VTT file"));
         enUS.put("lang", "en_US");
 
-        List<Map<String, Serializable>> map = List.of(enUS);
+        List<Map<String, Serializable>> map = Collections.singletonList(enUS);
 
         doc.setPropertyValue("cap:captions", (Serializable) map);
         doc = session.saveDocument(doc);

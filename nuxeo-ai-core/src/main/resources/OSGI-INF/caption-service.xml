@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.services.CaptionService" version="1.0">
+  <implementation class="org.nuxeo.ai.services.CaptionServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.services.CaptionService"/>
+  </service>
+</component>
