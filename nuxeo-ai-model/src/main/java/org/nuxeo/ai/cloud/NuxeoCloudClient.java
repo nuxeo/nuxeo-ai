@@ -107,7 +107,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
-                                                               .header(NO_DROP_FLAG, true)
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
         if (log.isDebugEnabled()) {
             LogInterceptor logInterceptor = new LogInterceptor();
@@ -164,9 +163,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 DateTime start = DateTime.now();
 
                 BatchUpload batchUpload = getClient().batchUploadManager()
-                                                     .createBatch()
-                                                     .enableChunk()
-                                                     .chunkSize(1024 * 1024 * 100);
+                                                     .createBatch();
 
                 FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
                         TFRECORD_MIME_TYPE);
