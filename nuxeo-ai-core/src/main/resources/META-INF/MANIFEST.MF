@@ -13,6 +13,8 @@ Nuxeo-Component: OSGI-INF/ai-contrib.xml,
  OSGI-INF/ai-auto-threshold.xml,
  OSGI-INF/ai-conversions-contrib.xml,
  OSGI-INF/ai-web-ui-properties.xml,
+ OSGI-INF/caption-core-type-contrib.xml,
+ OSGI-INF/caption-service.xml,
  OSGI-INF/enrichment-core-types-contrib.xml,
  OSGI-INF/caption-core-type-contrib.xml,
  OSGI-INF/listeners-contrib.xml
