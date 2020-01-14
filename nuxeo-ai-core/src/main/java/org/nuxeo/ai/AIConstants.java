@@ -25,9 +25,6 @@ public class AIConstants {
 
     public static final String AI_KIND_DIRECTORY = "aikind";
 
-    public static final String TRANSCRIBE_FACET = "Transcribable";
-    public static final String TRANSCRIBE_SCHEMA_NAME = "transcribe";
-
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";
     public static final String ENRICHMENT_SCHEMA_NAME = "enrichment";
