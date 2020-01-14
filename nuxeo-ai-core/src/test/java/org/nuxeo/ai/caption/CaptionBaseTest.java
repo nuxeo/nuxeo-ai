@@ -22,6 +22,7 @@ package org.nuxeo.ai.caption;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -51,11 +52,11 @@ public class CaptionBaseTest {
     @Test
     public void shouldBeAbleToAddCaptions2Doc() {
         DocumentModel doc = session.createDocumentModel("/", "MyDoc", "File");
-        doc.addFacet("Captionable");
+        doc.addFacet(CAPTIONABLE_FACET);
         doc = session.createDocument(doc);
         assertNotNull(doc);
 
-        assertTrue(doc.hasFacet("Captionable"));
+        assertTrue(doc.hasFacet(CAPTIONABLE_FACET));
         Object captionable = doc.getProperties("caption").get("cap:captions");
         assertNotNull(captionable);
         assertTrue(captionable.getClass().isAssignableFrom(ArrayList.class));

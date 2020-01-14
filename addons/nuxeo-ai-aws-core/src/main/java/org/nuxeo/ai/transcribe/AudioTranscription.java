@@ -33,9 +33,15 @@ public class AudioTranscription {
         PRONUNCIATION,
         PUNCTUATION;
 
-        String realName() {
+        public static Type of(String name) {
+            return Type.valueOf(name.toUpperCase());
+        }
+
+        public String realName() {
             return super.name().toLowerCase();
         }
+
+
     }
 
     protected String jobName;
@@ -59,6 +65,10 @@ public class AudioTranscription {
         this.status = status;
     }
 
+    public Result getResults() {
+        return results;
+    }
+
     public static class Result {
 
         protected List<Transcript> transcripts;
@@ -68,6 +78,14 @@ public class AudioTranscription {
                       @JsonProperty("items") List<Item> items) {
             this.transcripts = transcripts;
             this.items = items;
+        }
+
+        public List<Transcript> getTranscripts() {
+            return transcripts;
+        }
+
+        public List<Item> getItems() {
+            return items;
         }
     }
 
@@ -105,6 +123,22 @@ public class AudioTranscription {
          */
         public String getContent() {
             return alternatives.isEmpty() ? "" : alternatives.get(0).content;
+        }
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public List<Alternative> getAlternatives() {
+            return alternatives;
+        }
+
+        public Type getType() {
+            return Type.of(type);
         }
     }
 
