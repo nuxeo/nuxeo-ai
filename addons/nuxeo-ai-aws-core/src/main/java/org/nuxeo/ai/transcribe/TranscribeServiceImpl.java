@@ -75,7 +75,7 @@ public class TranscribeServiceImpl implements TranscribeService {
         try {
             result = getClient().startTranscriptionJob(request);
         } catch (ConflictException e) {
-            String jobName = getJobName(blob, DEFAULT_LANG_CODE);
+            String jobName = getJobName(blob, code);
             log.error("Job already exist {}; Deleting it", jobName);
             DeleteTranscriptionJobRequest deleteReq = new DeleteTranscriptionJobRequest()
                     .withTranscriptionJobName(jobName)

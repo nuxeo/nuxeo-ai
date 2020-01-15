@@ -47,6 +47,8 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.event.EventService;
+import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.work.AbstractWork;
 import org.nuxeo.ecm.platform.video.TranscodedVideo;
 import org.nuxeo.ecm.platform.video.VideoDocument;
@@ -72,7 +74,11 @@ public class TranscribeWork extends AbstractWork {
 
     private static final long WAIT_TIME = 1000 * 5; // 5s
 
+    public static final String LANGUAGE_KEY = "lang";
+
     public static final String DEFAULT_CONVERSION = "WAV 16K";
+
+    public static final String TRANSCRIBE_DONE_EVENT = "transcribeDone";
 
     public static final LanguageCode DEFAULT_LANG_CODE = LanguageCode.EnUS;
 
@@ -174,6 +180,11 @@ public class TranscribeWork extends AbstractWork {
         DocMetadataService dms = Framework.getService(DocMetadataService.class);
         doc = dms.saveEnrichment(session, (EnrichmentMetadata) metadata);
         session.saveDocument(doc);
+
+        DocumentEventContext ctx = new DocumentEventContext(session, session.getPrincipal(), doc);
+        ctx.setProperty(LANGUAGE_KEY, DEFAULT_LANG_CODE);
+        Framework.getService(EventService.class)
+                .fireEvent(ctx.newEvent(TRANSCRIBE_DONE_EVENT));
     }
 
     @Override
