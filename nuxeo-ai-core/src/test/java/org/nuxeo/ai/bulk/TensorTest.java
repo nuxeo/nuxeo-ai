@@ -19,6 +19,7 @@
 package org.nuxeo.ai.bulk;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -26,11 +27,23 @@ import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ai.tensorflow.TFRecord;
 import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -42,18 +55,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
-import javax.inject.Inject;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -105,10 +107,11 @@ public class TensorTest {
         byte[] exampleData;
         int countExamples = 0;
         while ((exampleData = tfRecordReader.read()) != null) {
-            Example example = Example.parseFrom(exampleData);
+            TFRecord tfRecord = TFRecord.from(exampleData);
             if (numOfFeatures > 0) {
-                assertEquals(numOfFeatures, example.getFeatures().getFeatureCount());
+                assertEquals(numOfFeatures, tfRecord.getFeatures().getFeatureCount());
             }
+            assertThat(tfRecord.getDocId()).isNotBlank();
             countExamples++;
         }
         return countExamples;
@@ -142,9 +145,9 @@ public class TensorTest {
         TFRecordReader tfRecordReader = new TFRecordReader(input, true);
         byte[] exampleData;
         while ((exampleData = tfRecordReader.read()) != null) {
-            Example example = Example.parseFrom(exampleData);
-            assertEquals(2, example.getFeatures().getFeatureCount());
-            Feature pictureBlob = example.getFeatures().getFeatureMap().get(FILE_CONTENT);
+            TFRecord tfRecord = TFRecord.from(exampleData);
+            assertEquals(2, tfRecord.getFeatures().getFeatureCount());
+            Feature pictureBlob = tfRecord.getFeatures().getFeatureMap().get(FILE_CONTENT);
             File picFile = Framework.createTempFile("tf_image", "jpeg");
             try (FileOutputStream fos = new FileOutputStream(picFile)) {
                 fos.write(pictureBlob.getBytesList().getValue(0).toByteArray());

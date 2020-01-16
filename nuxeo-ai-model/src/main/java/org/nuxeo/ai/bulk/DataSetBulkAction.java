@@ -41,7 +41,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.collections4.ListUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
@@ -61,7 +60,6 @@ import org.nuxeo.runtime.stream.StreamProcessorTopology;
  * Bulk export data from Nuxeo to TFRecord Split the dataset in training and validation sets.
  */
 public class DataSetBulkAction implements StreamProcessorTopology {
-
 
 
     public static final String TRAINING_STREAM = "exp-training";
@@ -85,29 +83,29 @@ public class DataSetBulkAction implements StreamProcessorTopology {
     @Override
     public Topology getTopology(Map<String, String> options) {
         return Topology.builder()
-                       .addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME),
-                               asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
-                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
-                                       OUTPUT_2 + ":" + TRAINING_STREAM, //
-                                       OUTPUT_3 + ":" + VALIDATION_STREAM))
+                .addComputation(() -> new ExportingComputation(EXPORT_ACTION_NAME),
+                        asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
+                                OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
+                                OUTPUT_2 + ":" + TRAINING_STREAM, //
+                                OUTPUT_3 + ":" + VALIDATION_STREAM))
 
-                       .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION),
-                               asList(INPUT_1 + ":" + TRAINING_STREAM, //
-                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+                .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION),
+                        asList(INPUT_1 + ":" + TRAINING_STREAM, //
+                                OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
 
-                       .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION),
-                               asList(INPUT_1 + ":" + VALIDATION_STREAM, //
-                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+                .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION),
+                        asList(INPUT_1 + ":" + VALIDATION_STREAM, //
+                                OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
 
-                       .addComputation(
-                               () -> new DataSetExportStatusComputation(EXPORT_STATUS_COMPUTATION,
-                                       new HashSet<>(asList(TRAINING_COMPUTATION, VALIDATION_COMPUTATION))),
-                               asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
-                                       OUTPUT_1 + ":" + STATUS_STREAM))
+                .addComputation(
+                        () -> new DataSetExportStatusComputation(EXPORT_STATUS_COMPUTATION,
+                                new HashSet<>(asList(TRAINING_COMPUTATION, VALIDATION_COMPUTATION))),
+                        asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
+                                OUTPUT_1 + ":" + STATUS_STREAM))
 
-                       .addComputation(() -> new DataSetUploadComputation(EXPORT_UPLOAD_COMPUTATION),
-                               singletonList(INPUT_1 + ":" + DONE_STREAM))
-                       .build();
+                .addComputation(() -> new DataSetUploadComputation(EXPORT_UPLOAD_COMPUTATION),
+                        singletonList(INPUT_1 + ":" + DONE_STREAM))
+                .build();
     }
 
     /**
@@ -139,11 +137,9 @@ public class DataSetBulkAction implements StreamProcessorTopology {
             // Split documents list into training and validation datasets
             DocumentModelList docs = loadDocuments(coreSession, ids);
             shuffle(docs);
-            int splitIndex = new Double(Math.ceil((docs.size() - 1) * (float) percentSplit / 100)).intValue();
-            List<DocumentModel> trainingDocs = new ArrayList<>(docs.subList(0,splitIndex));
-            List<DocumentModel> validationDocs = new ArrayList<>(docs.subList(splitIndex,docs.size()));
+            int splitIndex = (int) Math.ceil((docs.size() - 1) * percentSplit / 100.f);
 
-            for (DocumentModel doc : trainingDocs) {
+            for (DocumentModel doc : docs.subList(0, splitIndex)) {
                 Record record = createRecordFromDoc(props, doc);
                 if (record == null) {
                     log.error("Couldn't create record from document {}", doc.getId());
@@ -151,7 +147,8 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                 }
                 training.add(record);
             }
-            for (DocumentModel doc : validationDocs) {
+
+            for (DocumentModel doc : docs.subList(splitIndex, docs.size())) {
                 Record record = createRecordFromDoc(props, doc);
                 if (record == null) {
                     log.error("Couldn't create record from document {}", doc.getId());

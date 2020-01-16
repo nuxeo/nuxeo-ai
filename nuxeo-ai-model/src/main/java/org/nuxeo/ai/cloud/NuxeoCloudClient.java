@@ -169,9 +169,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 batchUpload.upload("1", evalDataBlob);
                 batchUpload.upload("2", statsDataBlob);
 
-                DateTime end = DateTime.now();
-
-                return createDataset(dataset, batchUpload.getBatchId(), start, end);
+                return createDataset(dataset, batchUpload.getBatchId(), start, DateTime.now());
             } catch (NuxeoClientException e) {
                 log.error("Failed to upload dataset. ", e);
             }

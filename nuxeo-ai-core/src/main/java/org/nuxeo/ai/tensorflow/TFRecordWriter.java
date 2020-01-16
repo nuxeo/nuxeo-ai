@@ -50,7 +50,6 @@ import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.tensorflow.example.BytesList;
-import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
@@ -135,17 +134,18 @@ public class TFRecordWriter extends AbstractRecordWriter {
         int skipped = 0;
         if (list != null && !list.isEmpty()) {
             File file = getFile(list.get(0).getKey());
-            try (BufferedOutputStream buffy = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
-                 DataOutputStream dataOutputStream = new DataOutputStream(buffy)) {
+            try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
+                 DataOutputStream dos = new DataOutputStream(bos)) {
 
-                TensorflowWriter tensorflowWriter = new TensorflowWriter(dataOutputStream);
+                TensorflowWriter tensorflowWriter = new TensorflowWriter(dos);
                 for (Record record : list) {
                     try {
                         BlobTextFromDocument blobText = fromRecord(record, BlobTextFromDocument.class);
                         Optional<Features> allFeatures = writeFeatures(blobText);
                         if (allFeatures.isPresent() && allFeatures.get().getFeatureCount() > 0) {
-                            Example example = Example.newBuilder().setFeatures(allFeatures.get()).build();
-                            tensorflowWriter.write(example.toByteArray());
+                            TFRecord tfRecord = new TFRecord(blobText.getId(), allFeatures.get());
+
+                            tensorflowWriter.write(tfRecord.toByteArray());
                             written++;
                         } else {
                             skipped++;
