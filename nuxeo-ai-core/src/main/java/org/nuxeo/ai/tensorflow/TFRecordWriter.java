@@ -52,7 +52,6 @@ import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
 import org.tensorflow.example.BytesList;
-import org.tensorflow.example.Example;
 import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
@@ -192,8 +191,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
             BlobTextFromDocument blobText = MAPPER.readValue(record.getData(), BlobTextFromDocument.class);
             Optional<Features> allFeatures = writeFeatures(blobText);
             if (allFeatures.isPresent() && allFeatures.get().getFeatureCount() > 0) {
-                Example example = Example.newBuilder().setFeatures(allFeatures.get()).build();
-                writer.write(example.toByteArray());
+                TFRecord tfRecord = new TFRecord(blobText.getId(), allFeatures.get());
+                writer.write(tfRecord.toByteArray());
                 return true;
             } else {
                 return false;
