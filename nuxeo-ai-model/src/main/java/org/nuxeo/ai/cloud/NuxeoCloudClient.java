@@ -105,6 +105,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
+                                                               .header("Accept-Encoding", "identity")
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
         if (log.isDebugEnabled()) {
             LogInterceptor logInterceptor = new LogInterceptor();
@@ -341,7 +342,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Override
     public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody), handler);
+        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody),
+                handler);
     }
 
     @Override
