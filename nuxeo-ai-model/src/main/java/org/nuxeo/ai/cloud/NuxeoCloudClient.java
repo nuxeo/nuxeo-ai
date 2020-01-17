@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.cloud;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
@@ -29,14 +28,12 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
 import static org.nuxeo.client.ConstantsV1.API_PATH;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -345,44 +342,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public JSONBlob getCloudAIModels() throws IOException {
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, "models?properties=ai_model");
-        Response response = getClient().get(modelsPath.toString());
-        if (response.body() == null) {
-            log.warn("Could not resolve any AI Models");
-            return new JSONBlob("{}");
-        }
-
-        String body = response.body().string();
-        return new JSONBlob(body);
-    }
-
-    @Nullable
-    @Override
-    public JSONBlob getCorpusDelta(String modelId) throws IOException {
-        if (StringUtils.isEmpty(modelId)) {
-            throw new NuxeoException("Model Id cannot be empty");
-        }
-
-        Path path = Paths.get(getApiUrl(), API_AI, projectId, "model", modelId, "corpusdelta");
-        Response response = getClient().get(path.toString());
-        if (!response.isSuccessful()) {
-            log.error("Failed to obtain Corpus delta of {}. Status code {}", modelId, response.code());
-            return null;
-        }
-
-        if (response.body() == null) {
-            log.warn("Corpus Delta is empty; Model Id {}", modelId);
-            return null;
-        }
-
-        String body = response.body().string();
-        return new JSONBlob(body);
-    }
-
-    @Override
     public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody), handler);
+        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody),
+                handler);
     }
 
     @Override
