@@ -74,7 +74,6 @@ public class DataSetBulkAction implements StreamProcessorTopology {
         return Topology.builder()
                 .addComputation(() -> new ExportInitComputation(EXPORT_ACTION_NAME),
                         asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
-//                                OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
                                 OUTPUT_1 + ":" + TRAINING_STREAM, //
                                 OUTPUT_2 + ":" + VALIDATION_STREAM))
 
@@ -99,7 +98,6 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                         () -> new DatasetExportStatusComputation(EXPORT_STATUS_COMPUTATION),
                         asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
                                 OUTPUT_1 + ":" + STATUS_STREAM))
-
                 .addComputation(() -> new ExportDoneComputation(EXPORT_DONE_COMPUTATION),
                         singletonList(INPUT_1 + ":" + DONE_STREAM))
                 .build();
