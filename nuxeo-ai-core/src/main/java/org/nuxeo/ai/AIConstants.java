@@ -46,7 +46,6 @@ public class AIConstants {
     public static final String AUTO_HISTORY = "history";
 
     public static final String EXPORT_ACTION_NAME = "bulkDatasetExport";
-    public static final String EXPORT_FEATURES_PARAM = "features";
     public static final String EXPORT_SPLIT_PARAM = "split";
 
     private AIConstants() {

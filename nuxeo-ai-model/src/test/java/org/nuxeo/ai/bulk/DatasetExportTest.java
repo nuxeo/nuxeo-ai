@@ -19,15 +19,25 @@
 package org.nuxeo.ai.bulk;
 
 import static java.util.stream.Collectors.groupingBy;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_STATS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.ABORTED;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
@@ -40,8 +50,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,12 +78,13 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.work.api.WorkManager;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.api.Framework;
@@ -84,7 +97,8 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
+@Features({EnrichmentTestFeature.class, AutomationFeature.class,
+        CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
@@ -112,20 +126,23 @@ public class DatasetExportTest {
     @Inject
     protected ElasticSearchAdmin esa;
 
+    @Inject
+    protected DatasetExportService des;
+
     @Before
     public void setUp() throws Exception {
         setupTestData();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         session.removeChildren(new PathRef("/"));
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/bulk-export-test.xml")
     @Ignore("Testing Stream concurrent cancel is not part of AI Addon")
-    public void shouldCancelOnlyOneTask() throws IOException, InterruptedException {
+    public void shouldCancelOnlyOneTask() throws InterruptedException {
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
 
         List<String> input = Arrays.asList("dc:title", "file:content");
@@ -178,17 +195,17 @@ public class DatasetExportTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testBulkExport() throws Exception {
-
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
 
-        String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
-        String commandId = Framework.getService(DatasetExportService.class)
-                .export(session, nxql,
-                        Arrays.asList("dc:title", "file:content"),
-                        Collections.singletonList("dc:description"), 60, null);
-        txFeature.nextTransaction();
-        assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
+        String nxql = "SELECT * from Document where ecm:parentId = " + NXQL.escapeString(testRoot.getId());
+        String commandId = des.export(session, nxql,
+                Arrays.asList("dc:title", "file:content"),
+                Collections.singletonList("dc:description"), 60, null);
+
+        assertTrue("Bulk action didn't finish",
+                service.await(commandId, Duration.ofSeconds(30)));
 
         BulkStatus status = service.getStatus(commandId);
         assertNotNull(status);
@@ -197,15 +214,88 @@ public class DatasetExportTest {
         assertEquals(COMPLETED, status.getState());
         // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
         assertEquals(450, status.getProcessed());
-        DocumentModel doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, "nonsense");
-        assertNull(doc);
-        doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, commandId);
-        assertNotNull(doc);
-        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
-        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
-        assertTrue(trainingCount > validationCount);
+        DocumentModelList docs = des
+                .getDatasetExports(session, "nonsense");
+        assertThat(docs).isEmpty();
+
+        docs = des.getDatasetExports(session, commandId);
+        assertNotNull(docs);
+        assertThat(docs).isNotEmpty().hasSize(23);
+
+        Blob first = (Blob) docs.get(0).getPropertyValue(DATASET_EXPORT_STATS);
+        Blob last = (Blob) docs.get(22).getPropertyValue(DATASET_EXPORT_STATS);
+
+        List<Statistic> statsFirst = MAPPER.readValue(first.getFile(), List.class);
+        List<Statistic> statsLast = MAPPER.readValue(last.getFile(), List.class);
+
+        assertThat(statsFirst).isNotEqualTo(statsLast);
+
+        int trainingCount = 0;
+        int validationCount = 0;
+
+        for (DocumentModel doc : docs) {
+            trainingCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
+            validationCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
+        }
+        assertThat(trainingCount).isGreaterThan(validationCount);
         assertEquals("We should have discarded 50 bad blobs.", 400, trainingCount + validationCount);
         assertEquals("50 bad blobs.", 50, status.getErrorCount());
+    }
+
+    @Test
+    public void shouldCallWithParameters() throws InterruptedException {
+        Map<String, Serializable> params = new HashMap<>();
+
+        params.put(DATASET_EXPORT_MODEL_ID, "fake_id");
+        params.put(DATASET_EXPORT_MODEL_START_DATE, new Date());
+
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
+
+        String nxql = "SELECT * from Document where ecm:parentId = " + NXQL.escapeString(testRoot.getId());
+
+        String cmdId = Framework.getService(DatasetExportService.class)
+                .export(session, nxql,
+                        Arrays.asList("dc:title", "file:content"),
+                        Collections.singleton("dc:created"), 60, params);
+
+        assertNotNull(cmdId);
+        assertTrue("Bulk action didn't finish",
+                service.await(cmdId, Duration.ofSeconds(30)));
+
+        BulkStatus status = service.getStatus(cmdId);
+        assertNotNull(status);
+
+        assertNotNull(status.getProcessingStartTime());
+        assertNotNull(status.getProcessingEndTime());
+        assertEquals(COMPLETED, status.getState());
+
+        DocumentModel doc = getDatasetDoc(cmdId);
+
+        assertEquals(nxql, doc.getPropertyValue(DATASET_EXPORT_QUERY));
+        assertEquals(60L, doc.getPropertyValue(DATASET_EXPORT_SPLIT));
+        assertEquals("fake_id", doc.getPropertyValue(DATASET_EXPORT_MODEL_ID));
+        Calendar startDate = (Calendar) doc.getPropertyValue(DATASET_EXPORT_MODEL_START_DATE);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Serializable>> inputs
+                = (List<Map<String, Serializable>>) doc.getPropertyValue(DATASET_EXPORT_INPUTS);
+        assertEquals(2, inputs.size());
+        assertTrue(inputs.stream().anyMatch(
+                p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Serializable>> outputs =
+                (List<Map<String, Serializable>>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
+        assertEquals(1, outputs.size());
+
+        assertNotNull(startDate);
+        assertThat(startDate.getTime()).isInSameDayAs(new Date());
+    }
+
+    protected DocumentModel getDatasetDoc(String returned) {
+        DocumentModelList docs = des.getDatasetExports(session, returned);
+        assertThat(docs).isNotEmpty();
+        return docs.get(0);
     }
 
     /**
@@ -249,16 +339,17 @@ public class DatasetExportTest {
 
     @Test
     public void testBulkExportSubjects() throws Exception {
-
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
         waitForCompletion();
 
         String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
-        String commandId = Framework.getService(DatasetExportService.class)
+        String commandId = des
                 .export(session, nxql,
                         Arrays.asList("dc:title"),
                         Arrays.asList("dc:subjects"), 80);
+
         txFeature.nextTransaction();
+
         assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
 
         BulkStatus status = service.getStatus(commandId);
@@ -267,17 +358,23 @@ public class DatasetExportTest {
         // All 500 records are processed, even the 50 records that have null subjects
         assertEquals(500, status.getProcessed());
 
-        DocumentModel doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, "nonsense");
-        assertNull(doc);
-        doc = Framework.getService(DatasetExportService.class).getDatasetExportDocument(session, commandId);
-        assertNotNull(doc);
-        int trainingCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), -1);
-        int validationCount = countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
-        assertTrue(trainingCount > validationCount);
+        DocumentModelList docs = des.getDatasetExports(session, "nonsense");
+        assertThat(docs).isEmpty();
+        docs = des.getDatasetExports(session, commandId);
+        assertThat(docs).isNotEmpty();
+
+        int trainingCount = 0;
+        int validationCount = 0;
+
+        for (DocumentModel doc : docs) {
+            trainingCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), -1);
+            validationCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
+        }
+
+        assertThat(trainingCount).isGreaterThan(validationCount);
         assertEquals(500, trainingCount + validationCount);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void testStats() throws Exception {
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));

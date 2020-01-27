@@ -3,8 +3,10 @@
 
   <require>org.nuxeo.ai.bulk.services</require>
     <extension target="org.nuxeo.ecm.core.bulk" point="actions">
-    <#if "${nuxeo.ai.export.batch.size}" != "">
-      <action name="bulkDatasetExport" bucketSize="100" batchSize="${nuxeo.ai.export.batch.size}"/>
+    <#if "${nuxeo.ai.export.batch.size}" != "" && "${nuxeo.ai.export.bucket.size}" != "">
+      <action name="bulkDatasetExport"
+      bucketSize="${nuxeo.ai.export.bucket.size}"
+      batchSize="${nuxeo.ai.export.batch.size}"/>
       </#if>
     </extension>
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">

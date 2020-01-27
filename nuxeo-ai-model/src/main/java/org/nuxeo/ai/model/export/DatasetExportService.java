@@ -21,11 +21,11 @@ package org.nuxeo.ai.model.export;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-
 import javax.annotation.Nullable;
 
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 
 /**
  * For a given dataset provides exporting capabilities.
@@ -65,5 +65,7 @@ public interface DatasetExportService {
     /**
      * Get the Corpus document by id or return null
      */
-    DocumentModel getDatasetExportDocument(CoreSession session, String id);
+    DocumentModelList getDatasetExports(CoreSession session, String id);
+
+    DocumentModel getBatchOf(String datasetJobId, CoreSession session, String id);
 }

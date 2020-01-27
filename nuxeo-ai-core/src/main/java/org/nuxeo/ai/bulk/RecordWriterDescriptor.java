@@ -18,16 +18,17 @@
  */
 package org.nuxeo.ai.bulk;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ai.pipes.streams.Initializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 @XObject("recordWriter")
 public class RecordWriterDescriptor {
@@ -47,7 +48,6 @@ public class RecordWriterDescriptor {
 
     public RecordWriter getWriter(String name) {
         try {
-
             RecordWriter writerImpl = writer.getDeclaredConstructor(String.class).newInstance(name);
             if (writerImpl instanceof Initializable) {
                 ((Initializable) writerImpl).init(options);

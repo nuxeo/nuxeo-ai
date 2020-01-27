@@ -21,6 +21,7 @@
   <xs:element name="model_end_date" type="xs:dateTime"/>
   <xs:element name="query" type="xs:string"/>
   <xs:element name="job_id" type="xs:string"/>
+  <xs:element name="batch_id" type="xs:string"/>
   <xs:element name="split" type="xs:integer"/>
   <xs:element name="documents_count" type="xs:integer"/>
   <xs:complexType name="dataset_export_featureListType">

@@ -25,12 +25,12 @@
 
   <category name="org.nuxeo">
     <!-- <priority value="TRACE"/> -->
-    <priority value="INFO"/>
+    <priority value="DEBUG"/>
     <appender-ref ref="FILE"/>
   </category>
 
   <root>
-    <priority value="INFO" />
+    <priority value="DEBUG" />
     <appender-ref ref="CONSOLE" />
   </root>
 

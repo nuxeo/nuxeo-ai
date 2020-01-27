@@ -24,27 +24,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.services.AIComponent;
-import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobProvider;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.test.runner.Deploy;
-import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.tensorflow.example.Example;
-import org.tensorflow.example.Feature;
-import javax.inject.Inject;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.File;
@@ -54,6 +35,26 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Inject;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.ExportRecord;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.test.runner.Deploy;
+import org.nuxeo.runtime.test.runner.Features;
+import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.tensorflow.example.Example;
+import org.tensorflow.example.Feature;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -75,13 +76,15 @@ public class TensorTest {
 
         String test_key = "k345";
         int numberOfRecords = 500;
-        List<Record> records = new ArrayList<>();
+        List<ExportRecord> records = new ArrayList<>();
 
         for (int i = 0; i < numberOfRecords; ++i) {
             BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("ixi" + i, "test", "aaf", "Picture", null);
             blobTextFromDoc.addProperty("dc:title", "my text " + i);
             blobTextFromDoc.getProperties().put("ecm:primaryType", "Picture");
-            records.add(toRecord(test_key, blobTextFromDoc));
+            byte[] bytes = MAPPER.writeValueAsBytes(blobTextFromDoc);
+
+            records.add(ExportRecord.of(test_key, test_key, bytes));
         }
 
         writer.write(records);
@@ -124,12 +127,13 @@ public class TensorTest {
 
         String test_key = "blobby";
         int numberOfRecords = 2;
-        List<Record> records = new ArrayList<>();
+        List<ExportRecord> records = new ArrayList<>();
 
         for (int i = 0; i < numberOfRecords; ++i) {
             BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
             blobTextFromDoc.getProperties().put("ecm:primaryType", "Picture");
-            records.add(toRecord(test_key, blobTextFromDoc));
+            byte[] bytes = MAPPER.writeValueAsBytes(blobTextFromDoc);
+            records.add(ExportRecord.of(test_key, test_key, bytes));
         }
 
         writer.write(records);

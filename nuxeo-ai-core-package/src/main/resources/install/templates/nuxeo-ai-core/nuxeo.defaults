@@ -17,6 +17,7 @@ nuxeo.ai.export.tensorflow=true
 
 # Configuration for Export Stream
 nuxeo.ai.export.batch.size=
+nuxeo.ai.export.bucket.size=
 nuxeo.ai.export.training.batch.size=
 nuxeo.ai.export.validation.batch.size=
 

@@ -20,15 +20,20 @@ package org.nuxeo.ai.bulk;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.nuxeo.ai.bulk.DataSetExportStatusComputation.updateExportStatusProcessed;
+import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
+import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.pipes.types.ExportRecord;
+import org.nuxeo.ai.pipes.types.ExportStatus;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.AbstractBatchComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
@@ -38,7 +43,7 @@ import org.nuxeo.runtime.api.Framework;
  * Writes records using a RecordWriter
  */
 public class RecordWriterBatchComputation extends AbstractBatchComputation {
-    private static final Log log = LogFactory.getLog(RecordWriterBatchComputation.class);
+    private static final Logger log = LogManager.getLogger(RecordWriterBatchComputation.class);
 
     public RecordWriterBatchComputation(String name) {
         super(name, 1, 1);
@@ -46,29 +51,47 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
     @Override
     public void batchProcess(ComputationContext context, String inputStream, List<Record> records) {
-        Map<String, List<Record>> recordsByCommand = records.stream().collect(groupingBy(Record::getKey, toList()));
         RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(metadata.name());
         if (writer == null) {
             throw new NuxeoException("Unknown record write specified: " + metadata.name());
         }
-        recordsByCommand.forEach((commandId, recordsOfCommand) -> {
-            long errors = 0;
+
+        Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
+        Map<String, List<ExportRecord>> grouped = records.stream()
+                .map(r -> codec.decode(r.getData()))
+                .collect(groupingBy(ExportRecord::getId, toList()));
+
+        boolean training = isTraining();
+        ExportStatus eb = new ExportStatus();
+        eb.setTraining(training);
+
+        for (Map.Entry<String, List<ExportRecord>> entry : grouped.entrySet()) {
+            List<ExportRecord> recs = entry.getValue();
             try {
-                errors = writer.write(recordsOfCommand);
+                long errored = writer.write(recs);
+                log.warn("Attempted to write {} records; Errors {}", recs.size(), errored);
             } catch (IOException e) {
-                throw new NuxeoException(
-                        String.format("Failed to write the %s batch for %s.", metadata.name(), commandId), e);
+                throw new NuxeoException("Failed to write batch " + metadata.name(), e);
             } finally {
-                updateExportStatusProcessed(context, commandId, recordsOfCommand.size(), errors);
+                recs.forEach(rec -> {
+                    byte[] encoded = codec.encode(rec);
+                    context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);
+                });
             }
-        });
+        }
+
+        context.askForCheckpoint();
     }
 
     @Override
     public void batchFailure(ComputationContext context, String inputStream, List<Record> records) {
         String commandId = records.isEmpty() ? "" : records.get(0).getKey();
-        log.warn(String.format("Batch failure \"%s\" batch of %s records with command %s.",
-                               metadata.name(), records.size(), commandId));
+        log.warn("Batch failure \"{}\" batch of {} records with command {}.",
+                metadata.name(), records.size(), commandId);
+    }
+
+    protected boolean isTraining() {
+        return TRAINING_COMPUTATION.equals(metadata.name());
     }
 
 }

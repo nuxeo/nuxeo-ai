@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+import org.nuxeo.ai.pipes.types.ExportRecord;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.lib.stream.computation.Record;
 
 /**
  * Writes stream records
@@ -39,7 +39,9 @@ public interface RecordWriter {
      * Write the records using this writer.  It is assumed that the implementation writes to a file.
      * Returns the number of errors.
      */
-    long write(List<Record> list) throws IOException;
+    long write(List<ExportRecord> list) throws IOException;
+
+    boolean write(ExportRecord record) throws IOException;
 
     /**
      * Indicates if a file exists for this id

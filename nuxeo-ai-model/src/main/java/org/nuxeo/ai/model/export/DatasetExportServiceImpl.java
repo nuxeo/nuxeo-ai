@@ -20,8 +20,9 @@ package org.nuxeo.ai.model.export;
 
 import static java.util.Collections.emptyList;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
-import static org.nuxeo.ai.AIConstants.EXPORT_FEATURES_PARAM;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
+import static org.nuxeo.ai.bulk.ExportHelper.propsToTypedList;
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
@@ -29,44 +30,32 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
-import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
-import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MIN_DOC_COUNT_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
-
 import javax.annotation.Nonnull;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.adapters.DatasetExport.IOParam;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.PathRef;
+import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.query.sql.NXQL;
-import org.nuxeo.ecm.core.schema.SchemaManager;
-import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
 import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
@@ -75,7 +64,6 @@ import org.nuxeo.elasticsearch.api.EsResult;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
-import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * Exports data
@@ -86,14 +74,30 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     protected static final Properties EMPTY_PROPS = new Properties();
 
+    public static final String QUERY_PARAM = "query";
+
+    public static final String INPUT_PROPERTIES = "inputProperties";
+
+    public static final String OUTPUT_PROPERTIES = "outputProperties";
+
+    public static final String INPUT_PARAMETERS = "inputParameters";
+
+    public static final String OUTPUT_PARAMETERS = "outputParameters";
+
+    public static final String MODEL_PARAMETERS = "modelParameters";
+
+    public static final String STATISTICS_PARAM = "statistics";
+
     public static final String QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
             + NXQL.escapeString(DATASET_EXPORT_TYPE)
             + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
             + DATASET_EXPORT_JOB_ID + " = ";
 
-    public static final PathRef PARENT_PATH = new PathRef("/" + DATASET_EXPORT_TYPE);
+    public static final String QUERY_FOR_BATCH = "SELECT * FROM Document WHERE ecm:primaryType = "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE)
+            + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
+            + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
 
-    public static final String NUXEO_FOLDER = "Folder";
 
     public static final String STATS_TOTAL = "total";
 
@@ -136,75 +140,32 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             throw new IllegalArgumentException("Dataset split value is a percentage between 1 and 100");
         }
 
-        Blob statsBlob;
-        try {
-            statsBlob = Blobs.createJSONBlobFromValue(getStatistics(session, nxql, inputProperties, outputProperties));
-        } catch (IOException e) {
-            throw new NuxeoException("Unable to process stats blob", e);
-        }
         List<IOParam> inputs = propsToTypedList(inputProperties);
         List<IOParam> outputs = propsToTypedList(outputProperties);
 
         List<IOParam> featuresWithType = new ArrayList<>(inputs);
         featuresWithType.addAll(outputs);
-        DatasetExport dataset = createDataset(session, nxql, inputs, outputs, split, statsBlob);
-
-        List<String> featuresList = new ArrayList<>(inputProperties);
-        featuresList.addAll(outputProperties);
 
         String notNullNXQL = notNullNxql(nxql, featuresWithType);
         String username = session.getPrincipal().getName();
         BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL)
                 .user(username)
                 .repository(session.getRepositoryName())
-                .param(EXPORT_FEATURES_PARAM, String.join(",", featuresList))
-                .param(EXPORT_SPLIT_PARAM, String.valueOf(split)).build();
-
-        dataset.setJobId(bulkCommand.getId());
-
-        DocumentModel document = dataset.getDocument();
-        if (modelParams != null) {
-            for (String key : modelParams.keySet()) {
-                document.setPropertyValue(key, modelParams.get(key));
-            }
-        }
-
-
-        document = session.createDocument(document);
+                .param(QUERY_PARAM, nxql)
+                .param(INPUT_PROPERTIES, (Serializable) inputProperties)
+                .param(OUTPUT_PROPERTIES, (Serializable) outputProperties)
+                .param(INPUT_PARAMETERS, (Serializable) inputs)
+                .param(OUTPUT_PARAMETERS, (Serializable) outputs)
+                .param(MODEL_PARAMETERS, (Serializable) modelParams)
+                .param(EXPORT_SPLIT_PARAM, split)
+                .build();
 
         if (log.isDebugEnabled()) {
-            log.debug("DatasetExport {} created.", document.getId());
+            log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());
         }
 
-        TransactionHelper.registerSynchronization(new DatasetSynchronization(bulkCommand));
-        return bulkCommand.getId();
-    }
-
-    /**
-     * JTA Synchronization for ensuring DatasetExport existence at BAF
-     */
-    protected static class DatasetSynchronization implements Synchronization {
-
-        protected final BulkCommand command;
-
-        public DatasetSynchronization(BulkCommand command) {
-            this.command = command;
-        }
-
-        @Override
-        public void beforeCompletion() {
-            /* NOP */
-        }
-
-        @Override
-        public void afterCompletion(int status) {
-            if (status == Status.STATUS_COMMITTED) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Submitting command id: {}, for action {}", command.getId(), command.getAction());
-                }
-                Framework.getService(BulkService.class).submit(command);
-            }
-        }
+        return Framework.getService(BulkService.class)
+                .submit(bulkCommand);
     }
 
     /**
@@ -221,50 +182,31 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
     }
 
-    /**
-     * Create a corpus document for the data export.
-     */
-    public DatasetExport createDataset(CoreSession session, String query,
-                                       List<IOParam> inputs, List<IOParam> outputs, int split,
-                                       Blob statsBlob) {
-        if (log.isDebugEnabled()) {
-            log.debug("Creating DatasetExport with Repository {} and User {}", session.getRepositoryName(),
-                    session.getPrincipal().getActingUser());
-        }
-        DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpor1", DATASET_EXPORT_TYPE);
-        DatasetExport adapter = doc.getAdapter(DatasetExport.class);
-        adapter.setQuery(query);
-        adapter.setSplit(split);
-        adapter.setInputs(inputs);
-        adapter.setOutputs(outputs);
-        adapter.setStatistics(statsBlob);
-
-        return adapter;
-    }
 
     @Override
-    public DocumentModel getDatasetExportDocument(CoreSession session, @Nonnull String id) {
-        List<DocumentModel> docs = session.query(QUERY + NXQL.escapeString(id), 1);
+    public DocumentModelList getDatasetExports(CoreSession session, @Nonnull String id) {
+        DocumentModelList docs = session.query(QUERY + NXQL.escapeString(id));
         if (docs.isEmpty()) {
             log.warn("Could not find any DatasetExport documents for id: {}", id);
         } else {
+            return docs;
+        }
+
+        return new DocumentModelListImpl();
+    }
+
+    @Override
+    public DocumentModel getBatchOf(String datasetJobId, CoreSession session, String id) {
+        String query = String.format(QUERY_FOR_BATCH, NXQL.escapeString(datasetJobId), NXQL.escapeString(id));
+        List<DocumentModel> docs = session.query(query, 1);
+        if (docs.isEmpty()) {
+            log.warn("Could not find any DatasetExport documents for id: {}", id);
+            return null;
+        } else {
             return docs.get(0);
         }
-
-        return null;
     }
 
-    /**
-     * Create the root folder if it doesn't exist
-     */
-    protected String getRootFolder(CoreSession session) {
-        if (!session.exists(PARENT_PATH)) {
-            DocumentModel doc = session.createDocumentModel("/", DATASET_EXPORT_TYPE, NUXEO_FOLDER);
-            doc.addFacet(HIDDEN_IN_NAVIGATION);
-            session.createDocument(doc);
-        }
-        return PARENT_PATH.toString();
-    }
 
     @Override
     public Collection<Statistic> getStatistics(CoreSession session, String nxql,
@@ -276,7 +218,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         List<Statistic> stats = new ArrayList<>();
         NxQueryBuilder qb = new NxQueryBuilder(session).nxql(nxql).limit(0);
-        Long total = getOverallStats(featuresWithType, stats, qb);
+        long total = getOverallStats(featuresWithType, stats, qb);
         if (total < 1) {
             return emptyList();
         }
@@ -347,57 +289,22 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     protected String notNullNxql(String nxql, List<IOParam> featuresWithType) {
-        StringBuilder buffy = new StringBuilder(nxql);
+        StringBuilder sb = new StringBuilder(nxql);
         for (Map<String, String> prop : featuresWithType) {
             String propName = prop.get(NAME_PROP);
             switch (prop.get(TYPE_PROP)) {
                 case IMAGE_TYPE:
-                    buffy.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
+                    sb.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
                     break;
                 case CATEGORY_TYPE:
                     // Don't add additional validation for the category type, it can be null.
                     break;
                 default:
-                    buffy.append(" AND ").append(propName).append(" IS NOT NULL");
+                    sb.append(" AND ").append(propName).append(" IS NOT NULL");
             }
         }
-        return buffy.toString();
-    }
-
-    /**
-     * For the given property, find out if it exists and determine if its text or content
-     */
-    protected IOParam getPropertyWithType(String prop) {
-        Field field = Framework.getService(SchemaManager.class).getField(prop);
-        IOParam feature = new IOParam();
-
-        feature.put(NAME_PROP, prop);
-        if (field == null) {
-            if (NXQL.ECM_FULLTEXT.equals(prop)) {
-                log.debug("Skipping {} because its not possible to get stats on it.", NXQL.ECM_FULLTEXT);
-                return null;
-            } else {
-                log.warn(prop + " does not exist as a type, defaulting to txt type.");
-                feature.put(TYPE_PROP, TEXT_TYPE);
-            }
-            return feature;
-        }
-        String type = isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE;
-        if (field.getType().isListType()) {
-            type = CATEGORY_TYPE;
-        }
-        feature.put(TYPE_PROP, type);
-        return feature;
+        return sb.toString();
     }
 
 
-    /**
-     * For a given Collection of property names, return a list of features with the property name and type.
-     */
-    protected List<IOParam> propsToTypedList(Collection<String> properties) {
-        return properties.stream()
-                .map(this::getPropertyWithType)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
 }

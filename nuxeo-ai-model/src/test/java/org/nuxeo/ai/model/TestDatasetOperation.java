@@ -23,34 +23,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 
 import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportInterruptOperation;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
+import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.model.export.DatasetGetModelOperation;
-import org.nuxeo.ai.model.export.DatasetUploadOperation;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -58,7 +45,9 @@ import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -69,7 +58,8 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({AutomationFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
+@Features({EnrichmentTestFeature.class, AutomationFeature.class,
+        CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
@@ -90,42 +80,16 @@ public class TestDatasetOperation {
     @Inject
     protected TransactionalFeature txFeature;
 
-    @Test
-    public void shouldCallWithParameters() throws OperationException {
+    @Inject
+    protected DatasetExportService des;
 
-        OperationContext ctx = new OperationContext(session);
-        Map<String, Object> params = new HashMap<>();
+    @Inject
+    protected BulkService bulkService;
 
-        int split = 60;
-        params.put("query", TEST_QUERY);
-        params.put("inputs", "dc:title,dc:description");
-        params.put("outputs", "dc:nature");
-        params.put("split", split);
-        params.put("model_id", "fake_id");
-        params.put("model_start_date", new Date());
-
-        OperationChain chain = new OperationChain("testChain1");
-        chain.add(DatasetExportOperation.ID).from(params);
-        String returned = (String) automationService.run(ctx, chain);
-        assertNotNull(returned);
-
-        DocumentModel doc = getDatasetDoc(returned);
-        assertEquals(TEST_QUERY, doc.getPropertyValue(DATASET_EXPORT_QUERY));
-        assertEquals((long) split, doc.getPropertyValue(DATASET_EXPORT_SPLIT));
-        assertEquals("fake_id", doc.getPropertyValue(DATASET_EXPORT_MODEL_ID));
-        Calendar startDate = (Calendar) doc.getPropertyValue(DATASET_EXPORT_MODEL_START_DATE);
-
-        assertNotNull(startDate);
-        assertThat(startDate.getTime()).isInSameDayAs(new Date());
-    }
 
     protected DocumentModel getDatasetDoc(String returned) {
-        txFeature.nextTransaction();
-        List<DocumentModel> docs = session.query(String.format("SELECT * FROM %s WHERE %s = '%s'",
-                DATASET_EXPORT_TYPE,
-                DATASET_EXPORT_JOB_ID,
-                                                               returned));
-        assertEquals("A dataset document must be created.", 1, docs.size());
+        DocumentModelList docs = des.getDatasetExports(session, returned);
+        assertThat(docs).isNotEmpty();
         return docs.get(0);
     }
 
@@ -171,46 +135,6 @@ public class TestDatasetOperation {
         } catch (OperationException e) {
             assertEquals(IllegalArgumentException.class, e.getCause().getClass());
         }
-    }
-
-    @Test
-    public void testBlob() throws OperationException {
-
-        OperationContext ctx = new OperationContext(session);
-        Map<String, Object> params = new HashMap<>();
-        params.put("query", TEST_QUERY);
-        params.put("inputs", "dc:title,file:content");
-        params.put("outputs", "dc:nature,dc:created");
-        OperationChain chain = new OperationChain("testChain1");
-        chain.add(DatasetExportOperation.ID).from(params);
-        String returned = (String) automationService.run(ctx, chain);
-        assertNotNull(returned);
-
-        DocumentModel doc = getDatasetDoc(returned);
-        assertEquals(TEST_QUERY, doc.getPropertyValue(DATASET_EXPORT_QUERY));
-
-        @SuppressWarnings("unchecked")
-        List<Map> inputs = (List<Map>) doc.getPropertyValue(DATASET_EXPORT_INPUTS);
-        assertEquals(2, inputs.size());
-        assertTrue(inputs.stream().anyMatch(
-                p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
-
-        @SuppressWarnings("unchecked")
-        List<Map> outputs = (List<Map>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
-        assertEquals(2, outputs.size());
-
-        ctx = new OperationContext(session);
-        ctx.setInput(doc);
-        chain = new OperationChain("uploadAgainChain1");
-        chain.add(DatasetUploadOperation.ID);
-        automationService.run(ctx, chain);
-
-        params.clear();
-        params.put("document", doc);
-        ctx = new OperationContext(session);
-        chain = new OperationChain("uploadAgainChain2");
-        chain.add(DatasetUploadOperation.ID).from(params);
-        automationService.run(ctx, chain);
     }
 
     @Test

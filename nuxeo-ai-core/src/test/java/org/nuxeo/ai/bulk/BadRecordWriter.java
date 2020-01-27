@@ -18,9 +18,10 @@
  */
 package org.nuxeo.ai.bulk;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.ai.pipes.types.ExportRecord;
 
 /**
  * Simple writer that doesn't work
@@ -32,9 +33,13 @@ public class BadRecordWriter extends AbstractRecordWriter {
     }
 
     @Override
-    public long write(List<Record> list) {
+    public long write(List<ExportRecord> list) {
         // Will never get here
         return 99;
     }
 
+    @Override
+    public boolean write(ExportRecord record) throws IOException {
+        return false;
+    }
 }
