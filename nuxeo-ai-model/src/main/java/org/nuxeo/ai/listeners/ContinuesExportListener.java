@@ -19,7 +19,7 @@
  */
 package org.nuxeo.ai.listeners;
 
-import static org.nuxeo.ai.bulk.DataSetBulkAction.ExportingComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;

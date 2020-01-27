@@ -19,7 +19,7 @@
 package org.nuxeo.ai.model.export;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.ExportingComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_END_DATE;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_NAME;

@@ -19,6 +19,7 @@
  */
 package org.nuxeo.ai.adapters;
 
+import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_INPUTS;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_END_DATE;
@@ -132,6 +133,14 @@ public class DatasetExport implements AIAdapter {
 
     public String getJobId() {
         return (String) doc.getPropertyValue(DATASET_EXPORT_JOB_ID);
+    }
+
+    public void setBatchId(String id) {
+        doc.setPropertyValue(DATASET_EXPORT_BATCH_ID, id);
+    }
+
+    public String getBatchId() {
+        return (String) doc.getPropertyValue(DATASET_EXPORT_BATCH_ID);
     }
 
     public static class IOParam extends HashMap<String, String> {

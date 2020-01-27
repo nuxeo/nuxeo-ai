@@ -38,6 +38,8 @@ public class AiDocumentTypeConstants {
 
     public static final String DATASET_EXPORT_JOB_ID = DATASET_EXPORT_SCHEMA + ":job_id";
 
+    public static final String DATASET_EXPORT_BATCH_ID = DATASET_EXPORT_SCHEMA + ":batch_id";
+
     public static final String DATASET_EXPORT_QUERY = DATASET_EXPORT_SCHEMA + ":query";
 
     public static final String DATASET_EXPORT_SPLIT = DATASET_EXPORT_SCHEMA + ":split";

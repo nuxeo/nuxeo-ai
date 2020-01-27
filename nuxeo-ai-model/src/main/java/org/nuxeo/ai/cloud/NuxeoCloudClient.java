@@ -72,6 +72,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
+    private static final int CHUNK_100_MB = 1024 * 1024 * 100;
+
     static {
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
@@ -182,7 +184,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 batchUpload = getClient().batchUploadManager()
                                          .createBatch()
                                          .enableChunk()
-                                         .chunkSize(1024 * 1024 * 100);
+                                         .chunkSize(CHUNK_100_MB);
 
                 String batch2 = batchUpload.getBatchId();
 
@@ -192,7 +194,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 batchUpload = getClient().batchUploadManager()
                                          .createBatch()
                                          .enableChunk()
-                                         .chunkSize(1024 * 1024 * 100);
+                                         .chunkSize(CHUNK_100_MB);
 
                 String batch3 = batchUpload.getBatchId();
 
@@ -228,6 +230,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     protected String createDataset(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start,
             DateTime end) {
         String jobId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID);
+        String batchId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID);
         String query = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_QUERY);
         Long docCount = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT);
         Long splitProp = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_SPLIT);

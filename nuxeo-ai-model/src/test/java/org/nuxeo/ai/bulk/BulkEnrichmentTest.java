@@ -21,6 +21,7 @@ package org.nuxeo.ai.bulk;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
@@ -28,7 +29,6 @@ import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 import java.io.Serializable;
@@ -53,7 +53,6 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -114,7 +113,7 @@ public class BulkEnrichmentTest {
     public void testBulkEnrich() throws Exception {
 
         DocumentModel testRoot = setupTestData();
-        String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId());
+        String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'", testRoot.getId());
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql)
                 .user(session.getPrincipal().getName())
                 .repository(session.getRepositoryName())
@@ -148,7 +147,7 @@ public class BulkEnrichmentTest {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(aDoc);
             assertEquals(1, wrapper.getModels().size());
             assertFalse("Title must be a suggestion", wrapper.getSuggestionsByProperty("dc:title").isEmpty());
-            assertEquals(null, aDoc.getPropertyValue("dc:nature"));
+            assertNull(aDoc.getPropertyValue("dc:nature"));
             assertEquals("Must be reset to previous value", "Administrator", aDoc.getPropertyValue("dc:creator"));
         }
 
@@ -204,7 +203,7 @@ public class BulkEnrichmentTest {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkExportNoAutoFields() throws Exception {
         DocumentModel testRoot = setupTestData();
-        String nxql = String.format("SELECT * from Document where ecm:parentId='%s' ", testRoot.getId());
+        String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ", testRoot.getId());
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
 
@@ -225,23 +224,19 @@ public class BulkEnrichmentTest {
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);
 
-        String commandId = Framework.getService(DatasetExportService.class)
-                                    .export(session, nxql,
-                                            Collections.singletonList("dc:creator"),
-                                            Collections.singletonList("dc:title"), 60, null);
+        DatasetExportService exportService = Framework.getService(DatasetExportService.class);
+        String commandId = exportService.export(session, nxql,
+                Collections.singletonList("dc:creator"),
+                Collections.singletonList("dc:title"), 60, null);
 
-        txFeature.nextTransaction();
-
-        DocumentModelList datasetExports = session.query(QUERY + NXQL.escapeString(commandId));
-        assertThat(datasetExports).isNotEmpty();
-        assertTrue("Bulk action didn't finish", bulkService.await(commandId, Duration.ofSeconds(10)));
+        assertTrue("Bulk action didn't finish", bulkService.await(commandId, Duration.ofSeconds(60)));
         BulkStatus status = bulkService.getStatus(commandId);
         assertEquals(COMPLETED, status.getState());
         assertEquals(100, status.getProcessed());
         // 20 were skipped because they were already auto-corrected
         assertEquals(20, status.getErrorCount());
 
-        datasetExports = session.query(QUERY + NXQL.escapeString(commandId));
+        DocumentModelList datasetExports = exportService.getDatasetExports(session, commandId);
         assertThat(datasetExports).isNotEmpty();
     }
 

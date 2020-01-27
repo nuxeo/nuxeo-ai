@@ -102,6 +102,12 @@ public class AICorpus {
         @JsonProperty("ai_corpus:import_info")
         protected Info info;
 
+        @JsonProperty("ai_corpus:export_job_id")
+        protected String jobId;
+
+        @JsonProperty("ai_corpus:export_batch_id")
+        protected String batchId;
+
         public Properties() {}
 
         public String getTitle() {
@@ -182,6 +188,22 @@ public class AICorpus {
 
         public void setInfo(Info info) {
             this.info = info;
+        }
+
+        public String getJobId() {
+            return jobId;
+        }
+
+        public void setJobId(String jobId) {
+            this.jobId = jobId;
+        }
+
+        public String getBatchId() {
+            return batchId;
+        }
+
+        public void setBatchId(String batchId) {
+            this.batchId = batchId;
         }
     }
 

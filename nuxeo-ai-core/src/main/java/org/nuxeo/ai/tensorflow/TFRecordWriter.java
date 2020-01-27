@@ -23,7 +23,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -36,9 +36,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.ExportRecord;
 import org.nuxeo.ai.tensorflow.ext.TensorflowWriter;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -47,7 +50,6 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
-import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.tensorflow.example.BytesList;
 import org.tensorflow.example.Example;
@@ -61,6 +63,8 @@ import com.google.protobuf.ByteString;
  * Write TFRecords
  */
 public class TFRecordWriter extends AbstractRecordWriter {
+
+    private static final Logger log = LogManager.getLogger(TFRecordWriter.class);
 
     public static final String TFRECORD_MIME_TYPE = "application/x-tensorflow-record";
 
@@ -130,37 +134,74 @@ public class TFRecordWriter extends AbstractRecordWriter {
     }
 
     @Override
-    public long write(List<Record> list) throws IOException {
+    public long write(List<ExportRecord> list) throws IOException {
         int written = 0;
         int skipped = 0;
         if (list != null && !list.isEmpty()) {
-            File file = getFile(list.get(0).getKey());
-            try (BufferedOutputStream buffy = new BufferedOutputStream(new FileOutputStream(file, true), bufferSize);
-                 DataOutputStream dataOutputStream = new DataOutputStream(buffy)) {
+            File file = getFile(list.get(0).getId());
 
-                TensorflowWriter tensorflowWriter = new TensorflowWriter(dataOutputStream);
-                for (Record record : list) {
-                    try {
-                        BlobTextFromDocument blobText = fromRecord(record, BlobTextFromDocument.class);
-                        Optional<Features> allFeatures = writeFeatures(blobText);
-                        if (allFeatures.isPresent() && allFeatures.get().getFeatureCount() > 0) {
-                            Example example = Example.newBuilder().setFeatures(allFeatures.get()).build();
-                            tensorflowWriter.write(example.toByteArray());
-                            written++;
-                        } else {
-                            skipped++;
-                        }
-                    } catch (NuxeoException nux) {
-                        log.warn(String.format("Failed to process record %s ", record.getWatermark()), nux);
+            try (FileOutputStream fos = new FileOutputStream(file, true);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
+                 DataOutputStream dos = new DataOutputStream(bos)) {
+
+                TensorflowWriter writer = new TensorflowWriter(dos);
+                for (ExportRecord record : list) {
+                    if (write(writer, record)) {
+                        record.setFailed(true);
+                        written++;
+                    } else {
+                        record.setFailed(false);
+                        skipped++;
                     }
                 }
             }
             if (list.size() != written) {
-                log.warn(String.format("%s writer had %d records, %d were written, %d were skipped.", name, list.size(),
-                        written, skipped));
+                log.warn("{} writer had {} records, {} were written, {} were skipped.",
+                        name, list.size(), written, skipped);
             }
         }
+
         return skipped;
+    }
+
+    @Override
+    public boolean write(ExportRecord record) throws IOException {
+        File file = getFile(record.getId());
+
+        try (FileOutputStream fos = new FileOutputStream(file, true);
+             BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
+             DataOutputStream dos = new DataOutputStream(bos)) {
+
+            TensorflowWriter writer = new TensorflowWriter(dos);
+            if (write(writer, record)) {
+                log.warn("Record for {} was written", name);
+                return true;
+            }
+        }
+
+        log.warn("Record for {} was skipped.", name);
+        return false;
+    }
+
+    protected boolean write(TensorflowWriter writer, ExportRecord record) throws IOException {
+        if (record.isFailed()) {
+            return false;
+        }
+
+        try {
+            BlobTextFromDocument blobText = MAPPER.readValue(record.getData(), BlobTextFromDocument.class);
+            Optional<Features> allFeatures = writeFeatures(blobText);
+            if (allFeatures.isPresent() && allFeatures.get().getFeatureCount() > 0) {
+                Example example = Example.newBuilder().setFeatures(allFeatures.get()).build();
+                writer.write(example.toByteArray());
+                return true;
+            } else {
+                return false;
+            }
+        } catch (NuxeoException e) {
+            log.warn("Failed to process record {}", record.getId(), e);
+            return false;
+        }
     }
 
     /**
