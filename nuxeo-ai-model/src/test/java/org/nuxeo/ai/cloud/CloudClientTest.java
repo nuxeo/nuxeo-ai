@@ -104,6 +104,13 @@ public class CloudClientTest {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void testReconnection() throws IOException {
+        ((NuxeoCloudClient) client).client = null;
+        assertNotNull(client.uploadedDataset(testDocument()));
+    }
+
+    @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-bad-test.xml")
     public void testConfiguredFails() throws IOException {
         assertNull(client.uploadedDataset(testDocument()));
