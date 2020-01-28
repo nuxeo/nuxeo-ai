@@ -2,7 +2,7 @@
 <component name="org.nuxeo.ai.bulk.services" version="1.0">
 
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
-    <action name="bulkDatasetExport" bucketSize="100" batchSize="20"/>
+    <action name="bulkDatasetExport" bucketSize="100" batchSize="100"/>
     <action name="bulkEnrich" bucketSize="100" batchSize="50"/>
     <action name="bulkEnrichRemove" bucketSize="100" batchSize="50"/>
   </extension>

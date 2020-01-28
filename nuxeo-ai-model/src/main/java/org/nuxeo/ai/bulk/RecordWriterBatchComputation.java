@@ -69,7 +69,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
             List<ExportRecord> recs = entry.getValue();
             try {
                 long errored = writer.write(recs);
-                log.warn("Attempted to write {} records; Errors {}", recs.size(), errored);
+                log.debug("Attempted to write {} records; Errors {}", recs.size(), errored);
             } catch (IOException e) {
                 throw new NuxeoException("Failed to write batch " + metadata.name(), e);
             } finally {

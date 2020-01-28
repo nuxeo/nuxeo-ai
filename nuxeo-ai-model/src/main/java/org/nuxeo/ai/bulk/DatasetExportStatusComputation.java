@@ -57,7 +57,7 @@ public class DatasetExportStatusComputation extends AbstractComputation {
             deltaStatus.setProcessingStartTime(Instant.now());
         }
 
-        log.warn("Received status {} batch id {} processed: {} errored: {}",
+        log.info("Received status {} batch id {} processed: {} errored: {}",
                 export.getCommandId(), export.getId(), export.getProcessed(), export.getErrored());
 
         deltaStatus.setProcessingEndTime(Instant.now());

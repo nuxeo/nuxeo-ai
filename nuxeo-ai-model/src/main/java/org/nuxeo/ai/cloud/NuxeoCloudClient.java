@@ -269,6 +269,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             props.setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())));
 
+            props.setJobId(jobId);
+            props.setBatchId(batchId);
+
             AICorpus corpus = new AICorpus(jobId, props);
 
             String payload;
