@@ -19,7 +19,9 @@
 package org.nuxeo.ai.bulk;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.DONE_STREAM;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
@@ -61,6 +63,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
     public static final String EXPORT_UPLOAD_STREAM = "exp-upload-comp";
 
+    public static final String EXPORT_DONE_COMPUTATION = "done-comp";
 
     /**
      * Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
@@ -96,6 +99,9 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                         () -> new DatasetExportStatusComputation(EXPORT_STATUS_COMPUTATION),
                         asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
                                 OUTPUT_1 + ":" + STATUS_STREAM))
+
+                .addComputation(() -> new ExportDoneComputation(EXPORT_DONE_COMPUTATION),
+                        singletonList(INPUT_1 + ":" + DONE_STREAM))
                 .build();
     }
 }

@@ -85,6 +85,7 @@ import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.work.api.WorkManager;
+import org.nuxeo.ecm.platform.audit.AuditFeature;
 import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.api.Framework;
@@ -98,7 +99,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, AutomationFeature.class,
-        CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
+        CoreBulkFeature.class, RepositoryElasticSearchFeature.class,
+        AuditFeature.class
+})
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
@@ -220,10 +223,10 @@ public class DatasetExportTest {
 
         docs = des.getDatasetExports(session, commandId);
         assertNotNull(docs);
-        assertThat(docs).isNotEmpty().hasSize(23);
+        assertThat(docs).isNotEmpty().hasSize(5);
 
         Blob first = (Blob) docs.get(0).getPropertyValue(DATASET_EXPORT_STATS);
-        Blob last = (Blob) docs.get(22).getPropertyValue(DATASET_EXPORT_STATS);
+        Blob last = (Blob) docs.get(4).getPropertyValue(DATASET_EXPORT_STATS);
 
         List<Statistic> statsFirst = MAPPER.readValue(first.getFile(), List.class);
         List<Statistic> statsLast = MAPPER.readValue(last.getFile(), List.class);

@@ -16,6 +16,46 @@ This repository provides 3 packages:
 
 1. Install the nuxeo-ai-core package. `./bin/nuxeoctl mp-install nuxeo-ai-core`
 
+
+#### Export Configuration
+You can set these in your `nuxeo.conf`.
+<div class="table-scroll">
+<table class="hover">
+<tbody>
+<tr>
+<th width="250" colspan="1">Parameter</th>
+<th colspan="1">Description</th>
+<th width="250" colspan="1">Default value</th>
+<th width="150" colspan="1">Since</th>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.export.batch.size`</td>
+<td colspan="1">Sets batch size for the TF Record export</td>
+<td colspan="1">`20`</td>
+<td colspan="1">Since 2.1</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.export.bucket.size`</td>
+<td colspan="1">Sets bucket size for the TF Record export</td>
+<td colspan="1">`100`</td>
+<td colspan="1">Since 2.1</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.export.training.batch.size`</td>
+<td colspan="1">Sets how many records are getting into the training writer</td>
+<td colspan="1">`200`</td>
+<td colspan="1">Since 2.1</td>
+</tr>
+<tr>
+<td colspan="1">`nuxeo.ai.export.validation.batch.size`</td>
+<td colspan="1">Sets how many records are getting into the validation writer</td>
+<td colspan="1">`100`</td>
+<td colspan="1">Since 2.1</td>
+</tr>
+</tbody>
+</table>
+</div>
+
 #### Indexing and Search
 It is recommended that the Elasticsearch mappings are updated to allow a full text search on enrichment labels.
  The following code will add this mapping to a server running locally.
