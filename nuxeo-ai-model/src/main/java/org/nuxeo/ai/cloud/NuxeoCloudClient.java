@@ -93,13 +93,15 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        initClient();
+    }
+
+    protected void initClient() {
         List<CloudConfigDescriptor> configs = getDescriptors(XP_CONFIG);
-        if (!configs.isEmpty()) {
-            if (configs.size() == 1) {
-                configureClient(configs.get(0));
-            } else {
-                throw new IllegalArgumentException("Nuxeo cloud client requires 1 single configuration.");
-            }
+        if (configs.size() == 1) {
+            configureClient(configs.get(0));
+        } else {
+            throw new IllegalArgumentException("Nuxeo cloud client requires 1 single configuration.");
         }
     }
 
@@ -135,8 +137,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
      */
     protected NuxeoClient getClient() {
         if (client == null) {
-            throw new IllegalArgumentException(
-                    "Nuxeo cloud client has no configuration." + " You should call client.isAvailable() first.");
+            initClient();
         }
         return client;
     }
@@ -181,20 +182,14 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                         trainingDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("0", trainingDataBlob);
 
-                batchUpload = getClient().batchUploadManager()
-                                         .createBatch()
-                                         .enableChunk()
-                                         .chunkSize(CHUNK_100_MB);
+                batchUpload = getClient().batchUploadManager().createBatch().enableChunk().chunkSize(CHUNK_100_MB);
 
                 String batch2 = batchUpload.getBatchId();
 
                 log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("1", evalDataBlob);
 
-                batchUpload = getClient().batchUploadManager()
-                                         .createBatch()
-                                         .enableChunk()
-                                         .chunkSize(CHUNK_100_MB);
+                batchUpload = getClient().batchUploadManager().createBatch().enableChunk().chunkSize(CHUNK_100_MB);
 
                 String batch3 = batchUpload.getBatchId();
 
@@ -227,8 +222,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         }
     }
 
-    protected String createDataset(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start,
-            DateTime end) {
+    protected String createDataset(DocumentModel datasetDoc, String batch1, String batch2, String batch3,
+            DateTime start, DateTime end) {
         String jobId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID);
         String batchId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID);
         String query = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_QUERY);
@@ -345,8 +340,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Override
     public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody),
-                handler);
+        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody), handler);
     }
 
     @Override
