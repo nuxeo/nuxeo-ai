@@ -33,10 +33,13 @@ public class CloudConfigDescriptor implements Descriptor {
     protected String url = "http://localhost:8080/nuxeo";
 
     @XNode("@readTimeout")
-    protected Duration readTimeout = Duration.ofMinutes(60);  // Default 60 minutes
+    protected Duration readTimeout = Duration.ofMinutes(10);  // Default 10 minutes
 
     @XNode("@connectTimeout")
     protected Duration connectTimeout = Duration.ofSeconds(30);  // Default 30 seconds
+
+    @XNode("@writeTimeout")
+    protected Duration writeTimeout = Duration.ofMinutes(10);  // Default 10 minutes
 
     @XNode("@projectId")
     protected String projectId;

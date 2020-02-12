@@ -108,6 +108,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     protected void configureClient(CloudConfigDescriptor descriptor) {
         NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
                                                                .readTimeout(descriptor.readTimeout.getSeconds())
+                                                               .writeTimeout(descriptor.writeTimeout.getSeconds())
                                                                .schemas("dublincore", "common")
                                                                .header("Accept-Encoding", "identity")
                                                                .connectTimeout(descriptor.connectTimeout.getSeconds());
