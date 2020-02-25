@@ -75,5 +75,7 @@ public class ExportDoneComputation extends AbstractComputation {
 
             logger.addLogEntries(Collections.singletonList(entry));
         }
+
+        ctx.askForCheckpoint();
     }
 }
