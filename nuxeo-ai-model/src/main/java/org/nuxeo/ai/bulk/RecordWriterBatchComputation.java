@@ -77,6 +77,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
                     byte[] encoded = codec.encode(rec);
                     context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);
                 });
+                context.askForCheckpoint();
             }
         }
 

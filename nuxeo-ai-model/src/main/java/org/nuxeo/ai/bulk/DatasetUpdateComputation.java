@@ -77,7 +77,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
         BulkService service = Framework.getService(BulkService.class);
         String commandId = export.getCommandId();
 
-        if (!export.isFailed()) {
+        if (export.isFailed()) {
             errors.putIfAbsent(export.getId(), 0L);
             errors.computeIfPresent(export.getId(), (s, val) -> 1L + val);
         }

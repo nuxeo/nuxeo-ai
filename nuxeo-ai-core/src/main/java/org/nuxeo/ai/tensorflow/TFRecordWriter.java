@@ -146,10 +146,10 @@ public class TFRecordWriter extends AbstractRecordWriter {
                 TensorflowWriter writer = new TensorflowWriter(dos);
                 for (ExportRecord record : list) {
                     if (write(writer, record)) {
-                        record.setFailed(true);
+                        record.setFailed(false);
                         written++;
                     } else {
-                        record.setFailed(false);
+                        record.setFailed(true);
                         skipped++;
                     }
                 }
