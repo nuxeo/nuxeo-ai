@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -95,8 +94,8 @@ public class SuggestionOp {
     public Blob run(DocumentModel doc) {
         if (updatedDoc != null) {
             for (String schema : doc.getSchemas()) {
-                for (Map.Entry<String, Object> prop : updatedDoc.getProperties(schema).entrySet()) {
-                    doc.setProperty(schema, prop.getKey(), prop.getValue());
+                for (Property prop : updatedDoc.getPropertyObjects(schema)) {
+                    doc.setPropertyValue(prop.getName(), prop.getValue());
                 }
             }
         }
