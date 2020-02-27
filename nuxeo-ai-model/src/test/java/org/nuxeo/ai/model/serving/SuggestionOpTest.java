@@ -18,8 +18,25 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +56,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
+import org.nuxeo.ecm.core.api.impl.SimpleDocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.mockito.MockitoFeature;
@@ -47,24 +65,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 /**
  * Unit Tests the Suggestion Operation.
@@ -147,6 +149,29 @@ public class SuggestionOpTest {
         verify(modelServingService).predict(argument.capture());
         assertEquals("my document", argument.getValue().getPropertyValue("dc:title"));
         assertEquals("updated description here", argument.getValue().getPropertyValue("dc:description"));
+    }
+
+    @Test
+    public void shouldResolvePropertiesFromSimpleDoc() throws OperationException {
+        SimpleDocumentModel simple = new SimpleDocumentModel("uid", "file", "common", "files", "dublincore", "relatedtext");
+        simple.setPropertyValue("dc:title", "Been updated");
+        simple.setPropertyValue("dc:description", "Coming from the update");
+
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("updatedDocument", simple);
+
+        DocumentModel fileDoc = session.createDocumentModel("/", "Test File", "File");
+        fileDoc.setPropertyValue("dc:title", "Test File");
+        fileDoc = session.createDocument(fileDoc);
+
+        OperationContext opCtx = new OperationContext(session);
+        opCtx.setInput(fileDoc);
+        automationService.run(opCtx, SuggestionOp.ID, parameters);
+
+        ArgumentCaptor<DocumentModel> argument = ArgumentCaptor.forClass(DocumentModel.class);
+        verify(modelServingService).predict(argument.capture());
+        assertEquals("Been updated", argument.getValue().getPropertyValue("dc:title"));
+        assertEquals("Coming from the update", argument.getValue().getPropertyValue("dc:description"));
     }
 
     @Test
