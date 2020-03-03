@@ -74,12 +74,13 @@ public class EnrichmentUtils {
 
     public static final String CONVERSION_SERVICE = "conversionService";
 
-    public static final String DEFAULT_CONVERTER = "pictureResize";
+    public static final String DEFAULT_CONVERTER = "aiPictureResize";
 
     public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
 
-    protected static final TypeReference<Collection<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE = new TypeReference<Collection<EnrichmentMetadata>>() {
-    };
+    // Java 8 does not resolve rhv; keep for back compatibility
+    protected static final TypeReference<Collection<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE =
+            new TypeReference<Collection<EnrichmentMetadata>>() {};
 
     private static final Logger log = LogManager.getLogger(EnrichmentUtils.class);
 
