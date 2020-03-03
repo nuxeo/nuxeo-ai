@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  ~ (C) Copyright 2018-2019 Nuxeo SA (http://nuxeo.com/).
+  ~   This is unpublished proprietary source code of Nuxeo SA. All rights reserved.
+  ~   Notice of copyright on this source code does not indicate publication.
+  ~
+  ~   Contributors:
+  ~       Nuxeo
+  -->
+<component name="org.nuxeo.ai.picture.conversions.contrib" version="1.0">
+
+  <require>org.nuxeo.ecm.platform.commandline.executor.service.defaultContrib</require>
+
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl"
+             point="converter">
+
+    <converter name="aiPictureResize" class="org.nuxeo.ai.convert.AiResizePictureConverter">
+      <sourceMimeType>image/*</sourceMimeType>
+      <sourceMimeType>application/photoshop</sourceMimeType>
+      <sourceMimeType>application/illustrator</sourceMimeType>
+      <sourceMimeType>application/postscript</sourceMimeType>
+      <sourceMimeType>application/pdf</sourceMimeType>
+      <destinationMimeType>image/jpeg</destinationMimeType>
+    </converter>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.commandline.executor.service.CommandLineExecutorComponent"
+             point="command">
+
+    <command name="aiResizer" enabled="true">
+      <commandLine>convert</commandLine>
+      <parameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -define png:exclude-chunk=all -quiet -strip
+        -depth #{targetDepth} #{inputFilePath}[0] -resize #{targetWidth}x#{targetHeight} #{outputFilePath}
+      </parameterString>
+      <winParameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -define png:exclude-chunk=all -quiet -strip
+        -depth #{targetDepth} #{inputFilePath}[0] -resize #{targetWidth}x#{targetHeight} #{outputFilePath}
+      </winParameterString>
+      <installationDirective>You need to install ImageMagick.</installationDirective>
+    </command>
+
+    <command name="aiJpegResizer" enabled="true">
+      <commandLine>convert</commandLine>
+      <parameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -define png:exclude-chunk=all -quiet -strip
+        -resize #{targetWidth}x#{targetHeight} #{inputFilePath}[0] -background white -flatten -depth #{targetDepth}
+        #{outputFilePath}
+      </parameterString>
+      <winParameterString>-define registry:temporary-path=#{nuxeo.tmp.dir} -define png:exclude-chunk=all -quiet -strip
+        -resize #{targetWidth}x#{targetHeight} #{inputFilePath}[0] -background white -flatten -depth #{targetDepth}
+        #{outputFilePath}
+      </winParameterString>
+      <installationDirective>You need to install ImageMagick.</installationDirective>1
+
+    </command>
+  </extension>
+
+</component>
