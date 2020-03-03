@@ -31,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
+import java.util.List;
 import javax.inject.Inject;
 
 import org.junit.Test;
@@ -54,7 +55,9 @@ public class CaptionServiceTest {
     @Test
     public void shouldWriteCaptionsIntoBlobWithVTTMimeType() throws IOException {
         Caption caption = new Caption(0, 1000, Collections.emptyList());
-        Blob blob = cs.write(Collections.singletonList(caption));
+        // used as a ref to track the temp file, so should be initialized out of scope of the method call
+        List<Caption> captions = Collections.singletonList(caption);
+        Blob blob = cs.write(captions);
         assertNotNull(blob);
         assertEquals(TEXT_VTT_MIME_TYPE, blob.getMimeType());
 
@@ -62,7 +65,6 @@ public class CaptionServiceTest {
         assertThat(file).isNotNull()
                 .hasExtension("vtt");
         assertThat(file.length()).isNotZero();
-
 
         try (FileInputStream fis = new FileInputStream(file);
              BufferedReader br = new BufferedReader(new InputStreamReader(fis, UTF_8))) {
