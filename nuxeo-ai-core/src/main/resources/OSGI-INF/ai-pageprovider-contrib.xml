@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.core.pp" version="1.0">
+
+  <require>org.nuxeo.ecm.core.CoreExtensions</require>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
+    <schema name="doctypes_pp_schema" prefix="doctypes_pp_schema" override="true" src="schemas/doctypes_pp.xsd"/>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
+    <doctype name="DocTypesPP" extends="Document">
+      <schema name="doctypes_pp_schema"/>
+    </doctype>
+  </extension>
+
+  <extension point="providers"
+             target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+    <coreQueryPageProvider name="doctypes_pp">
+      <property name="coreSession">#{documentManager}</property>
+      <whereClause docType="DocTypesPP">
+        <predicate parameter="ecm:primaryType" operator="IN">
+          <field schema="doctypes_pp_schema" name="doctypes"/>
+        </predicate>
+        <fixedPart>ecm:mixinType != 'HiddenInNavigation' AND ecm:isTrashed = 0 AND ecm:isProxy = 0
+        </fixedPart>
+      </whereClause>
+      <searchDocumentType>DocTypesPP</searchDocumentType>
+      <aggregates>
+        <aggregate id="doctypes_agg" type="terms" parameter="ecm:primaryType">
+          <field schema="doctypes_pp_schema" name="doctypes_agg"/>
+          <properties>
+            <property name="order">count desc</property>
+            <property name="size">20</property>
+          </properties>
+        </aggregate>
+      </aggregates>
+    </coreQueryPageProvider>
+  </extension>
+
+</component>
