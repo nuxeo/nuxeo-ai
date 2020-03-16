@@ -5,10 +5,11 @@
     <extension target="org.nuxeo.ecm.core.bulk" point="actions">
     <#if "${nuxeo.ai.export.batch.size}" != "" && "${nuxeo.ai.export.bucket.size}" != "">
       <action name="bulkDatasetExport"
-      bucketSize="${nuxeo.ai.export.bucket.size}"
-      batchSize="${nuxeo.ai.export.batch.size}"/>
-      </#if>
+        bucketSize="${nuxeo.ai.export.bucket.size}"
+        batchSize="${nuxeo.ai.export.batch.size}"/>
+    </#if>
     </extension>
+
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <#if "${nuxeo.ai.export.training.batch.size}" != "" || "${nuxeo.ai.export.validation.batch.size}" != "">
       <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
@@ -18,6 +19,30 @@
         </#if>
         <#if "${nuxeo.ai.export.validation.batch.size}" != "">
         <policy name="validation" batchCapacity="${nuxeo.ai.export.validation.batch.size}" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+        </#if>
+
+        <#if "${nuxeo.ai.export.threshold}" != "">
+        <stream name="exp-training" partitions="1">
+            <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+              <option name="storeName">default</option>
+              <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
+              <option name="storeTTL">4h</option>
+            </filter>
+          </stream>
+          <stream name="exp-validation" partitions="1">
+            <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+              <option name="storeName">default</option>
+              <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
+              <option name="storeTTL">4h</option>
+            </filter>
+          </stream>
+          <stream name="exp-dataset-update" partitions="1">
+            <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+              <option name="storeName">default</option>
+              <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
+              <option name="storeTTL">4h</option>
+            </filter>
+          </stream>
         </#if>
       </streamProcessor>
     </#if>
