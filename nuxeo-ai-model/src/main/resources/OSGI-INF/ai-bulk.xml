@@ -12,6 +12,28 @@
                      defaultConcurrency="1" defaultPartitions="1">
       <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
       <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+      <!--   2621440 = 2,5MB   -->
+      <stream name="exp-training" partitions="1">
+        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+          <option name="storeName">default</option>
+          <option name="thresholdSize">2621440</option>
+          <option name="storeTTL">4h</option>
+        </filter>
+      </stream>
+      <stream name="exp-validation" partitions="1">
+        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+          <option name="storeName">default</option>
+          <option name="thresholdSize">2621440</option>
+          <option name="storeTTL">4h</option>
+        </filter>
+      </stream>
+      <stream name="exp-dataset-update" partitions="1">
+        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+          <option name="storeName">default</option>
+          <option name="thresholdSize">2621440</option>
+          <option name="storeTTL">4h</option>
+        </filter>
+      </stream>
     </streamProcessor>
     <streamProcessor name="bulkEnrich" class="org.nuxeo.ai.bulk.BulkEnrichmentAction" logConfig="bulk"
                      defaultConcurrency="2" defaultPartitions="2">
