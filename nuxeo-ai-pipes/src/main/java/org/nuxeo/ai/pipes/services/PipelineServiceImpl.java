@@ -51,8 +51,8 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
 import org.nuxeo.runtime.stream.StreamService;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
+import io.dropwizard.metrics5.MetricRegistry;
+import io.dropwizard.metrics5.SharedMetricRegistries;
 
 public class PipelineServiceImpl extends DefaultComponent implements PipelineService {
 

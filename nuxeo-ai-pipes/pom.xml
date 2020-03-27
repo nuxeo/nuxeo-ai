@@ -21,6 +21,10 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>io.dropwizard.metrics5</groupId>
+      <artifactId>metrics-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.ecm.automation</groupId>
       <artifactId>nuxeo-automation-test</artifactId>
       <scope>test</scope>

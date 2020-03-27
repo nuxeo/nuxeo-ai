@@ -53,8 +53,9 @@ import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 
 @RunWith(FeaturesRunner.class)
 @Features({PipesTestConfigFeature.class, PlatformFeature.class})
@@ -96,7 +97,7 @@ public class EventPipesTest {
 
     @SuppressWarnings("rawtypes")
     public static long getMetricValue(NuxeoMetricSet metricSet, String metric) {
-        Map<String, Metric> metricMap = metricSet.getMetrics();
+        Map<MetricName, Metric> metricMap = metricSet.getMetrics();
         Gauge g = (Gauge) metricMap.get(metric);
         return (Long) g.getValue();
     }
