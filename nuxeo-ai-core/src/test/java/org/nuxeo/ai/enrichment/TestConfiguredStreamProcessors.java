@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.inject.Inject;
 
 import org.junit.Assert;
@@ -67,9 +68,9 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.MetricRegistry;
+import io.dropwizard.metrics5.SharedMetricRegistries;
 
 /**
  * Tests a fully configured stream processor
@@ -155,8 +156,8 @@ public class TestConfiguredStreamProcessors {
     protected Map<String, Gauge> getMetrics(String metricPrefix) {
         MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
         return registry.getGauges().entrySet().stream()
-                       .filter(e -> e.getKey().startsWith(metricPrefix))
-                       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                       .filter(e -> e.getKey().getKey().startsWith(metricPrefix))
+                       .collect(Collectors.toMap(e -> e.getKey().getKey(), Map.Entry::getValue));
     }
 
     @Test
