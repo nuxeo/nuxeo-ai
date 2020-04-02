@@ -155,6 +155,7 @@ public class TestDatasetOperation {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldRunRestartOperation() throws OperationException {
         OperationContext ctx = new OperationContext(session);
         Map<String, Object> params = new HashMap<>();

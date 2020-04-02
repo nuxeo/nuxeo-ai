@@ -70,15 +70,16 @@ public class DatasetUploadComputation extends AbstractComputation {
         try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(command.getRepository(),
                 command.getUsername())) {
             DocumentModel document = Framework.getService(DatasetExportService.class)
-                    .getBatchOf(commandId, session, export.getId());
+                    .getCorpusOfBatch(session, commandId, export.getId());
 
             if (document != null) {
                 CloudClient client = Framework.getService(CloudClient.class);
                 if (client.isAvailable()) {
                     log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId,
                             document.getId());
-                    String corpusId = client.uploadedDataset(document);
-                    client.addDatasetToModel(document, corpusId, export.getId());
+
+                    // TODO: Attach corpus to corpora
+                    client.uploadedDataset(document);
                 } else {
                     log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}",
                             commandId, document.getId(), client.isAvailable());

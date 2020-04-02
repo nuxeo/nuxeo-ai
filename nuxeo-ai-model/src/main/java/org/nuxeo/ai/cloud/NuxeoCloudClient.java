@@ -18,12 +18,20 @@
  */
 package org.nuxeo.ai.cloud;
 
+import static javax.ws.rs.core.Response.Status.OK;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_STATS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
 import static org.nuxeo.client.ConstantsV1.API_PATH;
@@ -39,7 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Supplier;
-
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
@@ -47,8 +55,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
-import org.nuxeo.ai.adapters.DatasetExport;
-import org.nuxeo.ai.model.AiDocumentTypeConstants;
+import org.nuxeo.ai.cloud.AICorpus.Properties;
 import org.nuxeo.client.NuxeoClient;
 import org.nuxeo.client.objects.blob.FileBlob;
 import org.nuxeo.client.objects.upload.BatchUpload;
@@ -61,8 +68,8 @@ import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-
 import okhttp3.Response;
 
 /**
@@ -81,6 +88,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     public static final String XP_CONFIG = "config";
 
     public static final String API_AI = "ai/";
+
+    public static final String API_EXPORT_AI = "ai_export/";
 
     private static final Logger log = LogManager.getLogger(NuxeoCloudClient.class);
 
@@ -151,6 +160,41 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
+    public String initExport(@Nullable String corporaId, CorporaParameters parameters) {
+        JsonNode json;
+        String payload;
+        try {
+            payload = MAPPER.writeValueAsString(parameters);
+            json = post(AIExportEndpoint.INIT.toPath(projectId, corporaId), payload, (resp) -> {
+                if (!resp.isSuccessful()) {
+                    log.error(
+                            "Failed to initialize Export for project {}, payload {}, url {}, code {} and reason {}",
+                            projectId, payload, url, resp.code(), resp.message());
+                    return null;
+                }
+                return resp.body() != null ? MAPPER.readTree(resp.body().byteStream()) : null;
+            });
+        } catch (JsonProcessingException e) {
+            log.error(e);
+            return null;
+        }
+
+        if (json == null || !json.has("uid")) {
+            log.error("Corpora for project {} and id {} wasn't created; payload {}", projectId, corporaId, payload);
+            return null;
+        } else {
+            String corpusId = json.get("uid").asText();
+            log.info("Corpora {} created for project {}, payload {}", corpusId, projectId, payload);
+            return corpusId;
+        }
+    }
+
+    @Override
+    public boolean notifyOnExportDone(String exportId) {
+        return post(AIExportEndpoint.DONE.toPath(projectId, exportId), "{}", Response::code) == OK.getStatusCode();
+    }
+
+    @Override
     public String uploadedDataset(@NotNull DocumentModel dataset) {
         String jobId = (String) dataset.getPropertyValue(DATASET_EXPORT_JOB_ID);
         Blob trainingData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_TRAINING_DATA);
@@ -200,7 +244,11 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 batchUpload.upload("2", statsDataBlob);
 
                 DateTime end = DateTime.now();
-                return createDataset(dataset, batch1, batch2, batch3, start, end);
+
+
+                AICorpus corpus = createCorpus(dataset, batch1, batch2, batch3, start, end);
+                String corporaId = (String) dataset.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
+                return uploadDataset(corpus, corporaId);
             } catch (NuxeoClientException e) {
                 log.error("Failed to upload dataset. ", e);
             }
@@ -208,69 +256,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         return null;
     }
 
-    @Override
-    public void addDatasetToModel(@NotNull DocumentModel doc, String corpusId, String ctxId) {
-        DatasetExport dataset = doc.getAdapter(DatasetExport.class);
-        if (dataset != null && isNotEmpty(dataset.getModelId()) && isNotEmpty(corpusId)) {
-            Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, dataset.getModelId(), corpusId);
-            Response response = getClient().put(modelsPath.toString(), "{}");
-            boolean success = response.isSuccessful();
-            if (success) {
-                log.info("Corpus {} added to model {} added - command or operation {}", corpusId, doc.getId(), ctxId);
-            } else {
-                log.error("Error when adding corpus {} to model {} - command or operation {} \n Response code {} - {}",
-                        corpusId, doc.getId(), ctxId, response.code(), response.message());
-            }
-        }
-    }
-
-    protected String createDataset(DocumentModel datasetDoc, String batch1, String batch2, String batch3,
-            DateTime start, DateTime end) {
-        String jobId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID);
-        String batchId = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID);
-        String query = (String) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_QUERY);
-        Long docCount = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT);
-        Long splitProp = (Long) datasetDoc.getPropertyValue(AiDocumentTypeConstants.DATASET_EXPORT_SPLIT);
-        long trainingCount = 0;
-        long evalCount = 0;
-        int split = splitProp == null ? 0 : splitProp.intValue();
-        if (docCount != null && docCount > 0 && split > 0) {
-            // Estimate counts
-            trainingCount = Math.round(docCount * split / 100.f);
-            evalCount = Math.round(docCount * (100 - split) / 100.f);
-        }
-
+    protected String uploadDataset(AICorpus corpus, String corporaId) {
         try {
-            // noinspection unchecked
-            List<Map<String, Object>> inputs = (List<Map<String, Object>>) datasetDoc.getPropertyValue(
-                    AiDocumentTypeConstants.DATASET_EXPORT_INPUTS);
-            // noinspection unchecked
-            List<Map<String, Object>> outputs = (List<Map<String, Object>>) datasetDoc.getPropertyValue(
-                    AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS);
-            List<Map<String, Object>> fields = new ArrayList<>(inputs);
-            fields.addAll(outputs);
-
-            String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
-
-            AICorpus.Properties props = new AICorpus.Properties();
-            props.setTitle(title);
-            props.setDocCount(trainingCount);
-            props.setEvaluationDocCount(evalCount);
-            props.setQuery(query);
-            props.setSplit(split);
-            props.setFields(fields);
-
-            props.setTrainData(new AICorpus.Batch("0", batch1));
-            props.setEvalData(new AICorpus.Batch("1", batch2));
-            props.setStats(new AICorpus.Batch("2", batch3));
-
-            props.setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())));
-
-            props.setJobId(jobId);
-            props.setBatchId(batchId);
-
-            AICorpus corpus = new AICorpus(jobId, props);
-
             String payload;
             try (StringWriter writer = new StringWriter()) {
                 MAPPER.writeValue(writer, corpus);
@@ -279,7 +266,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             log.info("Creating dataset document");
 
-            String url = API_AI + byProjectId("");
+
+            String url = AIExportEndpoint.ATTACH.toPath(projectId, corporaId);
             JsonNode node = post(url, payload, (resp) -> {
                 if (!resp.isSuccessful()) {
                     log.error(
@@ -287,7 +275,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                             projectId, payload, url, resp.code(), resp.message());
                     return null;
                 }
-                return MAPPER.readTree(resp.body() != null ? resp.body().byteStream() : null);
+                return resp.body() != null ? MAPPER.readTree(resp.body().byteStream()) : null;
             });
 
             if (node == null || !node.has("uid")) {
@@ -305,6 +293,49 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         }
 
         return null;
+    }
+
+    @Nonnull
+    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start, DateTime end) {
+        String jobId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_JOB_ID);
+        String batchId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_BATCH_ID);
+        String query = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_QUERY);
+        Long docCount = (Long) datasetDoc.getPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT);
+        Long splitProp = (Long) datasetDoc.getPropertyValue(DATASET_EXPORT_SPLIT);
+        long trainingCount = 0;
+        long evalCount = 0;
+        int split = splitProp == null ? 0 : splitProp.intValue();
+        if (docCount != null && docCount > 0 && split > 0) {
+            // Estimate counts
+            trainingCount = Math.round(docCount * split / 100.f);
+            evalCount = Math.round(docCount * (100 - split) / 100.f);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> inputs = (List<Map<String, Object>>) datasetDoc.getPropertyValue(
+                DATASET_EXPORT_INPUTS);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> outputs = (List<Map<String, Object>>) datasetDoc.getPropertyValue(
+                DATASET_EXPORT_OUTPUTS);
+        List<Map<String, Object>> fields = new ArrayList<>(inputs);
+        fields.addAll(outputs);
+
+        String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
+        Properties props = new Properties.Builder()
+                .setTitle(title)
+                .setDocCount(trainingCount)
+                .setEvaluationDocCount(evalCount)
+                .setQuery(query).setSplit(split)
+                .setFields(fields)
+                .setTrainData(new AICorpus.Batch("0", batch1))
+                .setEvalData(new AICorpus.Batch("1", batch2))
+                .setStats(new AICorpus.Batch("2", batch3))
+                .setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())))
+                .setJobId(jobId)
+                .setBatchId(batchId)
+                .build();
+
+        return new AICorpus(jobId, props);
     }
 
     @Override
@@ -401,5 +432,24 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     protected String makeTitle(long trainingCount, long evalCount, String suffix, int numberOfFields) {
         return String.format("%s features, %s Training, %s Evaluation, Export id %s", numberOfFields, trainingCount,
                 evalCount, suffix);
+    }
+
+    enum AIExportEndpoint {
+        INIT,
+        ATTACH,
+        DONE;
+
+        public String toPath(String project, String id) {
+            switch (this) {
+                case INIT:
+                    return API_EXPORT_AI + "init/" + project + "?corpora=" + id;
+                case ATTACH:
+                    return API_EXPORT_AI + "attach/" + project + "/" + id;
+                case DONE:
+                    return API_EXPORT_AI + "done/" + project + "/" + id;
+                default:
+                    return null;
+            }
+        }
     }
 }

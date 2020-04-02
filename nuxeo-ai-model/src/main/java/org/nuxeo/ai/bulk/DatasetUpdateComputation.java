@@ -19,12 +19,12 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_DOCUMENTS_COUNT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
 
 import java.io.IOException;
@@ -132,7 +132,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
         TransactionHelper.runInTransaction(() -> {
             try (CloseableCoreSession session = openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
                 DocumentModel document = Framework.getService(DatasetExportService.class)
-                        .getBatchOf(export.getCommandId(), session, export.getId());
+                        .getCorpusOfBatch(session, export.getCommandId(), export.getId());
 
                 if (document != null) {
                     document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, getCount(export.getId()));

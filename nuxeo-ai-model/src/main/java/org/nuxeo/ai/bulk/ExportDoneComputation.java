@@ -29,6 +29,7 @@ import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.Message;
+import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
@@ -61,6 +62,8 @@ public class ExportDoneComputation extends AbstractComputation {
 
             log.warn(message.getFormattedMessage());
 
+            // TODO: Notify client on export Done
+
             AuditLogger logger = Framework.getService(AuditLogger.class);
             LogEntry entry = logger.newLogEntry();
             entry.setCategory(EXPORT_ACTION_NAME);
@@ -74,6 +77,11 @@ public class ExportDoneComputation extends AbstractComputation {
             }
 
             logger.addLogEntries(Collections.singletonList(entry));
+
+            CloudClient cc = Framework.getService(CloudClient.class);
+            if (!cc.notifyOnExportDone(cmd.getId())) {
+                log.error("Could not notify Cloud on export done event; commandId " + cmd.getId());
+            }
         }
 
         ctx.askForCheckpoint();

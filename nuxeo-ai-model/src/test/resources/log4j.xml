@@ -27,6 +27,7 @@
     <!-- <priority value="TRACE"/> -->
     <priority value="DEBUG"/>
     <appender-ref ref="FILE"/>
+    <appender-ref ref="CONSOLE" />
   </category>
 
   <root>

@@ -19,6 +19,7 @@
 package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -37,18 +38,27 @@ public interface CloudClient {
     boolean isAvailable();
 
     /**
+     * Creates AI_Corpora on Cloud
+     * @param corporaId {@link String} uuid to use
+     * @param parameters {@link CorporaParameters} containing query and fields of the corpora
+     * @return AI_Corpora uuid as {@link String}
+     */
+    String initExport(@Nullable String corporaId, CorporaParameters parameters);
+
+    /**
      * Upload the blobs to the cloud, using data from the corpus document.
      * @return corpus id
      */
     String uploadedDataset(@NotNull DocumentModel dataset);
 
     /**
-     * Asks Cloud to add given AI_Corpus id to AI_Model
-     * @param doc Local DatasetExport to get AI_Model uid
-     * @param corpusId AI_Cloud's AI_Corpus uid
-     * @param ctxId Context reference (either from Stream command or Automation operation)
+     * Notifies Cloud about completion of the Export pipeline
+     * @param exportId of BAF command used
+     * @return {@link Boolean} as the state of finalization of export on Cloud
+     * {@link Boolean#TRUE} if export was found on Cloud and evaluation (if needed) started
+     * {@link Boolean#FALSE} otherwise
      */
-    void addDatasetToModel(@NotNull DocumentModel doc, String corpusId, String ctxId);
+    boolean notifyOnExportDone(String exportId);
 
     /**
      * @return a list of AI Models retrieved from AI Cloud

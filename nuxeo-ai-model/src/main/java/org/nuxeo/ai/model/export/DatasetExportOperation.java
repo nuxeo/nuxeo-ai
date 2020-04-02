@@ -19,11 +19,11 @@
 package org.nuxeo.ai.model.export;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
 import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_END_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_NAME;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
 
 import java.io.Serializable;
 import java.util.Date;
