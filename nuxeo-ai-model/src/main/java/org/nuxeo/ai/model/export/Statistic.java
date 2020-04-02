@@ -20,8 +20,8 @@ package org.nuxeo.ai.model.export;
 
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -29,7 +29,9 @@ import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.elasticsearch.aggregate.MultiBucketAggregate;
 import org.nuxeo.elasticsearch.aggregate.SingleBucketAggregate;
 import org.nuxeo.elasticsearch.aggregate.SingleValueMetricAggregate;
-import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonRawValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * A POJO representation of a Dataset Statistic
@@ -59,7 +61,7 @@ public class Statistic {
         return new Statistic(id, field, type, value, numericValue);
     }
 
-    public static Statistic from(Aggregate agg) {
+    public static Statistic from(Aggregate<?> agg) {
         Number numericValue = null;
         String value = null;
         if (agg instanceof SingleValueMetricAggregate) {
@@ -68,7 +70,7 @@ public class Statistic {
         } else if (agg instanceof SingleBucketAggregate) {
             numericValue = ((SingleBucketAggregate) agg).getDocCount();
         } else if (agg instanceof MultiBucketAggregate) {
-            List buckets = agg.getBuckets();
+            List<?> buckets = agg.getBuckets();
             try {
                 value = MAPPER.writeValueAsString(buckets);
             } catch (JsonProcessingException e) {

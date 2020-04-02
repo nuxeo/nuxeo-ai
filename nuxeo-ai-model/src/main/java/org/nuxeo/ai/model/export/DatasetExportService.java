@@ -67,5 +67,19 @@ public interface DatasetExportService {
      */
     DocumentModelList getDatasetExports(CoreSession session, String id);
 
-    DocumentModel getBatchOf(String datasetJobId, CoreSession session, String id);
+    /**
+     * Returns corpora id for given BAF export
+     * @param session to use for query
+     * @param exportJobId BAF command Id
+     * @return DatasetExport {@link DocumentModel}
+     */
+    String getCorporaForAction(CoreSession session, String exportJobId);
+
+    /**
+     * @param session to use for query
+     * @param exportJobId BAF command Id
+     * @param batchId on which Dataset_Export was based on
+     * @return DatasetExport {@link DocumentModel}
+     */
+    DocumentModel getCorpusOfBatch(CoreSession session, String exportJobId, String batchId);
 }

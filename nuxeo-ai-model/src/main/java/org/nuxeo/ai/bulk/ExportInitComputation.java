@@ -23,13 +23,15 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_END_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_NAME;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETERS;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PROPERTIES;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
@@ -44,18 +46,23 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import javax.annotation.Nonnull;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.adapters.DatasetExport.IOParam;
+import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.cloud.CorporaParameters;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
+import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.model.export.DatasetStatsService;
 import org.nuxeo.ai.model.export.Statistic;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
@@ -108,41 +115,59 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     @Override
     protected void compute(CoreSession session, List<String> ids, Map<String, Serializable> properties) {
-        @SuppressWarnings("unchecked")
-        List<String> input = (List<String>) properties.get(INPUT_PROPERTIES);
-        @SuppressWarnings("unchecked")
-        List<String> output = (List<String>) properties.get(OUTPUT_PROPERTIES);
-
-        // Id to track the batch
-        String exportId = UUID.randomUUID().toString();
+        CloudClient client = Framework.getService(CloudClient.class);
+        if (client == null || !client.isAvailable()) {
+            log.error("AI Client is not available; interrupting export " + command.getId());
+            return;
+        }
 
         DocumentModelList docs = loadDocuments(session, ids);
         shuffle(docs);
 
         KeyValueStore kvStore = getKVS();
-        kvStore.put(exportId, (long) docs.size(), TIMEOUT_48_HOURS_IN_SEC);
+        // Id to track the batch
+        String batchId = UUID.randomUUID().toString();
+        kvStore.put(batchId, (long) docs.size(), TIMEOUT_48_HOURS_IN_SEC);
+
+        int split = (int) properties.getOrDefault(EXPORT_SPLIT_PARAM, DEFAULT_SPLIT);
+        String original = (String) properties.get(QUERY_PARAM);
+
+        @SuppressWarnings("unchecked")
+        List<String> input = (List<String>) properties.get(INPUT_PROPERTIES);
+        @SuppressWarnings("unchecked")
+        List<String> output = (List<String>) properties.get(OUTPUT_PROPERTIES);
+        String nxql = buildQueryFrom(docs);
+        Blob stats = getStatisticsBlob(session, nxql, input, output);
+
+        @SuppressWarnings("unchecked")
+        List<IOParam> outputs = (List<IOParam>) properties.get(OUTPUT_PARAMETERS);
+        @SuppressWarnings("unchecked")
+        List<IOParam> inputs = (List<IOParam>) properties.get(INPUT_PARAMETERS);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Serializable> modelParams = (Map<String, Serializable>) properties.get(MODEL_PARAMETERS);
+        if (modelParams == null) {
+            modelParams = new HashMap<>();
+        }
+
+        createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
+
+        // Split documents list into training and validation dataset
+        int splitIndex = (int) Math.ceil((docs.size() - 1) * split / 100.f);
 
         List<String> featuresList = new ArrayList<>(input);
         featuresList.addAll(output);
         String[] props = featuresList.toArray(new String[0]);
 
-        int split = (int) properties.getOrDefault(EXPORT_SPLIT_PARAM, DEFAULT_SPLIT);
-        // Split documents list into training and validation dataset
-        int splitIndex = (int) Math.ceil((docs.size() - 1) * split / 100.f);
-
         for (DocumentModel doc : docs.subList(0, splitIndex)) {
-            ExportRecord record = createRecordFromDoc(exportId, props, doc);
+            ExportRecord record = createRecordFromDoc(batchId, props, doc);
             training.add(record);
         }
 
         for (DocumentModel doc : docs.subList(splitIndex, docs.size())) {
-            ExportRecord record = createRecordFromDoc(exportId, props, doc);
+            ExportRecord record = createRecordFromDoc(batchId, props, doc);
             validation.add(record);
         }
-
-        String original = (String) properties.get(QUERY_PARAM);
-        String nxql = buildQueryFrom(docs);
-        createDataset(session, original, nxql, properties, input, output, exportId, split);
 
         if (log.isDebugEnabled()) {
             log.debug("Training dataset size: {} - Validation dataset size: {} - Command {}", training.size(),
@@ -150,63 +175,44 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
     }
 
-    private void createDataset(CoreSession session, String original, String nxql, Map<String, Serializable> properties,
-                               List<String> input, List<String> output, String exportId, int split) {
-        @SuppressWarnings("unchecked")
-        List<IOParam> outputs = (List<IOParam>) properties.get(OUTPUT_PARAMETERS);
-        @SuppressWarnings("unchecked")
-        List<IOParam> inputs = (List<IOParam>) properties.get(INPUT_PARAMETERS);
+    protected DatasetExport createDataset(CoreSession session, String original, Map<String, Serializable> modelParams,
+                                        List<IOParam> inputs, List<IOParam> outputs, Blob stats, String batchId,
+                                        int split) {
+        return ExportHelper.runInTransaction(() -> {
+            try (CloseableCoreSession sess = CoreInstance.openCoreSessionSystem(session.getRepositoryName(),
+                    session.getPrincipal().getName())) {
 
-        Blob stats = getStatisticsBlob(session, nxql, input, output);
-
-        ExportHelper.runInTransaction(() -> {
-            try (CloseableCoreSession sess =
-                         CoreInstance.openCoreSessionSystem(session.getRepositoryName(),
-                                 session.getPrincipal().getName())) {
-                DatasetExport dataset = createDataset(sess, original, inputs, outputs, split, stats, exportId);
+                setCorporaId(sess, original, outputs, inputs, modelParams);
+                DatasetExport dataset = createDataset(sess, original, inputs, outputs, split, stats, batchId);
                 dataset.setJobId(command.getId());
-                dataset.setBatchId(exportId);
+                dataset.setBatchId(batchId);
 
                 DocumentModel document = dataset.getDocument();
 
-                @SuppressWarnings("unchecked")
-                Map<String, Serializable> modelParams = (Map<String, Serializable>) properties.get(MODEL_PARAMETERS);
-                if (modelParams != null) {
-                    for (String key : modelParams.keySet()) {
-                        Serializable value = modelParams.get(key);
-                        switch (key) {
-                            case DATASET_EXPORT_MODEL_END_DATE:
-                            case DATASET_EXPORT_MODEL_START_DATE:
-                                document.setPropertyValue(key, new Date((long) value));
-                                break;
-                            case DATASET_EXPORT_MODEL_ID:
-                            case DATASET_EXPORT_MODEL_NAME:
-                                document.setPropertyValue(key, value);
-                                break;
-                            default:
-                                log.warn("Unknown property {} of type {}", key, value);
-                        }
-
-                    }
-                }
+                propagateParameters(document, modelParams);
 
                 sess.createDocument(document);
+                return dataset;
             }
-
-            return null;
         });
     }
 
-    @NotNull
-    private Blob getStatisticsBlob(CoreSession session, String nxql, List<String> input, List<String> output) {
-        Blob stats;
-        try {
-            Collection<Statistic> statistics = buildStatistics(session, nxql, input, output);
-            stats = Blobs.createJSONBlobFromValue(statistics);
-        } catch (IOException e) {
-            throw new NuxeoException("Unable to process stats blob", e);
+    protected void setCorporaId(CoreSession session, String original, List<IOParam> outputs, List<IOParam> inputs, Map<String, Serializable> modelParams) {
+        if (StringUtils.isEmpty((String) modelParams.get(CORPORA_ID_PARAM))) {
+            DatasetExportService des = Framework.getService(DatasetExportService.class);
+            String corporaId = des.getCorporaForAction(session, command.getId());
+            if (StringUtils.isEmpty(corporaId)) {
+                CorporaParameters cp = new CorporaParameters();
+                cp.setQuery(original);
+
+                List<IOParam> fields = new ArrayList<>(inputs);
+                fields.addAll(outputs);
+                cp.setFields(fields);
+                corporaId = Framework.getService(CloudClient.class).initExport(null, cp);
+            }
+
+            modelParams.put(CORPORA_ID_PARAM, corporaId);
         }
-        return stats;
     }
 
     @Override
@@ -220,6 +226,12 @@ public class ExportInitComputation extends AbstractBulkComputation {
         validation.clear();
 
         context.askForCheckpoint();
+    }
+
+    @Override
+    public void processFailure(ComputationContext context, Throwable failure) {
+        super.processFailure(context, failure);
+        context.askForTermination();
     }
 
     /**
@@ -242,6 +254,42 @@ public class ExportInitComputation extends AbstractBulkComputation {
         adapter.setStatistics(statsBlob);
 
         return adapter;
+    }
+
+    private void propagateParameters(DocumentModel document, Map<String, Serializable> modelParams) {
+        if (modelParams != null) {
+            for (String key : modelParams.keySet()) {
+                Serializable value = modelParams.get(key);
+                switch (key) {
+                    case DATASET_EXPORT_MODEL_END_DATE:
+                    case DATASET_EXPORT_MODEL_START_DATE:
+                        document.setPropertyValue(key, new Date((long) value));
+                        break;
+                    case DATASET_EXPORT_MODEL_ID:
+                    case DATASET_EXPORT_MODEL_NAME:
+                        document.setPropertyValue(key, value);
+                        break;
+                    case CORPORA_ID_PARAM:
+                        document.setPropertyValue(DATASET_EXPORT_CORPORA_ID, value);
+                        break;
+                    default:
+                        log.warn("Unknown property {} of type {}", key, value);
+                }
+            }
+        }
+    }
+
+    @Nonnull
+    protected Blob getStatisticsBlob(CoreSession session, String
+            nxql, List<String> input, List<String> output) {
+        Blob stats;
+        try {
+            Collection<Statistic> statistics = buildStatistics(session, nxql, input, output);
+            stats = Blobs.createJSONBlobFromValue(statistics);
+        } catch (IOException e) {
+            throw new NuxeoException("Unable to process stats blob", e);
+        }
+        return stats;
     }
 
     protected String buildQueryFrom(DocumentModelList documents) {
@@ -283,7 +331,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
     }
 
-    protected Collection<Statistic> buildStatistics(CoreSession session, String query, List<String> input, List<String> output) {
+    protected Collection<Statistic> buildStatistics(CoreSession session, String
+            query, List<String> input, List<String> output) {
         DatasetStatsService dss = Framework.getService(DatasetStatsService.class);
         return dss.getStatistics(session, query, input, output);
     }

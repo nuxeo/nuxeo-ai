@@ -19,7 +19,7 @@
  */
 package org.nuxeo.ai.adapters.factories;
 
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ecm.core.api.DocumentModel;

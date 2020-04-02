@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPattern": "/api/v1/ai_export/attach/mockTestProject/(([a-z0-9]*)-([a-z0-9]*)-([a-z0-9]*)-([a-z0-9]*)-([a-z0-9]*))"
+  },
+  "response": {
+    "status": 201,
+    "jsonBody": {
+      "entity-type": "document",
+      "repository": "test",
+      "uid": "e67ee0e8-1bef-4fb7-9966-1d14081221",
+      "path": "/myCustomerB/models/model1",
+      "type": "AI_Corpus",
+      "state": "default",
+      "parentRef": "c190d199-43b7-444b-8f8a-0f7e2b916e55",
+      "isCheckedOut": true,
+      "isVersion": false,
+      "isProxy": false,
+      "changeToken": "1-0",
+      "isTrashed": false,
+      "title": "model1",
+      "lastModified": "2019-07-26T19:43:16.168Z",
+      "properties": {
+        "dc:creator": "Administrator",
+        "dc:modified": "2019-07-26T19:43:16.168Z",
+        "dc:lastContributor": "Administrator",
+        "dc:contributors": [
+          "Administrator"
+        ],
+        "dc:source": null,
+        "dc:publisher": null
+      },
+      "facets": [
+        "Versionable"
+      ]
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
