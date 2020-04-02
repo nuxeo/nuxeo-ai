@@ -18,8 +18,7 @@
  */
 package org.nuxeo.ai.model.export;
 
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,8 +55,7 @@ public class DatasetUploadOperation {
             if (document != null && DATASET_EXPORT_TYPE.equals(document.getType())) {
                 if (client.isAvailable()) {
                     log.info("Uploading dataset to cloud for dataset doc {}", document.getId());
-                    String uid = client.uploadedDataset(document);
-                    client.addDatasetToModel(document, uid, ID);
+                    client.uploadedDataset(document);
                 } else {
                     log.warn("Upload to cloud not possible for dataset doc {}, type {} and client {}",
                             document.getId(), document.getType(), client.isAvailable());

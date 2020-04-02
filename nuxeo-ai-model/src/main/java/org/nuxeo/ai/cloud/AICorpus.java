@@ -108,7 +108,25 @@ public class AICorpus {
         @JsonProperty("ai_corpus:export_batch_id")
         protected String batchId;
 
-        public Properties() {}
+        public Properties() {
+        }
+
+        protected Properties(String title, long docCount, long evaluationDocCount, String query,
+                          int split, List<Map<String, Object>> fields, Batch trainData,
+                          Batch evalData, Batch stats, Info info, String jobId, String batchId) {
+            this.title = title;
+            this.docCount = docCount;
+            this.evaluationDocCount = evaluationDocCount;
+            this.query = query;
+            this.split = split;
+            this.fields = fields;
+            this.trainData = trainData;
+            this.evalData = evalData;
+            this.stats = stats;
+            this.info = info;
+            this.jobId = jobId;
+            this.batchId = batchId;
+        }
 
         public String getTitle() {
             return title;
@@ -204,6 +222,75 @@ public class AICorpus {
 
         public void setBatchId(String batchId) {
             this.batchId = batchId;
+        }
+
+        public static class Builder {
+
+            protected Properties props = new Properties();
+
+            public Builder setTitle(String title) {
+                props.title = title;
+                return this;
+            }
+
+            public Builder setDocCount(long docCount) {
+                props.docCount = docCount;
+                return this;
+            }
+
+            public Builder setEvaluationDocCount(long evaluationDocCount) {
+                props.evaluationDocCount = evaluationDocCount;
+                return this;
+            }
+
+            public Builder setQuery(String query) {
+                props.query = query;
+                return this;
+            }
+
+            public Builder setSplit(int split) {
+                props.split = split;
+                return this;
+            }
+
+            public Builder setFields(List<Map<String, Object>> fields) {
+                props.fields = fields;
+                return this;
+            }
+
+            public Builder setTrainData(Batch trainData) {
+                props.trainData = trainData;
+                return this;
+            }
+
+            public Builder setEvalData(Batch evalData) {
+                props.evalData = evalData;
+                return this;
+            }
+
+            public Builder setStats(Batch stats) {
+                props.stats = stats;
+                return this;
+            }
+
+            public Builder setInfo(Info info) {
+                props.info = info;
+                return this;
+            }
+
+            public Builder setJobId(String jobId) {
+                props.jobId = jobId;
+                return this;
+            }
+
+            public Builder setBatchId(String batchId) {
+                props.batchId = batchId;
+                return this;
+            }
+
+            public AICorpus.Properties build() {
+                return props;
+            }
         }
     }
 
