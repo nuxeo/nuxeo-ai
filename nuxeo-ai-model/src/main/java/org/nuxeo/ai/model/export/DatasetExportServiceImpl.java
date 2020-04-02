@@ -21,10 +21,11 @@ package org.nuxeo.ai.model.export;
 import static java.util.Collections.emptyList;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.ExportHelper.propsToTypedList;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
@@ -48,14 +49,18 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.nuxeo.ai.adapters.DatasetExport.IOParam;
+import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
 import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
@@ -107,22 +112,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String DEFAULT_MIN_TERMS = "15";
 
-    /**
-     * Make an Aggregate using AggregateFactory.
-     */
-    protected static AggregateEsBase makeAggregate(String type, String field, Properties properties) {
-        AggregateDescriptor descriptor = new AggregateDescriptor();
-        descriptor.setId(aggKey(field, type));
-        descriptor.setDocumentField(field);
-        descriptor.setType(type);
-        properties.forEach((key, value) -> descriptor.setProperty((String) key, (String) value));
-        return AggregateFactory.create(descriptor, null);
-    }
-
-    protected static String aggKey(String propName, String s) {
-        return s + "_" + propName;
-    }
-
     @Override
     public String export(CoreSession session, String nxql,
                          Collection<String> inputProperties, Collection<String> outputProperties, int split) {
@@ -164,24 +153,13 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());
         }
 
+        CloudClient client = Framework.getService(CloudClient.class);
+        if (client == null || !client.isAvailable()) {
+            throw new NuxeoException("AI Client is not available; interrupting export " + bulkCommand.getId());
+        }
         return Framework.getService(BulkService.class)
                 .submit(bulkCommand);
     }
-
-    /**
-     * Validate if the specified params are correct.
-     */
-    protected void validateParams(String nxql, Collection<String> inputProperties, Collection<String> outputProperties) {
-        if (StringUtils.isBlank(nxql)
-                || inputProperties == null || inputProperties.isEmpty()
-                || outputProperties == null || outputProperties.isEmpty()) {
-            throw new IllegalArgumentException("nxql and properties are required parameters");
-        }
-        if (!nxql.toUpperCase().contains("WHERE")) {
-            throw new IllegalArgumentException("You cannot use an unbounded nxql query, please add a WHERE clause.");
-        }
-    }
-
 
     @Override
     public DocumentModelList getDatasetExports(CoreSession session, @Nonnull String id) {
@@ -196,11 +174,20 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
-    public DocumentModel getBatchOf(String datasetJobId, CoreSession session, String id) {
-        String query = String.format(QUERY_FOR_BATCH, NXQL.escapeString(datasetJobId), NXQL.escapeString(id));
+    public String getCorporaForAction(CoreSession session, String exportJobId) {
+        DocumentModelList corpora = session.query(QUERY + NXQL.escapeString(exportJobId), 1);
+        if (corpora.isEmpty()) {
+            return null;
+        }
+        return (String) corpora.get(0).getPropertyValue(DATASET_EXPORT_CORPORA_ID);
+    }
+
+    @Override
+    public DocumentModel getCorpusOfBatch(CoreSession session, String exportJobId, String batchId) {
+        String query = String.format(QUERY_FOR_BATCH, NXQL.escapeString(exportJobId), NXQL.escapeString(batchId));
         List<DocumentModel> docs = session.query(query, 1);
         if (docs.isEmpty()) {
-            log.warn("Could not find any DatasetExport documents for id: {}", id);
+            log.warn("Could not find any DatasetExport documents for batchId: {}", batchId);
             return null;
         } else {
             return docs.get(0);
@@ -225,6 +212,36 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresWithType)).limit(0);
         getValidStats(featuresWithType, stats, qb);
         return stats;
+    }
+
+    /**
+     * Make an Aggregate using AggregateFactory.
+     */
+    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field, Properties properties) {
+        AggregateDescriptor descriptor = new AggregateDescriptor();
+        descriptor.setId(aggKey(field, type));
+        descriptor.setDocumentField(field);
+        descriptor.setType(type);
+        properties.forEach((key, value) -> descriptor.setProperty((String) key, (String) value));
+        return AggregateFactory.create(descriptor, null);
+    }
+
+    protected static String aggKey(String propName, String s) {
+        return s + "_" + propName;
+    }
+
+    /**
+     * Validate if the specified params are correct.
+     */
+    protected void validateParams(String nxql, Collection<String> inputProperties, Collection<String> outputProperties) {
+        if (StringUtils.isBlank(nxql)
+                || inputProperties == null || inputProperties.isEmpty()
+                || outputProperties == null || outputProperties.isEmpty()) {
+            throw new IllegalArgumentException("nxql and properties are required parameters");
+        }
+        if (!nxql.toUpperCase().contains("WHERE")) {
+            throw new IllegalArgumentException("You cannot use an unbounded nxql query, please add a WHERE clause.");
+        }
     }
 
     /**

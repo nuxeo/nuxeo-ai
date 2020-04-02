@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns:nxs="http://www.nuxeo.org/ai/model/schemas/dataset_export"
            xmlns:nxsv="http://www.nuxeo.org/ecm/schemas/core/validation/"
@@ -16,6 +15,7 @@
     </xs:sequence>
   </xs:complexType>
   <xs:element name="model_id" type="xs:string"/>
+  <xs:element name="corporaId" type="xs:string"/>
   <xs:element name="model_name" type="xs:string"/>
   <xs:element name="model_start_date" type="xs:dateTime"/>
   <xs:element name="model_end_date" type="xs:dateTime"/>

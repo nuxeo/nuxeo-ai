@@ -19,18 +19,6 @@
  */
 package org.nuxeo.ai.adapters;
 
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_BATCH_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_END_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_NAME;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_STATS;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +29,41 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 public class DatasetExport implements AIAdapter {
+
+    // corpus type constants
+    public static final String DATASET_EXPORT_TYPE = "DatasetExport";
+
+    public static final String DATASET_EXPORT_SCHEMA = "dataset_export";
+
+    public static final String DATASET_EXPORT_MODEL_ID = DATASET_EXPORT_SCHEMA + ":model_id";
+
+    public static final String DATASET_EXPORT_CORPORA_ID = DATASET_EXPORT_SCHEMA + ":corporaId";
+
+    public static final String DATASET_EXPORT_MODEL_NAME = DATASET_EXPORT_SCHEMA + ":model_name";
+
+    public static final String DATASET_EXPORT_MODEL_START_DATE = DATASET_EXPORT_SCHEMA + ":model_start_date";
+
+    public static final String DATASET_EXPORT_MODEL_END_DATE = DATASET_EXPORT_SCHEMA + ":model_end_date";
+
+    public static final String DATASET_EXPORT_JOB_ID = DATASET_EXPORT_SCHEMA + ":job_id";
+
+    public static final String DATASET_EXPORT_BATCH_ID = DATASET_EXPORT_SCHEMA + ":batch_id";
+
+    public static final String DATASET_EXPORT_QUERY = DATASET_EXPORT_SCHEMA + ":query";
+
+    public static final String DATASET_EXPORT_SPLIT = DATASET_EXPORT_SCHEMA + ":split";
+
+    public static final String DATASET_EXPORT_DOCUMENTS_COUNT = DATASET_EXPORT_SCHEMA + ":documents_count";
+
+    public static final String DATASET_EXPORT_INPUTS = DATASET_EXPORT_SCHEMA + ":inputs";
+
+    public static final String DATASET_EXPORT_OUTPUTS = DATASET_EXPORT_SCHEMA + ":outputs";
+
+    public static final String DATASET_EXPORT_TRAINING_DATA = DATASET_EXPORT_SCHEMA + ":training_data";
+
+    public static final String DATASET_EXPORT_EVALUATION_DATA = DATASET_EXPORT_SCHEMA + ":evaluation_data";
+
+    public static final String DATASET_EXPORT_STATS = DATASET_EXPORT_SCHEMA + ":statistics";
 
     protected DocumentModel doc;
 
@@ -59,6 +82,14 @@ public class DatasetExport implements AIAdapter {
 
     public String getModelId() {
         return (String) doc.getPropertyValue(DATASET_EXPORT_MODEL_ID);
+    }
+
+    public String getCorporaId() {
+        return (String) doc.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
+    }
+
+    public void setCorporaId(String id) {
+        doc.setPropertyValue(DATASET_EXPORT_CORPORA_ID, id);
     }
 
     public void setModelName(String name) {

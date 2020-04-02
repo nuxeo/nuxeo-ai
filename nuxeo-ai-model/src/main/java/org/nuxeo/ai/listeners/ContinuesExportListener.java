@@ -20,6 +20,7 @@
 package org.nuxeo.ai.listeners;
 
 import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
@@ -29,6 +30,7 @@ import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,7 +88,7 @@ public class ContinuesExportListener implements PostCommitEventListener {
         CloudClient client = Framework.getService(CloudClient.class);
 
         List<String> uids = getModelIds(client);
-        if (uids == null || uids.isEmpty()) {
+        if (uids.isEmpty()) {
             return;
         }
 
@@ -98,23 +100,23 @@ public class ContinuesExportListener implements PostCommitEventListener {
      * @param client {@link CloudClient} Nuxeo Insight Cloud Client for REST communication
      * @return A {@link List} of AI_Model ids
      */
-    @SuppressWarnings("unchecked")
     protected List<String> getModelIds(CloudClient client) {
-        List<String> uids = null;
         try {
             JSONBlob models = client.getCloudAIModels();
+            @SuppressWarnings("unchecked")
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {
+                @SuppressWarnings("unchecked")
                 List<Map<String, Serializable>> entries = (List<Map<String, Serializable>>) resp.get(ENTRIES_KEY);
-                uids = entries.stream().map(entry -> (String) entry.get("uid")).collect(Collectors.toList());
+                return entries.stream().map(entry -> (String) entry.get("uid")).collect(Collectors.toList());
             } else {
                 log.debug("Could not find any entries in " + models.getString());
             }
-
         } catch (IOException e) {
             log.error(e);
         }
-        return uids;
+
+        return Collections.emptyList();
     }
 
     /**
@@ -141,8 +143,10 @@ public class ContinuesExportListener implements PostCommitEventListener {
                     String original = delta.getQuery();
                     String modified = modifyQuery(original, delta.getEnd());
                     if (checkMinimum(session, modified, delta.getMinSize())) {
+                        String corporaId = delta.getCorporaId();
+                        Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, corporaId);
                         String jobId = exportService.export(session, modified, delta.getInputs(), delta.getOutputs(),
-                                DEFAULT_SPLIT);
+                                DEFAULT_SPLIT, params);
                         log.info("Initiating continues export for " + uid + " with job id " + jobId);
                     } else {
                         log.info("Not enough documents to export; skipping");

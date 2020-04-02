@@ -42,6 +42,10 @@ public class CorpusDelta {
 
     public static final String MINIMUM_DOCS_PROP = "nuxeo.ai.export.min.docs";
 
+    public static final String CORPORA_ID_PARAM = "corporaId";
+
+    protected String corporaId;
+
     protected String query;
 
     protected List<Map<String, Object>> inputs;
@@ -52,14 +56,20 @@ public class CorpusDelta {
 
     protected int minSize = 0;
 
-    public CorpusDelta(@JsonProperty(value = "query") String query,
-                       @JsonProperty(value = "inputs") List<Map<String, Object>> inputs,
-                       @JsonProperty(value = "outputs") List<Map<String, Object>> outputs,
-                       @JsonProperty(value = "end") GregorianCalendar end) {
+    public CorpusDelta(@JsonProperty(CORPORA_ID_PARAM) String corporaId,
+                       @JsonProperty("query") String query,
+                       @JsonProperty("inputs") List<Map<String, Object>> inputs,
+                       @JsonProperty("outputs") List<Map<String, Object>> outputs,
+                       @JsonProperty("end") GregorianCalendar end) {
+        this.corporaId = corporaId;
         this.query = query;
         this.inputs = inputs;
         this.outputs = outputs;
         this.end = end;
+    }
+
+    public String getCorporaId() {
+        return corporaId;
     }
 
     public String getQuery() {
@@ -106,6 +116,7 @@ public class CorpusDelta {
         if (o == null || getClass() != o.getClass()) return false;
         CorpusDelta that = (CorpusDelta) o;
         return minSize == that.minSize &&
+                Objects.equals(corporaId, that.corporaId) &&
                 Objects.equals(query, that.query) &&
                 Objects.equals(inputs, that.inputs) &&
                 Objects.equals(outputs, that.outputs) &&
@@ -114,6 +125,6 @@ public class CorpusDelta {
 
     @Override
     public int hashCode() {
-        return Objects.hash(query, inputs, outputs, end, minSize);
+        return Objects.hash(corporaId, query, inputs, outputs, end, minSize);
     }
 }

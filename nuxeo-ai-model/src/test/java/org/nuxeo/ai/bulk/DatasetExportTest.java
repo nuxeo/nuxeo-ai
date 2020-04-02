@@ -18,21 +18,23 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.stream.Collectors.groupingBy;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_STATS;
-import static org.nuxeo.ai.model.AiDocumentTypeConstants.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
@@ -58,11 +60,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -96,6 +100,8 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, AutomationFeature.class,
@@ -110,6 +116,10 @@ public class DatasetExportTest {
     public static final String TEST_MIME_TYPE = "image/png";
 
     private static final String TEST_DIR_PATH = "/bulkexporttest";
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(
+            options().extensions(new ResponseTemplateTransformer(true)).port(5089));
 
     @Inject
     public BulkService service;
@@ -198,6 +208,7 @@ public class DatasetExportTest {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     @SuppressWarnings("unchecked")
     public void testBulkExport() throws Exception {
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
@@ -237,15 +248,26 @@ public class DatasetExportTest {
         int validationCount = 0;
 
         for (DocumentModel doc : docs) {
+            assertThat((String) doc.getPropertyValue(DATASET_EXPORT_CORPORA_ID)).isNotNull().isNotEmpty();
             trainingCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
             validationCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
         }
+
+        String corporaId = (String) docs.get(0).getPropertyValue(DATASET_EXPORT_CORPORA_ID);
+        assertThat(
+                docs.stream()
+                        .map(doc -> (String) doc.getPropertyValue(DATASET_EXPORT_CORPORA_ID))
+                        .collect(Collectors.toList())
+        ).isNotEmpty()
+        .allMatch(val -> val.equals(corporaId));
+
         assertThat(trainingCount).isGreaterThan(validationCount);
         assertEquals("We should have discarded 50 bad blobs.", 400, trainingCount + validationCount);
         assertEquals("50 bad blobs.", 50, status.getErrorCount());
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldCallWithParameters() throws InterruptedException {
         Map<String, Serializable> params = new HashMap<>();
 
@@ -341,6 +363,7 @@ public class DatasetExportTest {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkExportSubjects() throws Exception {
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
         waitForCompletion();
