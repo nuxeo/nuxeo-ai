@@ -21,51 +21,52 @@ limitations under the License.
 @element nuxeo-ai-bulk-add-button
 -->
 <dom-module id="nuxeo-ai-bulk-add-button">
-    <template>
-        <nuxeo-operation-button id="aiBulkAddOpBtn" operation="Bulk.RunAction" input="[[provider]]"
-            params="[[_params(provider)]]" icon="icons:speaker-notes" label="ai.bulkAddButton.label"
-            show-label$=[[showLabel]] error-label="ai.bulkAddButton.action.error" on-response="_responseReceived">
-        </nuxeo-operation-button>
-    </template>
-    <script>
-        Polymer({
-            is: 'nuxeo-ai-bulk-add-button',
-            behaviors: [Nuxeo.I18nBehavior, Nuxeo.FiltersBehavior],
-            properties: {
-                /**
-                 * Page provider from which results are to be exported.
-                 */
-                provider: {
-                    type: Object,
-                },
-                /**
-                 * `true` if the action should display the label, `false` otherwise.
-                 */
-                showLabel: {
-                    type: Boolean,
-                    value: false,
-                },
+  <template>
+    <nuxeo-operation-button id="aiBulkAddOpBtn" operation="Bulk.RunAction" input="[[provider]]"
+                            params="[[_params(provider)]]" icon="nuxeo-ai:nuxeo-ai-bots-on" label="ai.bulkAddButton.label"
+                            show-label$=[[showLabel]] error-label="ai.bulkAddButton.action.error"
+                            on-response="_responseReceived">
+    </nuxeo-operation-button>
+  </template>
+  <script>
+      Polymer({
+          is: 'nuxeo-ai-bulk-add-button',
+          behaviors: [Nuxeo.I18nBehavior, Nuxeo.FiltersBehavior],
+          properties: {
+              /**
+               * Page provider from which results are to be exported.
+               */
+              provider: {
+                  type: Object,
+              },
+              /**
+               * `true` if the action should display the label, `false` otherwise.
+               */
+              showLabel: {
+                  type: Boolean,
+                  value: false,
+              },
 
-                /**
-                 * Current action status.
-                 */
-                status: {
-                    type: Object,
-                    notify: true,
-                }
-            },
+              /**
+               * Current action status.
+               */
+              status: {
+                  type: Object,
+                  notify: true,
+              }
+          },
 
-            _params: function () {
-                var actionParams = {};
-                return {
-                    action: 'bulkEnrich',
-                    parameters: JSON.stringify(actionParams),
-                };
-            },
+          _params: function () {
+              var actionParams = {};
+              return {
+                  action: 'bulkEnrich',
+                  parameters: JSON.stringify(actionParams),
+              };
+          },
 
-            _responseReceived: function () {
-                this.fire('notify', { message: this.i18n('ai.bulkAddButton.action.poll') });
-            }
-        });
-    </script>
+          _responseReceived: function () {
+              this.fire('notify', {message: this.i18n('ai.bulkAddButton.action.poll')});
+          }
+      });
+  </script>
 </dom-module>
