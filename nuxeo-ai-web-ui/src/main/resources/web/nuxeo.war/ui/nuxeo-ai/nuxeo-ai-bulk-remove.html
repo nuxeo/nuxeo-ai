@@ -21,70 +21,75 @@ limitations under the License.
 @element nuxeo-ai-bulk-remove-button
 -->
 <dom-module id="nuxeo-ai-bulk-remove-button">
-    <template>
-        <nuxeo-operation-button id="aiBulkRemoveOpBtn" operation="Bulk.RunAction" input="[[provider]]"
-            params="[[_params(provider, modelId, xpaths)]]" icon="icons:speaker-notes-off"
-            label="ai.bulkRemoveButton.label" show-label$=[[showLabel]] error-label="ai.bulkRemoveButton.action.error"
-            on-response="_responseReceived">
-        </nuxeo-operation-button>
-    </template>
-    <script>
-        Polymer({
-            is: 'nuxeo-ai-bulk-remove-button',
-            behaviors: [Nuxeo.I18nBehavior, Nuxeo.FiltersBehavior],
-            properties: {
-                /**
-                 * Page provider from which results are to be exported.
-                 */
-                provider: {
-                    type: Object,
-                },
-                /**
-                 * A custom modelId for which all suggestions will be removed.
-                 */
-                modelId: {
-                    type: String,
-                },
-                /**
-                 * A comma separated list of xpaths for which all suggestions will be removed.
-                 */
-                xpaths: {
-                    type: String,
-                },
-                /**
-                 * `true` if the action should display the label, `false` otherwise.
-                 */
-                showLabel: {
-                    type: Boolean,
-                    value: false,
-                },
+  <template>
+    <nuxeo-operation-button id="aiBulkRemoveOpBtn" operation="Bulk.RunAction" input="[[provider]]"
+                            params="[[_params(provider, modelId, xpaths)]]" icon="nuxeo-ai:nuxeo-ai-bots-off"
+                            label="ai.bulkRemoveButton.label" show-label$=[[showLabel]]
+                            error-label="ai.bulkRemoveButton.action.error"
+                            on-response="_responseReceived">
+    </nuxeo-operation-button>
+  </template>
+  <script>
+      Polymer({
+          is: 'nuxeo-ai-bulk-remove-button',
+          behaviors: [Nuxeo.I18nBehavior, Nuxeo.FiltersBehavior],
+          properties: {
+              /**
+               * Page provider from which results are to be exported.
+               */
+              provider: {
+                  type: Object,
+              },
+              /**
+               * A custom modelId for which all suggestions will be removed.
+               */
+              modelId: {
+                  type: String,
+              },
+              /**
+               * A comma separated list of xpaths for which all suggestions will be removed.
+               */
+              xpaths: {
+                  type: String,
+              },
+              /**
+               * `true` if the action should display the label, `false` otherwise.
+               */
+              showLabel: {
+                  type: Boolean,
+                  value: false,
+              },
 
-                /**
-                 * Current action status.
-                 */
-                status: {
-                    type: Object,
-                    notify: true,
-                }
-            },
+              /**
+               * Current action status.
+               */
+              status: {
+                  type: Object,
+                  notify: true,
+              }
+          },
 
-            _params: function () {
-                var actionParams = {};
-                if (this.modelId) {
-                    actionParams.modelId = this.modelId.split(',').map(function (s) { return s.trim(); });
-                }
-                if (this.xpaths) {
-                    actionParams.xpaths = this.xpaths.split(',').map(function (s) { return s.trim(); });
-                }
-                return {
-                    action: 'bulkEnrichRemove',
-                    parameters: JSON.stringify(actionParams),
-                };
-            },
+          _params: function () {
+              var actionParams = {};
+              if (this.modelId) {
+                  actionParams.modelId = this.modelId.split(',').map(function (s) {
+                      return s.trim();
+                  });
+              }
+              if (this.xpaths) {
+                  actionParams.xpaths = this.xpaths.split(',').map(function (s) {
+                      return s.trim();
+                  });
+              }
+              return {
+                  action: 'bulkEnrichRemove',
+                  parameters: JSON.stringify(actionParams),
+              };
+          },
 
-            _responseReceived: function () {
-                this.fire('notify', { message: this.i18n('ai.bulkRemoveButton.action.poll') });
-            }
-        });
-    </script>
+          _responseReceived: function () {
+              this.fire('notify', {message: this.i18n('ai.bulkRemoveButton.action.poll')});
+          }
+      });
+  </script>
 </dom-module>
