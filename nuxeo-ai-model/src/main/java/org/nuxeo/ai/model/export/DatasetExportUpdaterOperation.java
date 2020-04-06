@@ -19,18 +19,22 @@
  */
 package org.nuxeo.ai.model.export;
 
+import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
+import static org.nuxeo.ai.model.export.DatasetExportOperation.EXPORT_KVS_STORE;
 import static org.nuxeo.ecm.automation.core.Constants.CAT_SERVICES;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ecm.automation.OperationException;
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.runtime.kv.KeyValueService;
+import org.nuxeo.runtime.kv.KeyValueStore;
 
 @Operation(
         id = DatasetExportUpdaterOperation.ID,
@@ -45,17 +49,34 @@ public class DatasetExportUpdaterOperation {
     protected BulkService bulkService;
 
     @Context
+    protected KeyValueService kvsService;
+
+    @Context
     protected CoreSession session;
 
     @OperationMethod(asyncService = BulkService.class)
-    public List<BulkStatus> run() throws OperationException {
+    public List<ExportProgressStatus> run() {
         String user = session.getPrincipal().getActingUser();
         List<BulkStatus> statuses = bulkService.getStatuses(user);
 
         return statuses.stream()
-                .filter(status -> "bulkDatasetExport".equals(status.getAction()))
+                .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
                 .sorted((o1, o2) -> o2.getSubmitTime().compareTo(o1.getSubmitTime()))
                 .limit(8)
+                .map(ExportProgressStatus::new)
+                .peek(this::updateName)
                 .collect(Collectors.toList());
     }
+
+    protected void updateName(ExportProgressStatus status) {
+        String modelName = getKVS().getString(status.getId());
+        if (StringUtils.isNotEmpty(modelName)) {
+            status.setName(modelName);
+        }
+    }
+
+    protected KeyValueStore getKVS() {
+        return kvsService.getKeyValueStore(EXPORT_KVS_STORE);
+    }
+
 }

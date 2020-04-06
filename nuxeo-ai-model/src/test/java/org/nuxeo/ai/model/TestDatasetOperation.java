@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 
@@ -36,18 +37,16 @@ import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportInterruptOperation;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
-import org.nuxeo.ai.model.export.DatasetExportService;
+import org.nuxeo.ai.model.export.DatasetExportUpdaterOperation;
 import org.nuxeo.ai.model.export.DatasetGetModelOperation;
+import org.nuxeo.ai.model.export.ExportProgressStatus;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
-import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -80,33 +79,18 @@ public class TestDatasetOperation {
     @Inject
     protected TransactionalFeature txFeature;
 
-    @Inject
-    protected DatasetExportService des;
-
-    @Inject
-    protected BulkService bulkService;
-
-
-    protected DocumentModel getDatasetDoc(String returned) {
-        DocumentModelList docs = des.getDatasetExports(session, returned);
-        assertThat(docs).isNotEmpty();
-        return docs.get(0);
-    }
-
     @Test
     public void testBadCall() {
 
         OperationContext ctx = new OperationContext(session);
         Map<String, Object> params = new HashMap<>();
         String inputs = "dc:title,file:content";
-        String unknownProp = "dc:on_no_you_dont";
         params.put("query", "");
         params.put("inputs", inputs);
         params.put("outputs", "dc:description");
         params.put("split", 75);
         OperationChain chain = new OperationChain("testChain2");
         chain.add(DatasetExportOperation.ID).from(params);
-        String returned = null;
         try {
             automationService.run(ctx, chain);
             fail();
@@ -177,5 +161,35 @@ public class TestDatasetOperation {
         params.put("commandId", returned);
         String result = (String) automationService.run(ctx, DatasetExportRestartOperation.ID, params);
         assertNotNull(result);
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void shouldRunExportOperationWithParameters() throws OperationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put("query", TEST_QUERY);
+        params.put("inputs", "dc:title,dc:description");
+        params.put("outputs", "dc:nature");
+        params.put("split", 60);
+        params.put("model_name", "Fake Name");
+
+        OperationContext ctx = new OperationContext(session);
+        String returned = (String) automationService.run(ctx, DatasetExportOperation.ID, params);
+        assertNotNull(returned);
+
+        txFeature.nextTransaction();
+
+        ctx = new OperationContext(session);
+        params = new HashMap<>();
+        params.put("commandId", returned);
+
+        @SuppressWarnings("unchecked")
+        List<ExportProgressStatus> result =
+                (List<ExportProgressStatus>) automationService.run(ctx, DatasetExportUpdaterOperation.ID, params);
+
+        assertThat(result).isNotEmpty().hasSize(1);
+        ExportProgressStatus status = result.get(0);
+        assertThat(status.getId()).isEqualTo(returned);
+        assertThat(status.getName()).isEqualTo("Fake Name");
     }
 }
