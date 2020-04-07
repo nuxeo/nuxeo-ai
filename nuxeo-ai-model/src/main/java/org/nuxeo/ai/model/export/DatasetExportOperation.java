@@ -38,6 +38,7 @@ import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.automation.core.util.StringList;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.runtime.kv.KeyValueService;
 
 @Operation(id = DatasetExportOperation.ID, category = Constants.CAT_SERVICES, label = "Bulk export a dataset", description = "Run a bulk export on a set of documents expressed by a NXQL query.")
 public class DatasetExportOperation {
@@ -46,8 +47,15 @@ public class DatasetExportOperation {
 
     public static final String ID = "AI.DatasetExport";
 
+    public static final String EXPORT_KVS_STORE = "aiExportNames";
+
+    public static final long TTL_128H = 128 * 60 * 60 * 1000;
+
     @Context
     protected DatasetExportService service;
+
+    @Context
+    protected KeyValueService kvs;
 
     @Context
     protected CoreSession session;
@@ -79,7 +87,12 @@ public class DatasetExportOperation {
     @OperationMethod
     public String run() {
         HashMap<String, Serializable> params = buildDatasetParameters();
-        return service.export(session, query, inputs, outputs, split, params);
+        String exportId = service.export(session, query, inputs, outputs, split, params);
+        if (isNotEmpty(exportId) && isNotEmpty(modelName)) {
+            kvs.getKeyValueStore(EXPORT_KVS_STORE).put(exportId, modelName, TTL_128H);
+        }
+
+        return exportId;
     }
 
     protected HashMap<String, Serializable> buildDatasetParameters() {
