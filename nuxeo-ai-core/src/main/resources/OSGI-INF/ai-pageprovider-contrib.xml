@@ -15,7 +15,7 @@
 
   <extension point="providers"
              target="org.nuxeo.ecm.platform.query.api.PageProviderService">
-    <coreQueryPageProvider name="doctypes_pp">
+    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider" name="doctypes_pp">
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <predicate parameter="ecm:primaryType" operator="IN">
@@ -35,7 +35,7 @@
           </properties>
         </aggregate>
       </aggregates>
-    </coreQueryPageProvider>
+    </genericPageProvider>
   </extension>
 
 </component>

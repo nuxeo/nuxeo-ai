@@ -27,8 +27,5 @@ nuxeo.s3storage.cacheminage=86400
 # Minimum amount of document required for continues export
 nuxeo.ai.export.min.docs=10
 
-# Supersede the page provider for faceted search
-elasticsearch.override.pageproviders=doctypes_pp
-
 # AI Export threshold for passing records in bytes
 nuxeo.ai.export.threshold=
