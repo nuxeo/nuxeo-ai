@@ -17,6 +17,7 @@ limitations under the License.
 <link rel="import" href="admin/nuxeo-admin-ai.html">
 <link rel="import" href="admin/nuxeo-admin-ai-advanced-export.html">
 <link rel="import" href="admin/nuxeo-admin-ai-export.html">
+<link rel="import" href="admin/nuxeo-admin-insight.html">
 <link rel="import" href="nuxeo-ai-suggestions.html">
 <link rel="import" href="nuxeo-ai-bulk-add-button.html">
 <link rel="import" href="nuxeo-ai-bulk-remove-button.html">
@@ -32,6 +33,8 @@ limitations under the License.
       <template>
         <nuxeo-menu-item name="aicore" label="app.title.admin.aicore" route="administration:aicore">
         </nuxeo-menu-item>
+        <nuxeo-menu-item name="aicloud" label="app.title.admin.aicloud" route="administration:aicloud">
+        </nuxeo-menu-item>
       </template>
     </nuxeo-filter>
   </template>
@@ -41,6 +44,7 @@ limitations under the License.
     <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
       <template>
         <nuxeo-admin-ai name="aicore"></nuxeo-admin-ai>
+        <nuxeo-admin-insight name="aicloud"></nuxeo-admin-insight>
       </template>
     </nuxeo-filter>
   </template>
