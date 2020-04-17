@@ -1,6 +1,9 @@
 {
   "admin.ai.heading": "Artificial Intelligence Admin",
   "app.title.admin.aicore": "Intelligence",
+  "app.title.admin.aicloud": "Nuxeo Insight",
+  "app.title.admin.aicloud.message": "Nuxeo Insight integrates Machine Learning Services into the Nuxeo Platform.",
+  "app.title.admin.aicloud.link": "Go to Nuxeo Insight",
   "admin.ai.export": "Dataset Export",
   "admin.ai.stats": "Dataset Statistics",
   "admin.ai.intel": "Intelligence",
