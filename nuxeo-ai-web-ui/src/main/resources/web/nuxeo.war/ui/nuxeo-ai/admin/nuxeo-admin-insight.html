@@ -33,7 +33,7 @@ limitations under the License.
         text-align: center;
       }
     </style>
-    <nuxeo-operation id="aiInsight" op="AI.FetchInsightURI" auto response="[[link]]"></nuxeo-operation>
+    <nuxeo-operation id="aiInsight" op="AI.FetchInsightURI"></nuxeo-operation>
     <nuxeo-page class="page-insight">
       <div slot="header">
         <span class="flex">[[i18n('app.title.admin.aicloud')]]</span>
@@ -41,23 +41,36 @@ limitations under the License.
       <div class="content-insight">
         <img src="images/nuxeo_insight.png"/>
         <p>[[i18n('app.title.admin.aicloud.message')]]</p>
-        <paper-button noink class="primary" animated on-tap="_navigate">
-          [[i18n('app.title.admin.aicloud.link')]]
+        <paper-button noink class="primary" animated>
+          <a href$="{{link}}" target="_blank">[[i18n('app.title.admin.aicloud.link')]]</a>
         </paper-button>
       </div>
     </nuxeo-page>
 
   </template>
   <script>
-    Polymer({
-      is: 'nuxeo-admin-insight',
-      behaviors: [Nuxeo.I18nBehavior],
-      properties: {
-        link: Object,
-      },
-      _navigate: function () {
-        window.open(this.link.value);
+    class NuxeoAdminInsight extends Polymer.mixinBehaviors([Nuxeo.I18nBehavior], Nuxeo.Element) {
+      static get is() {
+        return 'nuxeo-admin-insight';
       }
-    });
+
+      static get properties() {
+        return {
+          link: {
+            type: String,
+          },
+        }
+      }
+
+      ready() {
+        super.ready();
+        this.$.aiInsight.execute().then(({url, token, projectId, urlCore}) =>
+                this.link = `${url}?token=${token}&projectid=${projectId}&urlCore=${urlCore}`
+        ).catch(() => this.fire('notify', {message: this.i18n('ai.insight.url.error')}));
+      }
+    }
+
+    customElements.define(NuxeoAdminInsight.is, NuxeoAdminInsight);
+    Nuxeo.NuxeoAdminInsight = NuxeoAdminInsight;
   </script>
 </dom-module>
