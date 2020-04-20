@@ -32,5 +32,6 @@
   "ai.bulkRemoveButton.label" : "AI Backtrack",
   "ai.bulkRemoveButton.action.error" : "Error with Backtrack",
   "ai.bulkRemoveButton.action.poll" : "Backtrack started",
-  "ai.bulkRemoveButton.action.completed" : "Backtrack ended"
+  "ai.bulkRemoveButton.action.completed" : "Backtrack ended",
+  "ai.insight.url.error": "Cannot fetch Insight Cloud URI - Check with your administrator"
 }
