@@ -16,6 +16,7 @@
 
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
     <operation class="org.nuxeo.ai.model.serving.SuggestionOp"/>
+    <operation class="org.nuxeo.ai.model.serving.FetchInsightURI"/>
   </extension>
 
   <extension point="marshallers" target="org.nuxeo.ecm.core.io.MarshallerRegistry">
