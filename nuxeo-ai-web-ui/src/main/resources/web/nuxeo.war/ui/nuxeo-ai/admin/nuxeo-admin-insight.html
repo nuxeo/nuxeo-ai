@@ -32,6 +32,13 @@ limitations under the License.
         margin: 0 auto;
         text-align: center;
       }
+      .button-link {
+        background: blue;
+      }
+      a {
+        text-decoration: none;
+        color: white;
+      }
     </style>
     <nuxeo-operation id="aiInsight" op="AI.FetchInsightURI"></nuxeo-operation>
     <nuxeo-page class="page-insight">
@@ -41,7 +48,7 @@ limitations under the License.
       <div class="content-insight">
         <img src="images/nuxeo_insight.png"/>
         <p>[[i18n('app.title.admin.aicloud.message')]]</p>
-        <paper-button noink class="primary" animated>
+        <paper-button noink class="primary button-link" animated>
           <a href$="{{link}}" target="_blank">[[i18n('app.title.admin.aicloud.link')]]</a>
         </paper-button>
       </div>
