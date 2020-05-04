@@ -106,13 +106,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     protected void initClient() {
-        List<CloudConfigDescriptor> configs = getDescriptors(XP_CONFIG);
-        if (!configs.isEmpty()) {
-            if (configs.size() == 1) {
-                configureClient(configs.get(0));
-            } else {
-                throw new IllegalArgumentException("Nuxeo cloud client requires 1 single configuration.");
-            }
+        CloudConfigDescriptor config = getCloudConfig();
+        if (config != null) {
+            configureClient(config);
         }
     }
 
@@ -421,6 +417,19 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     @Override
     public String byProjectId(String url) {
         return projectId + url;
+    }
+
+    @Override
+    public CloudConfigDescriptor getCloudConfig() {
+        List<CloudConfigDescriptor> configs = getDescriptors(XP_CONFIG);
+        if (!configs.isEmpty()) {
+            if (configs.size() == 1) {
+                return configs.get(0);
+            } else {
+                throw new IllegalArgumentException("Nuxeo cloud client requires 1 single configuration.");
+            }
+        }
+        return null;
     }
 
     protected String getApiUrl() {
