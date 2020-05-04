@@ -33,6 +33,9 @@ INCREMENT=${INCREMENT:-patch}
 NEXT_VERSION=$(semver bump "$INCREMENT" "$RELEASE_VERSION")
 
 printf "Releasing %s\n\tVersion:\t%s\n\tNext version:\t%s\n" $(git remote get-url origin) "$RELEASE_VERSION" "$NEXT_VERSION"
+echo "RELEASE_VERSION=$RELEASE_VERSION" > release.properties
+echo "INCREMENT=$INCREMENT" >> release.properties
+echo "NEXT_VERSION=$NEXT_VERSION" >> release.properties
 
 mvn -V -B versions:set -DnewVersion="$RELEASE_VERSION" -DgenerateBackupPoms=false
 git add -u
@@ -44,7 +47,7 @@ else
     jx step changelog -v "v$RELEASE_VERSION"
 fi
 
-# Not including the release tag in master history
+# Not including the release tag in master-10.10 history
 git reset --hard "origin/$BRANCH"
 
 mvn -B versions:set -DnewVersion="${NEXT_VERSION}-SNAPSHOT" -DgenerateBackupPoms=false

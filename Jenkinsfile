@@ -18,7 +18,7 @@ void setGitHubBuildStatus(String context) {
 
 String getMavenArgs() {
     def args = '-V -B -Pmarketplace,ftest,aws clean install'
-    if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*') {
+    if (env.TAG_NAME || env.BRANCH_NAME == 'master-10.10') {
         args += ' deploy -P-nexus'
         if (env.TAG_NAME) {
             args += ' -Prelease -DskipTests'
@@ -32,6 +32,43 @@ String getMavenArgs() {
 String getVersion() {
     String version = readMavenPom().getVersion()
     return env.TAG_NAME ? version : version + "-${env.BRANCH_NAME}"
+}
+
+/**
+ * Build repo job better corresponding to the current job, if exists.
+ * If we're in a PR, then find the corresponding PR (if exists), else use the same working branch.
+ * @param repo
+ */
+void buildJob(String repo) {
+    String targetBranch
+    if (env.CHANGE_TARGET) { // Current is a PR
+        targetBranch = env.CHANGE_BRANCH
+        def prNumber = getPR(repo, "nuxeo:${targetBranch}")
+        if (prNumber) {
+            targetBranch = "PR-$prNumber"
+        }
+    } else {
+        targetBranch = env.BRANCH_NAME
+    }
+    jobName = "/$repo/" + targetBranch.replace("/", "%2F")
+    if (Jenkins.instance.getItemByFullName(jobName)) {
+        echo "Triggering job /$repo build on branch $targetBranch"
+        build job: jobName, propagate: false, wait: false
+    } else {
+        println("No job ${jobName} to trigger")
+    }
+}
+
+String getPR(String repo, String branch) {
+    escapedBranch = branch.replace("/", "%2F")
+    withEnv(["REPO=${repo}", "BRANCH=${escapedBranch}"]) {
+        withCredentials([string(credentialsId: 'github_token', variable: 'GITHUB_TOKEN')]) {
+            String prNumber = sh(script: '''
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/pulls?head=$BRANCH|jq ".[].number"|head -n1
+''', returnStdout: true).trim()
+            return prNumber
+        }
+    }
 }
 
 pipeline {
@@ -48,27 +85,62 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
+        PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
-        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase().replaceAll('[^-a-z0-9]', '')}"
+        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         VERSION = "${getVersion()}"
-        PERSISTENCE = "${BRANCH_NAME == 'master' || BRANCH_NAME ==~ 'master-.*'}"
+        PERSISTENCE = "${BRANCH_NAME == 'master-10.10'}"
+        MARKETPLACE_URL = 'https://connect.nuxeo.com/nuxeo/site/marketplace'
+        MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
     }
     stages {
-        stage('Build') {
+        stage('Init') {
+            steps {
+                container('platform1010') {
+                    sh """#!/bin/bash
+jx step git credentials
+git config credential.helper store
+"""
+                    sh """
+# skaffold
+curl -f -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.14.0/skaffold-linux-amd64
+chmod +x skaffold
+mv skaffold /usr/bin/
+
+# reg: Docker registry v2 command line client
+REG_SHA256="ade837fc5224acd8c34732bf54a94f579b47851cc6a7fd5899a98386b782e228"
+curl --retry 5 -fsSL "https://github.com/genuinetools/reg/releases/download/v0.16.1/reg-linux-amd64" -o /usr/bin/reg
+echo "\${REG_SHA256} /usr/bin/reg" | sha256sum -c - && chmod +x /usr/bin/reg
+"""
+                    script {
+                        PLATFORM_VERSION = sh(script: 'mvn help:evaluate -Dexpression=nuxeo.platform.version -q -DforceStdout', returnStdout: true).trim()
+                        if (env.CHANGE_TARGET) {
+                            echo "PR build: cleaning up the branch artifacts..."
+                            sh """
+reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
+"""
+                        }
+                    }
+                }
+            }
+        }
+        stage('Maven Build') {
             environment {
                 MAVEN_OPTS = "$MAVEN_OPTS -Xms512m -Xmx1g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
             steps {
-                setGitHubBuildStatus('build')
+                setGitHubBuildStatus('build/maven')
                 container('platform1010') {
 //                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
-                        sh 'mvn ${MAVEN_ARGS}'
-                        sh "find . -name '*-reports' -type d"
+                        withMaven() {
+                            sh 'mvn ${MAVEN_ARGS}'
+                            sh "find . -name '*-reports' -type d"
+                        }
                     }
                 }
             }
@@ -78,16 +150,39 @@ pipeline {
                     archiveArtifacts artifacts: '**/log/*.log, **/nxserver/config/distribution.properties, ' +
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
-                    setGitHubBuildStatus('build')
+                    setGitHubBuildStatus('build/maven')
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                setGitHubBuildStatus('build/docker')
+                container('platform1010') {
+                    sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
+                    withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
+                        dir('docker') {
+                            echo "Build preview image"
+                            sh 'printenv|sort|grep VERSION'
+                            sh """
+envsubst < skaffold.yaml > skaffold.yaml~gen
+skaffold build -f skaffold.yaml~gen
+"""
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'docker/skaffold.yaml~gen'
+                    setGitHubBuildStatus('build/docker')
                 }
             }
         }
         stage('Deploy Preview') {
             when {
                 anyOf {
-                    branch 'master'
+                    branch 'master-10.10'
                     branch 'Sprint-*'
-                    branch 'master-*'
                     allOf {
                         changeRequest()
 //                        expression {
@@ -100,14 +195,6 @@ pipeline {
                 setGitHubBuildStatus('charts/preview')
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform1010') {
-                        sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
-                        dir('docker') {
-                            echo "Build preview image"
-                            sh """
-envsubst < skaffold.yaml > skaffold.yaml~gen
-skaffold build -f skaffold.yaml~gen
-"""
-                        }
                         withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
                             withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
                                 dir('charts/preview') {
@@ -115,7 +202,7 @@ skaffold build -f skaffold.yaml~gen
 kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
 kubectl create ns ${PREVIEW_NAMESPACE}
 make preview
-jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 20m --alias nuxeo
+jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
 """
                                     sh "jx get preview  -o json |jq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
                                     sh "cat .previewUrl"
@@ -137,14 +224,11 @@ jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --pr
             when {
                 anyOf {
                     tag '*'
-                    branch 'master'
-                    branch 'master-*'
+                    branch 'master-10.10'
                     branch 'Sprint-*'
                 }
             }
             environment {
-                MARKETPLACE_URL = 'https://connect.nuxeo.com/nuxeo/site/marketplace'
-                MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
                 PACKAGE_PATTERN = 'addons/*-package/target/nuxeo*package*.zip *-package/target/nuxeo-ai-core-*.zip'
             }
             steps {
@@ -169,11 +253,38 @@ done
                 }
             }
         }
+        stage('Trigger Downstream Jobs') {
+            when {
+                not {
+                    tag '*'
+                }
+            }
+            steps {
+                container('platform1010') {
+                    script {
+                        buildJob("nuxeo/nuxeo-ai-integration")
+                    }
+                }
+            }
+        }
+        stage('Upgrade PR on Downstream Jobs') {
+            when {
+                tag '*'
+            }
+            steps {
+                container('platform1010') {
+                    sh """#!/bin/bash -xe
+# update Nuxeo AI Core version in the other repositories
+./tools/updatebot.sh ${AI_CORE_VERSION}
+"""
+                }
+            }
+        }
     }
     post {
         always {
             script {
-                if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*' || env.BRANCH_NAME ==~ 'Sprint-.*') {
+                if (env.TAG_NAME || env.BRANCH_NAME == 'master-10.10' || env.BRANCH_NAME ==~ 'Sprint-.*') {
                     step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                 }
             }
