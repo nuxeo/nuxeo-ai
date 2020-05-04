@@ -305,7 +305,7 @@ These streams are *disabled by default* but can be enabled by the [corresponding
 ##### Sample configuration for DAM Installations.
 The [configuration parameters](#configuration-parameters) are used to configure Nuxeo xml contributions, instead you can provide your own configuration that meets your requirements.
 
-A [Sample DAM configuration is available to download](https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-pipes/src/test/resources/ai-dam-config.xml), and defines 2 pipelines:
+A [Sample DAM configuration is available to download](https://github.com/nuxeo/nuxeo-ai/blob/master-10.10/nuxeo-ai-pipes/src/test/resources/ai-dam-config.xml), and defines 2 pipelines:
 ###### Images Pipeline
  * Listens for `pictureViewsGenerationDone` and sends `picture:views/3/content` to the `images` stream.
  * Configures an `EnrichingStreamProcessor` to read from the  `images` stream, calls the `aws.celebrityDetection` enrichment service and puts the response in the `images.enrichment.in` stream.

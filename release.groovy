@@ -24,7 +24,7 @@ pipeline {
         label "jenkins-ai-nuxeo1010"
     }
     parameters {
-        string(name: 'BRANCH', defaultValue: 'master', description: 'Branch to release from.')
+        string(name: 'BRANCH', defaultValue: 'master-10.10', description: 'Branch to release from.')
         string(name: 'VERSION', description: '''The version to release. 
 Leave it unset to use the version of the Maven POM.
 The version must match "X.Y.Z[-PRERELEASE][+BUILD]"''')
@@ -45,6 +45,8 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
                     withEnv(["BRANCH=${params.BRANCH}", "VERSION=${params.VERSION}", "INCREMENT=${params.INCREMENT}",
                              "DRY_RUN=${params.DRY_RUN}"]) {
                         sh './tools/release.sh'
+                        def releaseProps = readProperties file: 'release.properties'
+                        build job: '/nuxeo/nuxeo-ai/v' + releaseProps['RELEASE_VERSION'].replace("/", "%2F"), propagate: false, wait: false
                         sh 'chmod +r VERSION charts/*/templates/release.yaml || true'
                     }
                 }
@@ -52,7 +54,7 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
             post {
                 always {
                     setGitHubBuildStatus('release')
-                    archiveArtifacts artifacts: 'VERSION, charts/*/templates/release.yaml', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'VERSION, charts/*/templates/release.yaml, release.properties', allowEmptyArchive: true
                 }
             }
         }

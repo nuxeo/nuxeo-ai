@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.nuxeo.ecm.distribution</groupId>
     <artifactId>nuxeo-distribution</artifactId>
-    <version>10.10-HF25</version>
+    <version>10.10-HF32</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
@@ -32,7 +32,7 @@
 
   <repositories>
     <repository>
-      <id>public</id>
+      <id>maven-public</id>
       <url>https://packages.nuxeo.com/repository/maven-public</url>
       <releases>
         <enabled>true</enabled>
@@ -49,8 +49,8 @@
         <enabled>true</enabled>
       </releases>
       <snapshots>
-        <updatePolicy>always</updatePolicy>
         <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
     <repository>
@@ -158,6 +158,18 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-help-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 
   <scm>
     <connection>scm:git:git://github.com/nuxeo/nuxeo-ai.git</connection>
