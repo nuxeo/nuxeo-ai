@@ -56,12 +56,48 @@ public class CloudConfigDescriptor implements Descriptor {
     public static class Authentication {
 
         @XNode("@token")
-        public String token;
+        protected String token;
 
         @XNode("@username")
-        public String username;
+        protected String username;
 
         @XNode("@password")
-        public String password;
+        protected String password;
+
+        public String getToken() {
+            return token;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Duration getReadTimeout() {
+        return readTimeout;
+    }
+
+    public Duration getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public Duration getWriteTimeout() {
+        return writeTimeout;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public Authentication getAuthentication() {
+        return authentication;
     }
 }

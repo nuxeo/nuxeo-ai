@@ -98,6 +98,11 @@ public interface CloudClient {
     String byProjectId(String url);
 
     /**
+     * @return the cloud configuration infos
+     */
+    CloudConfigDescriptor getCloudConfig();
+
+    /**
      * A callback to handle a response from a call to the cloud.
      */
     interface ResponseHandler<T> {
