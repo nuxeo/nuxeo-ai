@@ -93,18 +93,18 @@ Example:
 Given role allows to publish to any topic.
 `ai-dev-rekognition-sns` - was created for Nuxeo developers under `test-role` 
 
-ARN of the role must be a part of `nuxeo.conf`
+ARN of the role must be a part of `nuxeo.conf`. It will be used by Rekognition to push messages to SNS
 ```yaml
 nuxeo.ai.aws.rekognition.role.arn=arn:aws:iam::your_profile:role/role_name
 ```
 
-To enable video add 
+To enable video you need to create a topic in the same region as your base services and add following properties 
 ```yaml
  nuxeo.ai.video.enabled=true
- nuxeo.enrichment.aws.sns.video.topic=ai-topic-name
+ nuxeo.enrichment.aws.sns.topic.arn=arn:aws:sns:[REGION]:[ID]:[TOPIC_NAME]
 ```
-Where `nuxeo.enrichment.aws.sns.video.topic` is the topic name to be dynamically created and subscribed
-upon platform start
+Where `nuxeo.enrichment.aws.sns.topic.arn` is the topic ARN that can be obtained through AWS CLI with
+`aws sns list-topics` or through AWS admin center upon topic creation
 
 ##### Video analysis limitation
 AWS Rekognition supports only MOV and MP4 files
