@@ -35,9 +35,8 @@ import org.nuxeo.runtime.model.DefaultComponent;
 
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sns.model.CreateTopicRequest;
-import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sns.model.SubscribeRequest;
+import com.amazonaws.services.sns.model.SubscribeResult;
 
 /**
  * A component implementing {@link NotificationService}
@@ -68,14 +67,11 @@ public class NotificationComponent extends DefaultComponent implements Notificat
     public void start(ComponentContext context) {
         super.start(context);
         topics.forEach((name, topic) -> {
-            log.debug("Creating SNS topic {}", topic.getName());
-            CreateTopicResult result = createTopic(topic.name);
-            topic.setArn(result.getTopicArn());
-
+            log.debug("Subscribing to SNS topic {}", topic.getTopicArn());
             try {
-                subscribe(result.getTopicArn(), getURL(topic.getPath()));
+                subscribe(topic.getTopicArn(), getURL(topic.getPath()));
             } catch (URISyntaxException e) {
-                log.error(e);
+                log.error("Failed to subscribe to {} with path {}", topic.getTopicArn(), topic.getPath(), e);
             }
         });
     }
@@ -86,39 +82,25 @@ public class NotificationComponent extends DefaultComponent implements Notificat
         amazonSNS = null;
     }
 
-
     @Override
     public AmazonSNS getClient() {
         return client();
     }
 
     @Override
-    public CreateTopicResult createTopic(String name) {
-        final CreateTopicRequest request = new CreateTopicRequest(name);
-        return client().createTopic(request);
-    }
-
-    @Override
-    public void removeTopic(String name) {
-        if (topics.containsKey(name)) {
-            client().deleteTopic(topics.get(name).arn);
-        } else {
-            log.info("An attempt to remove non-existent topic with name " + name);
-        }
-    }
-
-    @Override
-    public void subscribe(String arn, URI uri) {
+    public String subscribe(String arn, URI uri) {
         SubscribeRequest https = new SubscribeRequest(arn, uri.getScheme(), uri.toString());
-        client().subscribe(https);
+        SubscribeResult result = client().subscribe(https);
+        return result.getSubscriptionArn();
     }
 
     @Override
     public String getTopicArnFor(String topicType) {
         if (!topics.containsKey(topicType)) {
+            log.warn("Topic {} does not exist", topicType);
             return null;
         }
-        return topics.get(topicType).getArn();
+        return topics.get(topicType).getTopicArn();
     }
 
     @Override
@@ -133,9 +115,9 @@ public class NotificationComponent extends DefaultComponent implements Notificat
 
         synchronized (this) {
             amazonSNS = AmazonSNSClientBuilder.standard()
-                    .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
-                    .withRegion(AWSHelper.getInstance().getRegion())
-                    .build();
+                                              .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
+                                              .withRegion(AWSHelper.getInstance().getRegion())
+                                              .build();
             return amazonSNS;
         }
     }
