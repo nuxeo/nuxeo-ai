@@ -29,12 +29,6 @@ import org.nuxeo.common.xmap.annotation.XObject;
 public class TopicDescriptor {
 
     /**
-     * topic's name. Will be used as id on SNS
-     */
-    @XNode("@name")
-    protected String name;
-
-    /**
      * topic's type. Used internally for separating responsibilities among services
      */
     @XNode("@type")
@@ -47,17 +41,11 @@ public class TopicDescriptor {
     protected String path;
 
     /**
-     * ARN of the topic. Derived on runtime
+     * Topic ARN obtained from AWS
      */
-    protected String arn;
+    @XNode("@topicArn")
+    protected String topicArn;
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getType() {
         return type;
@@ -67,19 +55,11 @@ public class TopicDescriptor {
         this.type = type;
     }
 
-    public String getArn() {
-        return arn;
-    }
-
-    public void setArn(String arn) {
-        this.arn = arn;
+    public String getTopicArn() {
+        return topicArn;
     }
 
     public String getPath() {
         return path;
-    }
-
-    public void setPath(String url) {
-        this.path = url;
     }
 }

@@ -22,7 +22,6 @@ package org.nuxeo.ai.sns;
 import java.net.URI;
 
 import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.CreateTopicResult;
 
 /**
  * A service responsible for registering and creating and using AWS SNS topics
@@ -35,19 +34,12 @@ public interface NotificationService {
     AmazonSNS getClient();
 
     /**
-     * Creates topic with
-     * @param name of topic to be created
-     * @return {@link CreateTopicResult}
-     */
-    CreateTopicResult createTopic(String name);
-
-    /**
      * Subscribes for a topic with
      * @param arn of before created topic
      * @param uri to receive {@link Notification} uri must be either http or https
-     *            if using it on localhost set to http://0.0.0.0 using http://localhost will through an exception
+     * @return String subscription identifier
      */
-    void subscribe(String arn, URI uri);
+    String subscribe(String arn, URI uri);
 
     /**
      * Provides with ARN of a topic with
@@ -55,10 +47,4 @@ public interface NotificationService {
      * @return ARN as a {@link String}
      */
     String getTopicArnFor(String topicType);
-
-    /**
-     * Removes topic with
-     * @param name from registry and from SNS
-     */
-    void removeTopic(String name);
 }
