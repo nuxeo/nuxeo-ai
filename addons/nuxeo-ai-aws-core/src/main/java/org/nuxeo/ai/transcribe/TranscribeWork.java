@@ -182,7 +182,7 @@ public class TranscribeWork extends AbstractWork {
         session.saveDocument(doc);
 
         DocumentEventContext ctx = new DocumentEventContext(session, session.getPrincipal(), doc);
-        ctx.setProperty(LANGUAGE_KEY, DEFAULT_LANG_CODE);
+        ctx.setProperty(LANGUAGE_KEY, DEFAULT_LANG_CODE.toString());
         Framework.getService(EventService.class)
                 .fireEvent(ctx.newEvent(TRANSCRIBE_DONE_EVENT));
     }
