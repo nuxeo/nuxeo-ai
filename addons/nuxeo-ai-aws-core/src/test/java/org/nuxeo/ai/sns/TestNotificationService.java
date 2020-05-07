@@ -25,8 +25,10 @@ import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+
 import javax.inject.Inject;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -50,6 +52,7 @@ public class TestNotificationService {
     protected NotificationService ns;
 
     @Test
+    @Ignore("Requires Role available for QA")
     @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-sns.xml")
     public void shouldCreateTopic() throws URISyntaxException {
         AWS.assumeCredentials();
