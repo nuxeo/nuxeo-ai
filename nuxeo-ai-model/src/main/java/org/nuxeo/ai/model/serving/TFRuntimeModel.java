@@ -48,6 +48,7 @@ import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -229,6 +230,14 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 props.put(input.getName(),
                         Tensor.image(convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class))));
                 break;
+            case TEXT_TYPE:
+                Serializable propVal = getPropertyValue(doc, input.getName());
+                if (propVal instanceof Blob) {
+                    props.put(input.getName(), Tensor.image(convertTextBlob(getPropertyValue(doc, input.getName(), Blob.class))));
+                } else {
+                    props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
+                }
+                break;
             case CATEGORY_TYPE:
                 String categories = getPropertyValue(doc, input.getName(), String.class);
                 if (isNotEmpty(categories)) {
@@ -258,9 +267,13 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
         Map<String, Tensor> inputProperties = new HashMap<>();
-
-        for (Map.Entry<String, ManagedBlob> blobEntry : blobtext.getBlobs().entrySet()) {
-            inputProperties.put(blobEntry.getKey(), Tensor.image(convertImageBlob(blobEntry.getValue())));
+        
+        for (Map.Entry<PropertyType, ManagedBlob> blobEntry : blobtext.computePropertyBlobs().entrySet()) {
+            if (IMAGE_TYPE.equals(blobEntry.getKey().getType())) {
+                inputProperties.put(blobEntry.getKey().getName(), Tensor.image(convertImageBlob(blobEntry.getValue())));
+            } else if (TEXT_TYPE.equals(blobEntry.getKey().getType())) {
+                inputProperties.put(blobEntry.getKey().getName(), Tensor.text(convertTextBlob(blobEntry.getValue())));
+            }
         }
         for (ModelProperty input : inputs) {
             String text = blobtext.getProperties().get(input.getName());

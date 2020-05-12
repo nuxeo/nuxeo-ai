@@ -20,8 +20,24 @@ package org.nuxeo.ai.cloud;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.*;
-import static org.nuxeo.ai.adapters.DatasetExport.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
 import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
@@ -31,6 +47,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -188,8 +205,10 @@ public class CloudClientTest {
 
         CorpusDelta delta = MAPPER.readValue(corpusDelta.getStream(), CorpusDelta.class);
         assertNotNull(delta);
-        assertThat(delta.getInputs()).hasSize(1).contains("file:content");
-        assertThat(delta.getOutputs()).hasSize(1).contains("dc:title");
+        assertThat(delta.getInputs().stream().map(p -> p.getName()).collect(Collectors.toList())).hasSize(
+                1).contains("file:content");
+        assertThat(delta.getOutputs().stream().map(p -> p.getName()).collect(Collectors.toList())).hasSize(1)
+                                                                                                  .contains("dc:title");
     }
 
     @Test

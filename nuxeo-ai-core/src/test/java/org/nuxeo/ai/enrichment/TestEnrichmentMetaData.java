@@ -43,6 +43,7 @@ import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.TagSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -52,7 +53,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
 public class TestEnrichmentMetaData {
 
     final String repositoryName = "default";
@@ -63,10 +64,7 @@ public class TestEnrichmentMetaData {
     @Test
     public void testBuilder() {
         EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
-                                                                     new AIMetadata.Context(repositoryName,
-                                                                                            "doc1",
-                                                                                            null,
-                                                                                            null)).build();
+                new AIMetadata.Context(repositoryName, "doc1", null, null)).build();
         assertNotNull(metadata);
     }
 
@@ -82,26 +80,22 @@ public class TestEnrichmentMetaData {
                                                       .map(l -> new EnrichmentMetadata.Label(l, 1, 0L))
                                                       .collect(Collectors.toList());
 
-        List<EnrichmentMetadata.Tag> tags =
-                Stream.of("tag1", "tag2")
-                      .map(l -> new EnrichmentMetadata.Tag(l,
-                                                           "t1",
-                                                           "myref" + l,
-                                                           new AIMetadata.Box(0.5f, 0.3f, -0.2f, 2f),
-                                                           singletonList(new EnrichmentMetadata.Label("f" + l, 1, 0L)),
-                                                           0.65f))
-                      .collect(Collectors.toList());
+        List<EnrichmentMetadata.Tag> tags = Stream.of("tag1", "tag2")
+                                                  .map(l -> new EnrichmentMetadata.Tag(l, "t1", "myref" + l,
+                                                          new AIMetadata.Box(0.5f, 0.3f, -0.2f, 2f),
+                                                          singletonList(new EnrichmentMetadata.Label("f" + l, 1, 0L)),
+                                                          0.65f))
+                                                  .collect(Collectors.toList());
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
         blobTextFromDoc.addProperty("dc:title", "tbloby");
-        EnrichmentMetadata metadata =
-                new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc)
-                        .withLabels(Collections.singletonList(new LabelSuggestion("my:property", labels)))
-                        .withTags(Collections.singletonList(new TagSuggestion("my:property2", tags)))
-                        .withDigest("blobxx")
-                        .withDigest("freblogs")
-                        .withCreator("bob")
-                        .withRawKey("xyz")
-                        .build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test",
+                blobTextFromDoc).withLabels(Collections.singletonList(new LabelSuggestion("my:property", labels)))
+                                .withTags(Collections.singletonList(new TagSuggestion("my:property2", tags)))
+                                .withDigest("blobxx")
+                                .withDigest("freblogs")
+                                .withCreator("bob")
+                                .withRawKey("xyz")
+                                .build();
         assertNotNull(metadata);
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);
@@ -117,11 +111,9 @@ public class TestEnrichmentMetaData {
     @Test
     public void testRawJson() throws IOException {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
-        EnrichmentMetadata metadata =
-                new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc)
-                        .withCreator("bob")
-                        .withRawKey("xyz")
-                        .build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc).withCreator("bob")
+                                                                                                   .withRawKey("xyz")
+                                                                                                   .build();
         assertTrue(StringUtils.isEmpty(EnrichmentUtils.getRawBlob(metadata)));
     }
 
@@ -129,11 +121,11 @@ public class TestEnrichmentMetaData {
     public void testCacheKeys() throws IOException {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
         assertNull(EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
-        blobTextFromDoc.getBlobs().get(FILE_CONTENT).setDigest("47XX");
+        PropertyType fileContentProp = new PropertyType(FILE_CONTENT, "img");
+        blobTextFromDoc.computePropertyBlobs().get(fileContentProp).setDigest("47XX");
         assertEquals("testin47XX", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
-        ManagedBlob blob = blobTextFromDoc.getBlobs().get(FILE_CONTENT);
-        blobTextFromDoc.addBlob("TEST_AGAIN", new BlobMetaImpl(
-                blob.getProviderId(), blob.getMimeType(),
+        ManagedBlob blob = blobTextFromDoc.computePropertyBlobs().get(fileContentProp);
+        blobTextFromDoc.addBlob("TEST_AGAIN", "img", new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(),
                 blob.getKey(), "58YY", blob.getEncoding(), blob.getLength()));
         assertEquals("testin47XX_58YY", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
     }

@@ -113,7 +113,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         public void init(ComputationContext context) {
             log.debug(String.format("Starting enrichment computation for %s", metadata.name()));
             EnrichmentProvider enrichmentProvider = Framework.getService(AIComponent.class)
-                                                           .getEnrichmentProvider(enricherName);
+                                                             .getEnrichmentProvider(enricherName);
             if (enrichmentProvider == null) {
                 log.error(String.format("Invalid enricher name %s", enricherName));
                 throw new IllegalArgumentException("Unknown enrichment provider " + enricherName);
@@ -147,9 +147,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 } catch (CircuitBreakerOpenException cboe) {
                     metrics.circuitBreaker();
                     // The circuit break is open, throw NuxeoException so it doesn't continue processing.
-                    throw new NuxeoException(
-                            String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
-                                          enricherName));
+                    throw new NuxeoException(String.format(
+                            "Stream circuit breaker for %s.  Stopping processing the stream.", enricherName));
                 } catch (FatalEnrichmentError fee) {
                     metrics.fatal();
                     // Fatal error so throw it to stop processing
@@ -187,6 +186,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         /**
          * Get an entry from the enrichment cache
+         * 
          * @return
          */
         protected Collection<? extends AIMetadata> cacheGet(String cacheKey) {
@@ -214,8 +214,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         /**
-         * Try to get a reference to an enrichment provider if the BlobTextFromDocument meets the requirements, otherwise
-         * return null,
+         * Try to get a reference to an enrichment provider if the BlobTextFromDocument meets the requirements,
+         * otherwise return null,
          */
         protected Callable<Collection<AIMetadata>> getProvider(BlobTextFromDocument blobTextFromDoc) {
             if (useCache && provider instanceof EnrichmentCachable) {

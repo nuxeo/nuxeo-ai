@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 
 import java.io.File;
 import java.io.IOException;
@@ -157,7 +158,7 @@ public class TestRekognitionService {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.setRepositoryName("test");
         blobTextFromDoc.setId(UUID.randomUUID().toString());
-        blobTextFromDoc.addBlob("file:content", managedBlob);
+        blobTextFromDoc.addBlob("file:content", IMAGE_TYPE, managedBlob);
         return blobTextFromDoc;
     }
 

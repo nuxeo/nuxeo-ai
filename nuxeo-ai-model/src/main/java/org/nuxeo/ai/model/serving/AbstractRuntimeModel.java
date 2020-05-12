@@ -24,6 +24,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -89,11 +90,14 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         } catch (ConverterNotRegistered e) {
             log.warn(conversionService + " converter is not registered.  You will not be able to convert images.");
         }
-        this.imageWidth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_WIDTH, EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
-        this.imageHeight = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
-        this.imageDepth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
-        this.imageFormat = config
-                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
+        this.imageWidth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_WIDTH,
+                EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
+        this.imageHeight = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_HEIGHT,
+                EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
+        this.imageDepth = optionAsInteger(config, ImagingConvertConstants.OPTION_RESIZE_DEPTH,
+                EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
+        this.imageFormat = config.getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT,
+                EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
         String transientStoreName = config.get("transientStore");
         if (StringUtils.isNotBlank(transientStoreName)) {
             this.transientStore = transientStoreName;
@@ -146,9 +150,21 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
      */
     protected String convertImageBlob(Blob sourceBlob) {
         if (sourceBlob != null) {
-            Blob blob = EnrichmentUtils
-                    .convertImageBlob(conversionService, sourceBlob, imageWidth, imageHeight, imageDepth, imageFormat);
+            Blob blob = EnrichmentUtils.convertImageBlob(conversionService, sourceBlob, imageWidth, imageHeight,
+                    imageDepth, imageFormat);
             return base64EncodeBlob(blob);
+        }
+        return null;
+    }
+
+    protected String convertTextBlob(Blob sourceBlob) {
+        if (sourceBlob != null) {
+            try {
+                Blob blob = EnrichmentUtils.convertTextBlob(sourceBlob);
+                return blob == null ? "" : blob.getString();
+            } catch (IOException e) {
+                return null;
+            }
         }
         return null;
     }
@@ -165,7 +181,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
             }
             return live;
         }
-        return false;  // If you haven't specified a url then its not live.
+        return false; // If you haven't specified a url then its not live.
     }
 
 }
