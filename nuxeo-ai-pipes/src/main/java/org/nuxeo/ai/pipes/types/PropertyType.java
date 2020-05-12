@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2020 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,48 +14,48 @@
  * limitations under the License.
  *
  * Contributors:
- *     Gethin James
+ *     Pedro Cardoso
  */
-package org.nuxeo.ai.model;
+package org.nuxeo.ai.pipes.types;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.common.xmap.annotation.XNode;
-import org.nuxeo.common.xmap.annotation.XObject;
-
 /**
- * A property used by a model.
+ * POOJO for defining property -> type relation
  */
-@XObject("property")
-public class ModelProperty extends PropertyType {
+public class PropertyType implements Serializable {
 
-    @XNode("@name")
+    private static final long serialVersionUID = 8603843701457270326L;
+
     protected String name;
 
-    @XNode("@type")
     protected String type;
 
-    public ModelProperty() {
-        super();
+    public PropertyType() {
     }
-
-    public ModelProperty(String name, String type) {
-        super(name, type);
+    
+    public PropertyType(String name, String type) {
         this.name = name;
         this.type = type;
     }
-
-    @Override
+    
     public String getName() {
         return name;
     }
-
-    @Override
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
     public String getType() {
         return type;
     }
-
+    
+    public void setType(String type) {
+        this.type = type;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -64,22 +64,14 @@ public class ModelProperty extends PropertyType {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ModelProperty that = (ModelProperty) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(type, that.type);
+        PropertyType that = (PropertyType) o;
+        return Objects.equals(name, that.name) && Objects.equals(type, that.type);
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(name, type);
     }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("Property{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", type='").append(type).append('\'');
-        sb.append('}');
-        return sb.toString();
-    }
+    
+    
 }

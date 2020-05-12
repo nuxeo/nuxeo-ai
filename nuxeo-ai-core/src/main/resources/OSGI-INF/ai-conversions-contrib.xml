@@ -51,4 +51,12 @@
 
   </extension>
 
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl"
+             point="converter">
+    <converter name="aiPDF2text" class="org.nuxeo.ai.convert.AiPDFConverter">
+      <sourceMimeType>application/pdf</sourceMimeType>
+      <destinationMimeType>text/plain</destinationMimeType>
+    </converter>
+  </extension>
+
 </component>

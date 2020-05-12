@@ -24,9 +24,11 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -56,11 +58,9 @@ public class CorpusDelta {
 
     protected int minSize = 0;
 
-    public CorpusDelta(@JsonProperty(CORPORA_ID_PARAM) String corporaId,
-                       @JsonProperty("query") String query,
-                       @JsonProperty("inputs") List<Map<String, Object>> inputs,
-                       @JsonProperty("outputs") List<Map<String, Object>> outputs,
-                       @JsonProperty("end") GregorianCalendar end) {
+    public CorpusDelta(@JsonProperty(CORPORA_ID_PARAM) String corporaId, @JsonProperty("query") String query,
+            @JsonProperty("inputs") List<Map<String, Object>> inputs,
+            @JsonProperty("outputs") List<Map<String, Object>> outputs, @JsonProperty("end") GregorianCalendar end) {
         this.corporaId = corporaId;
         this.query = query;
         this.inputs = inputs;
@@ -76,16 +76,16 @@ public class CorpusDelta {
         return query;
     }
 
-    public List<String> getInputs() {
+    public Set<PropertyType> getInputs() {
         return inputs.stream()
-                .map(i -> (String) i.getOrDefault("name", ""))
-                .collect(Collectors.toList());
+                     .map(field -> new PropertyType((String) field.get("name"), (String) field.get("type")))
+                     .collect(Collectors.toSet());
     }
 
-    public List<String> getOutputs() {
+    public Set<PropertyType> getOutputs() {
         return outputs.stream()
-                .map(i -> (String) i.getOrDefault("name", ""))
-                .collect(Collectors.toList());
+                      .map(field -> new PropertyType((String) field.get("name"), (String) field.get("type")))
+                      .collect(Collectors.toSet());
     }
 
     public Calendar getEnd() {
@@ -112,15 +112,14 @@ public class CorpusDelta {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         CorpusDelta that = (CorpusDelta) o;
-        return minSize == that.minSize &&
-                Objects.equals(corporaId, that.corporaId) &&
-                Objects.equals(query, that.query) &&
-                Objects.equals(inputs, that.inputs) &&
-                Objects.equals(outputs, that.outputs) &&
-                Objects.equals(end, that.end);
+        return minSize == that.minSize && Objects.equals(corporaId, that.corporaId) && Objects.equals(query, that.query)
+                && Objects.equals(inputs, that.inputs) && Objects.equals(outputs, that.outputs)
+                && Objects.equals(end, that.end);
     }
 
     @Override

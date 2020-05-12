@@ -20,16 +20,20 @@ package org.nuxeo.ai.pipes.functions;
 
 import static java.util.stream.Collectors.toList;
 import static org.nuxeo.ai.pipes.events.DocEventToStream.BLOB_PROPERTIES;
+import static org.nuxeo.ai.pipes.events.DocEventToStream.BLOB_PROPERTIES_TYPE;
 import static org.nuxeo.ai.pipes.events.DocEventToStream.CUSTOM_PROPERTIES;
 import static org.nuxeo.ai.pipes.events.DocEventToStream.TEXT_PROPERTIES;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.events.DocEventToStream;
@@ -52,7 +56,7 @@ import org.nuxeo.ai.pipes.events.DocEventToStream;
  */
 public class PropertiesToStream extends PreFilterFunction<Event, Collection<Record>> {
 
-    protected List<String> blobProperties;
+    protected List<PropertyType> blobProperties;
     protected List<String> textProperties;
     protected List<String> customProperties;
 
@@ -70,7 +74,17 @@ public class PropertiesToStream extends PreFilterFunction<Event, Collection<Reco
      * Handles the provided options and sets up the class
      */
     protected void processOptions(Map<String, String> options) {
-        blobProperties = propsList(options.get(BLOB_PROPERTIES));
+        List<String> BlobPropertyList = propsList(options.get(BLOB_PROPERTIES));
+        List<String> BlobPropTypes = propsList(options.get(BLOB_PROPERTIES_TYPE));
+        if (BlobPropTypes != null && ( BlobPropertyList.size() != BlobPropTypes.size())) {
+            throw new NuxeoException(String.format("If %s is defined, must be the same size as %s",
+                    BLOB_PROPERTIES_TYPE, BLOB_PROPERTIES));
+        }
+        blobProperties = new ArrayList<>();
+        for (int index = 0; index < BlobPropertyList.size(); index++) {
+            String type = (BlobPropTypes == null) ? "img" : BlobPropTypes.get(index);
+            blobProperties.add(new PropertyType(BlobPropertyList.get(index), type));
+        }
         textProperties = propsList(options.get(TEXT_PROPERTIES));
         customProperties = propsList(options.get(CUSTOM_PROPERTIES));
     }

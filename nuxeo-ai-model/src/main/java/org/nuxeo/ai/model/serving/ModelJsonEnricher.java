@@ -24,10 +24,12 @@ import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.REFERENCE;
 import java.io.IOException;
 import java.util.Set;
 
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.io.marshallers.json.enrichers.AbstractJsonEnricher;
 import org.nuxeo.ecm.core.io.registry.reflect.Setup;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
@@ -44,7 +46,7 @@ public class ModelJsonEnricher extends AbstractJsonEnricher<DocumentModel> {
 
     @Override
     public void write(JsonGenerator jGen, DocumentModel documentModel) throws IOException {
-        Set<String> inputs = Framework.getService(ModelServingService.class).getInputs(documentModel);
+        Set<ModelProperty> inputs = Framework.getService(ModelServingService.class).getInputs(documentModel);
         if (!inputs.isEmpty()) {
             jGen.writeObjectFieldStart(NAME);
             jGen.writeObjectField("inputs", inputs);
