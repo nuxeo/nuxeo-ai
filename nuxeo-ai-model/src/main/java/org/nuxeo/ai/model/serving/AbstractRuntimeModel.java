@@ -24,6 +24,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -152,7 +153,18 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         }
         return null;
     }
-
+    protected String convertTextBlob(Blob sourceBlob) {
+        if (sourceBlob != null) {
+            try {
+                Blob blob = EnrichmentUtils.convertTextBlob(sourceBlob);
+                return blob.getString();
+            } catch (IOException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+    
     /**
      * Checks to see if the specified url is live.
      */

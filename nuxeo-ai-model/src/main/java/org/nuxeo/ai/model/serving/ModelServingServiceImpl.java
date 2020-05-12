@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
@@ -127,14 +128,14 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
-    public Set<String> getInputs(DocumentModel document) {
+    public List<ModelProperty> getInputs(DocumentModel document) {
         return filterPredicates.entrySet()
                                .stream()
                                .filter(e -> e.getValue().test(document))
                                .map(e -> models.get(e.getKey()))
                                .filter(Objects::nonNull)
-                               .flatMap(m -> m.getInputNames().stream())
-                               .collect(Collectors.toSet());
+                               .flatMap(m -> m.getInputs().stream())
+                               .collect(Collectors.toList());
     }
 
     @Override

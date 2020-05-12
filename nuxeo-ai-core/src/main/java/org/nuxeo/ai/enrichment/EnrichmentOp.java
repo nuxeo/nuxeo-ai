@@ -15,17 +15,21 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.enrichment;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.events.DocEventToStream;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.core.Constants;
@@ -33,6 +37,7 @@ import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
+import org.nuxeo.ecm.automation.core.util.Properties;
 import org.nuxeo.ecm.automation.core.util.StringList;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -43,8 +48,7 @@ import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 /**
  * Calls an enrichment provider.
  */
-@Operation(id = EnrichmentOp.ID, category = Constants.CAT_DOCUMENT, label = "Directly call an enrichment provider",
-        description = "Calls an enrichment provider on the provided document(s)")
+@Operation(id = EnrichmentOp.ID, category = Constants.CAT_DOCUMENT, label = "Directly call an enrichment provider", description = "Calls an enrichment provider on the provided document(s)")
 public class EnrichmentOp {
 
     public static final String ID = "AI.Enrichment";
@@ -63,8 +67,13 @@ public class EnrichmentOp {
     @Param(name = "enrichmentName", description = "The name of the enrichment provider to call")
     protected String enrichmentName;
 
+    // Deprecate: We assume that blobProperties are image blobs.
+    // For Text blobs use blobTypeProperties
     @Param(name = "blobProperties", required = false)
     protected StringList blobProperties;
+
+    @Param(name = "blobTypeProperties", required = false, description = "blob list with type. Key is property name, value is type (img, txt, cat)")
+    protected Properties blobTypeProperties;
 
     @Param(name = "textProperties", required = false)
     protected StringList textProperties;
@@ -94,10 +103,22 @@ public class EnrichmentOp {
             if (provider == null) {
                 throw new NuxeoException("Unknown enrichment provider " + enrichmentName);
             }
-            if (blobProperties == null && textProperties == null) {
-                throw new NuxeoException("You must specify either a blob or text property to use");
+            if (blobTypeProperties == null && textProperties == null && blobProperties == null) {
+                throw new NuxeoException("You must specify either a blob, blobType or text property to use");
             }
-            DocEventToStream docEventToStream = new DocEventToStream(blobProperties, textProperties, null);
+            List<PropertyNameType> blobPropertiesList = null;
+            if (blobTypeProperties != null) {
+                blobPropertiesList = blobTypeProperties.entrySet()
+                                                       .stream()
+                                                       .map(p -> new PropertyNameType(p.getKey(), p.getValue()))
+                                                       .collect(Collectors.toList());
+            } else if (blobProperties != null) {
+                blobPropertiesList = blobProperties.stream()
+                                                   .map(p -> new PropertyNameType(p, "img"))
+                                                   .collect(Collectors.toList());
+            }
+
+            DocEventToStream docEventToStream = new DocEventToStream(blobPropertiesList, textProperties, null);
 
             docs.forEach(documentModel -> {
                 Collection<BlobTextFromDocument> blobTexts = docEventToStream.docSerialize(documentModel);

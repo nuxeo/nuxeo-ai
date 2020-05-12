@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.adapters.DatasetExport;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.schema.SchemaManager;
@@ -106,7 +107,15 @@ public abstract class ExportHelper {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
-
+    
+    public static ModelProperty addTypeIfNull(ModelProperty prop) {
+        if (prop.getType() == null) {
+            DatasetExport.IOParam propType = getPropertyWithType(prop.getName());
+            return new ModelProperty(prop.getName(), propType.get(TYPE_PROP));
+        }
+        return prop;
+    }
+    
     /**
      * For the given property, find out if it exists and determine if its text or content
      */

@@ -20,27 +20,27 @@
 package org.nuxeo.ai.cloud;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
-import org.nuxeo.ai.adapters.DatasetExport;
+import org.nuxeo.ai.model.ModelProperty;
 
 public class CorporaParameters implements Serializable {
 
     private static final long serialVersionUID = 603202103827L;
 
-    protected List<DatasetExport.IOParam> fields;
+    protected Set<ModelProperty> fields;
 
     protected String query;
 
     public CorporaParameters() {
     }
 
-    public List<DatasetExport.IOParam> getFields() {
+    public Set<ModelProperty> getFields() {
         return fields;
     }
 
-    public void setFields(List<DatasetExport.IOParam> fields) {
+    public void setFields(Set<ModelProperty> fields) {
         this.fields = fields;
     }
 

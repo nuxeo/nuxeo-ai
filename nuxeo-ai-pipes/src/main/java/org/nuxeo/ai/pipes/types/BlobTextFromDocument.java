@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.pipes.types;
 
@@ -35,26 +36,28 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * The main subject of this class is usually either a blob or a piece of text taken from a Nuxeo Document.
  */
 public class BlobTextFromDocument implements Partitionable, Serializable {
-
+    
     private static final long serialVersionUID = 201920081233428L;
-
+    
     private final Map<String, String> properties = new HashMap<>();
-
+    
+    private final Map<String, String> blobTypes = new HashMap<>();
+    
     private final Map<String, ManagedBlob> blobs = new HashMap<>();
-
+    
     private String id;
-
+    
     private String repositoryName;
-
+    
     private String parentId;
-
+    
     private String primaryType;
-
+    
     private Set<String> facets;
-
+    
     public BlobTextFromDocument() {
     }
-
+    
     public BlobTextFromDocument(String id, String repositoryName, String parentId, String primaryType, Set<String> facets) {
         this.id = id;
         this.repositoryName = repositoryName;
@@ -62,7 +65,7 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
         this.primaryType = primaryType;
         this.facets = facets;
     }
-
+    
     public BlobTextFromDocument(DocumentModel doc) {
         this.id = doc.getId();
         this.repositoryName = doc.getRepositoryName();
@@ -70,63 +73,79 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
         this.primaryType = doc.getType();
         this.facets = doc.getFacets();
     }
-
+    
     public String getId() {
         return id;
     }
-
+    
     public void setId(String id) {
         this.id = id;
     }
-
+    
     public String getRepositoryName() {
         return repositoryName;
     }
-
+    
     public void setRepositoryName(String repositoryName) {
         this.repositoryName = repositoryName;
     }
-
+    
     public String getParentId() {
         return parentId;
     }
-
+    
     public void setParentId(String parentId) {
         this.parentId = parentId;
     }
-
+    
     public String getPrimaryType() {
         return primaryType;
     }
-
+    
     public void setPrimaryType(String primaryType) {
         this.primaryType = primaryType;
     }
-
+    
     public Set<String> getFacets() {
         return facets;
     }
-
+    
     public void setFacets(Set<String> facets) {
         this.facets = facets;
     }
-
+    
     public Map<String, ManagedBlob> getBlobs() {
         return blobs;
     }
-
-    public void addBlob(String name, ManagedBlob blob) {
-        blobs.put(name, blob);
+    
+    public Map<String, String> getBlobTypes() {
+        return blobTypes;
     }
-
+    
+    @JsonIgnore
+    public Map<PropertyNameType, ManagedBlob> getPropertyBlobs() {
+        Map<PropertyNameType, ManagedBlob> returnMap = new HashMap<>();
+        for (Map.Entry<String, ManagedBlob> blob: blobs.entrySet()){
+            String propName = blob.getKey();
+            String propType = blobTypes.get(propName);
+            returnMap.put(new PropertyNameType(propName, propType), blob.getValue());
+        }
+        return returnMap;
+    }
+    
+    public void addBlob(String name, String type, ManagedBlob blob) {
+        blobs.put(name, blob);
+        blobTypes.put(name, type);
+    }
+    
     public Map<String, String> getProperties() {
         return properties;
     }
-
+    
     public void addProperty(String name, String propVal) {
         properties.put(name, propVal);
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -142,14 +161,15 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
                 Objects.equals(primaryType, that.primaryType) &&
                 Objects.equals(facets, that.facets) &&
                 Objects.equals(blobs, that.blobs) &&
+                Objects.equals(blobTypes, that.blobTypes) &&
                 Objects.equals(properties, that.properties);
     }
-
+    
     @Override
     public int hashCode() {
-        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobs, properties);
+        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobs, blobTypes, properties);
     }
-
+    
     @Override
     public String toString() {
         return new ToStringBuilder(this)
@@ -158,15 +178,16 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
                 .append("parentId", parentId)
                 .append("primaryType", primaryType)
                 .append("facets", facets)
-                .append("blob", blobs)
+                .append("blobs", blobs)
+                .append("blobTypes", blobTypes)
                 .append("properties", properties)
                 .toString();
     }
-
+    
     @Override
     @JsonIgnore
     public String getKey() {
         return getId();
     }
-
+    
 }

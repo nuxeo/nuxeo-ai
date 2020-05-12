@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.textract.TextractProcessor;
 import org.nuxeo.ai.textract.TextractService;
 import org.nuxeo.ecm.core.api.CoreInstance;
@@ -95,11 +96,11 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+            for (Map.Entry<PropertyNameType, ManagedBlob> blob : blobTextFromDoc.getPropertyBlobs().entrySet()) {
                 DetectDocumentTextResult result =
                         Framework.getService(TextractService.class).detectText(blob.getValue());
                 if (result != null && !result.getBlocks().isEmpty()) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey().getName(), result.getBlocks()));
                 }
             }
             return enriched;

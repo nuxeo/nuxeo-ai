@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.model.export;
 
@@ -28,9 +29,12 @@ import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -38,7 +42,9 @@ import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.automation.core.util.StringList;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.kv.KeyValueService;
+import org.nuxeo.ecm.automation.core.util.Properties;
 
 @Operation(id = DatasetExportOperation.ID, category = Constants.CAT_SERVICES, label = "Bulk export a dataset", description = "Run a bulk export on a set of documents expressed by a NXQL query.")
 public class DatasetExportOperation {
@@ -63,11 +69,19 @@ public class DatasetExportOperation {
     @Param(name = "query")
     protected String query;
 
-    @Param(name = "inputs")
+    @Deprecated
+    @Param(name = "inputs", required = false)
     protected StringList inputs;
 
-    @Param(name = "outputs")
+    @Param(name = "inputProperties", required = false)
+    protected Properties inputProperties;
+
+    @Deprecated
+    @Param(name = "outputs", required = false)
     protected StringList outputs;
+
+    @Param(name = "outputProperties", required = false)
+    protected Properties outputProperties;
 
     @Param(name = "split", required = false)
     protected int split = DEFAULT_SPLIT;
@@ -87,7 +101,32 @@ public class DatasetExportOperation {
     @OperationMethod
     public String run() {
         HashMap<String, Serializable> params = buildDatasetParameters();
-        String exportId = service.export(session, query, inputs, outputs, split, params);
+
+        Set<ModelProperty> exportInputs;
+        if (inputs != null) {
+            exportInputs = inputs.stream().map(p -> new ModelProperty(p, null)).collect(Collectors.toSet());
+        } else if (inputProperties != null) {
+            exportInputs = inputProperties.entrySet()
+                                          .stream()
+                                          .map(p -> new ModelProperty(p.getKey(), p.getValue()))
+                                          .collect(Collectors.toSet());
+        } else {
+            throw new NuxeoException("inputs or inputProperties, one of the two needs to be defined.");
+        }
+
+        Set<ModelProperty> exportOutputs;
+        if (outputs != null) {
+            exportOutputs = outputs.stream().map(p -> new ModelProperty(p, null)).collect(Collectors.toSet());
+        } else if (outputProperties != null) {
+            exportOutputs = outputProperties.entrySet()
+                                            .stream()
+                                            .map(p -> new ModelProperty(p.getKey(), p.getValue()))
+                                            .collect(Collectors.toSet());
+        } else {
+            throw new NuxeoException("outputs or outputProperties, one of the two needs to be defined.");
+        }
+
+        String exportId = service.export(session, query, exportInputs, exportOutputs, split, params);
         if (isNotEmpty(exportId) && isNotEmpty(modelName)) {
             kvs.getKeyValueStore(EXPORT_KVS_STORE).put(exportId, modelName, TTL_128H);
         }

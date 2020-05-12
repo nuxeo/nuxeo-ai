@@ -35,6 +35,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
@@ -187,24 +188,28 @@ public class PropertyUtils {
     /**
      * Convert a document to BlobTextFromDocument with only a sub-set of the properties.
      */
-    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<String> propertiesList) {
+    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyNameType> propertiesList) {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
         Map<String, String> properties = blobTextFromDoc.getProperties();
         propertiesList.forEach(propName -> {
-            Serializable propVal = getPropertyValue(doc, propName);
+            Serializable propVal = getPropertyValue(doc, propName.getName());
             if (propVal instanceof ManagedBlob) {
-                blobTextFromDoc.addBlob(propName, getPictureConversion(doc, (ManagedBlob) propVal));
+                if (IMAGE_TYPE.equals(propName.getType())) {
+                    blobTextFromDoc.addBlob(propName.getName(), propName.getType(), getPictureConversion(doc, (ManagedBlob) propVal));
+                } else {
+                    blobTextFromDoc.addBlob(propName.getName(), propName.getType(), (ManagedBlob) propVal);
+                }
             } else if (propVal != null) {
                 if (propVal.getClass().isArray()) {
-                    properties.put(propName, serializeArray(propVal));
+                    properties.put(propName.getName(), serializeArray(propVal));
                 } else {
-                    properties.put(propName, propVal.toString());
+                    properties.put(propName.getName(), propVal.toString());
                 }
             }
 
         });
 
-        if (log.isDebugEnabled() && properties.size() + blobTextFromDoc.getBlobs().size() != propertiesList.size()) {
+        if (log.isDebugEnabled() && properties.size() + blobTextFromDoc.getPropertyBlobs().size() != propertiesList.size()) {
             log.debug(String.format("Document %s one of the following properties is null. %s", doc.getId(),
                     propertiesList));
         }

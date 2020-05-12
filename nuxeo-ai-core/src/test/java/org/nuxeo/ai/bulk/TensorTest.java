@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.bulk;
 
@@ -23,20 +24,8 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.*;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import javax.inject.Inject;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -69,8 +58,8 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.tensorflow.example.Feature;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml" })
 public class TensorTest {
 
     @Inject
@@ -130,7 +119,6 @@ public class TensorTest {
         return countExamples;
     }
 
-
     @Test
     public void testBlobWriter() throws IOException {
         RecordWriter writer = aiComponent.getRecordWriter("validation");
@@ -166,6 +154,47 @@ public class TensorTest {
             try (FileOutputStream fos = new FileOutputStream(picFile)) {
                 fos.write(pictureBlob.getBytesList().getValue(0).toByteArray());
                 assertTrue(picFile.length() > 0);
+            }
+        }
+    }
+
+    @Test
+    public void testTextBlobWriter() throws IOException {
+        RecordWriter writer = aiComponent.getRecordWriter("validation");
+        assertNotNull(writer);
+        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider("test");
+        assertNotNull(blobProvider);
+
+        String test_key = "blobby2";
+        int numberOfRecords = 2;
+        List<ExportRecord> records = new ArrayList<>();
+
+        for (int i = 0; i < numberOfRecords; ++i) {
+            BlobTextFromDocument blobTextFromDoc = blobTestPdf(blobManager);
+            blobTextFromDoc.getProperties().put("ecm:primaryType", "TextPDF");
+            byte[] bytes = MAPPER.writeValueAsBytes(blobTextFromDoc);
+            records.add(ExportRecord.of(test_key, test_key, bytes));
+        }
+
+        writer.write(records);
+        assertTrue(writer.exists(test_key));
+        Optional<Blob> blobWritten = writer.complete(test_key);
+        assertTrue(blobWritten.isPresent());
+        Blob blob = blobWritten.get();
+        // System.out.println("File: " + blob.getFile().getAbsolutePath());
+        DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
+        TFRecordReader tfRecordReader = new TFRecordReader(input, true);
+        byte[] exampleData;
+        while ((exampleData = tfRecordReader.read()) != null) {
+            TFRecord tfRecord = TFRecord.from(exampleData);
+            assertEquals(2, tfRecord.getFeatures().getFeatureCount());
+            Feature textBlob = tfRecord.getFeatures().getFeatureMap().get(FILE_CONTENT);
+            File txtFile = Framework.createTempFile("tf_Text", "txt");
+            try (FileOutputStream fos = new FileOutputStream(txtFile)) {
+                fos.write(textBlob.getBytesList().getValue(0).toByteArray());
+                assertTrue(txtFile.length() > 0);
+                String content = new String(textBlob.getBytesList().getValue(0).toByteArray());
+                assertTrue(content.startsWith("See discussions,"));
             }
         }
     }

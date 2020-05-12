@@ -131,10 +131,10 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
     @Override
     public HttpUriRequest prepareRequest(RequestBuilder requestBuilder, BlobTextFromDocument blobTextFromDoc) {
 
-        if (blobTextFromDoc.getBlobs().size() != 1) {
+        if (blobTextFromDoc.getPropertyBlobs().size() != 1) {
             throw new NuxeoException("Sightengine only supports one blob image at a time.");
         }
-        File file = getBlobFromProvider(blobTextFromDoc.getBlobs().values().stream().findFirst().get()).getFile();
+        File file = getBlobFromProvider(blobTextFromDoc.getPropertyBlobs().values().stream().findFirst().get()).getFile();
 
         // Use the multipart builder
         setMultipart(requestBuilder, builder -> {

@@ -31,11 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.PipesTestConfigFeature;
 import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -120,14 +122,15 @@ public class EventPipesTest {
         Event testEvent = getTestEvent(session);
         result = doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, result.size());
-        assertTrue(result.iterator().next().getBlobs().containsKey("file:content"));
+        assertTrue(result.iterator().next().getPropertyBlobs().containsKey(new PropertyNameType("file:content", "img")));
 
         List<String> unknownProp = singletonList("dublinapple:core");
 
         result = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
         assertEquals("2 properties were specified by only 1 is valid", 1, result.size());
-
-        result = new DocEventToStream(unknownProp, null, null).apply(testEvent);
+    
+        List<PropertyNameType> unknownPropBlob = singletonList(new PropertyNameType("dublinapple:core", "txt"));
+        result = new DocEventToStream( unknownPropBlob, null, null).apply(testEvent);
         assertEquals("No valid properties were specified so no results are returned", 0, result.size());
 
         List<String> creator = singletonList("dc:creator");
@@ -146,7 +149,7 @@ public class EventPipesTest {
         validResult = (List<BlobTextFromDocument>) doc2stream.apply(testEvent);
         BlobTextFromDocument firstResult = validResult.get(0);
         assertNotNull(firstResult.getProperties().get("dc:modified"));
-        ManagedBlob blob = firstResult.getBlobs().get("file:content");
+        ManagedBlob blob = firstResult.getPropertyBlobs().get(new PropertyNameType("file:content", "img"));
         assertNotNull(blob);
         assertEquals("1 blob and 1 text", 2, validResult.size());
 

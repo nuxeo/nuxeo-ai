@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -69,10 +70,10 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
         RekognitionService rs = Framework.getService(RekognitionService.class);
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
+            for (Map.Entry<PropertyNameType, ManagedBlob> blob : doc.getPropertyBlobs().entrySet()) {
                 DetectFacesResult result = rs.detectFaces(blob.getValue(), attribute);
                 if (result != null && !result.getFaceDetails().isEmpty()) {
-                    enriched.addAll(processResults(doc, blob.getKey(), result));
+                    enriched.addAll(processResults(doc, blob.getKey().getName(), result));
                 }
             }
             return enriched;

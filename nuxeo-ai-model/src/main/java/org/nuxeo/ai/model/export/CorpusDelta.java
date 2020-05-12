@@ -19,14 +19,10 @@
  */
 package org.nuxeo.ai.model.export;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -76,16 +72,22 @@ public class CorpusDelta {
         return query;
     }
 
-    public List<String> getInputs() {
-        return inputs.stream()
-                .map(i -> (String) i.getOrDefault("name", ""))
-                .collect(Collectors.toList());
+    public Set<ModelProperty> getInputs() {
+        Set<ModelProperty> inputFields = new HashSet<>();
+        for (Map<String, Object> field: inputs) {
+            ModelProperty input = new ModelProperty((String)field.get("name"), (String)field.get("type"));
+            inputFields.add(input);
+        }
+        return inputFields;
     }
 
-    public List<String> getOutputs() {
-        return outputs.stream()
-                .map(i -> (String) i.getOrDefault("name", ""))
-                .collect(Collectors.toList());
+    public Set<ModelProperty> getOutputs() {
+        Set<ModelProperty> outputFields = new HashSet<>();
+        for (Map<String, Object> field: outputs) {
+            ModelProperty input = new ModelProperty((String)field.get("name"), (String)field.get("type"));
+            outputFields.add(input);
+        }
+        return outputFields;
     }
 
     public Calendar getEnd() {

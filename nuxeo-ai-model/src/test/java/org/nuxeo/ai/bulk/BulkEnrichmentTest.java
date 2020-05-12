@@ -29,21 +29,25 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.*;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import javax.inject.Inject;
 
+import com.google.common.collect.Sets;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -66,12 +70,13 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class,
+        RepositoryElasticSearchFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video.convert")
 @Deploy("org.nuxeo.ecm.platform.video.core")
 @Deploy("org.nuxeo.ai.ai-core")
-@Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml"})
+@Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class BulkEnrichmentTest {
 
@@ -113,11 +118,10 @@ public class BulkEnrichmentTest {
     public void testBulkEnrich() throws Exception {
 
         DocumentModel testRoot = setupTestData();
-        String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'", testRoot.getId());
-        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql)
-                .user(session.getPrincipal().getName())
-                .repository(session.getRepositoryName())
-                .build();
+        String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
+                testRoot.getId());
+        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(
+                session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
@@ -134,11 +138,11 @@ public class BulkEnrichmentTest {
         }
 
         // Call with Model param
-        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql)
-                .user(session.getPrincipal().getName())
-                .repository(session.getRepositoryName())
-                .param(PARAM_MODEL, "basicBulkModel")
-                .build();
+        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME,
+                nxql).user(session.getPrincipal().getName())
+                     .repository(session.getRepositoryName())
+                     .param(PARAM_MODEL, "basicBulkModel")
+                     .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
 
@@ -152,11 +156,11 @@ public class BulkEnrichmentTest {
         }
 
         // Call with XPaths param
-        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql)
-                .user(session.getPrincipal().getName())
-                .repository(session.getRepositoryName())
-                .param(PARAM_XPATHS, (Serializable) Arrays.asList("dc:title"))
-                .build();
+        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME,
+                nxql).user(session.getPrincipal().getName())
+                     .repository(session.getRepositoryName())
+                     .param(PARAM_XPATHS, (Serializable) Arrays.asList("dc:title"))
+                     .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
 
@@ -168,10 +172,8 @@ public class BulkEnrichmentTest {
         }
 
         // Call with no params
-        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql)
-                .user(session.getPrincipal().getName())
-                .repository(session.getRepositoryName())
-                .build();
+        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
+                session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
 
@@ -182,10 +184,10 @@ public class BulkEnrichmentTest {
         }
 
         // All removed so lets add again.
-        command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql)
-                .user(session.getPrincipal().getName())
-                .repository(session.getRepositoryName())
-                .build();
+        command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(session.getPrincipal().getName())
+                                                                                 .repository(
+                                                                                         session.getRepositoryName())
+                                                                                 .build();
         submitAndAssert(command);
         waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
         txFeature.nextTransaction();
@@ -203,7 +205,8 @@ public class BulkEnrichmentTest {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkExportNoAutoFields() throws Exception {
         DocumentModel testRoot = setupTestData();
-        String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ", testRoot.getId());
+        String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
+                testRoot.getId());
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
 
@@ -224,10 +227,11 @@ public class BulkEnrichmentTest {
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);
 
+        Set<ModelProperty> input = Sets.newHashSet(new ModelProperty("dc:title", CATEGORY_TYPE));
+        Set<ModelProperty> output = Sets.newHashSet(new ModelProperty("dc:creator", TEXT_TYPE));
+
         DatasetExportService exportService = Framework.getService(DatasetExportService.class);
-        String commandId = exportService.export(session, nxql,
-                Collections.singletonList("dc:creator"),
-                Collections.singletonList("dc:title"), 60, null);
+        String commandId = exportService.export(session, nxql, input, output, 60, null);
 
         assertTrue("Bulk action didn't finish", bulkService.await(commandId, Duration.ofSeconds(60)));
         BulkStatus status = bulkService.getStatus(commandId);

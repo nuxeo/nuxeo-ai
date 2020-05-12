@@ -30,12 +30,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.model.serving.ModelServingService;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
@@ -81,9 +84,12 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> options) {
             ModelServingService modelServingService = Framework.getService(ModelServingService.class);
             for (DocumentModel doc : loadDocuments(coreSession, ids)) {
-                Set<String> inputs = modelServingService.getInputs(doc);
+                List<ModelProperty> inputs = modelServingService.getInputs(doc);
                 if (!inputs.isEmpty()) {
-                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputs);
+                    Set<PropertyNameType> inputPairs = inputs.stream()
+                                                             .map(p -> new PropertyNameType(p.getName(), p.getType()))
+                                                             .collect(Collectors.toSet());
+                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs);
                     if (blobTextFromDocument != null) {
                         outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));
                     }

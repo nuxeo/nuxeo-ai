@@ -145,6 +145,7 @@ public class ContinuesExportListener implements PostCommitEventListener {
                     if (checkMinimum(session, modified, delta.getMinSize())) {
                         String corporaId = delta.getCorporaId();
                         Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, corporaId);
+
                         String jobId = exportService.export(session, modified, delta.getInputs(), delta.getOutputs(),
                                 DEFAULT_SPLIT, params);
                         log.info("Initiating continues export for " + uid + " with job id " + jobId);

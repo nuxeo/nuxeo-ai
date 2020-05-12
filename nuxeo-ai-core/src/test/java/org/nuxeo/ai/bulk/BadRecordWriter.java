@@ -28,7 +28,7 @@ import org.nuxeo.ai.pipes.types.ExportRecord;
  */
 public class BadRecordWriter extends AbstractRecordWriter {
 
-    public BadRecordWriter(String name, String bad) {
+    public BadRecordWriter(String name) {
         super(name);
     }
 

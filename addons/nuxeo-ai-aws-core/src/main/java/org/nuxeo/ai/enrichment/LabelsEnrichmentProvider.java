@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -77,10 +78,10 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
         RekognitionService rs = Framework.getService(RekognitionService.class);
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
+            for (Map.Entry<PropertyNameType, ManagedBlob> blob : doc.getPropertyBlobs().entrySet()) {
                 DetectLabelsResult result = rs.detectLabels(blob.getValue(), maxResults, minConfidence);
                 if (result != null && !result.getLabels().isEmpty()) {
-                    enriched.addAll(processResult(doc, blob.getKey(), result));
+                    enriched.addAll(processResult(doc, blob.getKey().getName(), result));
                 }
             }
             return enriched;

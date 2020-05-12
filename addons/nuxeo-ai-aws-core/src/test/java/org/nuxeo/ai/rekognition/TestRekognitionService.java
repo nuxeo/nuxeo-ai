@@ -77,7 +77,7 @@ public class TestRekognitionService {
         assertEquals(blobTextFromDoc.getRepositoryName(), metadata.context.repositoryName);
         assertEquals(blobTextFromDoc.getId(), metadata.context.documentRef);
         assertEquals(1, metadata.context.digests.size());
-        assertEquals(blobTextFromDoc.getBlobs().entrySet().iterator().next().getValue().getDigest(),
+        assertEquals(blobTextFromDoc.getPropertyBlobs().entrySet().iterator().next().getValue().getDigest(),
                      metadata.context.digests.iterator().next());
         assertNotNull(metadata.getLabels());
     }
@@ -157,7 +157,7 @@ public class TestRekognitionService {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.setRepositoryName("test");
         blobTextFromDoc.setId(UUID.randomUUID().toString());
-        blobTextFromDoc.addBlob("file:content", managedBlob);
+        blobTextFromDoc.addBlob("file:content", "img", managedBlob);
         return blobTextFromDoc;
     }
 

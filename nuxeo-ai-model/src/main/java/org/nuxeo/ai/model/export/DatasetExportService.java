@@ -19,10 +19,11 @@
 package org.nuxeo.ai.model.export;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
@@ -33,34 +34,33 @@ import org.nuxeo.ecm.core.api.DocumentModelList;
 public interface DatasetExportService {
 
     /**
-     * Export the dataset matched by the nxql query and property names.
-     * Splits the dataset into 2 random groups based on the percentage split value.
+     * Export the dataset matched by the nxql query and property names. Splits the dataset into 2 random groups based on
+     * the percentage split value.
      *
-     * @param session          core session
-     * @param nxql             a valid query to use as a filter
-     * @param inputProperties  list of document property names
+     * @param session core session
+     * @param nxql a valid query to use as a filter
+     * @param inputProperties list of document property names
      * @param outputProperties list of document property names
-     * @param split            a number between 1 and 100.
+     * @param split a number between 1 and 100.
      * @return a bulk command id reference
      */
-    String export(CoreSession session, String nxql, Collection<String> inputProperties,
-                  Collection<String> outputProperties, int split);
+    String export(CoreSession session, String nxql, Set<ModelProperty> inputProperties,
+            Set<ModelProperty> outputProperties, int split);
 
     /**
-     * Export the dataset matched by the nxql query and property names.
-     * Splits the dataset into 2 random groups based on the percentage split value.
-     * Overloaded version of {@link DatasetExportService#export(CoreSession, String, Collection, Collection, int)}
+     * Export the dataset matched by the nxql query and property names. Splits the dataset into 2 random groups based on
+     * the percentage split value.
      *
-     * @param session          core session
-     * @param nxql             a valid query to use as a filter
-     * @param inputProperties  list of document property names
-     * @param outputProperties list of document property names
-     * @param split            a number between 1 and 100.
-     * @param modelParams      Reference parameters of AI_Model
+     * @param session core session
+     * @param nxql a valid query to use as a filter
+     * @param inputProperties list of document property with name and type
+     * @param outputProperties list of document property with name and type
+     * @param split a number between 1 and 100.
+     * @param modelParams Reference parameters of AI_Model
      * @return a bulk command id reference
      */
-    String export(CoreSession session, String nxql, Collection<String> inputProperties,
-                  Collection<String> outputProperties, int split, @Nullable Map<String, Serializable> modelParams);
+    String export(CoreSession session, String nxql, Set<ModelProperty> inputProperties,
+            Set<ModelProperty> outputProperties, int split, @Nullable Map<String, Serializable> modelParams);
 
     /**
      * Get the Corpus document by id or return null
@@ -69,6 +69,7 @@ public interface DatasetExportService {
 
     /**
      * Returns corpora id for given BAF export
+     * 
      * @param session to use for query
      * @param exportJobId BAF command Id
      * @return DatasetExport {@link DocumentModel}

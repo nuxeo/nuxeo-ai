@@ -36,7 +36,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -192,8 +192,8 @@ public class TestModelServing {
         assertEquals(3, models.size());
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "FileRefDoc");
-        Set<String> inputs = modelServingService.getInputs(testDoc);
-        assertEquals(4, inputs.size());
+        List<ModelProperty> inputs = modelServingService.getInputs(testDoc);
+        assertEquals(5, inputs.size());
 
         testDoc = session.createDocumentModel("/", "My note Doc", "Note");
         inputs = modelServingService.getInputs(testDoc);
@@ -220,8 +220,9 @@ public class TestModelServing {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         writer.write(testDoc, DocumentModel.class, DocumentModel.class, APPLICATION_JSON_TYPE, baos);
         String result = new String(baos.toByteArray());
-        assertTrue(result.contains("\"aiModels\":{\"inputs\":" +
-                                           "[\"ecm:mixinType\",\"dc:title\",\"file:content\",\"dc:subjects\"]}"));
+        assertTrue(result.contains("\"aiModels\":{\"inputs\":"));
+        assertTrue(result.contains("{\"name\":\"dc:title\",\"type\":\"txt\"}"));
+        assertTrue(result.contains("{\"name\":\"file:content\",\"type\":\"img\"}"));
     }
 
 }

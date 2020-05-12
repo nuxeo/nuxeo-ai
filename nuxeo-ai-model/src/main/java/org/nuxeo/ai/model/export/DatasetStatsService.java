@@ -18,8 +18,10 @@
  */
 package org.nuxeo.ai.model.export;
 
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.CoreSession;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * For a given dataset provides statistics.
@@ -27,5 +29,5 @@ import java.util.Collection;
 public interface DatasetStatsService {
 
     Collection<Statistic> getStatistics(CoreSession session, String nxql,
-                                        Collection<String> inputProperties, Collection<String> outputProperties);
+                                        Set<ModelProperty> inputProperties, Set<ModelProperty> outputProperties);
 }

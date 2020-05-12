@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -85,11 +86,11 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+            for (Map.Entry<PropertyNameType, ManagedBlob> blob : blobTextFromDoc.getPropertyBlobs().entrySet()) {
                 DetectTextResult result = Framework.getService(RekognitionService.class)
                                                    .detectText(blob.getValue());
                 if (result != null && !result.getTextDetections().isEmpty()) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey().getName(), result));
                 }
             }
             return enriched;

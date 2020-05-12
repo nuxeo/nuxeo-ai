@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.enrichment;
 
@@ -77,6 +78,8 @@ public class EnrichmentUtils {
     public static final String DEFAULT_CONVERTER = "aiPictureResize";
 
     public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
+    
+    public static final String MIME_TYPE_TEXT = "text/plain";
 
     // Java 8 does not resolve rhv; keep for back compatibility
     protected static final TypeReference<Collection<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE =
@@ -92,7 +95,7 @@ public class EnrichmentUtils {
      * Gets the names of all properties used by the BlobTextFromDocument.
      */
     public static Set<String> getPropertyNames(BlobTextFromDocument blobTextFromDoc) {
-        Set<String> inputProperties = new HashSet<>(blobTextFromDoc.getBlobs().keySet());
+        Set<String> inputProperties = blobTextFromDoc.getPropertyBlobs().keySet().stream().map(p->p.getName()).collect(Collectors.toSet());
         inputProperties.addAll(blobTextFromDoc.getProperties().keySet());
         return inputProperties;
     }
@@ -101,7 +104,7 @@ public class EnrichmentUtils {
      * Gets the digests of any blobs used by the BlobTextFromDocument.
      */
     public static Set<String> getDigests(BlobTextFromDocument blobtext) {
-        return blobtext.getBlobs()
+        return blobtext.getPropertyBlobs()
                 .values()
                 .stream()
                 .map(Blob::getDigest)
@@ -197,7 +200,26 @@ public class EnrichmentUtils {
         }
         return null;
     }
-
+    
+    /**
+     * Convert the provided text (pdf, word) blob.
+     */
+    public static Blob convertTextBlob(Blob blob){
+        ConversionService conversionService = Framework.getService(ConversionService.class);
+        SimpleBlobHolder bh = new SimpleBlobHolder(blob);
+        Map<String, Serializable> emptyParameters = new HashMap<>();
+        
+        BlobHolder result;
+        try {
+            result = conversionService.convertToMimeType(MIME_TYPE_TEXT, bh, emptyParameters);
+        } catch (ConversionException e) {
+            result = null;
+            log.warn("Could not convert blob {} to format {}: Exception {}", blob.getDigest(), MIME_TYPE_TEXT, e.getLocalizedMessage());
+        }
+    
+        return result == null ? null : result.getBlob();
+    }
+    
     /**
      * Convert the provided image blob.
      */

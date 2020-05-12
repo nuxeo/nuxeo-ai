@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.tensorflow;
 
@@ -22,7 +23,9 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.BufferedOutputStream;
@@ -42,6 +45,7 @@ import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.tensorflow.ext.TensorflowWriter;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -67,7 +71,7 @@ public class TFRecordWriter extends AbstractRecordWriter {
 
     public static final String TFRECORD_MIME_TYPE = "application/x-tensorflow-record";
 
-    protected String conversionService;
+    protected String imageConversionService;
 
     protected int imageWidth;
 
@@ -119,17 +123,20 @@ public class TFRecordWriter extends AbstractRecordWriter {
     @Override
     public void init(Map<String, String> options) {
         super.init(options);
-        this.conversionService = options.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);
+        this.imageConversionService = options.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);
         try {
-            Framework.getService(ConversionService.class).isConverterAvailable(conversionService);
+            Framework.getService(ConversionService.class).isConverterAvailable(imageConversionService);
         } catch (ConverterNotRegistered e) {
-            log.warn(conversionService + " converter is not registered.  You will not be able to export images.");
+            log.warn(imageConversionService + " converter is not registered.  You will not be able to export images.");
         }
-        this.imageWidth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_WIDTH, EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
-        this.imageHeight = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_HEIGHT, EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
-        this.imageDepth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_DEPTH, EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
-        this.imageFormat = options
-                .getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT, EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
+        this.imageWidth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_WIDTH,
+                EnrichmentUtils.DEFAULT_IMAGE_WIDTH);
+        this.imageHeight = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_HEIGHT,
+                EnrichmentUtils.DEFAULT_IMAGE_HEIGHT);
+        this.imageDepth = optionAsInteger(options, ImagingConvertConstants.OPTION_RESIZE_DEPTH,
+                EnrichmentUtils.DEFAULT_IMAGE_DEPTH);
+        this.imageFormat = options.getOrDefault(ImagingConvertConstants.CONVERSION_FORMAT,
+                EnrichmentUtils.DEFAULT_CONVERSATION_FORMAT);
     }
 
     @Override
@@ -140,8 +147,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
             File file = getFile(list.get(0).getId());
 
             try (FileOutputStream fos = new FileOutputStream(file, true);
-                 BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
-                 DataOutputStream dos = new DataOutputStream(bos)) {
+                    BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
+                    DataOutputStream dos = new DataOutputStream(bos)) {
 
                 TensorflowWriter writer = new TensorflowWriter(dos);
                 for (ExportRecord record : list) {
@@ -155,8 +162,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
                 }
             }
             if (list.size() != written) {
-                log.warn("{} writer had {} records, {} were written, {} were skipped.",
-                        name, list.size(), written, skipped);
+                log.warn("{} writer had {} records, {} were written, {} were skipped.", name, list.size(), written,
+                        skipped);
             }
         }
 
@@ -168,8 +175,8 @@ public class TFRecordWriter extends AbstractRecordWriter {
         File file = getFile(record.getId());
 
         try (FileOutputStream fos = new FileOutputStream(file, true);
-             BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
-             DataOutputStream dos = new DataOutputStream(bos)) {
+                BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
+                DataOutputStream dos = new DataOutputStream(bos)) {
 
             TensorflowWriter writer = new TensorflowWriter(dos);
             if (write(writer, record)) {
@@ -208,10 +215,10 @@ public class TFRecordWriter extends AbstractRecordWriter {
      */
     protected Optional<Features> writeFeatures(BlobTextFromDocument blobTextFromDoc) throws IOException {
         Features.Builder features = Features.newBuilder();
-        for (Map.Entry<String, ManagedBlob> blobEntry : blobTextFromDoc.getBlobs().entrySet()) {
-            Blob blob = convertImageBlob(blobEntry.getValue());
+        for (Map.Entry<PropertyNameType, ManagedBlob> blobEntry : blobTextFromDoc.getPropertyBlobs().entrySet()) {
+            Blob blob = getConvertedBlob(blobEntry.getValue(), blobEntry.getKey().getType());
             if (blob != null) {
-                features.putFeature(blobEntry.getKey(), blobFeature(blob));
+                features.putFeature(blobEntry.getKey().getName(), blobFeature(blob));
             } else {
                 return Optional.empty();
             }
@@ -228,15 +235,18 @@ public class TFRecordWriter extends AbstractRecordWriter {
         return Blobs.createBlob(file, TFRECORD_MIME_TYPE);
     }
 
-    /**
-     * Converts a managed blob to Tensorflow record format
-     */
-    protected Blob convertImageBlob(ManagedBlob sourceBlob) {
+    protected Blob getConvertedBlob(ManagedBlob sourceBlob, String type) {
         if (sourceBlob != null) {
             Blob source = getBlobFromProvider(sourceBlob);
             if (source != null) {
-                return EnrichmentUtils
-                        .convertImageBlob(conversionService, source, imageWidth, imageHeight, imageDepth, imageFormat);
+                if (IMAGE_TYPE.equals(type)) {
+                    // if the blob is an image
+                    return EnrichmentUtils.convertImageBlob(imageConversionService, source, imageWidth, imageHeight,
+                            imageDepth, imageFormat);
+                } else if (TEXT_TYPE.equals(type)) {
+                    // the Blob is text
+                    return EnrichmentUtils.convertTextBlob(source);
+                }
             }
         }
         return null;

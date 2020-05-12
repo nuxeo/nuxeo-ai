@@ -36,6 +36,7 @@ import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -80,11 +81,11 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
         RekognitionService rs = Framework.getService(RekognitionService.class);
         KeyValueStore store = getStore();
-        for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
+        for (Map.Entry<PropertyNameType, ManagedBlob> blob : doc.getPropertyBlobs().entrySet()) {
             String jobId = rs.startDetectUnsafe(blob.getValue());
             HashMap<String, Serializable> params = new HashMap<>();
             params.put("doc", doc);
-            params.put("key", blob.getKey());
+            params.put("key", blob.getKey().getName());
 
             storeCallback(store, jobId, params);
         }

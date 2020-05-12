@@ -37,6 +37,7 @@ import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyNameType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -90,13 +91,13 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
         RekognitionService rs = Framework.getService(RekognitionService.class);
         log.debug("Starting async enrichment for doc: {}", doc.getId());
         KeyValueStore store = getStore();
-        for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
+        for (Map.Entry<PropertyNameType, ManagedBlob> blob : doc.getPropertyBlobs().entrySet()) {
             String jobId = rs.startDetectLabels(blob.getValue(), minConfidence);
             log.debug("Start detect labels Job {} scheduled", jobId);
             HashMap<String, Serializable> params = new HashMap<>();
             params.put(MAX_RESULTS, maxResults);
             params.put("doc", doc);
-            params.put("key", blob.getKey());
+            params.put("key", blob.getKey().getName());
 
             storeCallback(store, jobId, params);
         }
