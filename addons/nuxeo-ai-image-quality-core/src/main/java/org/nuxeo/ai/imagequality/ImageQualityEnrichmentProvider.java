@@ -55,8 +55,8 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 /**
  * An implementation of an {@link org.nuxeo.ai.enrichment.EnrichmentProvider} with Sightengine.
  * <p>
- * The api call is json based, it extends RestEnrichmentProvider to benefit from the RestClient methods.
- * Response parsing is done with Jackson and the classes in the pojo directory.
+ * The api call is json based, it extends RestEnrichmentProvider to benefit from the RestClient methods. Response
+ * parsing is done with Jackson and the classes in the pojo directory.
  */
 public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
 
@@ -73,8 +73,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
     /**
      * List of models
      * <p>
-     * The models string is a comma-separated list of the models you want to apply.
-     * The string denominations for each model is:
+     * The models string is a comma-separated list of the models you want to apply. The string denominations for each
+     * model is:
      * <ul>
      * <li><strong>nudity</strong> for the nudity detection</li>
      * <li><strong>wad</strong> for the weapons-alcohol-drugs detection</li>
@@ -134,7 +134,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
         if (blobTextFromDoc.getBlobs().size() != 1) {
             throw new NuxeoException("Sightengine only supports one blob image at a time.");
         }
-        File file = getBlobFromProvider(blobTextFromDoc.getBlobs().values().stream().findFirst().get()).getFile();
+        File file = getBlobFromProvider(
+                blobTextFromDoc.getBlobs().values().stream().findFirst().get()).getFile();
 
         // Use the multipart builder
         setMultipart(requestBuilder, builder -> {
@@ -152,7 +153,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
     }
 
     @Override
-    public Collection<EnrichmentMetadata> handleResponse(HttpResponse httpResponse, BlobTextFromDocument blobTextFromDoc) {
+    public Collection<EnrichmentMetadata> handleResponse(HttpResponse httpResponse,
+            BlobTextFromDocument blobTextFromDoc) {
         String json = getContent(httpResponse);
         try {
             if (log.isDebugEnabled()) {
@@ -170,8 +172,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
     /**
      * Process the returned json image properties into enrichment metadata.
      */
-    protected Collection<EnrichmentMetadata> processResponseProperties(ImageProperties props,
-                                                                       String rawKey, BlobTextFromDocument blobTextFromDoc) {
+    protected Collection<EnrichmentMetadata> processResponseProperties(ImageProperties props, String rawKey,
+            BlobTextFromDocument blobTextFromDoc) {
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
         List<AIMetadata.Tag> tags = new ArrayList<>();
 
@@ -200,7 +202,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
         }
 
         if (props.getText() != null && props.getText().getBoxes() != null && !props.getText().getBoxes().isEmpty()) {
-            tags.addAll(props.getText().getBoxes()
+            tags.addAll(props.getText()
+                             .getBoxes()
                              .stream()
                              .map(this::newTag)
                              .filter(Objects::nonNull)
@@ -213,7 +216,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
                 labels.add(new AIMetadata.Label("offensive", props.getOffensive().getProb()));
             }
             if (props.getOffensive().getBoxes() != null && !props.getOffensive().getBoxes().isEmpty()) {
-                tags.addAll(props.getOffensive().getBoxes()
+                tags.addAll(props.getOffensive()
+                                 .getBoxes()
                                  .stream()
                                  .map(this::newTag)
                                  .filter(Objects::nonNull)
@@ -258,34 +262,32 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
         }
 
         if (props.getColors() != null && props.getColors().getDominant() != null) {
-            tags.add(new AIMetadata.Tag(props.getColors().getDominant().getHex(), "color/dominant",
-                                        null, null, null, 0.1F));
+            tags.add(new AIMetadata.Tag(props.getColors().getDominant().getHex(), "color/dominant", null, null, null,
+                    0.1F));
         }
 
-        //perhaps they are tags
-//        "sharpness": 0.981,
-//        "contrast": 0.838,
-//        "brightness": 0.626,
+        // perhaps they are tags
+        // "sharpness": 0.981,
+        // "contrast": 0.838,
+        // "brightness": 0.626,
         labels.add(new AIMetadata.Label(props.getSharpnessDescription(), props.getSharpness()));
         labels.add(new AIMetadata.Label(props.getContrastDescription(), props.getContrast()));
         labels.add(new AIMetadata.Label(props.getBrightnessDescription(), props.getBrightness()));
 
         // props.getMedia() and props.getRequest() are not used
 
-        //Return the result
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withLabels(asLabels(labels))
-                                                 .withTags(asTags(tags))
-                                                 .withRawKey(rawKey)
-                                                 .build());
+        // Return the result
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withTags(asTags(tags))
+                                                                           .withRawKey(rawKey)
+                                                                           .build());
     }
 
     protected AIMetadata.Tag newTag(Box box) {
         if (box.getProb() >= minConfidence) {
             return new EnrichmentMetadata.Tag(box.getLabel(), kind, null,
-                                              new AIMetadata.Box(
-                                                      box.getX2(), box.getY2(), box.getX1(), box.getY1()),
-                                              null, box.getProb());
+                    new AIMetadata.Box(box.getX2(), box.getY2(), box.getX1(), box.getY1()), null, box.getProb());
         }
         return null;
     }

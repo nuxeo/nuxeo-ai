@@ -8,7 +8,7 @@
         <property name="dc:title" type="txt"/>
       </inputProperties>
       <outputProperties>
-        <property name="dc:description" type="txt"/>
+        <property name="dc:description" type="cat"/>
       </outputProperties>
       <info name="modelName">mockBulkModel</info>
       <info name="modelLabel">testing</info>
@@ -22,7 +22,7 @@
         <property name="dc:title" type="txt"/>
       </inputProperties>
       <outputProperties>
-        <property name="dc:description" type="txt"/>
+        <property name="dc:description" type="cat"/>
       </outputProperties>
       <info name="modelName">descModel</info>
       <info name="modelLabel">other</info>

@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.enrichment;
 
@@ -47,8 +48,8 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AutomationFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml" })
 public class TestEnrichmentOp {
 
     @Inject
@@ -110,7 +111,7 @@ public class TestEnrichmentOp {
             automationService.run(ctx, chain3);
             fail();
         } catch (NuxeoException e) {
-            assertTrue(e.getMessage().contains("You must specify either a blob or text property"));
+            assertTrue(e.getMessage().contains("You must specify either a blob, blobType or text property to use"));
         }
     }
 }

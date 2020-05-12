@@ -46,6 +46,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -75,9 +76,9 @@ import com.codahale.metrics.SharedMetricRegistries;
  * Tests a fully configured stream processor
  */
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ecm.automation.core",
-        "org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ecm.platform.tag", "org.nuxeo.ecm.automation.core",
+        "org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml" })
 public class TestConfiguredStreamProcessors {
 
     protected static final String METRICS_PREFIX = "nuxeo.ai.enrichment.test_images$simpleTest$test_images.out.";
@@ -97,27 +98,27 @@ public class TestConfiguredStreamProcessors {
     @Test
     public void testConfiguredStreamProcessor() throws Exception {
 
-        //Create a document
+        // Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc = session.createDocument(testDoc);
         String docId = testDoc.getId();
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
 
-        //Create metadata about the blob and document
+        // Create metadata about the blob and document
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.setId(docId);
         blobTextFromDoc.setRepositoryName(testDoc.getRepositoryName());
-        blobTextFromDoc.addBlob(FILE_CONTENT, new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
+        blobTextFromDoc.addBlob(FILE_CONTENT, "img", new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
 
-        //Check metrics, nothing produced
+        // Check metrics, nothing produced
         Map<String, Gauge> gauges = getMetrics(METRICS_PREFIX);
         Gauge called = gauges.get(METRICS_PREFIX + "called");
         Gauge produced = gauges.get(METRICS_PREFIX + "produced");
         assertEquals("The provider should not be called yet.", 0L, called.getValue());
         assertEquals(0L, produced.getValue());
 
-        //Now check and append a Record to the "test_images" stream
+        // Now check and append a Record to the "test_images" stream
         LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
         LogAppender<Record> appender = manager.getAppender("test_images");
         LogLag lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
@@ -125,13 +126,13 @@ public class TestConfiguredStreamProcessors {
         LogOffset offset = appender.append("mykey", toRecord("k", blobTextFromDoc));
         waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
 
-        //After waiting for the appender lets check the 1 record was read
+        // After waiting for the appender lets check the 1 record was read
         assertEquals("We must have been called once", 1L, called.getValue());
         assertEquals("We must have produced one record", 1L, produced.getValue());
         lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
         assertEquals("All records should be processed", 0, lag.lag());
 
-        //Confirm the document was enriched with the metadata
+        // Confirm the document was enriched with the metadata
         txFeature.nextTransaction();
         DocumentModel enrichedDoc = session.getDocument(new IdRef(docId));
         assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
@@ -139,24 +140,24 @@ public class TestConfiguredStreamProcessors {
         Assert.assertNotNull(classProp);
         assertEquals("simpleTest", classProp.get(0).get(ENRICHMENT_MODEL).getValue());
 
-        //Confirm event listeners fired
+        // Confirm event listeners fired
         String description = (String) enrichedDoc.getPropertyValue("dc:description");
-        assertEquals("The metaListening chain must have fired and set the description",
-                     "I_AM_LISTENING", description);
+        assertEquals("The metaListening chain must have fired and set the description", "I_AM_LISTENING", description);
         String title = (String) enrichedDoc.getPropertyValue("dc:title");
-        assertEquals("metadataListener.groovy must have set the title",
-                     "George Paul", title);
+        assertEquals("metadataListener.groovy must have set the title", "George Paul", title);
 
-        //Confirm 5 tags were added
+        // Confirm 5 tags were added
         Set<String> tags = tagService.getTags(session, docId);
         assertEquals(5, tags.size());
     }
 
     protected Map<String, Gauge> getMetrics(String metricPrefix) {
         MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
-        return registry.getGauges().entrySet().stream()
+        return registry.getGauges()
+                       .entrySet()
+                       .stream()
                        .filter(e -> e.getKey().startsWith(metricPrefix))
-                       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                       .collect(Collectors.toMap(e -> e.getKey(), Map.Entry::getValue));
     }
 
     @Test
@@ -172,7 +173,7 @@ public class TestConfiguredStreamProcessors {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
         blobTextFromDoc.setId(docId);
         blobTextFromDoc.setRepositoryName(testDoc.getRepositoryName());
-        blobTextFromDoc.getBlobs().get(FILE_CONTENT).setDigest("myUniqueDigest");
+        blobTextFromDoc.computePropertyBlobs().get(new PropertyType(FILE_CONTENT, "img")).setDigest("myUniqueDigest");
         Record record = toRecord("c1", blobTextFromDoc);
 
         // Append the record and check the results
@@ -221,10 +222,11 @@ public class TestConfiguredStreamProcessors {
     }
 
     /**
-     * Wait until there is no lag or timesout.
-     * This is a temporary solution until this logic is available in the framework.
+     * Wait until there is no lag or timesout. This is a temporary solution until this logic is available in the
+     * framework.
      */
-    public static void waitForNoLag(LogManager manager, String name, String group, Duration timeout) throws InterruptedException {
+    public static void waitForNoLag(LogManager manager, String name, String group, Duration timeout)
+            throws InterruptedException {
 
         final long deadline = System.currentTimeMillis() + timeout.toMillis();
         while (System.currentTimeMillis() < deadline) {

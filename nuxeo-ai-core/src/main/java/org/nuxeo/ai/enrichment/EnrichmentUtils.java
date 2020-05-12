@@ -15,10 +15,13 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.enrichment;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.nuxeo.ai.convert.AiPDFConverter.AI_PDF_CONVERTER;
+import static org.nuxeo.ai.convert.AiPDFConverter.PDF_MIME_TYPE;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -78,9 +81,11 @@ public class EnrichmentUtils {
 
     public static final String ENRICHMENT_CACHE_KV = "ENRICHMENT_CACHE_KEY_VALUE";
 
+    public static final String MIME_TYPE_TEXT = "text/plain";
+
     // Java 8 does not resolve rhv; keep for back compatibility
-    protected static final TypeReference<Collection<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE =
-            new TypeReference<Collection<EnrichmentMetadata>>() {};
+    protected static final TypeReference<Collection<EnrichmentMetadata>> ENRICHMENT_LIST_TYPE = new TypeReference<Collection<EnrichmentMetadata>>() {
+    };
 
     private static final Logger log = LogManager.getLogger(EnrichmentUtils.class);
 
@@ -102,11 +107,11 @@ public class EnrichmentUtils {
      */
     public static Set<String> getDigests(BlobTextFromDocument blobtext) {
         return blobtext.getBlobs()
-                .values()
-                .stream()
-                .map(Blob::getDigest)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+                       .values()
+                       .stream()
+                       .map(Blob::getDigest)
+                       .filter(Objects::nonNull)
+                       .collect(Collectors.toSet());
     }
 
     /**
@@ -154,7 +159,8 @@ public class EnrichmentUtils {
         try {
             if (isNotBlank(metadata.getRawKey())) {
                 TransientStore transientStore = Framework.getService(AIComponent.class)
-                        .getTransientStoreForEnrichmentProvider(metadata.getModelName());
+                                                         .getTransientStoreForEnrichmentProvider(
+                                                                 metadata.getModelName());
                 List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
                 if (rawBlobs != null && rawBlobs.size() == 1) {
                     return rawBlobs.get(0).getString();
@@ -199,10 +205,33 @@ public class EnrichmentUtils {
     }
 
     /**
+     * Convert the provided text (pdf, word) blob.
+     */
+    public static Blob convertTextBlob(Blob blob) {
+        ConversionService conversionService = Framework.getService(ConversionService.class);
+        SimpleBlobHolder bh = new SimpleBlobHolder(blob);
+        Map<String, Serializable> emptyParameters = new HashMap<>();
+
+        BlobHolder result;
+        try {
+            if (PDF_MIME_TYPE.equals(blob.getMimeType())) {
+                result = conversionService.convert(AI_PDF_CONVERTER, bh, emptyParameters);
+            } else {
+                result = conversionService.convertToMimeType(MIME_TYPE_TEXT, bh, emptyParameters);
+            }
+        } catch (ConversionException e) {
+            result = null;
+            log.warn("Could not convert blob {} to format {}: Exception {}", blob.getDigest(), MIME_TYPE_TEXT,
+                    e.getLocalizedMessage());
+        }
+
+        return result == null ? null : result.getBlob();
+    }
+
+    /**
      * Convert the provided image blob.
      */
-    public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth,
-                                        String format) {
+    public static Blob convertImageBlob(String service, Blob blob, int width, int height, int depth, String format) {
         SimpleBlobHolder bh = new SimpleBlobHolder(blob);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, width);
@@ -216,7 +245,8 @@ public class EnrichmentUtils {
             result = conversionService.convert(service, bh, parameters);
         } catch (ConversionException e) {
             result = null;
-            log.warn("Could not convert blob {} to format {}: Exception {}", blob.getDigest(), format, e.getLocalizedMessage());
+            log.warn("Could not convert blob {} to format {}: Exception {}", blob.getDigest(), format,
+                    e.getLocalizedMessage());
         }
 
         return result == null ? null : result.getBlob();
@@ -270,7 +300,7 @@ public class EnrichmentUtils {
      * Copy all the supplied metadata but using the BlobTextFromDocument as the context.
      */
     public static Collection<AIMetadata> copyEnrichmentMetadata(Collection<AIMetadata> metadata,
-                                                                BlobTextFromDocument blobTextFromDoc) {
+            BlobTextFromDocument blobTextFromDoc) {
         return metadata.stream().map(meta -> copyMetadata(meta, blobTextFromDoc)).collect(Collectors.toList());
     }
 
@@ -281,11 +311,11 @@ public class EnrichmentUtils {
         EnrichmentMetadata meta = (EnrichmentMetadata) metadata;
         return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.modelName,
                 blobTextFromDoc).withLabels(meta.getLabels())
-                .withTags(meta.getTags())
-                .withRawKey(meta.rawKey)
-                .withDocumentProperties(meta.context.inputProperties)
-                .withCreator(meta.creator)
-                .build();
+                                .withTags(meta.getTags())
+                                .withRawKey(meta.rawKey)
+                                .withDocumentProperties(meta.context.inputProperties)
+                                .withCreator(meta.creator)
+                                .build();
     }
 
     /**

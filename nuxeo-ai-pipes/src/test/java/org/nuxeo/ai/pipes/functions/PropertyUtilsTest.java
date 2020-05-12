@@ -25,6 +25,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.nuxeo.ai.pipes.events.EventPipesTest.TEST_MIME_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
@@ -45,6 +47,7 @@ import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -168,19 +171,22 @@ public class PropertyUtilsTest {
     @Test
     public void iCanSerializeDoc() {
         // Test with blob text
-        Set<String> properties = new HashSet<>(Arrays.asList("dc:title", FILE_CONTENT));
+        Set<PropertyType> properties = new HashSet<>(Arrays.asList(new PropertyType("dc:title",TEXT_TYPE),
+                new PropertyType(FILE_CONTENT, TEXT_TYPE)));
         DocumentModel doc = session.createDocumentModel("/", "Text", "File");
         Blob textBlob = Blobs.createBlob("My text is not very long.", TEST_MIME_TYPE);
         doc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
         doc = session.createDocument(doc);
         BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, properties);
         assertThat(blobTextFromDocument).isNotNull();
-        ManagedBlob blobResult = blobTextFromDocument.getBlobs().get(FILE_CONTENT);
+        ManagedBlob blobResult = blobTextFromDocument.computePropertyBlobs().get(new PropertyType(FILE_CONTENT, TEXT_TYPE));
         textBlob = (Blob) doc.getPropertyValue(FILE_CONTENT);
         assertThat(blobResult).isNotNull();
         assertThat(blobResult.getDigest()).isEqualTo(textBlob.getDigest());
 
         // Test with pictures
+        properties = new HashSet<>(Arrays.asList(new PropertyType("dc:title",TEXT_TYPE),
+                new PropertyType(FILE_CONTENT, IMAGE_TYPE)));
         doc = session.createDocumentModel("/", "picture", "Picture");
         File file = FileUtils.getResourceFileFromContext("files/plane.jpg");
         FileBlob imageBlob = new FileBlob(file);
@@ -193,7 +199,7 @@ public class PropertyUtilsTest {
         blobTextFromDocument = PropertyUtils.docSerialize(doc, properties);
         Blob image = (Blob) doc.getPropertyValue(FILE_CONTENT);
         assertThat(blobTextFromDocument).isNotNull();
-        blobResult = blobTextFromDocument.getBlobs().get(FILE_CONTENT);
+        blobResult = blobTextFromDocument.computePropertyBlobs().get(new PropertyType(FILE_CONTENT, IMAGE_TYPE));
         assertThat(blobResult).isNotNull();
         // Confirm that we took a related picture view and not the original blob
         assertThat(blobResult.getDigest()).isNotEqualTo(image.getDigest());

@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
@@ -53,8 +54,9 @@ public interface ModelServingService {
 
     /**
      * Get all the input properties for all models that match the provided document.
+     * @return
      */
-    Set<String> getInputs(DocumentModel document);
+    Set<ModelProperty> getInputs(DocumentModel document);
 
     /**
      * For each running model, evaluate if the supplied document passes the predicate test for a model, if so call the

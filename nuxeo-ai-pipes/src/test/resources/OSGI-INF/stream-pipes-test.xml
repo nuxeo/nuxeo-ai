@@ -29,6 +29,7 @@
       </consumer>
       <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
         <option name="blobProperties">picture:views/3/content</option>
+        <option name="blobPropertiesType">img</option>
       </transformer>
     </pipe>
   </extension>
@@ -83,6 +84,7 @@
       </consumer>
       <transformer>
         <option name="blobProperties">file:content</option>
+        <option name="blobPropertiesType">img</option>
         <option name="customProperties">picture:info/width,picture:info/height</option>
       </transformer>
     </pipe>

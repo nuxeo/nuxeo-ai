@@ -73,7 +73,7 @@ public class TestTextractService {
     @Test
     public void testDetectText() throws IOException {
         AWS.assumeCredentials();
-        BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/harddrive.jpg", "image/jpeg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/harddrive.jpg", "image/jpeg", "img");
 
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.documentText");
         assertNotNull(service);
@@ -89,7 +89,7 @@ public class TestTextractService {
     @Test
     public void testAnalyzeDocument() throws IOException {
         AWS.assumeCredentials();
-        BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/text.png", "image/jpeg");
+        BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/text.png", "image/jpeg", "img");
 
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.documentAnalyze");
         assertNotNull(service);
