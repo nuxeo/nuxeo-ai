@@ -155,7 +155,7 @@ public class TestTranscribeService {
         ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobKey,
                 blobKey, blob.getEncoding(), blob.getLength()
         );
-        btfd.addBlob("file:content", managedBlob);
+        btfd.addBlob("file:content", "img", managedBlob);
         AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME, new BlobTextFromDocument(doc))
                 .withLabels(Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
                 .withRawKey(rawKey)

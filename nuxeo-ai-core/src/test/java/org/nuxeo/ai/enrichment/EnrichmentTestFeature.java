@@ -40,13 +40,12 @@ import org.nuxeo.runtime.test.runner.RunnerFeature;
 /**
  * Sets the configuration for Enrichment tests
  */
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ecm.default.config",
-        "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-stream-config-test.xml",
-        "org.nuxeo.ai.ai-core"})
+@Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes", "org.nuxeo.ecm.default.config",
+        "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-stream-config-test.xml", "org.nuxeo.ai.ai-core" })
 public class EnrichmentTestFeature implements RunnerFeature {
 
     public static final String PIPES_TEST_CONFIG = "test_enrichment";
+
     public static final String FILE_CONTENT = "file:content";
 
     @Override
@@ -59,15 +58,16 @@ public class EnrichmentTestFeature implements RunnerFeature {
     /**
      * Create a BlobTextFromDocument test object using the specified file blob.
      */
-    public static BlobTextFromDocument setupBlobForStream(BlobManager manager, String fileName, String mimeType) throws IOException {
+    public static BlobTextFromDocument setupBlobForStream(BlobManager manager, String fileName, String mimeType,
+            String blobType) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(manager.getClass().getResourceAsStream(fileName), mimeType);
         ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobProvider.writeBlob(blob),
-                                                   blob.getDigest(), blob.getEncoding(), blob.getLength());
+                blob.getDigest(), blob.getEncoding(), blob.getLength());
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.setRepositoryName("test");
         blobTextFromDoc.setId(UUID.randomUUID().toString());
-        blobTextFromDoc.addBlob(FILE_CONTENT, managedBlob);
+        blobTextFromDoc.addBlob(FILE_CONTENT, blobType, managedBlob);
         return blobTextFromDoc;
     }
 
@@ -75,6 +75,14 @@ public class EnrichmentTestFeature implements RunnerFeature {
      * Create a BlobTextFromDocument test object with a sample test image.
      */
     public static BlobTextFromDocument blobTestImage(BlobManager manager) throws IOException {
-        return setupBlobForStream(manager, "/files/plane.jpg", "image/jpeg");
+        return setupBlobForStream(manager, "/files/plane.jpg", "image/jpeg", "img");
     }
+
+    /**
+     * Create a BlobTextFromDocument test object with a sample PDF.
+     */
+    public static BlobTextFromDocument blobTestPdf(BlobManager manager) throws IOException {
+        return setupBlobForStream(manager, "/files/MLLecture1.pdf", "application/pdf", "txt");
+    }
+
 }

@@ -25,12 +25,9 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.bulk.ExportHelper.propsToTypedList;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MIN_DOC_COUNT_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
@@ -40,9 +37,11 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -50,8 +49,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.search.aggregations.Aggregation;
-import org.nuxeo.ai.adapters.DatasetExport.IOParam;
+import org.nuxeo.ai.bulk.ExportHelper;
 import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
@@ -94,15 +94,12 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public static final String STATISTICS_PARAM = "statistics";
 
     public static final String QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
-            + NXQL.escapeString(DATASET_EXPORT_TYPE)
-            + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
             + DATASET_EXPORT_JOB_ID + " = ";
 
     public static final String QUERY_FOR_BATCH = "SELECT * FROM Document WHERE ecm:primaryType = "
-            + NXQL.escapeString(DATASET_EXPORT_TYPE)
-            + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
             + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
-
 
     public static final String STATS_TOTAL = "total";
 
@@ -113,41 +110,49 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public static final String DEFAULT_MIN_TERMS = "15";
 
     @Override
-    public String export(CoreSession session, String nxql,
-                         Collection<String> inputProperties, Collection<String> outputProperties, int split) {
+    public String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
+                         Set<PropertyType> outputProperties, int split) {
         return export(session, nxql, inputProperties, outputProperties, split, null);
     }
 
     @Override
-    public String export(CoreSession session, String nxql,
-                         Collection<String> inputProperties, Collection<String> outputProperties, int split,
-                         Map<String, Serializable> modelParams) {
+    public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
+                         int split, Map<String, Serializable> modelParams) {
 
-        validateParams(nxql, inputProperties, outputProperties);
+        List<String> inputNames = inputs.stream().map(p -> p.getName()).collect(Collectors.toList());
+        List<String> outputNames = outputs.stream().map(p -> p.getName()).collect(Collectors.toList());
+        validateParams(nxql, inputNames, outputNames);
 
         if (split < 1 || split > 100) {
             throw new IllegalArgumentException("Dataset split value is a percentage between 1 and 100");
         }
 
-        List<IOParam> inputs = propsToTypedList(inputProperties);
-        List<IOParam> outputs = propsToTypedList(outputProperties);
-
-        List<IOParam> featuresWithType = new ArrayList<>(inputs);
+        List<PropertyType> featuresWithType = new ArrayList<>(inputs);
         featuresWithType.addAll(outputs);
 
         String notNullNXQL = notNullNxql(nxql, featuresWithType);
         String username = session.getPrincipal().getName();
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL)
-                .user(username)
-                .repository(session.getRepositoryName())
-                .param(QUERY_PARAM, nxql)
-                .param(INPUT_PROPERTIES, (Serializable) inputProperties)
-                .param(OUTPUT_PROPERTIES, (Serializable) outputProperties)
-                .param(INPUT_PARAMETERS, (Serializable) inputs)
-                .param(OUTPUT_PARAMETERS, (Serializable) outputs)
-                .param(MODEL_PARAMETERS, (Serializable) modelParams)
-                .param(EXPORT_SPLIT_PARAM, split)
-                .build();
+        List<Map> inputAsParameter = inputs.stream().map(p -> new HashMap<String, String>() {
+            {
+                put("name", p.getName());
+                put("type", p.getType());
+            }
+        }).collect(Collectors.toList());
+        List<Map> outputAsParameter = outputs.stream().map(p -> new HashMap<String, String>() {
+            {
+                put("name", p.getName());
+                put("type", p.getType());
+            }
+        }).collect(Collectors.toList());
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME,
+                notNullNXQL).user(username)
+                            .repository(session.getRepositoryName())
+                            .param(QUERY_PARAM, nxql)
+                            .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
+                            .param(OUTPUT_PARAMETERS, (Serializable) outputAsParameter)
+                            .param(MODEL_PARAMETERS, (Serializable) modelParams)
+                            .param(EXPORT_SPLIT_PARAM, split)
+                            .build();
 
         if (log.isDebugEnabled()) {
             log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());
@@ -157,8 +162,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         if (client == null || !client.isAvailable()) {
             throw new NuxeoException("AI Client is not available; interrupting export " + bulkCommand.getId());
         }
-        return Framework.getService(BulkService.class)
-                .submit(bulkCommand);
+        return Framework.getService(BulkService.class).submit(bulkCommand);
     }
 
     @Override
@@ -194,30 +198,35 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
     }
 
-
     @Override
-    public Collection<Statistic> getStatistics(CoreSession session, String nxql,
-                                               Collection<String> inputProperties, Collection<String> outputProperties) {
-        validateParams(nxql, inputProperties, outputProperties);
-        List<String> featuresList = new ArrayList<>(inputProperties);
-        featuresList.addAll(outputProperties);
-        List<IOParam> featuresWithType = propsToTypedList(featuresList);
+    public Collection<Statistic> getStatistics(CoreSession session, String nxql, Set<PropertyType> inputProperties,
+            Set<PropertyType> outputProperties) {
+        Set<String> inputPropNames = inputProperties.stream().map(PropertyType::getName).collect(Collectors.toSet());
+        Set<String> outputPropNames = outputProperties.stream().map(PropertyType::getName).collect(Collectors.toSet());
+        validateParams(nxql, inputPropNames, outputPropNames);
+
+        List<PropertyType> featuresList = inputProperties.stream()
+                                                          .map(ExportHelper::addTypeIfNull)
+                                                          .collect(Collectors.toList());
+        featuresList.addAll(
+                outputProperties.stream().map(ExportHelper::addTypeIfNull).collect(Collectors.toList()));
 
         List<Statistic> stats = new ArrayList<>();
         NxQueryBuilder qb = new NxQueryBuilder(session).nxql(nxql).limit(0);
-        long total = getOverallStats(featuresWithType, stats, qb);
+        long total = getOverallStats(featuresList, stats, qb);
         if (total < 1) {
             return emptyList();
         }
-        qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresWithType)).limit(0);
-        getValidStats(featuresWithType, stats, qb);
+        qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
+        getValidStats(featuresList, stats, qb);
         return stats;
     }
 
     /**
      * Make an Aggregate using AggregateFactory.
      */
-    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field, Properties properties) {
+    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
+            Properties properties) {
         AggregateDescriptor descriptor = new AggregateDescriptor();
         descriptor.setId(aggKey(field, type));
         descriptor.setDocumentField(field);
@@ -233,9 +242,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Validate if the specified params are correct.
      */
-    protected void validateParams(String nxql, Collection<String> inputProperties, Collection<String> outputProperties) {
-        if (StringUtils.isBlank(nxql)
-                || inputProperties == null || inputProperties.isEmpty()
+    protected void validateParams(String nxql, Collection<String> inputProperties,
+            Collection<String> outputProperties) {
+        if (StringUtils.isBlank(nxql) || inputProperties == null || inputProperties.isEmpty()
                 || outputProperties == null || outputProperties.isEmpty()) {
             throw new IllegalArgumentException("nxql and properties are required parameters");
         }
@@ -248,28 +257,22 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Get the stats for the smaller dataset of valid values.
      */
     @SuppressWarnings("unchecked")
-    protected void getValidStats(List<IOParam> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
-        for (Map<String, String> prop : featuresWithType) {
-            String propName = prop.get(NAME_PROP);
-            switch (prop.get(TYPE_PROP)) {
-                case IMAGE_TYPE:
-                    //           qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
-                    break;
-                default:
-                    // Only 2 types at the moment, we would need numeric type in the future.
-                    // TEXT_TYPE
-                    Properties termProps = new Properties();
-                    termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
-                    termProps.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
-                    qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
-                    qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
+    protected void getValidStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
+        for (PropertyType prop : featuresWithType) {
+            String propName = prop.getName();
+            if (IMAGE_TYPE.equals(prop.getType()) || TEXT_TYPE.equals(prop.getType())) {
+                // qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
+            } else {
+                Properties termProps = new Properties();
+                termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
+                termProps.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
+                qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
+                qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
             }
         }
 
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.addAll(esResult.getAggregates().stream()
-                .map(Statistic::from)
-                .collect(Collectors.toList()));
+        stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
                 esResult.getElasticsearchResponse().getHits().getTotalHits()));
     }
@@ -278,13 +281,15 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Gets the overall stats for the dataset, before considering if the fields are valid.
      */
     @SuppressWarnings("unchecked")
-    protected Long getOverallStats(List<IOParam> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
+    protected Long getOverallStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
 
-        for (Map<String, String> prop : featuresWithType) {
-            String propName = prop.get(NAME_PROP);
-            switch (prop.get(TYPE_PROP)) {
+        for (PropertyType prop : featuresWithType) {
+            String propName = prop.getName();
+            if (prop.getType() != null) {
+                switch (prop.getType()) {
                 case CATEGORY_TYPE:
                 case TEXT_TYPE:
+                    // TODO assuming that text is a property ! could be a blob
                     qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
                     break;
                 case IMAGE_TYPE:
@@ -292,6 +297,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                     break;
                 default:
                     // Only 3 types at the moment, we would need numeric type in the future.
+                }
+            } else {
+                // TODO assuming without type it is text or category !
+                qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
             }
         }
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
@@ -305,23 +314,21 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         return propName + "/length";
     }
 
-    protected String notNullNxql(String nxql, List<IOParam> featuresWithType) {
+    protected String notNullNxql(String nxql, List<PropertyType> featuresWithType) {
         StringBuilder sb = new StringBuilder(nxql);
-        for (Map<String, String> prop : featuresWithType) {
-            String propName = prop.get(NAME_PROP);
-            switch (prop.get(TYPE_PROP)) {
-                case IMAGE_TYPE:
-                    sb.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
-                    break;
-                case CATEGORY_TYPE:
-                    // Don't add additional validation for the category type, it can be null.
-                    break;
-                default:
-                    sb.append(" AND ").append(propName).append(" IS NOT NULL");
+        // SchemaManager serv = Framework.getService(SchemaManager.class);
+        // Field field = serv.getField(propName);
+        for (PropertyType prop : featuresWithType) {
+            String propName = prop.getName();
+            if (IMAGE_TYPE.equals(prop.getType())) {
+                sb.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
+            } else if (CATEGORY_TYPE.equals(prop.getType())) {
+                // nothing to do here
+            } else {
+                sb.append(" AND ").append(propName).append(" IS NOT NULL");
             }
         }
         return sb.toString();
     }
-
 
 }

@@ -19,7 +19,6 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
@@ -33,17 +32,14 @@ import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
 import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PROPERTIES;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PROPERTIES;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY_PARAM;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,14 +47,15 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.adapters.DatasetExport;
-import org.nuxeo.ai.adapters.DatasetExport.IOParam;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.cloud.CorporaParameters;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
@@ -68,6 +65,7 @@ import org.nuxeo.ai.model.export.Statistic;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
@@ -133,16 +131,19 @@ public class ExportInitComputation extends AbstractBulkComputation {
         String original = (String) properties.get(QUERY_PARAM);
 
         @SuppressWarnings("unchecked")
-        List<String> input = (List<String>) properties.get(INPUT_PROPERTIES);
+        // re-create the properties for input and output
+        Set<PropertyType> outputs = ((List<Map<String, Serializable>>) properties.get(
+                OUTPUT_PARAMETERS)).stream()
+                                   .map(p -> new PropertyType((String) p.get("name"), (String) p.get("type")))
+                                   .collect(Collectors.toSet());
         @SuppressWarnings("unchecked")
-        List<String> output = (List<String>) properties.get(OUTPUT_PROPERTIES);
-        String nxql = buildQueryFrom(docs);
-        Blob stats = getStatisticsBlob(session, nxql, input, output);
+        Set<PropertyType> inputs = ((List<Map<String, Serializable>>) properties.get(
+                INPUT_PARAMETERS)).stream()
+                                  .map(p -> new PropertyType((String) p.get("name"), (String) p.get("type")))
+                                  .collect(Collectors.toSet());
 
-        @SuppressWarnings("unchecked")
-        List<IOParam> outputs = (List<IOParam>) properties.get(OUTPUT_PARAMETERS);
-        @SuppressWarnings("unchecked")
-        List<IOParam> inputs = (List<IOParam>) properties.get(INPUT_PARAMETERS);
+        String nxql = buildQueryFrom(docs);
+        Blob stats = getStatisticsBlob(session, nxql, inputs, outputs);
 
         @SuppressWarnings("unchecked")
         Map<String, Serializable> modelParams = (Map<String, Serializable>) properties.get(MODEL_PARAMETERS);
@@ -155,17 +156,16 @@ public class ExportInitComputation extends AbstractBulkComputation {
         // Split documents list into training and validation dataset
         int splitIndex = (int) Math.ceil((docs.size() - 1) * split / 100.f);
 
-        List<String> featuresList = new ArrayList<>(input);
-        featuresList.addAll(output);
-        String[] props = featuresList.toArray(new String[0]);
+        Set<PropertyType> featuresList = new HashSet<>(inputs);
+        featuresList.addAll(outputs);
 
         for (DocumentModel doc : docs.subList(0, splitIndex)) {
-            ExportRecord record = createRecordFromDoc(batchId, props, doc);
+            ExportRecord record = createRecordFromDoc(batchId, featuresList, doc);
             training.add(record);
         }
 
         for (DocumentModel doc : docs.subList(splitIndex, docs.size())) {
-            ExportRecord record = createRecordFromDoc(batchId, props, doc);
+            ExportRecord record = createRecordFromDoc(batchId, featuresList, doc);
             validation.add(record);
         }
 
@@ -176,8 +176,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
     }
 
     protected DatasetExport createDataset(CoreSession session, String original, Map<String, Serializable> modelParams,
-                                        List<IOParam> inputs, List<IOParam> outputs, Blob stats, String batchId,
-                                        int split) {
+                                          Set<PropertyType> inputs, Set<PropertyType> outputs, Blob stats, String batchId, int split) {
         return ExportHelper.runInTransaction(() -> {
             try (CloseableCoreSession sess = CoreInstance.openCoreSessionSystem(session.getRepositoryName(),
                     session.getPrincipal().getName())) {
@@ -197,7 +196,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
         });
     }
 
-    protected void setCorporaId(CoreSession session, String original, List<IOParam> outputs, List<IOParam> inputs, Map<String, Serializable> modelParams) {
+    protected void setCorporaId(CoreSession session, String original, Set<PropertyType> outputs,
+                                Set<PropertyType> inputs, Map<String, Serializable> modelParams) {
         if (StringUtils.isEmpty((String) modelParams.get(CORPORA_ID_PARAM))) {
             DatasetExportService des = Framework.getService(DatasetExportService.class);
             String corporaId = des.getCorporaForAction(session, command.getId());
@@ -205,7 +205,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
                 CorporaParameters cp = new CorporaParameters();
                 cp.setQuery(original);
 
-                List<IOParam> fields = new ArrayList<>(inputs);
+                Set<PropertyType> fields = new HashSet<>(inputs);
                 fields.addAll(outputs);
                 cp.setFields(fields);
                 corporaId = Framework.getService(CloudClient.class).initExport(null, cp);
@@ -237,20 +237,31 @@ public class ExportInitComputation extends AbstractBulkComputation {
     /**
      * Create a corpus document for the data export.
      */
-    public DatasetExport createDataset(CoreSession session, String query,
-                                       List<IOParam> inputs, List<IOParam> outputs,
-                                       int split, Blob statsBlob, String exportId) {
+    public DatasetExport createDataset(CoreSession session, String query, Set<PropertyType> inputs,
+                                       Set<PropertyType> outputs, int split, Blob statsBlob, String exportId) {
         if (log.isDebugEnabled()) {
             log.debug("Creating DatasetExport with Repository {} and User {}", session.getRepositoryName(),
                     session.getPrincipal().getActingUser());
         }
-        DocumentModel doc = session.createDocumentModel(getRootFolder(session),
-                "corpus_" + exportId, DATASET_EXPORT_TYPE);
+        DocumentModel doc = session.createDocumentModel(getRootFolder(session), "corpus_" + exportId,
+                DATASET_EXPORT_TYPE);
         DatasetExport adapter = doc.getAdapter(DatasetExport.class);
         adapter.setQuery(query);
         adapter.setSplit(split);
-        adapter.setInputs(inputs);
-        adapter.setOutputs(outputs);
+        List<DatasetExport.IOParam> inputForAdp = inputs.stream().map(p -> new DatasetExport.IOParam() {
+            {
+                put("name", p.getName());
+                put("type", p.getType());
+            }
+        }).collect(Collectors.toList());
+        adapter.setInputs(inputForAdp);
+        List<DatasetExport.IOParam> outputForAdp = outputs.stream().map(p -> new DatasetExport.IOParam() {
+            {
+                put("name", p.getName());
+                put("type", p.getType());
+            }
+        }).collect(Collectors.toList());
+        adapter.setOutputs(outputForAdp);
         adapter.setStatistics(statsBlob);
 
         return adapter;
@@ -261,27 +272,27 @@ public class ExportInitComputation extends AbstractBulkComputation {
             for (String key : modelParams.keySet()) {
                 Serializable value = modelParams.get(key);
                 switch (key) {
-                    case DATASET_EXPORT_MODEL_END_DATE:
-                    case DATASET_EXPORT_MODEL_START_DATE:
-                        document.setPropertyValue(key, new Date((long) value));
-                        break;
-                    case DATASET_EXPORT_MODEL_ID:
-                    case DATASET_EXPORT_MODEL_NAME:
-                        document.setPropertyValue(key, value);
-                        break;
-                    case CORPORA_ID_PARAM:
-                        document.setPropertyValue(DATASET_EXPORT_CORPORA_ID, value);
-                        break;
-                    default:
-                        log.warn("Unknown property {} of type {}", key, value);
+                case DATASET_EXPORT_MODEL_END_DATE:
+                case DATASET_EXPORT_MODEL_START_DATE:
+                    document.setPropertyValue(key, new Date((long) value));
+                    break;
+                case DATASET_EXPORT_MODEL_ID:
+                case DATASET_EXPORT_MODEL_NAME:
+                    document.setPropertyValue(key, value);
+                    break;
+                case CORPORA_ID_PARAM:
+                    document.setPropertyValue(DATASET_EXPORT_CORPORA_ID, value);
+                    break;
+                default:
+                    log.warn("Unknown property {} of type {}", key, value);
                 }
             }
         }
     }
 
     @Nonnull
-    protected Blob getStatisticsBlob(CoreSession session, String
-            nxql, List<String> input, List<String> output) {
+    protected Blob getStatisticsBlob(CoreSession session, String nxql, Set<PropertyType> input,
+            Set<PropertyType> output) {
         Blob stats;
         try {
             Collection<Statistic> statistics = buildStatistics(session, nxql, input, output);
@@ -305,18 +316,28 @@ public class ExportInitComputation extends AbstractBulkComputation {
         return sb.toString();
     }
 
-    protected ExportRecord createRecordFromDoc(String id, String[] props, DocumentModel doc) {
-        List<String> targetProperties = new ArrayList<>(asList(props));
+    protected ExportRecord createRecordFromDoc(String id, Set<PropertyType> props, DocumentModel doc) {
+        Map<String, String> nameTypePair = props.stream()
+                                                .collect(Collectors.toMap(PropertyType::getName,
+                                                        PropertyType::getType));
 
         if (doc.hasFacet(ENRICHMENT_FACET)) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
-            targetProperties.removeAll(wrapper.getAutoFilled());
-            targetProperties.removeAll(wrapper.getAutoCorrected());
+            for (String removeProperty : wrapper.getAutoFilled()) {
+                nameTypePair.remove(removeProperty);
+            }
+            for (String removeProperty : wrapper.getAutoCorrected()) {
+                nameTypePair.remove(removeProperty);
+            }
         }
 
         BlobTextFromDocument subDoc = null;
-        if (!targetProperties.isEmpty()) {
-            subDoc = PropertyUtils.docSerialize(doc, new HashSet<>(targetProperties));
+        if (!nameTypePair.isEmpty()) {
+            Set<PropertyType> properties = nameTypePair.entrySet()
+                                                           .stream()
+                                                           .map(p -> new PropertyType(p.getKey(), p.getValue()))
+                                                           .collect(Collectors.toSet());
+            subDoc = PropertyUtils.docSerialize(doc, properties);
         }
 
         if (subDoc != null) {
@@ -331,8 +352,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
     }
 
-    protected Collection<Statistic> buildStatistics(CoreSession session, String
-            query, List<String> input, List<String> output) {
+    protected Collection<Statistic> buildStatistics(CoreSession session, String query, Set<PropertyType> input,
+            Set<PropertyType> output) {
         DatasetStatsService dss = Framework.getService(DatasetStatsService.class);
         return dss.getStatistics(session, query, input, output);
     }

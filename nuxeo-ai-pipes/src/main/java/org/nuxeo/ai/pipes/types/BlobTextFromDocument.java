@@ -15,6 +15,7 @@
  *
  * Contributors:
  *     Gethin James
+ *     Pedro Cardoso
  */
 package org.nuxeo.ai.pipes.types;
 
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -31,14 +33,16 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * A POJO representation used to transfer data in a stream.
- * The main subject of this class is usually either a blob or a piece of text taken from a Nuxeo Document.
+ * A POJO representation used to transfer data in a stream. The main subject of this class is usually either a blob or a
+ * piece of text taken from a Nuxeo Document.
  */
 public class BlobTextFromDocument implements Partitionable, Serializable {
 
     private static final long serialVersionUID = 201920081233428L;
 
     private final Map<String, String> properties = new HashMap<>();
+
+    private final Map<String, String> blobTypes = new HashMap<>();
 
     private final Map<String, ManagedBlob> blobs = new HashMap<>();
 
@@ -55,7 +59,8 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
     public BlobTextFromDocument() {
     }
 
-    public BlobTextFromDocument(String id, String repositoryName, String parentId, String primaryType, Set<String> facets) {
+    public BlobTextFromDocument(String id, String repositoryName, String parentId, String primaryType,
+            Set<String> facets) {
         this.id = id;
         this.repositoryName = repositoryName;
         this.parentId = parentId;
@@ -115,8 +120,20 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
         return blobs;
     }
 
-    public void addBlob(String name, ManagedBlob blob) {
+    public Map<String, String> getBlobTypes() {
+        return blobTypes;
+    }
+
+    public Map<PropertyType, ManagedBlob> computePropertyBlobs() {
+        return blobs.entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(b -> new PropertyType(b.getKey(), blobTypes.get(b.getKey())),
+                            Map.Entry::getValue));
+    }
+
+    public void addBlob(String name, String type, ManagedBlob blob) {
         blobs.put(name, blob);
+        blobTypes.put(name, type);
     }
 
     public Map<String, String> getProperties() {
@@ -136,31 +153,28 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
             return false;
         }
         BlobTextFromDocument that = (BlobTextFromDocument) o;
-        return Objects.equals(id, that.id) &&
-                Objects.equals(repositoryName, that.repositoryName) &&
-                Objects.equals(parentId, that.parentId) &&
-                Objects.equals(primaryType, that.primaryType) &&
-                Objects.equals(facets, that.facets) &&
-                Objects.equals(blobs, that.blobs) &&
-                Objects.equals(properties, that.properties);
+        return Objects.equals(id, that.id) && Objects.equals(repositoryName, that.repositoryName)
+                && Objects.equals(parentId, that.parentId) && Objects.equals(primaryType, that.primaryType)
+                && Objects.equals(facets, that.facets) && Objects.equals(blobs, that.blobs)
+                && Objects.equals(blobTypes, that.blobTypes) && Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobs, properties);
+        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobs, blobTypes, properties);
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("id", id)
-                .append("repositoryName", repositoryName)
-                .append("parentId", parentId)
-                .append("primaryType", primaryType)
-                .append("facets", facets)
-                .append("blob", blobs)
-                .append("properties", properties)
-                .toString();
+        return new ToStringBuilder(this).append("id", id)
+                                        .append("repositoryName", repositoryName)
+                                        .append("parentId", parentId)
+                                        .append("primaryType", primaryType)
+                                        .append("facets", facets)
+                                        .append("blobs", blobs)
+                                        .append("blobTypes", blobTypes)
+                                        .append("properties", properties)
+                                        .toString();
     }
 
     @Override
