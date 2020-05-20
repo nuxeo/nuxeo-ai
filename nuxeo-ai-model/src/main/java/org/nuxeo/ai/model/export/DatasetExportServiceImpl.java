@@ -51,6 +51,8 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.nuxeo.ai.bulk.ExportHelper;
 import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -111,13 +113,13 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
-                         Set<PropertyType> outputProperties, int split) {
+            Set<PropertyType> outputProperties, int split) {
         return export(session, nxql, inputProperties, outputProperties, split, null);
     }
 
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
-                         int split, Map<String, Serializable> modelParams) {
+            int split, Map<String, Serializable> modelParams) {
 
         List<String> inputNames = inputs.stream().map(p -> p.getName()).collect(Collectors.toList());
         List<String> outputNames = outputs.stream().map(p -> p.getName()).collect(Collectors.toList());
@@ -132,13 +134,13 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         String notNullNXQL = notNullNxql(nxql, featuresWithType);
         String username = session.getPrincipal().getName();
-        List<Map> inputAsParameter = inputs.stream().map(p -> new HashMap<String, String>() {
+        List<Map<String, String>> inputAsParameter = inputs.stream().map(p -> new HashMap<String, String>() {
             {
                 put("name", p.getName());
                 put("type", p.getType());
             }
         }).collect(Collectors.toList());
-        List<Map> outputAsParameter = outputs.stream().map(p -> new HashMap<String, String>() {
+        List<Map<String, String>> outputAsParameter = outputs.stream().map(p -> new HashMap<String, String>() {
             {
                 put("name", p.getName());
                 put("type", p.getType());
@@ -206,10 +208,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         validateParams(nxql, inputPropNames, outputPropNames);
 
         List<PropertyType> featuresList = inputProperties.stream()
-                                                          .map(ExportHelper::addTypeIfNull)
-                                                          .collect(Collectors.toList());
-        featuresList.addAll(
-                outputProperties.stream().map(ExportHelper::addTypeIfNull).collect(Collectors.toList()));
+                                                         .map(ExportHelper::addTypeIfNull)
+                                                         .collect(Collectors.toList());
+        featuresList.addAll(outputProperties.stream().map(ExportHelper::addTypeIfNull).collect(Collectors.toList()));
 
         List<Statistic> stats = new ArrayList<>();
         NxQueryBuilder qb = new NxQueryBuilder(session).nxql(nxql).limit(0);
@@ -280,9 +281,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Gets the overall stats for the dataset, before considering if the fields are valid.
      */
-    @SuppressWarnings("unchecked")
     protected Long getOverallStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
-
         for (PropertyType prop : featuresWithType) {
             String propName = prop.getName();
             if (prop.getType() != null) {
