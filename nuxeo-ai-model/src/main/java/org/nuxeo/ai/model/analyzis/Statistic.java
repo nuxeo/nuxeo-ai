@@ -16,8 +16,9 @@
  * Contributors:
  *     Gethin James
  */
-package org.nuxeo.ai.model.export;
+package org.nuxeo.ai.model.analyzis;
 
+import static org.nuxeo.ai.model.analyzis.DatasetStatsService.getInputType;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.util.List;
@@ -25,10 +26,13 @@ import java.util.List;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.elasticsearch.aggregate.MultiBucketAggregate;
 import org.nuxeo.elasticsearch.aggregate.SingleBucketAggregate;
 import org.nuxeo.elasticsearch.aggregate.SingleValueMetricAggregate;
+import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,18 +53,30 @@ public class Statistic {
 
     protected final Number numericValue;
 
+    protected String aggType;
+
     public Statistic(String id, String field, String type, String value, Number numericValue) {
         this.id = id;
         this.field = field;
         this.type = type;
         this.value = value;
         this.numericValue = numericValue;
+        this.aggType = type;
     }
 
+    /**
+     * Factory constructor
+     * @return {@link Statistic} new object
+     */
     public static Statistic of(String id, String field, String type, String value, Number numericValue) {
         return new Statistic(id, field, type, value, numericValue);
     }
 
+    /**
+     * Factory constructor
+     * @param agg {@link Aggregate} from which to construct
+     * @return {@link Statistic} new object
+     */
     public static Statistic from(Aggregate<?> agg) {
         Number numericValue = null;
         String value = null;
@@ -79,7 +95,21 @@ public class Statistic {
         } else {
             throw new UnsupportedOperationException("Unable to create a statistic for " + agg.getType());
         }
-        return new Statistic(agg.getId(), agg.getField(), agg.getType(), value, numericValue);
+
+        String fieldName = agg.getField();
+        if (fieldName.endsWith("/length") || fieldName.endsWith(".length")) {
+            fieldName = fieldName.substring(0, fieldName.length() - "/length".length());
+        }
+
+        SchemaManager ts = Framework.getService(SchemaManager.class);
+        Field field = ts.getField(fieldName);
+
+        String type = getInputType(field);
+
+        Statistic statistic = new Statistic(agg.getId(), fieldName, type, value, numericValue);
+        statistic.aggType = agg.getType();
+
+        return statistic;
     }
 
     public String getId() {
@@ -100,6 +130,14 @@ public class Statistic {
 
     public String getValue() {
         return value;
+    }
+
+    public String getAggType() {
+        return aggType;
+    }
+
+    public void setAggType(String aggType) {
+        this.aggType = aggType;
     }
 
     @Override

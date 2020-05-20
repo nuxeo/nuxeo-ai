@@ -19,9 +19,12 @@
 package org.nuxeo.ai.model.export;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
@@ -41,7 +44,7 @@ public class DatasetStatsOperation {
     public static final String ID = "AI.DatasetStats";
 
     @Context
-    protected DatasetStatsService service;
+    protected DatasetStatsService dss;
 
     @Context
     protected CoreSession session;
@@ -87,6 +90,7 @@ public class DatasetStatsOperation {
             throw new NuxeoException("outputs or outputProperties, one of the two needs to be defined.");
         }
 
-        return Blobs.createJSONBlobFromValue(service.getStatistics(session, query, inputProp, outputProp));
+        Collection<Statistic> statistics = dss.getStatistics(session, query, inputProp, outputProp);
+        return Blobs.createJSONBlobFromValue(dss.transform(statistics));
     }
 }

@@ -74,7 +74,7 @@
     </consumer>
     <transformer>
       <option name="blobProperties">file:content</option>
-      <option name="blobProperties">img</option>
+      <option name="blobPropertiesType">img</option>
     </transformer>
   </pipe>
 
