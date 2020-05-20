@@ -73,11 +73,10 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.model.export.DatasetStatsOperation;
-import org.nuxeo.ai.model.export.DatasetStatsService;
-import org.nuxeo.ai.model.export.Statistic;
+import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.automation.AutomationService;
-import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
@@ -416,7 +415,7 @@ public class DatasetExportTest {
                                                     .getStatistics(session, nxql, input, output);
         assertEquals("There should be 3 aggregates * 3 category fields + 2 agg missing content fields + 2 totals = 12",
                 12, statistics.size());
-        Map<String, List<Statistic>> byType = statistics.stream().collect(groupingBy(Statistic::getType));
+        Map<String, List<Statistic>> byType = statistics.stream().collect(groupingBy(Statistic::getAggType));
         Map<String, List<Statistic>> byField = statistics.stream().collect(groupingBy(Statistic::getField));
         assertEquals("There should be 3 aggregates + 2 total = 5", 5, byType.size());
         Statistic total = byType.get(STATS_TOTAL).get(0);
@@ -443,7 +442,7 @@ public class DatasetExportTest {
         assertEquals(250, missingLang.getNumericValue().intValue());
         Statistic missingContent = byType.get(AGG_MISSING)
                                          .stream()
-                                         .filter(a -> "file:content.length".equals(a.getField()))
+                                         .filter(a -> "file:content".equals(a.getField()))
                                          .findFirst()
                                          .get();
         assertEquals(50, missingContent.getNumericValue().intValue());
@@ -461,19 +460,16 @@ public class DatasetExportTest {
         params.put("query", "SELECT * from document WHERE dc:title = 'i dont exist'");
         params.put("inputs", "dc:title,file:content");
         params.put("outputs", "dc:description");
-        OperationChain chain = new OperationChain("testChainStatsEmpty");
-        chain.add(DatasetStatsOperation.ID).from(params);
-        Blob jsonBlob = (Blob) automationService.run(ctx, chain);
+
+        Blob jsonBlob = (Blob) automationService.run(ctx, DatasetStatsOperation.ID, params);
         JsonNode jsonTree = MAPPER.readTree(jsonBlob.getString());
         assertEquals(0, jsonTree.size());
 
-        params.put("query", String.format("SELECT * from Document where ecm:parentId='%s'", testRoot.getId()));
-        chain = new OperationChain("testChainStats");
-        chain.add(DatasetStatsOperation.ID).from(params);
-        jsonBlob = (Blob) automationService.run(ctx, chain);
+        params.put("query", "SELECT * from Document where ecm:parentId = " + NXQL.escapeString(testRoot.getId()));
+
+        jsonBlob = (Blob) automationService.run(ctx, DatasetStatsOperation.ID, params);
         jsonTree = MAPPER.readTree(jsonBlob.getString());
-        assertEquals("There should be 3 aggregates * 2 text fields + 1 agg content field + 2 totals = 9", 5,
+        assertEquals("There should be 3 field statistics", 3,
                 jsonTree.size());
-        // TODO improve the count
     }
 }
