@@ -35,6 +35,7 @@
           </properties>
         </aggregate>
       </aggregates>
+      <pageSize>1</pageSize>
     </genericPageProvider>
   </extension>
 
