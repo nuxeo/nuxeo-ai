@@ -15,45 +15,42 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="simpleProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="simpleProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">test_images</option>
-      <option name="sink">test_images.out</option>
+      <option name="source">test/images</option>
+      <option name="sink">test/images-out</option>
       <option name="enrichmentProviderName">simpleTest</option>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="tagsProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="tagsProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
-      <option name="source">test_images.out</option>
+      <option name="source">test/images-out</option>
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     logConfig="test_enrichment"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
-      <option name="source">test_images.out</option>
+      <option name="source">test/images-out</option>
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="customEventProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     logConfig="test_enrichment"
                      class="org.nuxeo.ai.enrichment.CustomEnrichmentConsumer">
-      <option name="source">test_images.out</option>
+      <option name="source">test/images-out</option>
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     logConfig="test_enrichment"
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
-      <option name="source">test_images.out</option>
+      <option name="source">test/images-out</option>
       <option name="eventName">myCustomMetadataCreated</option>
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
@@ -85,19 +82,19 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="suggestionProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="suggestionProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">test_images</option>
-      <option name="sink">test_suggestion_out</option>
+      <option name="source">test/images</option>
+      <option name="sink">test/suggestion-out</option>
       <option name="enrichmentProviderName">simpleTest</option>
       <option name="suggest">true</option>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="suggestProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="suggestProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.CustomSuggestionConsumer">
-      <option name="source">test_suggestion</option>
+      <option name="source">test/suggestion</option>
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>

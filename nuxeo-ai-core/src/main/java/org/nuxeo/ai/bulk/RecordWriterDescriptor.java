@@ -54,7 +54,7 @@ public class RecordWriterDescriptor {
             }
             return writerImpl;
         } catch (ReflectiveOperationException e) {
-            throw new NuxeoException("RecordWriterDescriptor must define a valid RecordWriter", e);
+            throw new NuxeoException("Invalid RecordWriter '" + name + "' for RecordWriterDescriptor", e);
         }
     }
 }

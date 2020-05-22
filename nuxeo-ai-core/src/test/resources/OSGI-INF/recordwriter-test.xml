@@ -9,8 +9,8 @@
   </extension>
   <extension point="recordWriter" target="org.nuxeo.ai.services.AIComponent">
     <recordWriter class="org.nuxeo.ai.tensorflow.TFRecordWriter">
-      <name>training</name>
-      <name>validation</name>
+      <name>ai/training</name>
+      <name>ai/validation</name>
       <option name="blobProvider">test</option>
       <option name="conversionService">specialConverter</option>
     </recordWriter>

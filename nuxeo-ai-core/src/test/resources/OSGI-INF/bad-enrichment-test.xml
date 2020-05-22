@@ -15,7 +15,7 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="basicProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">iny</option>
       <option name="sink">outy</option>
@@ -24,7 +24,7 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="noServiceProcessor" logConfig="test_enrichment" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="noServiceProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">not_in</option>
       <option name="sink">not_out</option>

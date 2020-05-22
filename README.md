@@ -198,7 +198,7 @@ You can set these in your `nuxeo.conf`.
 <tr>
 <td colspan="1">`nuxeo.enrichment.source.stream`</td>
 <td colspan="1">The name of the stream that receives Enrichment data</td>
-<td colspan="1">`enrichment.in`</td>
+<td colspan="1">`ai/enrichment-in`</td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
@@ -307,14 +307,14 @@ The [configuration parameters](#configuration-parameters) are used to configure 
 A [Sample DAM configuration is available to download](https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-pipes/src/test/resources/ai-dam-config.xml), and defines 2 pipelines:
 ###### Images Pipeline
  * Listens for `pictureViewsGenerationDone` and sends `picture:views/3/content` to the `images` stream.
- * Configures an `EnrichingStreamProcessor` to read from the  `images` stream, calls the `aws.celebrityDetection` enrichment service and puts the response in the `images.enrichment.in` stream.
- * The next stream processor reads from the `images.enrichment.in` stream, and raises an `imageMetadataCreated` event for each new enrichment entry.
+ * Configures an `EnrichingStreamProcessor` to read from the  `images` stream, calls the `aws.celebrityDetection` enrichment service and puts the response in the `ai/images-enrichment-in` stream.
+ * The next stream processor reads from the `ai/images-enrichment-in` stream, and raises an `imageMetadataCreated` event for each new enrichment entry.
  * An example listener for the  `imageMetadataCreated` event writes a log message.
 
 ###### Video Pipeline
  * Listens for new `vid:storyboard` modifications for a document in a path containing `movies` and sends 4 of the video storyboard images to the `video` stream.
- * Configures an `EnrichingStreamProcessor` to read from the `video` stream, calls the `aws.imageLabels` enrichment service and puts the response in the `video.enrichment.in` stream.
- * The next stream processor reads from the `video.enrichment.in` stream and creates document tags for the enrichment labels.
+ * Configures an `EnrichingStreamProcessor` to read from the `video` stream, calls the `aws.imageLabels` enrichment service and puts the response in the `ai/video-enrichment-in` stream.
+ * The next stream processor reads from the `ai/video-enrichment-in` stream and creates document tags for the enrichment labels.
 
 Please note that the `EnrichingStreamProcessors` are using a stream processing policy of `continueOnFailure=true`, this means that *stream processing will continue even if the enrichment failed*.
 
@@ -364,10 +364,10 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 
 ```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-<streamProcessor name="basicProcessor" logConfig="${nuxeo.ai.stream.config.name}" defaultConcurrency="1" defaultPartitions="4"
+<streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="4"
                class="org.nuxeo.my.custom.StreamProcessor">
- <option name="source">mystream</option>
- <option name="sink">mystream.out</option>
+ <option name="source">ai/mystream</option>
+ <option name="sink">ai/mystream-out</option>
 </streamProcessor>
 </extension>
 ```
@@ -375,14 +375,13 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 ##### Enrichment stream processing
 You can register your custom enrichment services to act as a stream processor using the `EnrichingStreamProcessor`.
 For example, the following configuration would register a stream processor that acts on a source stream called `images`,
-it runs the `custom1` enrichment service on each record and sends the result to the `enrichment.in` stream.
+it runs the `custom1` enrichment service on each record and sends the result to the `ai/enrichment-in` stream.
 ```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-<streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"
-                 logConfig="${nuxeo.ai.stream.config.name}"
+<streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"                 
                  class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-  <option name="source">images</option>
-  <option name="sink">enrichment.in</option>
+  <option name="source">ai/images</option>
+  <option name="sink">ai/enrichment-in</option>
   <option name="enrichmentProviderName">custom1</option>
 </streamProcessor>
 </extension>

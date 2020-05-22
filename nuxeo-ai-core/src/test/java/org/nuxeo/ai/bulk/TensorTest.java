@@ -70,7 +70,7 @@ public class TensorTest {
 
     @Test
     public void testWriter() throws IOException {
-        RecordWriter writer = aiComponent.getRecordWriter("training");
+        RecordWriter writer = aiComponent.getRecordWriter("ai/training");
         assertNotNull(writer);
         BlobProvider blobProvider = blobManager.getBlobProvider("test");
         assertNotNull(blobProvider);
@@ -121,7 +121,7 @@ public class TensorTest {
 
     @Test
     public void testBlobWriter() throws IOException {
-        RecordWriter writer = aiComponent.getRecordWriter("validation");
+        RecordWriter writer = aiComponent.getRecordWriter("ai/validation");
         assertNotNull(writer);
         BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider("test");
         assertNotNull(blobProvider);
@@ -160,7 +160,7 @@ public class TensorTest {
 
     @Test
     public void testTextBlobWriter() throws IOException {
-        RecordWriter writer = aiComponent.getRecordWriter("validation");
+        RecordWriter writer = aiComponent.getRecordWriter("ai/validation");
         assertNotNull(writer);
         BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider("test");
         assertNotNull(blobProvider);
@@ -201,7 +201,7 @@ public class TensorTest {
 
     @Test
     public void testMissing() throws IOException {
-        AbstractRecordWriter writer = (AbstractRecordWriter) aiComponent.getRecordWriter("validation");
+        AbstractRecordWriter writer = (AbstractRecordWriter) aiComponent.getRecordWriter("ai/validation");
         assertNotNull(writer);
         assertFalse(writer.complete("madeup").isPresent());
 

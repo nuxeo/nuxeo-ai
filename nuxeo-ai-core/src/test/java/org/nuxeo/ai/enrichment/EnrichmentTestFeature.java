@@ -24,7 +24,6 @@ import static org.nuxeo.ai.configuration.ThresholdComponent.AUTO_CORRECT_DEFAULT
 import java.io.IOException;
 import java.util.UUID;
 
-import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -44,13 +43,14 @@ import org.nuxeo.runtime.test.runner.RunnerFeature;
         "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-stream-config-test.xml", "org.nuxeo.ai.ai-core" })
 public class EnrichmentTestFeature implements RunnerFeature {
 
+    // @deprecated not needed anymore
+    @Deprecated(since = "11.1")
     public static final String PIPES_TEST_CONFIG = "test_enrichment";
 
     public static final String FILE_CONTENT = "file:content";
 
     @Override
     public void beforeRun(FeaturesRunner runner) throws Exception {
-        Framework.getProperties().put(PipelineServiceImpl.PIPES_CONFIG, PIPES_TEST_CONFIG);
         Framework.getProperties().put(AUTOFILL_DEFAULT_VALUE, "0.2");
         Framework.getProperties().put(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
     }

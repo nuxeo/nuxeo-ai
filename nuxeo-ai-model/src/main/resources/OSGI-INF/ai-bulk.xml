@@ -2,47 +2,53 @@
 <component name="org.nuxeo.ai.bulk.services" version="1.0">
 
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
-    <action name="bulkDatasetExport" bucketSize="100" batchSize="100"/>
-    <action name="bulkEnrich" bucketSize="100" batchSize="50"/>
-    <action name="bulkEnrichRemove" bucketSize="100" batchSize="50"/>
+    <action name="bulkDatasetExport" inputStream="ai/bulkDatasetExport" bucketSize="100" batchSize="100" />
+    <action name="bulkEnrich" inputStream="ai/bulkEnrich" bucketSize="100" batchSize="50" />
+    <action name="bulkEnrichRemove" inputStream="ai/bulkEnrichRemove" bucketSize="100" batchSize="50" />
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
-                     defaultConcurrency="1" defaultPartitions="1">
-      <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
-      <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+    <streamProcessor name="bulkDatasetExport" class="org.nuxeo.ai.bulk.BulkDatasetExportAction" defaultConcurrency="1"
+      defaultPartitions="1">
+      <policy name="ai/training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true" />
+      <policy name="ai/validation" batchCapacity="100" batchThreshold="3s" maxRetries="0"
+        continueOnFailure="true" />
       <!--   1048576 = 1MB   -->
-      <stream name="exp-training" partitions="1">
-        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+      <stream name="ai/training" partitions="1">
+        <filter name="overflow"
+          class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
           <option name="storeTTL">4h</option>
         </filter>
       </stream>
-      <stream name="exp-validation" partitions="1">
-        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+      <stream name="ai/validation" partitions="1">
+        <filter name="overflow"
+          class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
           <option name="storeTTL">4h</option>
         </filter>
       </stream>
-      <stream name="exp-dataset-update" partitions="1">
-        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+      <stream name="ai/dataset-update" partitions="1">
+        <filter name="overflow"
+          class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
           <option name="storeTTL">4h</option>
         </filter>
       </stream>
     </streamProcessor>
-    <streamProcessor name="bulkEnrich" class="org.nuxeo.ai.bulk.BulkEnrichmentAction" logConfig="bulk"
-                     defaultConcurrency="2" defaultPartitions="2">
-      <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
-      <option name="streamName">bulk.enrich</option>
+
+    <streamProcessor name="bulkEnrich" class="org.nuxeo.ai.bulk.BulkEnrichmentAction" defaultConcurrency="2"
+      defaultPartitions="2">
+      <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true" />
+      <option name="streamName">ai/bulkEnriched</option>
     </streamProcessor>
-    <streamProcessor name="bulkEnrichRemove" class="org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction" logConfig="bulk"
-                     defaultConcurrency="2" defaultPartitions="2">
-      <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
+
+    <streamProcessor name="bulkEnrichRemove" class="org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction" defaultConcurrency="2"
+      defaultPartitions="2">
+      <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true" />
     </streamProcessor>
   </extension>
 </component>

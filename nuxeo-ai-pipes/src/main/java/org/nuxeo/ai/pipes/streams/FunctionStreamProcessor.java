@@ -18,11 +18,14 @@
  */
 package org.nuxeo.ai.pipes.streams;
 
+import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +36,7 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
+
 import io.dropwizard.metrics5.MetricRegistry;
 import io.dropwizard.metrics5.SharedMetricRegistries;
 
@@ -55,7 +59,7 @@ public class FunctionStreamProcessor {
         if (StringUtils.isBlank(streamIn)) {
             throw new IllegalArgumentException("You must define a streamIn stream");
         }
-        streams.add("i1:" + streamIn);
+        streams.add(INPUT_1 + ":" + streamIn);
         if (StringUtils.isNotBlank(streamOut)) {
             String[] outStreams = streamOut.split(",");
             int i = 1;
@@ -67,9 +71,9 @@ public class FunctionStreamProcessor {
     }
 
     public static String buildName(String simpleName, String streamIn, String streamOut) {
-        String in = streamIn != null ? streamIn + "$" : "";
-        String out = streamOut != null ? "$" + streamOut : "";
-        return in + simpleName + out;
+        String in = streamIn != null ? streamIn.replace("/", "-") : "void";
+        String out = streamOut != null ? "_" + streamOut.replace("/", "-").replace(",", "_") : "";
+        return "ai/" + simpleName + "_" + in + out;
     }
 
     public Topology getTopology(Function<Record, Optional<Record>> function, Map<String, String> options) {

@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+
 import javax.inject.Inject;
 
 import org.junit.Rule;
@@ -59,6 +60,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
+import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -81,6 +83,10 @@ import com.google.common.collect.Sets;
 public class BulkEnrichmentTest {
 
     public static final int NUM_OF_DOCS = 100;
+
+    protected static final Name ENRICHMENT_IN = Name.ofUrn("test/enrichment-in");
+
+    protected static final Name SAVE_ENRICHMENT_GROUP = Name.ofUrn("test/SaveEnrichmentFunction_test-enrichment-in");
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(5089);
@@ -120,12 +126,12 @@ public class BulkEnrichmentTest {
         DocumentModel testRoot = setupTestData();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
                 testRoot.getId());
-        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(
+        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
-        waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
         txFeature.nextTransaction();
 
         List<DocumentModel> docs = getSomeDocuments(nxql);
@@ -184,12 +190,10 @@ public class BulkEnrichmentTest {
         }
 
         // All removed so lets add again.
-        command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(session.getPrincipal().getName())
-                                                                                 .repository(
-                                                                                         session.getRepositoryName())
-                                                                                 .build();
+        command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql,
+                session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
-        waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
+        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
         txFeature.nextTransaction();
 
         docs = getSomeDocuments(nxql);
@@ -220,7 +224,7 @@ public class BulkEnrichmentTest {
 
         bulkService.submit(command);
         assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(30)));
-        waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
+        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
         txFeature.nextTransaction();
 
         DocumentModelList someDoc = session.query(nxql);

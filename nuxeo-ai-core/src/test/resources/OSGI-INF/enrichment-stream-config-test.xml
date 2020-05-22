@@ -1,11 +1,6 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.enrichment.stream.config.test" version="1.0">
 
-  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
-    <logConfig name="test_enrichment">
-    </logConfig>
-  </extension>
-
   <extension target="org.nuxeo.ecm.core.transientstore.TransientStorageComponent" point="store">
     <store name="testTransient">
       <targetMaxSizeMB>0</targetMaxSizeMB>

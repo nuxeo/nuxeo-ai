@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.annotation.Nonnull;
 
 import org.apache.commons.lang3.StringUtils;
@@ -147,7 +148,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             }
         }).collect(Collectors.toList());
         BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME,
-                notNullNXQL).user(username)
+                notNullNXQL, username)
                             .repository(session.getRepositoryName())
                             .param(QUERY_PARAM, nxql)
                             .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
