@@ -39,12 +39,11 @@
     <!-- Define an stream processor that uses the enrichment service -->
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
       <streamProcessor name="sightengineDefaultProcessor" defaultConcurrency="1" defaultPartitions="4"
-                       logConfig="${nuxeo.ai.stream.config.name}"
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
         <!-- The input stream to process -->
-        <option name="source">images</option>
+        <option name="source">ai/images</option>
         <!-- The output stream to write out enrichment metadata -->
-        <option name="sink">enrichment.in</option>
+        <option name="sink">ai/enrichment-in</option>
         <!-- The name matches the enrichment service name defined above -->
         <option name="enrichmentProviderName">ai.imagequality.all</option>
       </streamProcessor>

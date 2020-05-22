@@ -6,10 +6,10 @@
     <action name="bulkDatasetExport" bucketSize="100" batchSize="2"/>
   </extension>
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
-                     defaultConcurrency="2" defaultPartitions="2">
-      <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
-      <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+    <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.BulkDatasetExportAction" defaultConcurrency="2"
+      defaultPartitions="2">
+      <policy name="training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true" />
+      <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true" />
     </streamProcessor>
   </extension>
 

@@ -22,7 +22,7 @@ package org.nuxeo.ai.bulk;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
+import static org.nuxeo.ai.bulk.BulkDatasetExportAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
 import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;

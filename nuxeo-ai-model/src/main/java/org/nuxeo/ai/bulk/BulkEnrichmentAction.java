@@ -57,6 +57,10 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
 
     public static final String ACTION_NAME = "bulkEnrich";
 
+    public static final String INPUT_STREAM = "ai/" + ACTION_NAME;
+
+    public static final String COMPUTATION_NAME  =  INPUT_STREAM;
+
     public static final String STREAM_NAME = "streamName";
 
     @Override
@@ -65,7 +69,7 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         String outputStream = options.get(STREAM_NAME);
         return Topology.builder()
                        .addComputation(DocEnrichingComputation::new,
-                               Arrays.asList(INPUT_1 + ":" + ACTION_NAME, OUTPUT_1 + ":" + STATUS_STREAM,
+                               Arrays.asList(INPUT_1 + ":" + INPUT_STREAM, OUTPUT_1 + ":" + STATUS_STREAM,
                                        OUTPUT_2 + ":" + outputStream))
                        .build();
     }
@@ -77,7 +81,7 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         List<Record> outputs = new ArrayList<>();
 
         public DocEnrichingComputation() {
-            super(ACTION_NAME, 2);
+            super(COMPUTATION_NAME, 2);
         }
 
         @Override

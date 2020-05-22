@@ -22,7 +22,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.nuxeo.ai.pipes.PipesTestConfigFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
@@ -32,7 +31,9 @@ import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+
 import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -48,6 +49,7 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.LogRecord;
 import org.nuxeo.lib.stream.log.LogTailer;
+import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -71,24 +73,39 @@ public class StreamsPipesTest {
     @Inject
     EventService eventService;
 
+    protected static final Name TEST_GROUP = Name.ofUrn("test/group");
+
+    protected static final Name TEXT_OUT = Name.ofUrn("test/text-out");
+
+    protected static final Name PIPE_TEXT_OUT = Name.ofUrn("test/pipe-text-out");
+
+    protected static final Name PIPE_DIRTY_OUT = Name.ofUrn("test/pipe-dirty-out");
+
+    protected static final Name DEFAULT_BINARY_TEXT = Name.ofUrn("test/default-binary-text");
+
+    protected static final Name CUSTOM_BINARY_TEXT = Name.ofUrn("test/custom-binary-text");
+
     @Test
     public void testPipes() throws Exception {
 
         Event event = getTestEvent(session);
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
-
-        //First check the event goes from text-> text.pass -> text.out streams
-        try (LogTailer<Record> tailer = manager.createTailer("group", "text.out")) {
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        // First check the event goes from text-> text-pass -> text-out streams
+        try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, TEXT_OUT)) {
             assertNull(tailer.read(Duration.ofSeconds(1)));
             eventService.fireEvent(event);
             eventService.waitForAsyncCompletion();
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
             assertNotNull(record);
+        } catch (IllegalArgumentException e) {
+            // here
+            System.out.println(manager);
+            System.out.println(event);
         }
 
         DocumentModel theTestDoc;
         //Now check the MimeBlobPropertyFilter filter the blob by "text" mimetype
-        try (LogTailer<Record> tailer = manager.createTailer("group", "pipe.text.out")) {
+        try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, PIPE_TEXT_OUT)) {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(1));
             assertNotNull(record);
             BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
@@ -96,7 +113,7 @@ public class StreamsPipesTest {
         }
 
         //Modify the test document and check the dirty listeners ran
-        try (LogTailer<Record> tailer = manager.createTailer("group", "pipe.dirty.out")) {
+        try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, PIPE_DIRTY_OUT)) {
             assertEquals(null, tailer.read(Duration.ofSeconds(1)));
             theTestDoc.setPropertyValue("dc:title", "Dirty Document");
             session.saveDocument(theTestDoc);
@@ -112,10 +129,10 @@ public class StreamsPipesTest {
 
         DocumentModel doc = session.createDocumentModel("/", "My binary Doc", "File");
         ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
 
         //First create some text and check it gets added to the stream
-        try (LogTailer<Record> tailer = manager.createTailer("group", "default.binary.text")) {
+        try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, DEFAULT_BINARY_TEXT)) {
             tailer.toEnd();
             doc = session.createDocument(doc);
             session.setDocumentSystemProp(doc.getRef(), BINARY_TEXT_SYS_PROP, "My text");
@@ -128,7 +145,7 @@ public class StreamsPipesTest {
         }
 
         //Create text twice but the second is ignore because its in the "window size"
-        try (LogTailer<Record> tailer = manager.createTailer("group", "custom.binary.text")) {
+        try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, CUSTOM_BINARY_TEXT)) {
             tailer.toEnd();
             doc = session.createDocument(doc);
             session.setDocumentSystemProp(doc.getRef(), BINARY_TEXT_SYS_PROP, "My custom text");
@@ -174,12 +191,15 @@ public class StreamsPipesTest {
     @Test
     public void testBuildName() {
         assertEquals("Should not error even though nulls passed in",
-                     "aname", buildName("aname", null, null)
+                "ai/aname_void", buildName("aname", null, null)
         );
-        assertEquals("bob$king$hope", buildName("king", "bob", "hope"));
-        assertEquals("bob$king$hope,rope", buildName("king", "bob", "hope,rope"));
+        assertEquals("ai/king_bob_hope", buildName("king", "bob", "hope"));
+        assertEquals("ai/king_bob_hope_rope", buildName("king", "bob", "hope,rope"));
 
-        assertEquals("bob$king", buildName("king", "bob", null));
-        assertEquals("king$kong", buildName("king", null, "kong"));
+        assertEquals("ai/king_bob", buildName("king", "bob", null));
+        assertEquals("ai/king_void_kong", buildName("king", null, "kong"));
+
+        assertEquals("ai/functionClass_stream-source_stream-sink1_stream-sink2",
+                buildName("functionClass", "stream/source", "stream/sink1,stream/sink2"));
     }
 }

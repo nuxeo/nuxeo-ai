@@ -54,6 +54,10 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
 
     public static final String ACTION_NAME = "bulkEnrichRemove";
 
+    public static final String INPUT_STREAM = "ai/" + ACTION_NAME;
+
+    public static final String COMPUTATION_NAME  =  INPUT_STREAM;
+
     public static final String PARAM_MODEL = "modelId";
 
     public static final String PARAM_XPATHS = "xpaths";
@@ -63,7 +67,7 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
 
         return Topology.builder()
                        .addComputation(RemovalComputation::new,
-                                       Arrays.asList(INPUT_1 + ":" + ACTION_NAME, //
+                                       Arrays.asList(INPUT_1 + ":" + INPUT_STREAM, //
                                                      OUTPUT_1 + ":" + STATUS_STREAM))
                        .build();
     }
@@ -77,7 +81,7 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
         protected Set<String> xPaths;
 
         public RemovalComputation() {
-            super(ACTION_NAME);
+            super(COMPUTATION_NAME);
         }
 
         @Override

@@ -5,10 +5,9 @@
 <#if "${nuxeo.enrichment.aws.images}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.imageLabels</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -16,10 +15,9 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.textDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -27,10 +25,9 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="faceProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.faceDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -38,10 +35,9 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="celebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.celebrityDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -49,10 +45,9 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="unsafeImagesProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.unsafeImages</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -62,10 +57,9 @@
 <#if "${nuxeo.enrichment.aws.text}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="textSentimentProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">text</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/text</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.textSentiment</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -75,10 +69,9 @@
 <#if "${nuxeo.enrichment.aws.document.text}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="textractTextProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.documentText</option>
     </streamProcessor>
   </extension>
@@ -87,10 +80,9 @@
 <#if "${nuxeo.enrichment.aws.document.analyze}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="textractDocProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.documentAnalyze</option>
     </streamProcessor>
   </extension>
@@ -99,9 +91,8 @@
 <#if "${nuxeo.enrichment.aws.document.analyze}" == "true" || "${nuxeo.enrichment.aws.document.text}" == "true">
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
         <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
-                         logConfig="${nuxeo.ai.stream.config.name}"
                          class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
-          <option name="source">enrichment.in</option>
+          <option name="source">ai/enrichment-in</option>
           <option name="eventName">textractMetadataCreated</option>
         </streamProcessor>
     </extension>
@@ -110,10 +101,9 @@
 <#if "${nuxeo.enrichment.aws.video}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="videoLabelsProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">videos</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/videos</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.videoLabels</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -121,10 +111,9 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="videoUnsafeProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">videos</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/videos</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.unsafeVideo</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -132,10 +121,9 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="videoFaceProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">videos</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/videos</option>
+      <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.videoFaceDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -143,10 +131,9 @@
 
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
       <streamProcessor name="videoCelebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
-                       logConfig="${nuxeo.ai.stream.config.name}"
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-        <option name="source">videos</option>
-        <option name="sink">enrichment.in</option>
+        <option name="source">ai/videos</option>
+        <option name="sink">ai/enrichment-in</option>
         <option name="enrichmentProviderName">aws.videoCelebrityDetection</option>
         <option name="cache">${nuxeo.enrichment.aws.cache}</option>
       </streamProcessor>

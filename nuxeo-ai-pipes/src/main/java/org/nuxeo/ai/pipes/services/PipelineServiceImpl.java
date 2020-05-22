@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
@@ -41,6 +42,7 @@ import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogManager;
+import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.codec.CodecService;
@@ -51,6 +53,7 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;
 import org.nuxeo.runtime.stream.StreamService;
+
 import io.dropwizard.metrics5.MetricRegistry;
 import io.dropwizard.metrics5.SharedMetricRegistries;
 
@@ -74,8 +77,6 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
 
     protected final MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
 
-    private String pipeConfigName;
-
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
         if (ROUTE_AP.equals(extensionPoint)) {
@@ -96,7 +97,6 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        pipeConfigName = Framework.getProperty(PIPES_CONFIG, "pipes");
         this.configs.forEach((key, value) -> addPipe(value));
         this.textConfigs.forEach(d ->
                                  d.consumer.streams.forEach(s ->
@@ -201,10 +201,11 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
      * Create a <code>LogAppenderConsumer</code> for the specified log/stream</code>
      */
     protected LogAppenderConsumer addLogConsumer(String logName, int size) {
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(pipeConfigName);
-        manager.createIfNotExists(logName, size);
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        Name log = Name.ofUrn(logName);
+        manager.createIfNotExists(log, size);
         CloseableLogAppender<Record> appender =
-                (CloseableLogAppender) manager.getAppender(logName,
+                (CloseableLogAppender) manager.getAppender(log,
                                                            Framework.getService(CodecService.class)
                                                                     .getCodec(RECORD_CODEC, Record.class));
         LogAppenderConsumer consumer = new LogAppenderConsumer(appender);

@@ -26,26 +26,24 @@
   </extension>
 
   <!-- Read from the "images" stream, call aws.celebrityDetection and put the response in the
-      images.enrichment.in stream -->
+      ai/images-enrichment-in stream -->
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="celebrityProcessor" defaultConcurrency="2" defaultPartitions="4"
-                     logConfig="pipes"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">images</option>
-      <option name="sink">images.enrichment.in</option>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/images-enrichment-in</option>
       <option name="enrichmentProviderName">aws.celebrityDetection</option>
       <option name="cache">true</option>
       <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
     </streamProcessor>
   </extension>
 
-  <!-- Read from the "images.enrichment.in" stream, and raise an "imageMetadataCreated" event for each new enrichment entry. -->
+  <!-- Read from the "ai/images-enrichment-in" stream, and raise an "imageMetadataCreated" event for each new enrichment entry. -->
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="raiseEventProcessor" defaultConcurrency="2" defaultPartitions="4"
-                     logConfig="pipes"
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
-      <option name="source">images.enrichment.in</option>
+      <option name="source">ai/images-enrichment-in</option>
       <option name="eventName">imageMetadataCreated</option>
     </streamProcessor>
   </extension>
@@ -99,26 +97,24 @@
   </extension>
 
   <!-- Read from the "video" stream, call aws.videoLabels and put the response in the
-      video.enrichment.in stream -->
+      ai/video-enrichment-in stream -->
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="pipes"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">video</option>
-      <option name="sink">video.enrichment.in</option>
+      <option name="source">ai/video</option>
+      <option name="sink">ai/video-enrichment-in</option>
       <option name="enrichmentProviderName">aws.videoLabels</option>
       <option name="cache">true</option>
       <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
     </streamProcessor>
   </extension>
 
-  <!-- Read from the "video.enrichment.in" stream and create document tags for the enrichment labels -->
+  <!-- Read from the "ai/video-enrichment-in" stream and create document tags for the enrichment labels -->
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="tagsProcessor" defaultConcurrency="1" defaultPartitions="4"
-                     logConfig="pipes"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
-      <option name="source">video.enrichment.in</option>
+      <option name="source">ai/video-enrichment-in</option>
     </streamProcessor>
   </extension>
   <!-- VIDEO PIPELINE END -->

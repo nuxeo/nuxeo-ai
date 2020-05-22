@@ -28,29 +28,28 @@
       <info name="modelLabel">other</info>
     </model>
   </extension>
-  
+
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="basicProcessor" logConfig="bulk" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">bulk.enrich</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/bulkEnriched</option>
+      <option name="sink">test/enrichment-in</option>
       <option name="enrichmentProviderName">basicBulkModel</option>
     </streamProcessor>
   </extension>
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="descProcessor" logConfig="bulk" defaultConcurrency="1" defaultPartitions="1"
+    <streamProcessor name="descProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">bulk.enrich</option>
-      <option name="sink">enrichment.in</option>
+      <option name="source">ai/bulkEnriched</option>
+      <option name="sink">test/enrichment-in</option>
       <option name="enrichmentProviderName">descBulkModel</option>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="saveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     logConfig="bulk"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
-      <option name="source">enrichment.in</option>
+      <option name="source">test/enrichment-in</option>
       <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
     </streamProcessor>
   </extension>

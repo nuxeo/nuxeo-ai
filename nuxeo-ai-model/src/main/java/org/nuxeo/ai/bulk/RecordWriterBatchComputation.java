@@ -20,7 +20,7 @@ package org.nuxeo.ai.bulk;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
+import static org.nuxeo.ai.bulk.BulkDatasetExportAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 
 import java.io.IOException;
@@ -51,6 +51,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
     @Override
     public void batchProcess(ComputationContext context, String inputStream, List<Record> records) {
+        log.error("Got batch of " + records.size());
         RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(metadata.name());
         if (writer == null) {
             throw new NuxeoException("Unknown record write specified: " + metadata.name());
@@ -73,6 +74,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
             } catch (IOException e) {
                 throw new NuxeoException("Failed to write batch " + metadata.name(), e);
             } finally {
+                log.error("output: " + recs.size());
                 recs.forEach(rec -> {
                     byte[] encoded = codec.encode(rec);
                     context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);

@@ -20,7 +20,7 @@ package org.nuxeo.ai.bulk;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
+import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_STREAM;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.DONE_STREAM;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
@@ -39,31 +39,31 @@ import com.google.common.collect.Sets;
 /**
  * Bulk export data from Nuxeo to TFRecord Split the dataset in training and validation sets.
  */
-public class DataSetBulkAction implements StreamProcessorTopology {
+public class BulkDatasetExportAction implements StreamProcessorTopology {
 
-    private static final Logger log = LogManager.getLogger(DataSetBulkAction.class);
+    private static final Logger log = LogManager.getLogger(BulkDatasetExportAction.class);
 
-    public static final String TRAINING_STREAM = "exp-training";
+    public static final String TRAINING_STREAM = "ai/training";
 
-    public static final String TRAINING_COMPUTATION = "training";
+    public static final String TRAINING_COMPUTATION = TRAINING_STREAM;
 
-    public static final String VALIDATION_STREAM = "exp-validation";
+    public static final String VALIDATION_STREAM = "ai/validation";
 
-    public static final String VALIDATION_COMPUTATION = "validation";
+    public static final String VALIDATION_COMPUTATION = VALIDATION_STREAM;
 
-    public static final String DATASET_UPDATE_STREAM = "exp-dataset-update";
+    public static final String DATASET_UPDATE_STREAM = "ai/dataset-update";
 
-    public static final String DATASET_UPDATE_COMPUTATION = "dataset-update";
+    public static final String DATASET_UPDATE_COMPUTATION = DATASET_UPDATE_STREAM;
 
-    public static final String EXPORT_STATUS_STREAM = "exp-status";
+    public static final String EXPORT_STATUS_STREAM = "ai/status";
 
-    public static final String EXPORT_STATUS_COMPUTATION = "exp-status-comp";
+    public static final String EXPORT_STATUS_COMPUTATION = EXPORT_STATUS_STREAM;
 
-    public static final String EXPORT_UPLOAD_COMPUTATION = "upload-comp";
+    public static final String EXPORT_UPLOAD_STREAM = "ai/upload";
 
-    public static final String EXPORT_UPLOAD_STREAM = "exp-upload-comp";
+    public static final String EXPORT_UPLOAD_COMPUTATION = EXPORT_UPLOAD_STREAM;
 
-    public static final String EXPORT_DONE_COMPUTATION = "done-comp";
+    public static final String EXPORT_DONE_COMPUTATION = "ai/done";
 
     /**
      * Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
@@ -72,8 +72,8 @@ public class DataSetBulkAction implements StreamProcessorTopology {
     @Override
     public Topology getTopology(Map<String, String> options) {
         return Topology.builder()
-                .addComputation(() -> new ExportInitComputation(EXPORT_ACTION_NAME),
-                        asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
+                .addComputation(() -> new ExportInitComputation(EXPORT_ACTION_STREAM),
+                        asList(INPUT_1 + ":" + EXPORT_ACTION_STREAM, //
                                 OUTPUT_1 + ":" + TRAINING_STREAM, //
                                 OUTPUT_2 + ":" + VALIDATION_STREAM))
 

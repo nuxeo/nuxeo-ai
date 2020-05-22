@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.logging.LogFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.streams.Initializable;
@@ -123,7 +122,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
         String existing = kvStore.getString(key);
         if (existing == null) {
             try {
-                File tempFile = Framework.createTempFile(id, name);
+                File tempFile = Framework.createTempFile(id, sanitize(name));
                 Framework.trackFile(tempFile, this);
                 kvStore.put(key, tempFile.getAbsolutePath(), DEFAULT_BLOB_TTL_SEC);
                 if (log.isDebugEnabled()) {
@@ -137,6 +136,10 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
             return new File(existing);
         }
 
+    }
+
+    protected String sanitize(String name) {
+        return name.replace("/", "-");
     }
 
 }

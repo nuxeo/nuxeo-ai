@@ -25,7 +25,6 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.PIPES_TEST_CONFIG;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
@@ -61,6 +60,7 @@ import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.LogOffset;
+import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.stream.StreamService;
@@ -82,7 +82,19 @@ import io.dropwizard.metrics5.SharedMetricRegistries;
         "org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml" })
 public class TestConfiguredStreamProcessors {
 
-    protected static final String METRICS_PREFIX = "nuxeo.ai.enrichment.test_images$simpleTest$test_images.out.";
+    protected static final String METRICS_PREFIX = "nuxeo.ai.enrichment.ai/simpleTest_test-images_test-images-out.";
+
+    protected static final Name TEST_IMAGES = Name.ofUrn("test/images");
+
+    protected static final Name TEST_IMAGES_OUT = Name.ofUrn("test/images-out");
+
+    protected static final Name SAVE_ENRICHMENT_GROUP = Name.ofUrn("ai/SaveEnrichmentFunction_test-images-out");
+
+    protected static final Name RAISE_ENRICHMENT_GROUP = Name.ofUrn("ai/RaiseEnrichmentEvent_test-images-out");
+
+    protected static final Name SUGGESTION = Name.ofUrn("test/suggestion");
+
+    protected static final Name SUGGESTION_GROUP = Name.ofUrn("ai/CustomSuggestionConsumer_test-suggestion");
 
     @Inject
     protected CoreSession session;
@@ -119,18 +131,18 @@ public class TestConfiguredStreamProcessors {
         assertEquals("The provider should not be called yet.", 0L, called.getValue());
         assertEquals(0L, produced.getValue());
 
-        // Now check and append a Record to the "test_images" stream
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
-        LogAppender<Record> appender = manager.getAppender("test_images");
-        LogLag lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
+        // Now check and append a Record to the TEST_IMAGES stream
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        LogAppender<Record> appender = manager.getAppender(TEST_IMAGES);
+        LogLag lag = manager.getLag(TEST_IMAGES_OUT, SAVE_ENRICHMENT_GROUP);
         assertEquals("There should be nothing waiting to be processed", 0, lag.lag());
         LogOffset offset = appender.append("mykey", toRecord("k", blobTextFromDoc));
-        waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
+        waitForNoLag(manager, TEST_IMAGES_OUT, RAISE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
 
         // After waiting for the appender lets check the 1 record was read
         assertEquals("We must have been called once", 1L, called.getValue());
         assertEquals("We must have produced one record", 1L, produced.getValue());
-        lag = manager.getLag("test_images.out", "test_images.out$SaveEnrichmentFunction");
+        lag = manager.getLag(TEST_IMAGES_OUT, SAVE_ENRICHMENT_GROUP);
         assertEquals("All records should be processed", 0, lag.lag());
 
         // Confirm the document was enriched with the metadata
@@ -178,10 +190,10 @@ public class TestConfiguredStreamProcessors {
         Record record = toRecord("c1", blobTextFromDoc);
 
         // Append the record and check the results
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
-        LogAppender<Record> appender = manager.getAppender("test_images");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        LogAppender<Record> appender = manager.getAppender(TEST_IMAGES);
         appender.append("cache1", record);
-        waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
+        waitForNoLag(manager, TEST_IMAGES_OUT, RAISE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
 
         Map<String, Gauge> gauges = getMetrics(METRICS_PREFIX);
         Gauge cached = gauges.get(METRICS_PREFIX + "cacheHit");
@@ -189,7 +201,7 @@ public class TestConfiguredStreamProcessors {
 
         appender.append("cache2", record);
         appender.append("cache3", record);
-        waitForNoLag(manager, "test_images.out", "test_images.out$RaiseEnrichmentEvent", Duration.ofSeconds(5));
+        waitForNoLag(manager, TEST_IMAGES_OUT, RAISE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
 
         assertEquals(cacheHit + 2, cached.getValue());
     }
@@ -210,15 +222,15 @@ public class TestConfiguredStreamProcessors {
                                 .withCreator("bob")
                                 .withRawKey("xyz")
                                 .build();
-        Map<String, Gauge> gauges = getMetrics("nuxeo.ai.streams.func.test_suggestion$CustomSuggestionConsumer.");
-        Gauge call = gauges.get("nuxeo.ai.streams.func.test_suggestion$CustomSuggestionConsumer." + "called");
+        Map<String, Gauge> gauges = getMetrics("nuxeo.ai.streams.func.ai/CustomSuggestionConsumer_test-suggestion.");
+        Gauge call = gauges.get("nuxeo.ai.streams.func.ai/CustomSuggestionConsumer_test-suggestion.called");
         long called = (long) call.getValue();
         assertEquals(0, called);
-        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPES_TEST_CONFIG);
-        LogAppender<Record> appender = manager.getAppender("test_suggestion");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        LogAppender<Record> appender = manager.getAppender(SUGGESTION);
         appender.append("suggest1", toRecord("s1", EnrichmentMetadata));
         appender.append("suggest2", toRecord("s2", EnrichmentMetadata));
-        waitForNoLag(manager, "test_suggestion", "test_suggestion$CustomSuggestionConsumer", Duration.ofSeconds(5));
+        waitForNoLag(manager, SUGGESTION, SUGGESTION_GROUP, Duration.ofSeconds(5));
         assertEquals(2L, call.getValue());
     }
 
@@ -226,7 +238,7 @@ public class TestConfiguredStreamProcessors {
      * Wait until there is no lag or timesout. This is a temporary solution until this logic is available in the
      * framework.
      */
-    public static void waitForNoLag(LogManager manager, String name, String group, Duration timeout)
+    public static void waitForNoLag(LogManager manager, Name name, Name group, Duration timeout)
             throws InterruptedException {
 
         final long deadline = System.currentTimeMillis() + timeout.toMillis();
