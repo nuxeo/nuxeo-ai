@@ -25,9 +25,12 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * POJO that represents overall statistic for a field
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FieldStatistics {
 
     protected String type;
@@ -80,10 +83,10 @@ public class FieldStatistics {
      * @return original {@link FieldStatistics} with values from input if taken
      */
     public FieldStatistics merge(FieldStatistics that) {
-        this.count = Math.max(this.count, that.count);
         this.total = Math.max(this.total, that.total);
         this.missing = Math.max(this.missing, that.missing);
         this.cardinality = Math.max(this.cardinality, that.cardinality);
+        this.count = this.total - this.missing;
         this.terms = this.terms == null ? that.terms : this.terms;
 
         return this;
