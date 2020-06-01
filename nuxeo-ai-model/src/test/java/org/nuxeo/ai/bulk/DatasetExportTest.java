@@ -59,6 +59,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -71,10 +72,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.model.analyzis.FieldStatistics;
+import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.model.export.DatasetStatsOperation;
-import org.nuxeo.ai.model.analyzis.DatasetStatsService;
-import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -100,6 +102,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -459,7 +462,7 @@ public class DatasetExportTest {
         Map<String, Object> params = new HashMap<>();
         params.put("query", "SELECT * from document WHERE dc:title = 'i dont exist'");
         params.put("inputs", "dc:title,file:content");
-        params.put("outputs", "dc:description");
+        params.put("outputs", "dc:description,dc:subjects");
 
         Blob jsonBlob = (Blob) automationService.run(ctx, DatasetStatsOperation.ID, params);
         JsonNode jsonTree = MAPPER.readTree(jsonBlob.getString());
@@ -468,8 +471,12 @@ public class DatasetExportTest {
         params.put("query", "SELECT * from Document where ecm:parentId = " + NXQL.escapeString(testRoot.getId()));
 
         jsonBlob = (Blob) automationService.run(ctx, DatasetStatsOperation.ID, params);
-        jsonTree = MAPPER.readTree(jsonBlob.getString());
-        assertEquals("There should be 3 field statistics", 3,
-                jsonTree.size());
+        TypeReference<Set<FieldStatistics>> typeRef = new TypeReference<Set<FieldStatistics>>() {
+        };
+        Set<FieldStatistics> stats = MAPPER.readValue(jsonBlob.getString(), typeRef);
+        assertEquals("There should be 4 field statistics", 4, stats.size());
+        Optional<FieldStatistics> any = stats.stream().filter(s -> s.getField().equals("dc:description")).findAny();
+        assertTrue(any.isPresent());
+        assertThat(any.get().getTerms()).isNotBlank();
     }
 }
