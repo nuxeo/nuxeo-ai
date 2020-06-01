@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.rest;
 
-
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -29,7 +29,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.inject.Inject;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -45,12 +48,18 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/enrichment-rest-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-rest-test.xml" })
 public class TestRestEnrichment {
+
+    @Rule
+    public WireMockRule wmr = new WireMockRule(options().extensions(new ResponseTemplateTransformer(true)).port(5089));
 
     @Inject
     protected AIComponent aiComponent;
@@ -61,7 +70,8 @@ public class TestRestEnrichment {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("rest1");
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
-        blobTextFromDoc.addBlob(FILE_CONTENT, "img", new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+        blobTextFromDoc.addBlob(FILE_CONTENT, "img",
+                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertEquals(1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();
@@ -76,8 +86,8 @@ public class TestRestEnrichment {
 
         service = aiComponent.getEnrichmentProvider("rest2");
         results = service.enrich(blobTextFromDoc);
-        assertEquals("Called unsuccessfully so the error must be handled and an empty result returned",
-                     0, results.size());
+        assertEquals("Called unsuccessfully so the error must be handled and an empty result returned", 0,
+                results.size());
 
     }
 
@@ -85,7 +95,7 @@ public class TestRestEnrichment {
     public void testIsLive() {
         Map<String, String> options = new HashMap<>();
         String prefix = "testing.";
-        options.put(prefix + "uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
+        options.put(prefix + "uri", "http://localhost:5089/nuxeo/runningstatus");
         options.put(prefix + "methodName", "GET");
         assertTrue(RestClient.isLive(options, prefix));
     }
@@ -99,23 +109,26 @@ public class TestRestEnrichment {
         options.put(prefix + "header.123", "small head");
         options.put(prefix + "header.546", "big head");
         RestClient client = new RestClient(options, prefix, null);
-        assertEquals("myhead", client.headers.stream()
-                                             .filter(h -> "xyz".equals(h.getName())).findFirst().get().getValue());
-        assertEquals("small head", client.headers.stream()
-                                                 .filter(h -> "123".equals(h.getName())).findFirst().get().getValue());
+        assertEquals("myhead",
+                client.headers.stream().filter(h -> "xyz".equals(h.getName())).findFirst().get().getValue());
+        assertEquals("small head",
+                client.headers.stream().filter(h -> "123".equals(h.getName())).findFirst().get().getValue());
 
         options.clear();
         options.put(prefix + "uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
         client = new RestClient(options, prefix, null);
-        assertEquals("No config so we just have the default headers",
-                     client.getDefaultHeaders().size(), client.headers.size());
+        assertEquals("No config so we just have the default headers", client.getDefaultHeaders().size(),
+                client.headers.size());
 
         options.clear();
         options.put("uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
         options.put("header.X-Authentication-Token", "3456");
         client = new RestClient(options, null);
-        assertEquals("3456", client.headers.stream()
-                                           .filter(h -> "X-Authentication-Token".equals(h.getName())).findFirst().get()
-                                           .getValue());
+        assertEquals("3456",
+                client.headers.stream()
+                              .filter(h -> "X-Authentication-Token".equals(h.getName()))
+                              .findFirst()
+                              .get()
+                              .getValue());
     }
 }

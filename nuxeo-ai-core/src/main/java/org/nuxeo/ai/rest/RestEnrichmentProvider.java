@@ -43,13 +43,13 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
- * An enrichment provider that calls a Rest api.
- * It uses a RestClient for most of the logic to call and responds to an api.
- * Options can be passed in the init() method via the descriptor.
+ * An enrichment provider that calls a Rest api. It uses a RestClient for most of the logic to call and responds to an
+ * api. Options can be passed in the init() method via the descriptor.
  */
 public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider {
 
     protected static final Log log = LogFactory.getLog(RestEnrichmentProvider.class);
+
     protected RestClient client;
 
     @Override
@@ -67,20 +67,16 @@ public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider 
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-
-        return client.call(builder -> prepareRequest(builder, blobTextFromDoc),
-                           response -> {
-                               int statusCode = response.getStatusLine().getStatusCode();
-                               if (statusCode < 200 || statusCode >= 300) {
-                                   log.warn(String.format("Unsuccessful call to rest api %s, status is %d",
-                                                          client.uri.toString(),
-                                                          statusCode));
-                                   return Collections.emptyList();
-                               } else {
-                                   return handleResponse(response, blobTextFromDoc);
-                               }
-                           }
-        );
+        return client.call(builder -> prepareRequest(builder, blobTextFromDoc), response -> {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                log.warn(String.format("Unsuccessful call to rest api %s, status is %d", client.uri.toString(),
+                        statusCode));
+                return Collections.emptyList();
+            } else {
+                return handleResponse(response, blobTextFromDoc);
+            }
+        });
 
     }
 
@@ -92,7 +88,8 @@ public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider 
     /**
      * Handle the response and return the result
      */
-    public abstract Collection<EnrichmentMetadata> handleResponse(HttpResponse response, BlobTextFromDocument blobTextFromDoc);
+    public abstract Collection<EnrichmentMetadata> handleResponse(HttpResponse response,
+            BlobTextFromDocument blobTextFromDoc);
 
     /**
      * Set a string as a Json body parameter on the request
@@ -126,6 +123,5 @@ public abstract class RestEnrichmentProvider extends AbstractEnrichmentProvider 
             return null;
         }
     }
-
 
 }
