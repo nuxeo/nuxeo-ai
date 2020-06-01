@@ -3,7 +3,7 @@
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="rest1" kind="/classification" class="org.nuxeo.ai.rest.RestEnrichmentImpl">
-      <option name="uri">http://explorer.nuxeo.com/nuxeo/runningstatus</option>
+      <option name="uri">http://localhost:5089/nuxeo/runningstatus</option>
       <option name="methodName">GET</option>
     </enrichment>
     <enrichment name="rest2" kind="/classification" class="org.nuxeo.ai.rest.RestEnrichmentImpl">

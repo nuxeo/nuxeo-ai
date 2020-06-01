@@ -262,14 +262,16 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     protected void getValidStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
         for (PropertyType prop : featuresWithType) {
             String propName = prop.getName();
-            if (IMAGE_TYPE.equals(prop.getType()) || TEXT_TYPE.equals(prop.getType())) {
+            if (IMAGE_TYPE.equals(prop.getType())) {
                 // qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
-            } else {
+            } else if (CATEGORY_TYPE.equals(prop.getType()) || TEXT_TYPE.equals(prop.getType())) {
                 Properties termProps = new Properties();
                 termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
                 termProps.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
                 qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
                 qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
+            } else {
+                log.warn("Trying to get statistics for an unknown type: {}", prop.getType());
             }
         }
 
