@@ -39,4 +39,78 @@
     </genericPageProvider>
   </extension>
 
+  <extension point="providers"
+             target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider"
+                         name="enrichments_pp">
+      <property name="coreSession">#{documentManager}</property>
+      <whereClause docType="DocTypesPP">
+        <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
+          ecm:isTrashed = 0 AND ecm:isProxy = 0
+        </fixedPart>
+      </whereClause>
+      <searchDocumentType>DocTypesPP</searchDocumentType>
+      <aggregates>
+        <aggregate id="filled_agg" type="terms" parameter="enrichments:filled">
+          <field schema="doctypes_pp_schema" name="filled_agg"/>
+          <properties>
+            <property name="order">count desc</property>
+            <property name="size">20</property>
+          </properties>
+        </aggregate>
+        <aggregate id="corrected_agg" type="terms" parameter="enrichments:corrected">
+          <field schema="doctypes_pp_schema" name="corrected_agg"/>
+          <properties>
+            <property name="order">count desc</property>
+            <property name="size">20</property>
+          </properties>
+        </aggregate>
+      </aggregates>
+      <pageSize>1</pageSize>
+    </genericPageProvider>
+  </extension>
+
+  <extension point="providers"
+             target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider" name="docs_filled">
+      <property name="coreSession">#{documentManager}</property>
+      <whereClause docType="DocTypesPP">
+        <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
+          ecm:isTrashed = 0 AND ecm:isProxy = 0
+        </fixedPart>
+      </whereClause>
+      <searchDocumentType>DocTypesPP</searchDocumentType>
+      <pageSize>1</pageSize>
+    </genericPageProvider>
+  </extension>
+
+  <extension point="providers"
+             target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider"
+                         name="docs_corrected">
+      <property name="coreSession">#{documentManager}</property>
+      <whereClause docType="DocTypesPP">
+        <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
+          ecm:isTrashed = 0 AND ecm:isProxy = 0
+        </fixedPart>
+      </whereClause>
+      <searchDocumentType>DocTypesPP</searchDocumentType>
+      <pageSize>1</pageSize>
+    </genericPageProvider>
+  </extension>
+
+  <extension point="providers"
+             target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider" name="docs_others">
+      <property name="coreSession">#{documentManager}</property>
+      <whereClause docType="DocTypesPP">
+        <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
+          ecm:isTrashed = 0 AND ecm:isProxy = 0
+        </fixedPart>
+      </whereClause>
+      <searchDocumentType>DocTypesPP</searchDocumentType>
+      <pageSize>1</pageSize>
+    </genericPageProvider>
+  </extension>
+
 </component>
