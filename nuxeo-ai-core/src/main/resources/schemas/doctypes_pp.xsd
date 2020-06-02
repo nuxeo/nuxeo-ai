@@ -8,5 +8,7 @@
   </xs:simpleType>
 
   <xs:element name="doctypes_agg" type="nxs:stringList"/>
+  <xs:element name="filled_agg" type="nxs:stringList"/>
+  <xs:element name="corrected_agg" type="nxs:stringList"/>
   <xs:element name="doctypes" type="nxs:stringList"/>
 </xs:schema>
