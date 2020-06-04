@@ -2,7 +2,7 @@
 <package type="addon" name="nuxeo-ai-aws" version="@VERSION@">
   <title>Nuxeo AI AWS Integrations</title>
   <description>
-    <p>Integrate enrichment services from AWS with Nuxeo AI.</p>
+    <p>Integrates enrichment services from AWS with Nuxeo AI Core. Requires an account and subscription for AWS services.</p>
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>

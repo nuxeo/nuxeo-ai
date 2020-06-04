@@ -2,7 +2,7 @@
 <package type="addon" name="nuxeo-ai-image-quality" version="@VERSION@">
   <title>Nuxeo AI Image Quality</title>
   <description>
-    <p>An Enrichment Service that uses <a href="https://sightengine.com/">Sightengine</a> to determine image quality.</p>
+    <p>Integrates an enrichment service from Sightengine to determine image quality. Requires an account and subscription for Sightengine services.</p>
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>

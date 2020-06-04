@@ -2,7 +2,7 @@
 <package type="addon" name="nuxeo-ai-core" version="@VERSION@">
   <title>Nuxeo AI Core</title>
   <description>
-    <p>Provides Core AI functionality for Nuxeo.  Includes enrichment, custom model support and event stream enhancements.</p>
+    <p>Provides the enrichment framework to integrate with cloud AI offerings (APIs) as well as AI model training services (e.g. SageMaker).</p>
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>
