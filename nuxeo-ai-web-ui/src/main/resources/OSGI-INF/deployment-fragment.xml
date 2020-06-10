@@ -8,7 +8,6 @@
     <unzip from="${bundle.fileName}" to="/" prefix="web">
       <include>web/nuxeo.war/**</include>
       <exclude>web/nuxeo.war/ui/i18n/**</exclude>
-      <exclude>web/nuxeo.war/ui/images/**</exclude>
     </unzip>
 
     <!-- create a temporary folder -->
