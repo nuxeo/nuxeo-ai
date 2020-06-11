@@ -7,6 +7,7 @@
     <!-- Unzip the contents of our web application into the server -->
     <unzip from="${bundle.fileName}" to="/" prefix="web">
       <include>web/nuxeo.war/**</include>
+      <include>web/nuxeo.war/ui/images/**</include>
       <exclude>web/nuxeo.war/ui/i18n/**</exclude>
     </unzip>
 
