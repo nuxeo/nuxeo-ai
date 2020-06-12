@@ -57,9 +57,9 @@ public class FetchInsightURI {
 
     protected Blob buildResponse(String url, String token, String projectId, String urlCore) throws IOException {
         Map<String, String> response = new HashMap<>();
-        response.put("url", String.format("%s/ai", url));
+        response.put("url", String.format("%s/ai/#!/", url));
         response.put("urlCore", urlCore);
-        response.put("token", token);
+        response.put("aitoken", token);
         response.put("projectId", projectId);
         return Blobs.createJSONBlobFromValue(response);
     }

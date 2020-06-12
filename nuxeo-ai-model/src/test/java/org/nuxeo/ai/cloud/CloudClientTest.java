@@ -225,6 +225,6 @@ public class CloudClientTest {
         OperationContext ctx = new OperationContext();
         JSONBlob uri = (JSONBlob) automationService.run(ctx, FetchInsightURI.ID);
         assertThat(uri.getString()).isEqualTo(
-                "{\"urlCore\":null,\"projectId\":\"mockTestProject\",\"url\":\"http://localhost:5089/ai\",\"token\":\"20344556\"}");
+                "{\"aitoken\":\"20344556\",\"urlCore\":null,\"projectId\":\"mockTestProject\",\"url\":\"http://localhost:5089/ai/#!/\"}");
     }
 }
