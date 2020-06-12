@@ -271,7 +271,8 @@ public class DatasetExportTest {
     public void shouldCallWithParameters() throws InterruptedException {
         Map<String, Serializable> params = new HashMap<>();
 
-        params.put(DATASET_EXPORT_MODEL_ID, "fake_id");
+        String modelId = "e67ee0e8-1bef-4fb7-9966-1d14081221";
+        params.put(DATASET_EXPORT_MODEL_ID, modelId);
         params.put(DATASET_EXPORT_MODEL_START_DATE, new Date());
 
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
@@ -299,7 +300,7 @@ public class DatasetExportTest {
 
         assertEquals(nxql, doc.getPropertyValue(DATASET_EXPORT_QUERY));
         assertEquals(60L, doc.getPropertyValue(DATASET_EXPORT_SPLIT));
-        assertEquals("fake_id", doc.getPropertyValue(DATASET_EXPORT_MODEL_ID));
+        assertEquals(modelId, doc.getPropertyValue(DATASET_EXPORT_MODEL_ID));
         Calendar startDate = (Calendar) doc.getPropertyValue(DATASET_EXPORT_MODEL_START_DATE);
 
         @SuppressWarnings("unchecked")

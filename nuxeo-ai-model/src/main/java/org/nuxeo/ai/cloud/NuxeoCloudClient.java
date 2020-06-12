@@ -163,8 +163,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             payload = MAPPER.writeValueAsString(parameters);
             json = post(AIExportEndpoint.INIT.toPath(projectId, corporaId), payload, (resp) -> {
                 if (!resp.isSuccessful()) {
-                    log.error(
-                            "Failed to initialize Export for project {}, payload {}, url {}, code {} and reason {}",
+                    log.error("Failed to initialize Export for project {}, payload {}, url {}, code {} and reason {}",
                             projectId, payload, url, resp.code(), resp.message());
                     return null;
                 }
@@ -183,6 +182,19 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             log.info("Corpora {} created for project {}, payload {}", corpusId, projectId, payload);
             return corpusId;
         }
+    }
+
+    @Override
+    public boolean bind(@Nonnull String modelId, @Nonnull String corporaId) {
+        return post(AIExportEndpoint.BIND.toPath(projectId, modelId, corporaId), "{}", (resp) -> {
+            if (!resp.isSuccessful()) {
+                log.error("Failed to bind model {} with corpora {} for project {}, url {}, code {} and reason {}",
+                        modelId, corporaId, projectId, url, resp.code(), resp.message());
+                return false;
+            }
+
+            return true;
+        });
     }
 
     @Override
@@ -241,7 +253,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
                 DateTime end = DateTime.now();
 
-
                 AICorpus corpus = createCorpus(dataset, batch1, batch2, batch3, start, end);
                 String corporaId = (String) dataset.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
                 return uploadDataset(corpus, corporaId);
@@ -261,7 +272,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
 
             log.info("Creating dataset document");
-
 
             String url = AIExportEndpoint.ATTACH.toPath(projectId, corporaId);
             JsonNode node = post(url, payload, (resp) -> {
@@ -292,7 +302,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Nonnull
-    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start, DateTime end) {
+    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start,
+            DateTime end) {
         String jobId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_JOB_ID);
         String batchId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_BATCH_ID);
         String query = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_QUERY);
@@ -317,19 +328,20 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         fields.addAll(outputs);
 
         String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
-        Properties props = new Properties.Builder()
-                .setTitle(title)
-                .setDocCount(trainingCount)
-                .setEvaluationDocCount(evalCount)
-                .setQuery(query).setSplit(split)
-                .setFields(fields)
-                .setTrainData(new AICorpus.Batch("0", batch1))
-                .setEvalData(new AICorpus.Batch("1", batch2))
-                .setStats(new AICorpus.Batch("2", batch3))
-                .setInfo(new AICorpus.Info(dateFormat.format(start.toDate()), dateFormat.format(end.toDate())))
-                .setJobId(jobId)
-                .setBatchId(batchId)
-                .build();
+        Properties props = new Properties.Builder().setTitle(title)
+                                                   .setDocCount(trainingCount)
+                                                   .setEvaluationDocCount(evalCount)
+                                                   .setQuery(query)
+                                                   .setSplit(split)
+                                                   .setFields(fields)
+                                                   .setTrainData(new AICorpus.Batch("0", batch1))
+                                                   .setEvalData(new AICorpus.Batch("1", batch2))
+                                                   .setStats(new AICorpus.Batch("2", batch3))
+                                                   .setInfo(new AICorpus.Info(dateFormat.format(start.toDate()),
+                                                           dateFormat.format(end.toDate())))
+                                                   .setJobId(jobId)
+                                                   .setBatchId(batchId)
+                                                   .build();
 
         return new AICorpus(jobId, props);
     }
@@ -372,8 +384,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Override
     public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody),
-                handler);
+        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody), handler);
     }
 
     @Override
@@ -445,21 +456,38 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     enum AIExportEndpoint {
-        INIT,
-        ATTACH,
-        DONE;
+        INIT, BIND, ATTACH, DONE;
 
-        public String toPath(String project, String id) {
+        /**
+         * Resolve path based on
+         * 
+         * @param project Id of a client
+         * @param id of a document
+         * @return {@link String} as uri
+         */
+        public String toPath(@Nonnull String project, String id) {
             switch (this) {
-                case INIT:
-                    return API_EXPORT_AI + "init/" + project + "?corpora=" + id;
-                case ATTACH:
-                    return API_EXPORT_AI + "attach/" + project + "/" + id;
-                case DONE:
-                    return API_EXPORT_AI + "done/" + project + "/" + id;
-                default:
-                    return null;
+            case INIT:
+                return API_EXPORT_AI + "init/" + project + "?corpora=" + id;
+            case ATTACH:
+                return API_EXPORT_AI + "attach/" + project + "/" + id;
+            case DONE:
+                return API_EXPORT_AI + "done/" + project + "/" + id;
+            default:
+                return null;
             }
+        }
+
+        /**
+         * Resolve path between
+         * 
+         * @param project Id of a client
+         * @param modelId of AI_Model
+         * @param corporaId of AI_Corpora
+         * @return {@link String} as uri
+         */
+        public String toPath(@Nonnull String project, @Nonnull String modelId, @Nonnull String corporaId) {
+            return API_EXPORT_AI + "bind/" + project + "?modelId=" + modelId + "&corporaId=" + corporaId;
         }
     }
 }
