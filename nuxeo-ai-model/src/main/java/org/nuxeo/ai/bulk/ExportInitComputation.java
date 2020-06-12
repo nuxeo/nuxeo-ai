@@ -152,6 +152,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
 
         createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
+        bindCorporaToModel(client, modelParams);
 
         // Split documents list into training and validation dataset
         int splitIndex = (int) Math.ceil((docs.size() - 1) * split / 100.f);
@@ -175,8 +176,20 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
     }
 
+    protected void bindCorporaToModel(CloudClient client, Map<String, Serializable> modelParams) {
+        if (modelParams.containsKey(CORPORA_ID_PARAM) && modelParams.containsKey(DATASET_EXPORT_MODEL_ID)) {
+            String modelId = (String) modelParams.get(DATASET_EXPORT_MODEL_ID);
+            String corporaId = (String) modelParams.get(CORPORA_ID_PARAM);
+            boolean bound = client.bind((String) modelId,
+                    corporaId);
+            if (!bound) {
+                log.error("Could not bind AI Model {} and AI Corpora {}", modelId, corporaId);
+            }
+        }
+    }
+
     protected DatasetExport createDataset(CoreSession session, String original, Map<String, Serializable> modelParams,
-                                          Set<PropertyType> inputs, Set<PropertyType> outputs, Blob stats, String batchId, int split) {
+            Set<PropertyType> inputs, Set<PropertyType> outputs, Blob stats, String batchId, int split) {
         return ExportHelper.runInTransaction(() -> {
             try (CloseableCoreSession sess = CoreInstance.openCoreSessionSystem(session.getRepositoryName(),
                     session.getPrincipal().getName())) {
@@ -197,7 +210,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
     }
 
     protected void setCorporaId(CoreSession session, String original, Set<PropertyType> outputs,
-                                Set<PropertyType> inputs, Map<String, Serializable> modelParams) {
+            Set<PropertyType> inputs, Map<String, Serializable> modelParams) {
         if (StringUtils.isEmpty((String) modelParams.get(CORPORA_ID_PARAM))) {
             DatasetExportService des = Framework.getService(DatasetExportService.class);
             String corporaId = des.getCorporaForAction(session, command.getId());
@@ -238,7 +251,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
      * Create a corpus document for the data export.
      */
     public DatasetExport createDataset(CoreSession session, String query, Set<PropertyType> inputs,
-                                       Set<PropertyType> outputs, int split, Blob statsBlob, String exportId) {
+            Set<PropertyType> outputs, int split, Blob statsBlob, String exportId) {
         if (log.isDebugEnabled()) {
             log.debug("Creating DatasetExport with Repository {} and User {}", session.getRepositoryName(),
                     session.getPrincipal().getActingUser());
@@ -318,8 +331,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     protected ExportRecord createRecordFromDoc(String id, Set<PropertyType> props, DocumentModel doc) {
         Map<String, String> nameTypePair = props.stream()
-                                                .collect(Collectors.toMap(PropertyType::getName,
-                                                        PropertyType::getType));
+                                                .collect(
+                                                        Collectors.toMap(PropertyType::getName, PropertyType::getType));
 
         if (doc.hasFacet(ENRICHMENT_FACET)) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
@@ -334,9 +347,9 @@ public class ExportInitComputation extends AbstractBulkComputation {
         BlobTextFromDocument subDoc = null;
         if (!nameTypePair.isEmpty()) {
             Set<PropertyType> properties = nameTypePair.entrySet()
-                                                           .stream()
-                                                           .map(p -> new PropertyType(p.getKey(), p.getValue()))
-                                                           .collect(Collectors.toSet());
+                                                       .stream()
+                                                       .map(p -> new PropertyType(p.getKey(), p.getValue()))
+                                                       .collect(Collectors.toSet());
             subDoc = PropertyUtils.docSerialize(doc, properties);
         }
 
