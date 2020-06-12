@@ -72,7 +72,7 @@ limitations under the License.
       ready() {
         super.ready();
         this.$.aiInsight.execute().then(({url, token, projectId, urlCore}) =>
-                this.link = `${url}?token=${token}&projectid=${projectId}&urlCore=${urlCore}`
+                this.link = `${url}?aitoken=${aitoken}&projectid=${projectId}&urlCore=${urlCore}`
         ).catch(() => this.fire('notify', {message: this.i18n('ai.insight.url.error')}));
       }
     }
