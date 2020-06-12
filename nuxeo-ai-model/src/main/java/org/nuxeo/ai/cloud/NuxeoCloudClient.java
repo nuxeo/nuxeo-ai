@@ -187,6 +187,19 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
+    public boolean bind(@Nonnull String modelId, @Nonnull String corporaId) {
+        return post(AIExportEndpoint.BIND.toPath(projectId, modelId, corporaId), "{}", (resp) -> {
+            if (!resp.isSuccessful()) {
+                log.error("Failed to bind model {} with corpora {} for project {}, url {}, code {} and reason {}",
+                        modelId, corporaId, projectId, url, resp.code(), resp.message());
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    @Override
     public boolean notifyOnExportDone(String exportId) {
         return post(AIExportEndpoint.DONE.toPath(projectId, exportId), "{}", Response::code) == OK.getStatusCode();
     }
@@ -445,9 +458,16 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     enum AIExportEndpoint {
-        INIT, ATTACH, DONE;
+        INIT, BIND, ATTACH, DONE;
 
-        public String toPath(String project, String id) {
+        /**
+         * Resolve path based on
+         * 
+         * @param project Id of a client
+         * @param id of a document
+         * @return {@link String} as uri
+         */
+        public String toPath(@Nonnull String project, String id) {
             switch (this) {
             case INIT:
                 return API_EXPORT_AI + "init/" + project + "?corpora=" + id;
@@ -458,6 +478,18 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             default:
                 return null;
             }
+        }
+
+        /**
+         * Resolve path between
+         * 
+         * @param project Id of a client
+         * @param modelId of AI_Model
+         * @param corporaId of AI_Corpora
+         * @return {@link String} as uri
+         */
+        public String toPath(@Nonnull String project, @Nonnull String modelId, @Nonnull String corporaId) {
+            return API_EXPORT_AI + "bind/" + project + "?modelId=" + modelId + "&corporaId=" + corporaId;
         }
     }
 }

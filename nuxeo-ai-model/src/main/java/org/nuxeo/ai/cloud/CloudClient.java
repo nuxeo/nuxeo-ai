@@ -19,6 +19,7 @@
 package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
@@ -50,6 +51,13 @@ public interface CloudClient {
      * @return corpus id
      */
     String uploadedDataset(@NotNull DocumentModel dataset);
+
+    /**
+     * Bind model and corpora in the cloud
+     * @param modelId of AI_Model
+     * @param corporaId of AI_Corpora
+     */
+    boolean bind(@Nonnull String modelId, @Nonnull String corporaId);
 
     /**
      * Notifies Cloud about completion of the Export pipeline
