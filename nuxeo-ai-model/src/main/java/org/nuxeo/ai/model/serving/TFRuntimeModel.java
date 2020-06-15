@@ -167,7 +167,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             jsonResponse.get(JSON_RESULTS).elements().forEachRemaining(resultsNode -> {
                 resultsNode.get(JSON_OUTPUTS).elements().forEachRemaining(outputNode -> {
                     String outputName = outputNode.asText();
-                    ArrayNode outputProbabilities = (ArrayNode) resultsNode.get(outputName + JSON_PROBABILITIES);
+                    ArrayNode outputProbabilities = (ArrayNode) resultsNode.get(outputName);
                     ArrayNode outputLabels = (ArrayNode) resultsNode.get(outputName + JSON_LABELS);
                     List<EnrichmentMetadata.Label> labels = new ArrayList<>();
                     if (outputLabels.size() == outputProbabilities.size()) {
@@ -177,6 +177,8 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                                 labels.add(new EnrichmentMetadata.Label(outputLabels.get(i).asText(), confidence, 0L));
                             }
                         }
+                    } else {
+                        log.warn("Mismatch of labels and probabilities cardinality");
                     }
                     if (!labels.isEmpty()) {
                         results.put(outputName, labels);
