@@ -62,6 +62,9 @@ import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.TypeConstants;
+import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
@@ -146,6 +149,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                 put("type", p.getType());
             }
         }).collect(Collectors.toList());
+
         BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME,
                 notNullNXQL).user(username)
                             .repository(session.getRepositoryName())
@@ -317,19 +321,22 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     protected String notNullNxql(String nxql, List<PropertyType> featuresWithType) {
         StringBuilder sb = new StringBuilder(nxql);
-        // SchemaManager serv = Framework.getService(SchemaManager.class);
-        // Field field = serv.getField(propName);
+        SchemaManager serv = Framework.getService(SchemaManager.class);
         for (PropertyType prop : featuresWithType) {
             String propName = prop.getName();
-            if (IMAGE_TYPE.equals(prop.getType())) {
+            Field field = serv.getField(propName);
+            if (IMAGE_TYPE.equals(prop.getType()) || isTextBlob(prop, field)) {
                 sb.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
-            } else if (CATEGORY_TYPE.equals(prop.getType())) {
+            } else if (CATEGORY_TYPE.equals(prop.getType()) || TEXT_TYPE.equals(prop.getType())) {
                 // nothing to do here
             } else {
-                sb.append(" AND ").append(propName).append(" IS NOT NULL");
+                log.warn("Unknown Property type " + prop.getType());
             }
         }
         return sb.toString();
     }
 
+    protected boolean isTextBlob(PropertyType prop, Field field) {
+        return TEXT_TYPE.equals(prop.getType()) && TypeConstants.isContentType(field.getType());
+    }
 }

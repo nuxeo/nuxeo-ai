@@ -44,6 +44,7 @@ import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
+import org.nuxeo.ecm.automation.core.util.Properties;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
@@ -146,8 +147,16 @@ public class TestDatasetOperation {
 
         int split = 60;
         params.put("query", TEST_QUERY);
-        params.put("inputs", "dc:title,dc:description");
-        params.put("outputs", "dc:nature");
+
+        Properties inputs = new Properties();
+        inputs.put("dc:title", "txt");
+        inputs.put("dc:description", "txt");
+        params.put("inputProperties", inputs);
+
+        Properties outputs = new Properties();
+        outputs.put("dc:nature", "cat");
+        params.put("outputProperties", outputs);
+
         params.put("split", split);
         OperationChain chain = new OperationChain("testChain1");
         chain.add(DatasetExportOperation.ID).from(params);
@@ -168,8 +177,16 @@ public class TestDatasetOperation {
     public void shouldRunExportOperationWithParameters() throws OperationException {
         Map<String, Object> params = new HashMap<>();
         params.put("query", TEST_QUERY);
-        params.put("inputs", "dc:title,dc:description");
-        params.put("outputs", "dc:nature");
+
+        Properties inputs = new Properties();
+        inputs.put("dc:title", "txt");
+        inputs.put("dc:description", "txt");
+        params.put("inputProperties", inputs);
+
+        Properties outputs = new Properties();
+        outputs.put("dc:nature", "cat");
+        params.put("outputProperties", outputs);
+
         params.put("split", 60);
         params.put("model_name", "Fake Name");
 

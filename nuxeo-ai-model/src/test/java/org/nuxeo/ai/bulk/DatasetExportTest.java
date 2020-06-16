@@ -53,6 +53,7 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -450,6 +451,45 @@ public class DatasetExportTest {
                                          .findFirst()
                                          .get();
         assertEquals(50, missingContent.getNumericValue().intValue());
+    }
+
+    @Test
+    public void shouldGetStatisticsOnAllProp() {
+        String nxql = "SELECT * FROM Document WHERE ecm:primaryType = 'File'";
+        DocumentModel doc0 = session.query(nxql, 1).get(0);
+        List<String> collect = new ArrayList<>();
+        for (String schema : doc0.getSchemas()) {
+            for (String prop : doc0.getProperties(schema).keySet()) {
+                if (prop.contains(":")) {
+                    collect.add(prop);
+                } else {
+                    collect.add(schema + ":" + prop);
+                }
+            }
+        }
+
+        Set<PropertyType> inputs = collect.subList(0, collect.size() / 2)
+                                          .stream()
+                                          .map(prop -> new PropertyType(prop, null))
+                                          .collect(Collectors.toSet());
+
+        Set<PropertyType> outputs = collect.subList(collect.size() / 2, collect.size())
+                                           .stream()
+                                           .map(prop -> new PropertyType(prop, null))
+                                           .collect(Collectors.toSet());
+
+        assertThat(collect).isNotEmpty();
+        assertThat(inputs.size() + outputs.size()).isEqualTo(collect.size());
+
+        DatasetStatsService dss = Framework.getService(DatasetStatsService.class);
+        Collection<Statistic> statistics = dss.getStatistics(session, nxql, inputs, outputs);
+
+        Set<FieldStatistics> fieldStatistics = dss.transform(statistics);
+        assertThat(fieldStatistics).isNotEmpty();
+
+        Map<String, FieldStatistics> mapped = fieldStatistics.stream().collect(Collectors.toMap(FieldStatistics::getField, stat -> stat));
+        assertThat(mapped.get("dc:subjects").getTerms()).isNotBlank().isNotEqualTo("[]");
+        assertThat(mapped.get("dc:subjects").getCardinality()).isEqualTo(2);
 
     }
 
