@@ -61,6 +61,7 @@ import org.nuxeo.client.NuxeoClient;
 import org.nuxeo.client.objects.blob.FileBlob;
 import org.nuxeo.client.objects.upload.BatchUpload;
 import org.nuxeo.client.spi.NuxeoClientException;
+import org.nuxeo.client.spi.NuxeoClientRemoteException;
 import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -115,31 +116,36 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     protected void configureClient(CloudConfigDescriptor descriptor) {
-        NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
-                                                               .readTimeout(descriptor.readTimeout.getSeconds())
-                                                               .writeTimeout(descriptor.writeTimeout.getSeconds())
-                                                               .schemas("dublincore", "common")
-                                                               .header("Accept-Encoding", "identity")
-                                                               .connectTimeout(descriptor.connectTimeout.getSeconds());
-        if (log.isDebugEnabled()) {
-            LogInterceptor logInterceptor = new LogInterceptor();
-            builder.interceptor(logInterceptor);
+        try {
+            NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
+                                                                   .readTimeout(descriptor.readTimeout.getSeconds())
+                                                                   .writeTimeout(descriptor.writeTimeout.getSeconds())
+                                                                   .schemas("dublincore", "common")
+                                                                   .header("Accept-Encoding", "identity")
+                                                                   .connectTimeout(
+                                                                           descriptor.connectTimeout.getSeconds());
+            if (log.isDebugEnabled()) {
+                LogInterceptor logInterceptor = new LogInterceptor();
+                builder.interceptor(logInterceptor);
+            }
+            CloudConfigDescriptor.Authentication auth = descriptor.authentication;
+            if (auth != null && isNotEmpty(auth.token)) {
+                builder.authentication(new TokenAuthInterceptor(auth.token));
+            } else if (auth != null && isNotEmpty(auth.username) && isNotEmpty(auth.password)) {
+                builder.authentication(auth.username, auth.password);
+            } else {
+                throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
+            }
+            projectId = descriptor.projectId;
+            url = descriptor.url; // The client doesn't seem to export the URL to use
+            if (isBlank(url) || isBlank(projectId)) {
+                throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
+            }
+            client = builder.connect();
+            log.debug("Nuxeo Cloud Client {} is configured for {}.", projectId, url);
+        } catch (NuxeoClientRemoteException e) {
+            log.warn("Authentication/Connection issue with Insight cloud", e);
         }
-        CloudConfigDescriptor.Authentication auth = descriptor.authentication;
-        if (auth != null && isNotEmpty(auth.token)) {
-            builder.authentication(new TokenAuthInterceptor(auth.token));
-        } else if (auth != null && isNotEmpty(auth.username) && isNotEmpty(auth.password)) {
-            builder.authentication(auth.username, auth.password);
-        } else {
-            throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
-        }
-        projectId = descriptor.projectId;
-        url = descriptor.url; // The client doesn't seem to export the URL to use
-        if (isBlank(url) || isBlank(projectId)) {
-            throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
-        }
-        client = builder.connect();
-        log.debug("Nuxeo Cloud Client {} is configured for {}.", projectId, url);
     }
 
     /**
