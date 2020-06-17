@@ -46,7 +46,7 @@
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
-          ecm:isTrashed = 0 AND ecm:isProxy = 0
+          ecm:isTrashed = 0 AND ecm:isProxy = 0 ?
         </fixedPart>
       </whereClause>
       <searchDocumentType>DocTypesPP</searchDocumentType>
