@@ -21,6 +21,7 @@ package org.nuxeo.ai.model.export;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.nuxeo.ai.pipes.types.PropertyType;
@@ -66,6 +67,14 @@ public interface DatasetExportService {
      * Get the Corpus document by id or return null
      */
     DocumentModelList getDatasetExports(CoreSession session, String id);
+
+    /**
+     * Retrieves a list of {@link org.nuxeo.ai.adapters.DatasetExport} related document with
+     * @param session {@link CoreSession} based on
+     * @param modelId not null {@link String} as uuid of pre-created model
+     * @return list of {@link org.nuxeo.ai.adapters.DatasetExport}
+     */
+    DocumentModel latestDatasetExportForModel(CoreSession session, @Nonnull String modelId);
 
     /**
      * Returns corpora id for given BAF export
