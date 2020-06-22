@@ -36,11 +36,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-@Operation(
-        id = DatasetExportUpdaterOperation.ID,
-        category = CAT_SERVICES, label = "Retrieve AI Model",
-        description = "Executes REST call to AI Services to get all AI models available"
-)
+@Operation(id = DatasetExportUpdaterOperation.ID, category = CAT_SERVICES, label = "Retrieve AI Model", description = "Executes REST call to AI Services to get all AI models available")
 public class DatasetExportUpdaterOperation {
 
     public static final String ID = "AI.ExportStatus";
@@ -60,12 +56,12 @@ public class DatasetExportUpdaterOperation {
         List<BulkStatus> statuses = bulkService.getStatuses(user);
 
         return statuses.stream()
-                .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
-                .sorted((o1, o2) -> o2.getSubmitTime().compareTo(o1.getSubmitTime()))
-                .limit(8)
-                .map(ExportProgressStatus::new)
-                .peek(this::updateName)
-                .collect(Collectors.toList());
+                       .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
+                       .sorted((o1, o2) -> o2.getSubmitTime().compareTo(o1.getSubmitTime()))
+                       .limit(8)
+                       .map(ExportProgressStatus::new)
+                       .peek(this::updateName)
+                       .collect(Collectors.toList());
     }
 
     protected void updateName(ExportProgressStatus status) {

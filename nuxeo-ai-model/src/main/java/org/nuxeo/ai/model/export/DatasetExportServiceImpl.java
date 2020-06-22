@@ -67,7 +67,10 @@ import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.platform.query.api.Bucket;
+import org.nuxeo.ecm.platform.query.api.PageProvider;
+import org.nuxeo.ecm.platform.query.api.PageProviderService;
 import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
+import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
 import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
 import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
 import org.nuxeo.elasticsearch.api.ElasticSearchService;
@@ -82,6 +85,9 @@ import org.nuxeo.runtime.model.DefaultComponent;
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
     private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
+
+    protected static final String BASE_QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
 
     protected static final Properties EMPTY_PROPS = new Properties();
 
@@ -99,13 +105,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String STATISTICS_PARAM = "statistics";
 
-    public static final String QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
-            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
-            + DATASET_EXPORT_JOB_ID + " = ";
+    public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
 
-    public static final String QUERY_FOR_BATCH = "SELECT * FROM Document WHERE ecm:primaryType = "
-            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND "
-            + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
+    public static final String QUERY_FOR_BATCH = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND "
+            + DATASET_EXPORT_BATCH_ID + " = %s";
 
     public static final String STATS_TOTAL = "total";
 
@@ -125,8 +128,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
             int split, Map<String, Serializable> modelParams) {
 
-        List<String> inputNames = inputs.stream().map(p -> p.getName()).collect(Collectors.toList());
-        List<String> outputNames = outputs.stream().map(p -> p.getName()).collect(Collectors.toList());
+        List<String> inputNames = inputs.stream().map(PropertyType::getName).collect(Collectors.toList());
+        List<String> outputNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toList());
         validateParams(nxql, inputNames, outputNames);
 
         if (split < 1 || split > 100) {
@@ -180,6 +183,23 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
 
         return new DocumentModelListImpl();
+    }
+
+    @Override
+    public DocumentModel latestDatasetExportForModel(CoreSession session, @Nonnull String modelId) {
+        PageProviderService pps = Framework.getService(PageProviderService.class);
+        Map<String, Serializable> props = new HashMap<>();
+        props.put(CoreQueryDocumentPageProvider.CORE_SESSION_PROPERTY, (Serializable) session);
+        final String DATASET_EXPORT_DESC_PP = "dataset_export_desc";
+        @SuppressWarnings("unchecked")
+        PageProvider<DocumentModel> pp = (PageProvider<DocumentModel>) pps.getPageProvider(DATASET_EXPORT_DESC_PP, null,
+                1L, 0L, props, modelId);
+        List<DocumentModel> currentPage = pp.getCurrentPage();
+        if (currentPage.isEmpty()) {
+            return null;
+        }
+        // Get the latest created Dataset Export
+        return currentPage.get(0);
     }
 
     @Override
