@@ -17,5 +17,6 @@
     <operation class="org.nuxeo.ai.model.export.DatasetExportUpdaterOperation"/>
     <operation class="org.nuxeo.ai.model.export.DatasetExportInterruptOperation"/>
     <operation class="org.nuxeo.ai.model.export.DatasetExportRestartOperation"/>
+    <operation class="org.nuxeo.ai.model.export.ExportProgressOperation"/>
   </extension>
 </component>

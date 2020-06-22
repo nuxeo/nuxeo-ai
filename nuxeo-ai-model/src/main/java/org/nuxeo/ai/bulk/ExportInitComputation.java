@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 import javax.annotation.Nonnull;
 
 import org.apache.commons.lang3.StringUtils;
@@ -59,9 +60,9 @@ import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.cloud.CorporaParameters;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
-import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
 import org.nuxeo.ai.model.analyzis.Statistic;
+import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
@@ -180,8 +181,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
         if (modelParams.containsKey(CORPORA_ID_PARAM) && modelParams.containsKey(DATASET_EXPORT_MODEL_ID)) {
             String modelId = (String) modelParams.get(DATASET_EXPORT_MODEL_ID);
             String corporaId = (String) modelParams.get(CORPORA_ID_PARAM);
-            boolean bound = client.bind((String) modelId,
-                    corporaId);
+            boolean bound = client.bind(modelId, corporaId);
             if (!bound) {
                 log.error("Could not bind AI Model {} and AI Corpora {}", modelId, corporaId);
             }

@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.page.providers.contrib" version="1.0">
+
+  <extension point="providers"
+             target="org.nuxeo.ecm.platform.query.api.PageProviderService">
+
+    <coreQueryPageProvider name="dataset_export_desc">
+      <property name="maxResults">PAGE_SIZE</property>
+      <pattern escapeParameters="false" quoteParameters="true">
+        SELECT * FROM DatasetExport WHERE ecm:isVersion = 0 AND ecm:isTrashed = 0 AND dataset_export:model_id = ?
+      </pattern>
+      <pageSize>10</pageSize>
+      <sort column="dc:created" ascending="false"/>
+    </coreQueryPageProvider>
+  </extension>
+
+</component>
