@@ -21,6 +21,7 @@ package org.nuxeo.ai.model;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -28,6 +29,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.junit.Rule;
@@ -39,6 +41,7 @@ import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
 import org.nuxeo.ai.model.export.DatasetExportUpdaterOperation;
 import org.nuxeo.ai.model.export.DatasetGetModelOperation;
+import org.nuxeo.ai.model.export.ExportProgressOperation;
 import org.nuxeo.ai.model.export.ExportProgressStatus;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
@@ -58,8 +61,8 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AutomationFeature.class,
-        CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
+        RepositoryElasticSearchFeature.class })
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
@@ -82,7 +85,6 @@ public class TestDatasetOperation {
 
     @Test
     public void testBadCall() {
-
         OperationContext ctx = new OperationContext(session);
         Map<String, Object> params = new HashMap<>();
         String inputs = "dc:title,file:content";
@@ -189,6 +191,7 @@ public class TestDatasetOperation {
 
         params.put("split", 60);
         params.put("model_name", "Fake Name");
+        params.put("model_id", "e67ee0e8-1bef-4fb7-9966-1d14081221");
 
         OperationContext ctx = new OperationContext(session);
         String returned = (String) automationService.run(ctx, DatasetExportOperation.ID, params);
@@ -201,12 +204,26 @@ public class TestDatasetOperation {
         params.put("commandId", returned);
 
         @SuppressWarnings("unchecked")
-        List<ExportProgressStatus> result =
-                (List<ExportProgressStatus>) automationService.run(ctx, DatasetExportUpdaterOperation.ID, params);
+        List<ExportProgressStatus> result = (List<ExportProgressStatus>) automationService.run(ctx,
+                DatasetExportUpdaterOperation.ID, params);
 
         assertThat(result).isNotEmpty().hasSize(1);
         ExportProgressStatus status = result.get(0);
         assertThat(status.getId()).isEqualTo(returned);
         assertThat(status.getName()).isEqualTo("Fake Name");
+
+        txFeature.nextTransaction();
+
+        Map<String, Object> statusParams = new HashMap<>();
+        statusParams.put("modelId", "e67ee0e8-1bef-4fb7-9966-1d14081221");
+        ExportProgressStatus progressStatus = (ExportProgressStatus) automationService.run(ctx,
+                ExportProgressOperation.ID, statusParams);
+        assertNotNull(progressStatus);
+        assertThat(progressStatus.getId()).isEqualTo(returned);
+
+        statusParams.put("modelId", "non_existing");
+        progressStatus = (ExportProgressStatus) automationService.run(ctx,
+                ExportProgressOperation.ID, statusParams);
+        assertNull(progressStatus);
     }
 }
