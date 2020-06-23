@@ -89,21 +89,27 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     protected static final String BASE_QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
             + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
 
+    protected static final Properties TERM_PROPS;
+
+    public static final String DEFAULT_NUM_TERMS = "200";
+
+    public static final String DEFAULT_MIN_TERMS = "15";
+
+    static {
+        TERM_PROPS = new Properties();
+        TERM_PROPS.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
+        TERM_PROPS.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
+    }
+
     protected static final Properties EMPTY_PROPS = new Properties();
 
     public static final String QUERY_PARAM = "query";
-
-    public static final String INPUT_PROPERTIES = "inputProperties";
-
-    public static final String OUTPUT_PROPERTIES = "outputProperties";
 
     public static final String INPUT_PARAMETERS = "inputParameters";
 
     public static final String OUTPUT_PARAMETERS = "outputParameters";
 
     public static final String MODEL_PARAMETERS = "modelParameters";
-
-    public static final String STATISTICS_PARAM = "statistics";
 
     public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
 
@@ -113,10 +119,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public static final String STATS_TOTAL = "total";
 
     public static final String STATS_COUNT = "count";
-
-    public static final String DEFAULT_NUM_TERMS = "200";
-
-    public static final String DEFAULT_MIN_TERMS = "15";
 
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
@@ -242,7 +244,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             return emptyList();
         }
         qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
-        getValidStats(featuresList, stats, qb);
+        addCount(stats, qb);
         return stats;
     }
 
@@ -280,25 +282,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /**
      * Get the stats for the smaller dataset of valid values.
      */
-    @SuppressWarnings("unchecked")
-    protected void getValidStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
-        for (PropertyType prop : featuresWithType) {
-            String propName = prop.getName();
-            if (IMAGE_TYPE.equals(prop.getType())) {
-                // qb.addAggregate(makeAggregate(AGG_CARDINALITY, contentProperty(propName), EMPTY_PROPS));
-            } else if (CATEGORY_TYPE.equals(prop.getType()) || TEXT_TYPE.equals(prop.getType())) {
-                Properties termProps = new Properties();
-                termProps.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
-                termProps.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
-                qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, termProps));
-                qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
-            } else {
-                log.warn("Trying to get statistics for an unknown type: {}", prop.getType());
-            }
-        }
-
+    protected void addCount(List<Statistic> stats, NxQueryBuilder qb) {
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
                 esResult.getElasticsearchResponse().getHits().getTotalHits()));
     }
@@ -315,22 +300,25 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                 case TEXT_TYPE:
                     // TODO assuming that text is a property ! could be a blob
                     qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
+                    qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, TERM_PROPS));
+                    qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
                     break;
                 case IMAGE_TYPE:
                     qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
                     break;
                 default:
-                    // Only 3 types at the moment, we would need numeric type in the future.
+                    // Only 3 types at the moment, we would need numeric type in the future. //
                 }
             } else {
-                // TODO assuming without type it is text or category !
+                // Assuming without type it is text or category !
                 qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
             }
         }
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
         stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
-        Long total = esResult.getElasticsearchResponse().getHits().getTotalHits();
+        long total = esResult.getElasticsearchResponse().getHits().getTotalHits();
         stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, null, total));
+
         return total;
     }
 
