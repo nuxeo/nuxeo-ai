@@ -20,6 +20,7 @@ package org.nuxeo.ai.pipes.types;
 
 import java.io.Serializable;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * POOJO for defining property -> type relation
@@ -47,7 +48,8 @@ public class PropertyType implements Serializable {
     public void setName(String name) {
         this.name = name;
     }
-    
+
+    @Nullable
     public String getType() {
         return type;
     }
