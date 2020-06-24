@@ -29,3 +29,11 @@ nuxeo.ai.export.min.docs=10
 
 # AI Export threshold for passing records in bytes
 nuxeo.ai.export.threshold=
+
+# Nuxeo Client Config
+nuxeo.ai.insight.client.enable=false
+
+# If client enabled: set project id, insight url and token access (see AI team for setup)
+# nuxeo.ai.insight.client.projectid=
+# nuxeo.ai.insight.client.target.url=
+# nuxeo.ai.insight.client.token=
