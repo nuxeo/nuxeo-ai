@@ -129,6 +129,7 @@ public class AutoServiceImpl implements AutoService {
 
             Framework.getService(DocMetadataService.class)
                     .updateAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, null, comment);
+            docMetadata.addAutoFilled(xpath);
         } else if (alreadyAutofilled) {
             // We autofilled but now the value didn't autofill so lets reset it
             Framework.getService(DocMetadataService.class)
