@@ -227,7 +227,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     public EnrichmentMetadata predict(DocumentModel doc) {
         Map<String, Tensor> props = new HashMap<>(inputs.size());
         for (ModelProperty input : inputs) {
-            switch (input.getType()) {
+            String type = input.getType() == null ? "none" : input.getType();
+
+            switch (type) {
             case IMAGE_TYPE:
                 props.put(input.getName(),
                         Tensor.image(convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class))));
@@ -235,9 +237,11 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             case TEXT_TYPE:
                 Serializable propVal = getPropertyValue(doc, input.getName());
                 if (propVal instanceof Blob) {
-                    props.put(input.getName(), Tensor.image(convertTextBlob(getPropertyValue(doc, input.getName(), Blob.class))));
+                    String text = convertTextBlob(getPropertyValue(doc, input.getName(), Blob.class));
+                    props.put(input.getName(), Tensor.text(text));
                 } else {
-                    props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
+                    String val = getPropertyValue(doc, input.getName(), String.class);
+                    props.put(input.getName(), Tensor.text(val));
                 }
                 break;
             case CATEGORY_TYPE:
@@ -269,7 +273,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
         Map<String, Tensor> inputProperties = new HashMap<>();
-        
+
         for (Map.Entry<PropertyType, ManagedBlob> blobEntry : blobtext.computePropertyBlobs().entrySet()) {
             if (IMAGE_TYPE.equals(blobEntry.getKey().getType())) {
                 inputProperties.put(blobEntry.getKey().getName(), Tensor.image(convertImageBlob(blobEntry.getValue())));
@@ -277,15 +281,13 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 inputProperties.put(blobEntry.getKey().getName(), Tensor.text(convertTextBlob(blobEntry.getValue())));
             }
         }
+
         for (ModelProperty input : inputs) {
             String text = blobtext.getProperties().get(input.getName());
             if (text != null) {
-                switch (input.getType()) {
-                case CATEGORY_TYPE:
+                if (CATEGORY_TYPE.equals(input.getType())) {
                     inputProperties.put(input.getName(), Tensor.category(text.split(LIST_DELIMITER_PATTERN)));
-                    break;
-                default:
-                    // default to text String
+                } else {// default to text String
                     inputProperties.put(input.getName(), Tensor.text(text));
                 }
             }
