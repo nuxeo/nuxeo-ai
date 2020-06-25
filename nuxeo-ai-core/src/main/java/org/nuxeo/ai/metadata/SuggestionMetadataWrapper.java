@@ -158,6 +158,15 @@ public class SuggestionMetadataWrapper {
         return autoFilled;
     }
 
+    /**
+     * Update auto filled values for sequential operations
+     * @param xpath {@link DocumentModel} property path
+     * @return {@link Boolean#TRUE} if successfully added
+     */
+    public boolean addAutoFilled(String xpath) {
+        return autoFilled.add(xpath);
+    }
+
     public Set<String> getAutoCorrected() {
         return autoCorrected;
     }
