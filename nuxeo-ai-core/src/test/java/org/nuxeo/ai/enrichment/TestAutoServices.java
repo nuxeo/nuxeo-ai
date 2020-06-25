@@ -28,6 +28,7 @@ import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
 import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
@@ -53,6 +54,7 @@ import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.event.EventServiceAdmin;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -60,8 +62,8 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml"})
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core" })
 public class TestAutoServices {
 
     @Inject
@@ -82,10 +84,41 @@ public class TestAutoServices {
     @Inject
     protected TransactionalFeature txFeature;
 
+    @Inject
+    protected EventServiceAdmin esa;
+
     @Test
     @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/core-types-test.xml")
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test2.xml")
+    public void testAutoAll() {
+        DocumentModel testDoc = session.createDocumentModel("/", "My Auto Doc", "MultiFile");
+        testDoc = session.createDocument(testDoc);
+        session.saveDocument(testDoc);
+        txFeature.nextTransaction();
+
+        esa.setListenerEnabledFlag("enrichedDirtyProp", false);
+        esa.setListenerEnabledFlag("enrichmentModified", false);
+        try {
+            EnrichmentMetadata suggestionMetadata = setupTestEnrichmentMetadata(testDoc);
+            testDoc = docMetadataService.saveEnrichment(session, suggestionMetadata);
+            session.saveDocument(testDoc);
+            txFeature.nextTransaction();
+
+            autoService.calculateProperties(testDoc, ALL);
+            testDoc = session.saveDocument(testDoc);
+
+            assertThat((String[]) testDoc.getPropertyValue("complexTest:testList")).hasSize(3);
+        } finally {
+            esa.setListenerEnabledFlag("enrichedDirtyProp", true);
+            esa.setListenerEnabledFlag("enrichmentModified", true);
+        }
+
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/core-types-test.xml")
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testAutofill() {
-        assertNotNull(docMetadataService);
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto Doc", "MultiFile");
         testDoc = session.createDocument(testDoc);
         session.saveDocument(testDoc);
@@ -93,7 +126,8 @@ public class TestAutoServices {
 
         for (String schema : testDoc.getSchemas()) {
             for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
-                System.out.println(schema + " prop " + entry.getKey() + " is list " + testDoc.getPropertyObject(schema, entry.getKey()).isList());
+                System.out.println(schema + " prop " + entry.getKey() + " is list "
+                        + testDoc.getPropertyObject(schema, entry.getKey()).isList());
             }
         }
 
@@ -160,6 +194,7 @@ public class TestAutoServices {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testAutoCorrect() {
         String formatText = "something";
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto Corrected Doc", "File");
@@ -201,6 +236,7 @@ public class TestAutoServices {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testAutoHistory() {
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto History Doc", "File");
         testDoc = session.createDocument(testDoc);
@@ -231,6 +267,7 @@ public class TestAutoServices {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testUpdateAutoHistory() {
         String comment = "No Comment";
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto Hist Doc", "File");
@@ -268,16 +305,15 @@ public class TestAutoServices {
 
         // We have updated dc:title and dc:format twice but we should have only the 2 latest entries in the history.
         assertEquals(2, history.size());
-        assertEquals("NOT_OLD", history.stream()
-                                       .filter(h -> "dc:title".equals(h.getProperty()))
-                                       .findFirst().get().getPreviousValue());
-        assertEquals("OLDISH", history.stream()
-                                      .filter(h -> "dc:format".equals(h.getProperty()))
-                                      .findFirst().get().getPreviousValue());
+        assertEquals("NOT_OLD",
+                history.stream().filter(h -> "dc:title".equals(h.getProperty())).findFirst().get().getPreviousValue());
+        assertEquals("OLDISH",
+                history.stream().filter(h -> "dc:format".equals(h.getProperty())).findFirst().get().getPreviousValue());
 
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testAutoOperation() throws OperationException {
         // Setup doc with suggestions
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto Op Doc", "File");
@@ -300,6 +336,7 @@ public class TestAutoServices {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testhasValue() {
         DocumentModel testDoc = session.createDocumentModel("/", "My Auto Value Doc", "File");
         testDoc = session.createDocument(testDoc);
@@ -319,7 +356,7 @@ public class TestAutoServices {
         wrapper = new SuggestionMetadataWrapper(testDoc);
         assertFalse("Must allow empty strings[]", wrapper.hasHumanValue("dc:subjects"));
 
-        testDoc.setPropertyValue("dc:subjects", new String[]{"sciences", "art/cinema"});
+        testDoc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
         wrapper = new SuggestionMetadataWrapper(testDoc);
         assertTrue(wrapper.hasHumanValue("dc:subjects"));
 
