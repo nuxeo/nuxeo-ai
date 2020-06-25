@@ -30,13 +30,14 @@
 
   <repositories>
     <repository>
-      <id>maven-public</id>
-      <url>https://packages.nuxeo.com/repository/maven-public/</url>
+      <id>public</id>
+      <url>https://packages.nuxeo.com/repository/maven-public</url>
       <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
         <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
     <repository>
@@ -46,7 +47,19 @@
         <enabled>true</enabled>
       </releases>
       <snapshots>
+        <updatePolicy>always</updatePolicy>
         <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>maven-internal</id>
+      <url>https://packages.nuxeo.com/repository/maven-internal</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
   </repositories>
@@ -54,13 +67,24 @@
   <pluginRepositories>
     <pluginRepository>
       <id>maven-public</id>
-      <url>https://packages.nuxeo.com/repository/maven-public/</url>
-      <name>Nuxeo releases</name>
+      <url>https://packages.nuxeo.com/repository/maven-public</url>
       <releases>
         <enabled>true</enabled>
       </releases>
       <snapshots>
         <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>maven-internal</id>
+      <url>https://packages.nuxeo.com/repository/maven-internal</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
@@ -123,9 +147,21 @@
   </dependencyManagement>
 
   <scm>
-    <connection>scm:git:git://github.com/nuxeo/ai-core.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:nuxeo/ai-core.git</developerConnection>
-    <url>http://nuxeo.github.io</url>
+    <connection>scm:git:git://github.com/nuxeo/nuxeo-ai.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:nuxeo/nuxeo-ai.git</developerConnection>
+    <url>https://nuxeo.github.io</url>
   </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>maven-public-releases</id>
+      <url>https://packages.nuxeo.com/repository/maven-public-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>maven-public-snapshots</id>
+      <url>https://packages.nuxeo.com/repository/maven-public-snapshots/</url>
+      <uniqueVersion>true</uniqueVersion>
+    </snapshotRepository>
+  </distributionManagement>
 
 </project>
