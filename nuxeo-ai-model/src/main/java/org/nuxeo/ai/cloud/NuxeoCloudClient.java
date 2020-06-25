@@ -47,6 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Supplier;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -71,6 +72,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import okhttp3.Response;
 
 /**
@@ -142,7 +144,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             client = builder.connect();
             log.debug("Nuxeo Cloud Client {} is configured for {}.", projectId, url);
         } catch (NuxeoClientRemoteException e) {
-            log.warn("Authentication/Connection issue with Insight cloud", e);
+            log.error("Authentication/Connection issue with Insight cloud", e);
         }
     }
 
@@ -158,7 +160,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Override
     public boolean isAvailable() {
-        return client != null;
+        return getClient() != null;
     }
 
     @Override
