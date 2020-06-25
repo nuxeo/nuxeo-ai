@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.model.analyzis.FieldStatistics;
 import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.automation.core.Constants;
@@ -37,6 +38,8 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Type;
 
 @Operation(id = DatasetStatsOperation.ID, category = Constants.CAT_SERVICES, label = "Statistics on a dataset", description = "Return statistics on a set of documents expressed by a NXQL query.")
 public class DatasetStatsOperation {
@@ -45,6 +48,9 @@ public class DatasetStatsOperation {
 
     @Context
     protected DatasetStatsService dss;
+
+    @Context
+    protected SchemaManager sm;
 
     @Context
     protected CoreSession session;
@@ -91,6 +97,14 @@ public class DatasetStatsOperation {
         }
 
         Collection<Statistic> statistics = dss.getStatistics(session, query, inputProp, outputProp);
-        return Blobs.createJSONBlobFromValue(dss.transform(statistics));
+        Set<FieldStatistics> transform = dss.transform(statistics);
+        transform.forEach(this::setMultiClass);
+
+        return Blobs.createJSONBlobFromValue(transform);
+    }
+
+    protected void setMultiClass(FieldStatistics stat) {
+        Type type = sm.getField(stat.getField()).getType();
+        stat.setMultiClass(type.isListType());
     }
 }
