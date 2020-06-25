@@ -30,7 +30,7 @@
 
   <repositories>
     <repository>
-      <id>public</id>
+      <id>maven-public</id>
       <url>https://packages.nuxeo.com/repository/maven-public</url>
       <releases>
         <enabled>true</enabled>
@@ -51,13 +51,34 @@
         <enabled>true</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>maven-internal</id>
+      <url>https://packages.nuxeo.com/repository/maven-internal</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
   </repositories>
 
   <pluginRepositories>
     <pluginRepository>
-      <id>public</id>
+      <id>maven-public</id>
       <url>https://packages.nuxeo.com/repository/maven-public</url>
-      <name>Nuxeo releases</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>maven-internal</id>
+      <url>https://packages.nuxeo.com/repository/maven-internal</url>
       <releases>
         <enabled>true</enabled>
       </releases>
