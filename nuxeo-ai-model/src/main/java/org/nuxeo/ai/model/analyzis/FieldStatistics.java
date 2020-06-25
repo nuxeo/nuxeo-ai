@@ -47,6 +47,8 @@ public class FieldStatistics {
 
     protected long cardinality;
 
+    protected boolean multiClass;
+
     public static FieldStatistics from(Statistic stat, long total) {
         long missing = 0L;
         long cardinality = 0L;
@@ -59,15 +61,15 @@ public class FieldStatistics {
             terms = stat.getValue();
         }
 
-        return new FieldStatistics(total, total - missing, missing, stat.getType(), stat.getField(), terms,
-                cardinality);
+        return new FieldStatistics(total, total - missing, missing, stat.getType(), stat.getField(), terms, cardinality,
+                false);
     }
 
     public FieldStatistics() {
     }
 
     public FieldStatistics(long total, long count, long missing, String type, String field, String terms,
-                           long cardinality) {
+            long cardinality, boolean multiClass) {
         this.total = total;
         this.missing = missing;
         this.type = type;
@@ -75,10 +77,12 @@ public class FieldStatistics {
         this.count = count;
         this.terms = terms;
         this.cardinality = cardinality;
+        this.multiClass = multiClass;
     }
 
     /**
      * Merging with another statistics too obtain missing values
+     * 
      * @param that {@link FieldStatistics} to merge
      * @return original {@link FieldStatistics} with values from input if taken
      */
@@ -146,6 +150,14 @@ public class FieldStatistics {
 
     public void setCardinality(long cardinality) {
         this.cardinality = cardinality;
+    }
+
+    public boolean isMultiClass() {
+        return multiClass;
+    }
+
+    public void setMultiClass(boolean multiClass) {
+        this.multiClass = multiClass;
     }
 
     @Override
