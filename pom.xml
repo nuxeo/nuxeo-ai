@@ -3,8 +3,8 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.nuxeo</groupId>
-    <artifactId>nuxeo-ecm</artifactId>
-    <version>11.1-SNAPSHOT</version>
+    <artifactId>nuxeo-parent</artifactId>
+    <version>11.2-SNAPSHOT</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
@@ -14,6 +14,7 @@
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
   <properties>
+    <nuxeo.target.version>11.*</nuxeo.target.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
