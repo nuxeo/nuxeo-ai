@@ -42,11 +42,12 @@ pipeline {
             environment {
                 MAVEN_OPTS = "$MAVEN_OPTS -Xms512m -Xmx1g"
                 MAVEN_ARGS = getMavenArgs()
+                AWS_REGION = "us-east-1"
             }
             steps {
                 setGitHubBuildStatus('build')
                 container('platform11') {
-//                    withAWS(credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
+//                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
                         sh 'mvn ${MAVEN_ARGS}'
@@ -83,9 +84,11 @@ pipeline {
                     withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS'),
                                      usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
                         sh '''
-PACKAGE="\$(ls $PACKAGE_PATTERN)"
-curl --fail -u "$CONNECT_CREDS_PREPROD" -F package=@\$PACKAGE "$MARKETPLACE_URL_PREPROD/upload?batch=true" || true
-curl --fail -u "$CONNECT_CREDS" -F package=@\$PACKAGE "$MARKETPLACE_URL/upload?batch=true"
+PACKAGES="\$(ls $PACKAGE_PATTERN)"
+for file in \$PACKAGES ; do
+    curl --fail -u "$CONNECT_CREDS_PREPROD" -F package=@\$file "$MARKETPLACE_URL_PREPROD/upload?batch=true" || true
+    curl --fail -u "$CONNECT_CREDS" -F package=@\$file "$MARKETPLACE_URL/upload?batch=true"
+done
 '''
                     }
                 }
@@ -93,7 +96,7 @@ curl --fail -u "$CONNECT_CREDS" -F package=@\$PACKAGE "$MARKETPLACE_URL/upload?b
             post {
                 always {
                     setGitHubBuildStatus('package/push')
-                    archiveArtifacts artifacts: "$PACKAGE_PATTERN", allowEmptyArchive: false
+                    archiveArtifacts artifacts: PACKAGE_PATTERN.replaceAll(' ', ', '), allowEmptyArchive: false
                 }
             }
         }
@@ -105,9 +108,6 @@ curl --fail -u "$CONNECT_CREDS" -F package=@\$PACKAGE "$MARKETPLACE_URL/upload?b
                     step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                 }
             }
-        }
-        cleanup {
-            cleanWs()
         }
     }
 }
