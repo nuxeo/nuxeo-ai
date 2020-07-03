@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.model.ModelProperty;
+import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.rest.RestClient;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -161,8 +162,9 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         if (sourceBlob != null) {
             try {
                 Blob blob = EnrichmentUtils.convertTextBlob(sourceBlob);
-                return blob == null ? "" : blob.getString();
+                return blob == null ? "" : PropertyUtils.sanitize(blob.getString());
             } catch (IOException e) {
+                log.error("Could not convert blob " + sourceBlob.getDigest(), e);
                 return null;
             }
         }
@@ -183,5 +185,4 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         }
         return false; // If you haven't specified a url then its not live.
     }
-
 }

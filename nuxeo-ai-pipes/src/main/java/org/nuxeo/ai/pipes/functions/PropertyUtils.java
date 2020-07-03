@@ -61,6 +61,10 @@ public class PropertyUtils {
 
     public static final String LIST_DELIMITER_PATTERN = Pattern.quote(LIST_DELIMITER);
 
+    public static final String PIPE_REPLACEMENT = ";";
+
+    public static final String PIPE_SANITIZER_PATTERN = "\\|";
+
     public static final String NAME_PROP = "name";
 
     public static final String TYPE_PROP = "type";
@@ -195,7 +199,8 @@ public class PropertyUtils {
             Serializable propVal = getPropertyValue(doc, propName.getName());
             if (propVal instanceof ManagedBlob) {
                 if (IMAGE_TYPE.equals(propName.getType())) {
-                    blobTextFromDoc.addBlob(propName.getName(), propName.getType(), getPictureConversion(doc, (ManagedBlob) propVal));
+                    blobTextFromDoc.addBlob(propName.getName(), propName.getType(),
+                            getPictureConversion(doc, (ManagedBlob) propVal));
                 } else {
                     blobTextFromDoc.addBlob(propName.getName(), propName.getType(), (ManagedBlob) propVal);
                 }
@@ -203,7 +208,7 @@ public class PropertyUtils {
                 if (propVal.getClass().isArray()) {
                     properties.put(propName.getName(), serializeArray(propVal));
                 } else {
-                    properties.put(propName.getName(), propVal.toString());
+                    properties.put(propName.getName(), sanitize(propVal.toString()));
                 }
             }
 
@@ -244,11 +249,21 @@ public class PropertyUtils {
         StringBuilder valueBuilder = new StringBuilder();
         int length = Array.getLength(propVal);
         for (int i = 0; i < length; i++) {
-            valueBuilder.append(Array.get(propVal, i));
+            String val = String.valueOf(Array.get(propVal, i));
+            valueBuilder.append(sanitize(val));
             if (i != length - 1) {
                 valueBuilder.append(LIST_DELIMITER);
             }
         }
         return valueBuilder.toString();
+    }
+
+    /**
+     * Text sanitizer
+     * @param source {@link String} to process
+     * @return {@link String} sanitized result
+     */
+    public static String sanitize(String source) {
+        return source.replaceAll(PIPE_SANITIZER_PATTERN, PIPE_REPLACEMENT);
     }
 }
