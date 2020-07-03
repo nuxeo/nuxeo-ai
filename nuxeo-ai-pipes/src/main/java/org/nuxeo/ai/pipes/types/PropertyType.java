@@ -20,6 +20,7 @@ package org.nuxeo.ai.pipes.types;
 
 import java.io.Serializable;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -32,6 +33,16 @@ public class PropertyType implements Serializable {
     protected String name;
 
     protected String type;
+
+    /**
+     * Factory constructor
+     * @param name of the property
+     * @param type of the property
+     * @return new instance of {@link PropertyType}
+     */
+    public static PropertyType of(@Nonnull String name, @Nonnull String type) {
+        return new PropertyType(name, type);
+    }
 
     public PropertyType() {
     }
