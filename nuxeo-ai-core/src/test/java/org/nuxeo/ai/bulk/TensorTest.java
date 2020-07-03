@@ -24,7 +24,9 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.*;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestPdf;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.DataInput;
@@ -36,17 +38,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
 import javax.inject.Inject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
+import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.tensorflow.TFRecord;
 import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
@@ -56,6 +64,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.tensorflow.example.Feature;
+
+import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })
@@ -67,6 +77,9 @@ public class TensorTest {
 
     @Inject
     protected AIComponent aiComponent;
+
+    @Inject
+    protected CoreSession session;
 
     @Test
     public void testWriter() throws IOException {
@@ -181,7 +194,6 @@ public class TensorTest {
         Optional<Blob> blobWritten = writer.complete(test_key);
         assertTrue(blobWritten.isPresent());
         Blob blob = blobWritten.get();
-        // System.out.println("File: " + blob.getFile().getAbsolutePath());
         DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
         TFRecordReader tfRecordReader = new TFRecordReader(input, true);
         byte[] exampleData;
@@ -217,5 +229,86 @@ public class TensorTest {
         RecordWriterDescriptor descriptor = new RecordWriterDescriptor();
         descriptor.writer = BadRecordWriter.class;
         descriptor.getWriter("mywriter");
+    }
+
+    @Test
+    public void shouldWriteHTMLAsSingleValueTensor() throws IOException {
+        String html = "<p>Step to reproduce:</p>\n" +
+                "<ul>\n\t<li>select a File document in a content view and push the Copy button</li>\n" +
+                "\t<li>push the Paste button</li>\n" +
+                "\t<li>a new document is created in the same folder:" +
+                " get its id (<tt>cd551cce-5322-4368-b045-e13086f250bb</tt> in my example)</li>\n" +
+                "\t<li>edit the new document and increment the minor version</li>\n" +
+                "\t<li>run the following SQL query against your database\n" +
+                "<div style=\"\\\"border-width:\" class=\"\\\"preformatted\"><div class=\"\\\"preformattedContent\">\n" +
+                "<pre>select * from versions where versionableid='cd551cce-5322-4368-b045-e13086f250bb';\n" +
+                " id | versionableid | created | label | description | islatest | islatestmajor \n" +
+                "--------------------------------------------------------------------------------------" +
+                "------------------------------------------------\\n" +
+                " ba10d4af-9045-48bc-be46-0c293b84b408 | cd551cce-5322-4368-b045-e13086f250bb | 2016-05-26 14:38:00.815 | | | t | f\n" +
+                "</pre>\n</div></div>\n<p>=> the label value is empty</p></li>\n</ul>\n" +
+                "\n\n<p>This value is returned when calling <tt>session.getLastVersion(docRef).getLabel()</tt>.</p>";
+
+        DocumentModel doc = session.createDocumentModel("/", "TestDoc", "File");
+        doc.setPropertyValue("dc:description", html);
+        doc.setPropertyValue("dc:title", "HTML doc");
+
+        doc = session.createDocument(doc);
+
+        Set<PropertyType> set = Sets.newHashSet(PropertyType.of("dc:title", "txt"),
+                PropertyType.of("dc:description", "txt"));
+        BlobTextFromDocument blobTextFromDoc = PropertyUtils.docSerialize(doc, set);
+
+        byte[] bytes = MAPPER.writeValueAsBytes(blobTextFromDoc);
+
+
+        RecordWriter writer = aiComponent.getRecordWriter("ai/training");
+        assertNotNull(writer);
+
+        String test_key = "recordKey";
+
+        List<ExportRecord> records = new ArrayList<>();
+        records.add(ExportRecord.of(test_key, test_key, bytes));
+
+        writer.write(records);
+        assertTrue(writer.exists(test_key));
+
+        Optional<Blob> blob = writer.complete(test_key);
+        assertTrue(blob.isPresent());
+
+        DataInput input = new DataInputStream(new FileInputStream(blob.get().getFile()));
+        TFRecordReader tfRecordReader = new TFRecordReader(input, true);
+        byte[] exampleData = tfRecordReader.read();
+        TFRecord tfRecord = TFRecord.from(exampleData);
+        assertThat(tfRecord).isNotNull();
+
+        assertThat(tfRecord.getFeatures().getFeatureCount()).isEqualTo(2);
+
+        Feature feature = tfRecord.getFeatures().getFeatureOrDefault("dc:description", null);
+        assertNotNull(feature);
+
+        final String expected = "<p>Step to reproduce:</p>\n" +
+                "<ul>\n\t<li>select a File document in a content view and push the Copy button</li>\n" +
+                "\t<li>push the Paste button</li>\n" +
+                "\t<li>a new document is created in the same folder:" +
+                " get its id (<tt>cd551cce-5322-4368-b045-e13086f250bb</tt> in my example)</li>\n" +
+                "\t<li>edit the new document and increment the minor version</li>\n" +
+                "\t<li>run the following SQL query against your database\n" +
+                "<div style=\"\\\"border-width:\" class=\"\\\"preformatted\"><div class=\"\\\"preformattedContent\">\n" +
+                "<pre>select * from versions where versionableid='cd551cce-5322-4368-b045-e13086f250bb';\n" +
+                " id ; versionableid ; created ; label ; description ; islatest ; islatestmajor \n" +
+                "--------------------------------------------------------------------------------------" +
+                "------------------------------------------------\\n" +
+                " ba10d4af-9045-48bc-be46-0c293b84b408 ; cd551cce-5322-4368-b045-e13086f250bb ; 2016-05-26 14:38:00.815 ; ; ; t ; f\n" +
+                "</pre>\n</div></div>\n<p>=> the label value is empty</p></li>\n</ul>\n" +
+                "\n\n<p>This value is returned when calling <tt>session.getLastVersion(docRef).getLabel()</tt>.</p>";
+
+        File txtFile = Framework.createTempFile("tf_HTML", "txt");
+        try (FileOutputStream fos = new FileOutputStream(txtFile)) {
+            fos.write(feature.getBytesList().getValue(0).toByteArray());
+            assertTrue(txtFile.length() > 0);
+            String content = new String(feature.getBytesList().getValue(0).toByteArray());
+            assertThat(content).isEqualTo(expected);
+        }
     }
 }
