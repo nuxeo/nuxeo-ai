@@ -262,7 +262,7 @@ public class TensorTest {
         byte[] bytes = MAPPER.writeValueAsBytes(blobTextFromDoc);
 
 
-        RecordWriter writer = aiComponent.getRecordWriter("ai/training");
+        RecordWriter writer = aiComponent.getRecordWriter("training");
         assertNotNull(writer);
 
         String test_key = "recordKey";
