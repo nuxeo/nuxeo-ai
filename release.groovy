@@ -21,7 +21,7 @@ void setGitHubBuildStatus(String context) {
 
 pipeline {
     agent {
-        label "jenkins-ai-nuxeo10"
+        label "jenkins-ai-nuxeo1010"
     }
     parameters {
         string(name: 'BRANCH', defaultValue: 'master', description: 'Branch to release from.')
