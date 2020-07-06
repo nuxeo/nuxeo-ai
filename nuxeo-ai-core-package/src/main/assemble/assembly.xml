@@ -140,7 +140,7 @@
     </nx:studioExtraction>
 
     <zip destfile="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" basedir="${outdir}/marketplace"/>
-    <artifact:attach file="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" type="zip"/>
+    <!--<artifact:attach file="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" type="zip"/>-->
   </target>
 
 </project>
