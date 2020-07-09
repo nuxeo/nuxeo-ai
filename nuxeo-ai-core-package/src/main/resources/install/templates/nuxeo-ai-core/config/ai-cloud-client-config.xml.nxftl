@@ -2,10 +2,20 @@
 <component name="org.nuxeo.ai.insight.client.config" version="1.0">
   <require>org.nuxeo.ai.services.AIComponent</require>
   <#if "${nuxeo.ai.insight.client.enable}" == "true">
+
   <extension target="org.nuxeo.ai.cloud.NuxeoClient" point="config">
     <config id="njConfig" projectId="${nuxeo.ai.insight.client.projectid}" url="${nuxeo.ai.insight.client.target.url}">
       <authentication token="${nuxeo.ai.insight.client.token}" />
     </config>
   </extension>
+
+  <extension target="org.nuxeo.ecm.platform.web.common.requestcontroller.service.RequestControllerService" point="corsConfig">
+      <corsConfig name="ai-client" allowSubdomains="true
+                  allowOrigin="${nuxeo.ai.insight.client.target.url}"
+                  supportedMethods ="GET,POST,HEAD,OPTIONS,DELETE,PUT">
+        <pattern>/nuxeo/.*</pattern>
+      </corsConfig>
+  </extension>
+
   </#if>
 </component>
