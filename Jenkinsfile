@@ -70,6 +70,7 @@ pipeline {
                 anyOf {
                     tag '*'
                     branch 'master'
+                    branch 'master-*'
                     branch 'Sprint-*'
                 }
             }
@@ -104,7 +105,7 @@ done
     post {
         always {
             script {
-                if (env.BRANCH_NAME == 'master' || env.TAG_NAME || env.BRANCH_NAME ==~ 'Sprint-.*') {
+                if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*' || env.BRANCH_NAME ==~ 'Sprint-.*') {
                     step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                 }
             }
