@@ -35,6 +35,8 @@ pipeline {
     }
     environment {
         ORG = 'nuxeo'
+        APP_NAME = 'nuxeo-ai'
+        AI_CORE_VERSION = '3.0.0-SNAPSHOT'
         branch_name_lower_case = "${env.BRANCH_NAME.toLowerCase()}"
     }
     stages {
@@ -62,6 +64,56 @@ pipeline {
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
                     setGitHubBuildStatus('build')
+                }
+            }
+        }
+        stage('Deploy Preview') {
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'Sprint-*'
+                    allOf {
+                        changeRequest()
+//                        expression {
+//                            return pullRequest.labels.contains('preview')
+//                        }
+                    }
+                }
+            }
+            steps {
+                setGitHubBuildStatus('charts/preview')
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    container('platform1010') {
+                        sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
+                        dir('docker') {
+                            echo "Build preview image"
+                            sh """
+envsubst < skaffold.yaml > skaffold.yaml~gen
+skaffold build -f skaffold.yaml~gen
+"""
+                        }
+                        withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                                dir('charts/preview') {
+                                    sh """#!/bin/bash -xe
+kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
+kubectl create ns ${PREVIEW_NAMESPACE}
+make preview
+jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
+"""
+                                    sh "jx get preview  -o json |jq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
+                                    sh "cat .previewUrl"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'charts/preview/values.yaml, charts/preview/extraValues.yaml, ' +
+                            'charts/preview/requirements.lock'
+                    setGitHubBuildStatus('charts/preview')
                 }
             }
         }
@@ -101,6 +153,37 @@ done
                 }
             }
         }
+        stage('Deploy Preview') {
+                    when {
+                        anyOf {
+                            branch 'master'
+                            branch 'Sprint-*'
+                            changeRequest()
+                        }
+                    }
+                    steps {
+                        setGitHubBuildStatus('charts/preview')
+                        container('platform11') {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                                dir('charts/preview') {
+                                    sh """#!/bin/bash -xe
+        # creating the namespace to be able to copy secret (make preview is having an error if we dont copy first)
+        kubectl delete ns ai-nuxeo-nuxeo-ai-${branch_name_lower_case} --ignore-not-found=true
+        kubectl create ns ai-nuxeo-nuxeo-ai-${branch_name_lower_case}
+        kubectl get secret instance-clid --namespace=ai --export -o yaml | kubectl apply --namespace=ai-nuxeo-nuxeo-ai-${branch_name_lower_case} -f -
+        make preview
+        jx preview --source-url $GIT_URL
+        kubectl delete --all pods --namespace=ai-nuxeo-nuxeo-ai-${branch_name_lower_case}
+        """
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            setGitHubBuildStatus('charts/preview')
+                        }
+                    }
     }
     post {
         always {

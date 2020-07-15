@@ -1,0 +1,62 @@
+expose:
+  Annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+  config:
+    exposer: Ingress
+    domain: ai.dev.nuxeo.com
+    http: true
+    tlsacme: true
+    tlsSecretName: ai-tls
+#    urltemplate: '"{{.Namespace}}.{{.Domain}}"'
+
+cleanup:
+  Args:
+    - --cleanup
+  Annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+
+nuxeo:
+  nuxeo:
+    podLabels:
+      branch: "$BRANCH_NAME"
+      team: ai
+      resource: pod
+      usage: preview
+    service:
+      annotations:
+        fabric8.io/expose: "true"
+        fabric8.io/ingress.path: /nuxeo/
+        fabric8.io/ingress.name: preview
+        fabric8.io/ingress.annotations: |-
+          nginx.ingress.kubernetes.io/proxy-body-size: 0
+          nginx.ingress.kubernetes.io/server-snippet: ignore_invalid_headers off;
+      labels:
+        branch: "$BRANCH_NAME"
+        team: ai
+        resource: service
+        usage: preview
+    packages: nuxeo-dam nuxeo-ai-core
+    livenessProbe:
+      initialDelaySeconds: 300
+      periodSeconds: 20
+      successThreshold: 1
+      failureThreshold: 5
+      timeoutSeconds: 10
+    readinessProbe:
+      periodSeconds: 20
+      initialDelaySeconds: 300
+      successThreshold: 1
+      timeoutSeconds: 10
+      failureThreshold: 5
+    custom_envs:
+      - name: NUXEO_CLID
+        valueFrom:
+          secretKeyRef:
+            name: instance-clid
+            key: instance.clid
+  mongodb:
+    deploy: false
+  postgresql:
+    deploy: false
