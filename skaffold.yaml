@@ -1,0 +1,19 @@
+apiVersion: skaffold/v1
+kind: Config
+build:
+  tagPolicy:
+    envTemplate:
+      template: "{{.DOCKER_REGISTRY}}/{{.ORG}}/{{.IMAGE_NAME}}:{{.VERSION}}"
+  artifacts:
+    - image: nuxeo-ai
+      context: .
+      kaniko:
+        buildContext:
+          localDir: {}
+        cache:
+          repo: ${DOCKER_REGISTRY}/${ORG}/cache
+  cluster:
+    namespace: ai
+    pullSecretName: kaniko-secret
+    dockerConfig:
+      secretName: jenkins-docker-cfg

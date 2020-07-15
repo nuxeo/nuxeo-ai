@@ -35,6 +35,8 @@ pipeline {
     }
     environment {
         ORG = 'nuxeo'
+        APP_NAME = 'nuxeo-ai'
+        AI_CORE_VERSION = '3.0.0-SNAPSHOT'
         branch_name_lower_case = "${env.BRANCH_NAME.toLowerCase()}"
     }
     stages {
@@ -100,6 +102,37 @@ done
                 }
             }
         }
+        stage('Deploy Preview') {
+                    when {
+                        anyOf {
+                            branch 'master'
+                            branch 'Sprint-*'
+                            changeRequest()
+                        }
+                    }
+                    steps {
+                        setGitHubBuildStatus('charts/preview')
+                        container('platform11') {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                                dir('charts/preview') {
+                                    sh """#!/bin/bash -xe
+        # creating the namespace to be able to copy secret (make preview is having an error if we dont copy first)
+        kubectl delete ns ai-nuxeo-nuxeo-ai-${branch_name_lower_case} --ignore-not-found=true
+        kubectl create ns ai-nuxeo-nuxeo-ai-${branch_name_lower_case}
+        kubectl get secret instance-clid --namespace=ai --export -o yaml | kubectl apply --namespace=ai-nuxeo-nuxeo-ai-${branch_name_lower_case} -f -
+        make preview
+        jx preview --source-url $GIT_URL
+        kubectl delete --all pods --namespace=ai-nuxeo-nuxeo-ai-${branch_name_lower_case}
+        """
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            setGitHubBuildStatus('charts/preview')
+                        }
+                    }
     }
     post {
         always {
