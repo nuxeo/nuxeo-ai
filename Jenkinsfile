@@ -17,9 +17,14 @@ void setGitHubBuildStatus(String context) {
 }
 
 String getMavenArgs() {
-    def args = '-V -B -Pmarketplace,ftest,aws clean install'
+    def args = '-V -B -Pmarketplace,ftest,aws clean'
+    if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*') {
+        args += ' deploy -P-nexus'
+    } else { // those artifacts are not pushed outside
+        args += ' install -Pnexus'
+    }
     if (env.TAG_NAME) {
-        args += ' -Prelease deploy'
+        args += ' -Prelease'
     }
     return args
 }
