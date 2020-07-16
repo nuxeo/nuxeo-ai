@@ -17,9 +17,14 @@ void setGitHubBuildStatus(String context) {
 }
 
 String getMavenArgs() {
-    def args = '-V -B -Pmarketplace,ftest,aws clean install'
-    if (env.TAG_NAME) {
-        args += ' -Prelease deploy'
+    def args = '-V -B -Pmarketplace,ftest,aws clean install -DskipTests' // TODO: REMOVE skipTests BEFORE MERGE
+    if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*') {
+        args += ' deploy -P-nexus'
+        if (env.TAG_NAME) {
+            args += ' -Prelease -DskipTests'
+        }
+    } else {
+        args += ' package'
     }
     return args
 }
@@ -36,8 +41,10 @@ pipeline {
     environment {
         ORG = 'nuxeo'
         APP_NAME = 'nuxeo-ai'
-        AI_CORE_VERSION = '3.0.0-SNAPSHOT'
-        branch_name_lower_case = "${env.BRANCH_NAME.toLowerCase()}"
+        AI_CORE_VERSION = readMavenPom().getVersion()
+        JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
+        SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
+        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
     }
     stages {
         stage('Build') {
@@ -97,42 +104,51 @@ done
             }
             post {
                 always {
-                    setGitHubBuildStatus('package/push')
                     archiveArtifacts artifacts: PACKAGE_PATTERN.replaceAll(' ', ', '), allowEmptyArchive: false
+                    setGitHubBuildStatus('package/push')
                 }
             }
         }
         stage('Deploy Preview') {
-                    when {
-                        anyOf {
-                            branch 'master'
-                            branch 'Sprint-*'
-                            changeRequest()
-                        }
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'Sprint-*'
+                    allOf {
+                        changeRequest()
+//                        expression {
+//                            return pullRequest.labels.contains('preview')
+//                        }
                     }
-                    steps {
-                        setGitHubBuildStatus('charts/preview')
-                        container('platform11') {
-                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
-                                dir('charts/preview') {
-                                    sh """#!/bin/bash -xe
-        # creating the namespace to be able to copy secret (make preview is having an error if we dont copy first)
-        kubectl delete ns ai-nuxeo-nuxeo-ai-${branch_name_lower_case} --ignore-not-found=true
-        kubectl create ns ai-nuxeo-nuxeo-ai-${branch_name_lower_case}
-        kubectl get secret instance-clid --namespace=ai --export -o yaml | kubectl apply --namespace=ai-nuxeo-nuxeo-ai-${branch_name_lower_case} -f -
-        make preview
-        jx preview --source-url $GIT_URL
-        kubectl delete --all pods --namespace=ai-nuxeo-nuxeo-ai-${branch_name_lower_case}
-        """
-                                }
+                }
+            }
+            steps {
+                setGitHubBuildStatus('charts/preview')
+                container('platform11') {
+                    withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
+                        withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                            dir('charts/preview') {
+                                sh """#!/bin/bash -xe
+kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
+kubectl create ns ${PREVIEW_NAMESPACE}
+make preview
+jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
+"""
+                                sh "jx get preview  -o yaml |yq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
+                                sh "cat .previewUrl"
                             }
                         }
                     }
-                    post {
-                        always {
-                            setGitHubBuildStatus('charts/preview')
-                        }
-                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'charts/preview/values.yaml, charts/preview/extraValues.yaml, ' +
+                            'charts/preview/requirements.lock'
+                    setGitHubBuildStatus('charts/preview')
+                }
+            }
+        }
     }
     post {
         always {

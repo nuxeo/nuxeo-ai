@@ -2,12 +2,13 @@ dependencies:
 - alias: expose
   name: exposecontroller
   repository: http://chartmuseum.jenkins-x.io
-  version: 2.3.56
+  version: ~2.3.118
 - alias: cleanup
   name: exposecontroller
   repository: http://chartmuseum.jenkins-x.io
-  version: 2.3.56
-- name: nuxeo
-  version: 0.2.1
-  repository: http://jenkins-x-chartmuseum:8080
-  alias: nuxeo
+  version: ~2.3.118
+- alias: nuxeo
+  name: nuxeo
+  repository: https://chartmuseum.platform.dev.nuxeo.com
+  version: ~0.3.1
+  
