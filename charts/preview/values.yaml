@@ -37,7 +37,7 @@ nuxeo:
         team: ai
         resource: service
         usage: preview
-    packages: nuxeo-dam nuxeo-ai-core
+    packages: "nuxeo-dam nuxeo-ai-core-$AI_CORE_VERSION"
     livenessProbe:
       initialDelaySeconds: 300
       periodSeconds: 20
