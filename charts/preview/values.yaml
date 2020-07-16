@@ -8,7 +8,7 @@ expose:
     http: true
     tlsacme: true
     tlsSecretName: ai-tls
-#    urltemplate: '"{{.Namespace}}.{{.Domain}}"'
+    urltemplate: '{{.Service}}-{{.Namespace}}.{{.Domain}}'
 
 cleanup:
   Args:
@@ -18,7 +18,10 @@ cleanup:
     helm.sh/hook-delete-policy: hook-succeeded
 
 nuxeo:
+  fullnameOverride: preview
   nuxeo:
+    podAnnotations:
+      preview/scm.ref: ${SCM_REF}
     podLabels:
       branch: "$BRANCH_NAME"
       team: ai
@@ -27,36 +30,73 @@ nuxeo:
     service:
       annotations:
         fabric8.io/expose: "true"
-        fabric8.io/ingress.path: /nuxeo/
-        fabric8.io/ingress.name: preview
         fabric8.io/ingress.annotations: |-
+          kubernetes.io/ingress.class: nginx
           nginx.ingress.kubernetes.io/proxy-body-size: 0
           nginx.ingress.kubernetes.io/server-snippet: ignore_invalid_headers off;
       labels:
-        branch: "$BRANCH_NAME"
         team: ai
         resource: service
         usage: preview
-    packages: nuxeo-dam nuxeo-ai-core
+    packages: "nuxeo-ai-core-${AI_CORE_VERSION} nuxeo-jira-ai-${JIRA_AI_VERSION}"
     livenessProbe:
-      initialDelaySeconds: 300
+      initialDelaySeconds: 900
       periodSeconds: 20
       successThreshold: 1
       failureThreshold: 5
       timeoutSeconds: 10
     readinessProbe:
-      periodSeconds: 20
+      periodSeconds: 60
       initialDelaySeconds: 300
       successThreshold: 1
       timeoutSeconds: 10
-      failureThreshold: 5
+      failureThreshold: 10
+    custom_params: |-
+      nuxeo.ai.insight.client.enable=true
+      nuxeo.ai.insight.client.projectid=jira
+      nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
+      nuxeo.ai.insight.client.token=${AI_INSIGHT_CLIENT_TOKEN}
     custom_envs:
       - name: NUXEO_CLID
         valueFrom:
           secretKeyRef:
             name: instance-clid
             key: instance.clid
+      - name: AI_INSIGHT_CLIENT_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: ai-insight-client-token
+            key: text
+#    persistence:
+#      enabled: ${PERSISTENCE}
   mongodb:
     deploy: false
   postgresql:
     deploy: false
+#  mongodb:
+#    deploy: ${PERSISTENCE}
+#    useStatefulSet: ${PERSISTENCE}
+#    persistence:
+#      enabled: ${PERSISTENCE}
+#    labels:
+#      branch: "$BRANCH_NAME"
+#      resource: deployment
+#      team: platform
+#      usage: preview
+#    podLabels:
+#      branch: "$BRANCH_NAME"
+#      resource: pod
+#      team: platform
+#      usage: preview
+#  elasticsearch:
+#    deploy: ${PERSISTENCE}
+#    master:
+#      persistence:
+#        enabled: ${PERSISTENCE}
+#    data:
+#      persistence:
+#        enabled: ${PERSISTENCE}
+
+# needed for instance-clid replicator and local usage
+local:
+  instance_clid:
