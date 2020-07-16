@@ -9,9 +9,7 @@ else
 	exit -1
 endif
 preview:
+	mv values.yaml values.yaml.tmp
+	envsubst < values.yaml.tmp > values.yaml
 	$(SED) -e "s/version:.*/version: $(PREVIEW_VERSION)/" Chart.yaml
-	$(SED) -e "s/version:.*/version: $(PREVIEW_VERSION)/" ../*/Chart.yaml
-	$(SED) -e "s|repository:.*|repository: $(DOCKER_REGISTRY)\/$(ORG)\/nuxeo-ai|" values.yaml
-	$(SED) -e "s/tag:.*/tag: $(PREVIEW_VERSION)/" values.yaml
-	echo "  version: $(PREVIEW_VERSION)" >> requirements.yaml
-	jx step helm build
+	jx step helm build --verbose
