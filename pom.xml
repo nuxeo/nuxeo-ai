@@ -21,6 +21,7 @@
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
     <nuxeo.insight-demos.version>1.3.2</nuxeo.insight-demos.version>
     <jackson.version>2.10.2</jackson.version>
+    <nuxeo.log4j.version>1.0.1</nuxeo.log4j.version>
   </properties>
 
   <modules>
@@ -158,6 +159,11 @@
         <groupId>org.nuxeo.client</groupId>
         <artifactId>nuxeo-java-client</artifactId>
         <version>${nuxeo.cloud.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.log4j</groupId>
+        <artifactId>nuxeo-log4j-core</artifactId>
+        <version>${nuxeo.log4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.tensorflow</groupId>
