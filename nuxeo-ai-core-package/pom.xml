@@ -41,6 +41,10 @@
       <artifactId>nuxeo-ai-web-ui</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.log4j</groupId>
+      <artifactId>nuxeo-log4j-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.client</groupId>
       <artifactId>nuxeo-java-client</artifactId>
       <scope>compile</scope>
