@@ -51,6 +51,7 @@ pipeline {
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
         VERSION = "${getVersion()}"
+        PERSISTENCE = "${BRANCH_NAME == 'master' || BRANCH_NAME ==~ 'master-.*'}"
     }
     stages {
         stage('Build') {
