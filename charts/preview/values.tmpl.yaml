@@ -43,6 +43,18 @@ nuxeo:
       tag: ${VERSION}
       pullPolicy: Always
     packages: "/tmp/nuxeo-ai-core.zip nuxeo-jira-ai-${JIRA_AI_VERSION}"
+    livenessProbe:
+      initialDelaySeconds: 900
+      periodSeconds: 20
+      successThreshold: 1
+      failureThreshold: 5
+      timeoutSeconds: 10
+    readinessProbe:
+      periodSeconds: 60
+      initialDelaySeconds: 900
+      successThreshold: 1
+      timeoutSeconds: 10
+      failureThreshold: 10
     custom_params: |-
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira
