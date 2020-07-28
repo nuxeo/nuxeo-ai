@@ -48,6 +48,7 @@ nuxeo:
       nuxeo.ai.insight.client.projectid=jira
       nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
       nuxeo.ai.insight.client.token=${AI_INSIGHT_CLIENT_TOKEN}
+      nuxeo.url=${PREVIEW_URL}
     custom_envs:
       - name: NUXEO_CLID
         valueFrom:
