@@ -50,6 +50,7 @@ pipeline {
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
+        PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         VERSION = "${getVersion()}"
         PERSISTENCE = "${BRANCH_NAME == 'master' || BRANCH_NAME ==~ 'master-.*'}"
     }
@@ -78,6 +79,56 @@ pipeline {
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
                     setGitHubBuildStatus('build')
+                }
+            }
+        }
+        stage('Deploy Preview') {
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'Sprint-*'
+                    allOf {
+                        changeRequest()
+//                        expression {
+//                            return pullRequest.labels.contains('preview')
+//                        }
+                    }
+                }
+            }
+            steps {
+                setGitHubBuildStatus('charts/preview')
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    container('platform11') {
+                        sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
+                        dir('docker') {
+                            echo "Build preview image"
+                            sh """
+envsubst < skaffold.yaml > skaffold.yaml~gen
+skaffold build -f skaffold.yaml~gen
+"""
+                        }
+                        withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                                dir('charts/preview') {
+                                    sh """#!/bin/bash -xe
+kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
+kubectl create ns ${PREVIEW_NAMESPACE}
+make preview
+jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
+"""
+                                    sh "jx get preview  -o json |jq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
+                                    sh "cat .previewUrl"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'charts/preview/values.yaml, charts/preview/extraValues.yaml, ' +
+                            'charts/preview/requirements.lock'
+                    setGitHubBuildStatus('charts/preview')
                 }
             }
         }
@@ -113,54 +164,6 @@ done
                 always {
                     archiveArtifacts artifacts: PACKAGE_PATTERN.replaceAll(' ', ', '), allowEmptyArchive: false
                     setGitHubBuildStatus('package/push')
-                }
-            }
-        }
-        stage('Deploy Preview') {
-            when {
-                anyOf {
-                    branch 'master'
-                    branch 'Sprint-*'
-                    allOf {
-                        changeRequest()
-//                        expression {
-//                            return pullRequest.labels.contains('preview')
-//                        }
-                    }
-                }
-            }
-            steps {
-                setGitHubBuildStatus('charts/preview')
-                container('platform11') {
-                    sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
-                    dir('docker') {
-                        echo "Build preview image"
-                        sh """
-envsubst < skaffold.yaml > skaffold.yaml~gen
-skaffold build -f skaffold.yaml~gen
-"""
-                    }
-                    withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
-                        withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
-                            dir('charts/preview') {
-                                sh """#!/bin/bash -xe
-kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
-kubectl create ns ${PREVIEW_NAMESPACE}
-make preview
-jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
-"""
-                                sh "jx get preview  -o yaml |yq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
-                                sh "cat .previewUrl"
-                            }
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'charts/preview/values.yaml, charts/preview/extraValues.yaml, ' +
-                            'charts/preview/requirements.lock'
-                    setGitHubBuildStatus('charts/preview')
                 }
             }
         }
