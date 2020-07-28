@@ -9,7 +9,6 @@ else
 	exit -1
 endif
 preview:
-	mv values.yaml values.yaml.tmp
-	envsubst < values.yaml.tmp > values.yaml
+	envsubst < values.tmpl.yaml > values.yaml
 	$(SED) -e "s/version:.*/version: $(PREVIEW_VERSION)/" Chart.yaml
 	jx step helm build --verbose

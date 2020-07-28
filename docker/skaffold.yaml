@@ -1,0 +1,23 @@
+apiVersion: skaffold/v1
+kind: Config
+build:
+  tagPolicy:
+    envTemplate:
+      template: "{{.DOCKER_REGISTRY}}/{{.ORG}}/{{.IMAGE_NAME}}:{{.VERSION}}"
+  artifacts:
+    - image: ${APP_NAME}
+      context: .
+      kaniko:
+        buildContext:
+          localDir: {}
+        buildArgs:
+          BUILD_TAG: "{{.BUILD_TAG}}"
+          SCM_REF: "{{.SCM_REF}}"
+          VERSION: "{{.VERSION}}"
+        cache:
+          repo: ${DOCKER_REGISTRY}/${ORG}/cache
+  cluster:
+    namespace: ai
+    pullSecretName: kaniko-secret
+    dockerConfig:
+      secretName: jenkins-docker-cfg
