@@ -29,6 +29,11 @@ String getMavenArgs() {
     return args
 }
 
+String getVersion() {
+    String version = readMavenPom().getVersion()
+    return env.TAG_NAME ? version : version + "-${env.BRANCH_NAME}"
+}
+
 pipeline {
     agent {
         label "jenkins-ai-nuxeo1010"
@@ -45,6 +50,7 @@ pipeline {
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
+        VERSION = "${getVersion()}"
     }
     stages {
         stage('Build') {
@@ -176,6 +182,14 @@ done
             steps {
                 setGitHubBuildStatus('charts/preview')
                 container('platform11') {
+                    sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
+                    dir('docker') {
+                        echo "Build preview image"
+                        sh """
+envsubst < skaffold.yaml > skaffold.yaml~gen
+skaffold build -f skaffold.yaml~gen
+"""
+                    }
                     withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
                         withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
                             dir('charts/preview') {

@@ -38,19 +38,24 @@ nuxeo:
         team: ai
         resource: service
         usage: preview
-    packages: "nuxeo-ai-core-${AI_CORE_VERSION} nuxeo-jira-ai-${JIRA_AI_VERSION}"
-    livenessProbe:
-      initialDelaySeconds: 900
-      periodSeconds: 20
-      successThreshold: 1
-      failureThreshold: 5
-      timeoutSeconds: 10
-    readinessProbe:
-      periodSeconds: 60
-      initialDelaySeconds: 300
-      successThreshold: 1
-      timeoutSeconds: 10
-      failureThreshold: 10
+    image:
+      repository: ${DOCKER_REGISTRY}/${ORG}/${APP_NAME}
+      tag: ${VERSION}
+      pullPolicy: Always
+#      pullSecrets: kubernetes-docker-cfg
+    packages: "/tmp/nuxeo-ai-core.zip nuxeo-jira-ai-${JIRA_AI_VERSION}"
+#    livenessProbe:
+#      initialDelaySeconds: 900
+#      periodSeconds: 20
+#      successThreshold: 1
+#      failureThreshold: 5
+#      timeoutSeconds: 10
+#    readinessProbe:
+#      periodSeconds: 60
+#      initialDelaySeconds: 300
+#      successThreshold: 1
+#      timeoutSeconds: 10
+#      failureThreshold: 10
     custom_params: |-
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira
