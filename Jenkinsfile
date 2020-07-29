@@ -87,6 +87,7 @@ pipeline {
                 anyOf {
                     branch 'master'
                     branch 'Sprint-*'
+                    branch 'master-.*'
                     allOf {
                         changeRequest()
 //                        expression {
