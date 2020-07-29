@@ -17,7 +17,7 @@ void setGitHubBuildStatus(String context) {
 }
 
 String getMavenArgs() {
-    def args = '-V -B -Pmarketplace,ftest,aws clean install -DskipTests' // TODO: REMOVE skipTests BEFORE MERGE
+    def args = '-V -B -Pmarketplace,ftest,aws clean install'
     if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*') {
         args += ' deploy -P-nexus'
         if (env.TAG_NAME) {
