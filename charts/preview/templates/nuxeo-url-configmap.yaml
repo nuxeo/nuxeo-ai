@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: preview
+  labels:
+    app: preview
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: config
+  annotations:
+    expose.config.fabric8.io/url-key: url
+  data:
+    # url will be filled automatically by expose
+    url: ""

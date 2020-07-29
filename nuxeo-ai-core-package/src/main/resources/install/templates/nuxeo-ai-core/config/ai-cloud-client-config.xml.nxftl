@@ -10,10 +10,10 @@
   </extension>
 
   <extension target="org.nuxeo.ecm.platform.web.common.requestcontroller.service.RequestControllerService" point="corsConfig">
-      <corsConfig name="ai-client" allowSubdomains="true
-                  allowOrigin="${nuxeo.ai.insight.client.target.url}"
-                  supportedMethods ="GET,POST,HEAD,OPTIONS,DELETE,PUT">
-        <pattern>/nuxeo/.*</pattern>
+      <corsConfig name="ai-client" allowSubdomains="true"
+                  allowOrigin="${nuxeo.ai.insight.client.target.url} ${nuxeo.url}"
+                  supportedMethods="GET,POST,HEAD,OPTIONS,DELETE,PUT">
+        <pattern>/.*</pattern>
       </corsConfig>
   </extension>
 
