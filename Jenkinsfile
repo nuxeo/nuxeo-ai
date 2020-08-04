@@ -115,7 +115,7 @@ skaffold build -f skaffold.yaml~gen
 kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
 kubectl create ns ${PREVIEW_NAMESPACE}
 make preview
-jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
+jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 20m --alias nuxeo
 """
                                     sh "jx get preview  -o json |jq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
                                     sh "cat .previewUrl"
