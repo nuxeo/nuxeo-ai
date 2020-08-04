@@ -49,7 +49,7 @@ pipeline {
         AI_CORE_VERSION = readMavenPom().getVersion()
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
-        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
+        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase().replaceAll('[^-a-z0-9]', '')}"
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         VERSION = "${getVersion()}"
         PERSISTENCE = "${BRANCH_NAME == 'master' || BRANCH_NAME ==~ 'master-.*'}"
