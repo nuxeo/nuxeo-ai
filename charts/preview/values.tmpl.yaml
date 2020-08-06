@@ -42,7 +42,7 @@ nuxeo:
       repository: ${DOCKER_REGISTRY}/${ORG}/${APP_NAME}
       tag: ${VERSION}
       pullPolicy: Always
-    packages: "/tmp/nuxeo-ai-core.zip nuxeo-jira-ai-${JIRA_AI_VERSION}"
+    packages: "/tmp/nuxeo-web-ui.zip /tmp/nuxeo-ai-core.zip nuxeo-jira-ai-${JIRA_AI_VERSION}"
     custom_params: |-
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira

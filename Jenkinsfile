@@ -53,6 +53,9 @@ pipeline {
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         VERSION = "${getVersion()}"
         PERSISTENCE = "${BRANCH_NAME == 'master' || BRANCH_NAME ==~ 'master-.*'}"
+        MARKETPLACE_URL = 'https://connect.nuxeo.com/nuxeo/site/marketplace'
+        MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
+        WEB_UI_VERSION = '3.0.1-rc.9'
     }
     stages {
         stage('Build') {
@@ -100,6 +103,12 @@ pipeline {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform11') {
                         sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
+                        withCredentials([usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
+                            sh '''
+curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download?version=${WEB_UI_VERSION}" \
+    -o docker/nuxeo-web-ui-${WEB_UI_VERSION}.zip
+'''
+                        }
                         dir('docker') {
                             echo "Build preview image"
                             sh """
@@ -141,8 +150,6 @@ jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --pr
                 }
             }
             environment {
-                MARKETPLACE_URL = 'https://connect.nuxeo.com/nuxeo/site/marketplace'
-                MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
                 PACKAGE_PATTERN = 'addons/*-package/target/nuxeo*package*.zip *-package/target/nuxeo-ai-core-*.zip'
             }
             steps {
