@@ -37,3 +37,5 @@ nuxeo.ai.insight.client.enable=false
 # nuxeo.ai.insight.client.projectid=
 # nuxeo.ai.insight.client.target.url=
 # nuxeo.ai.insight.client.token=
+# All additional urls to disable cors on (separated with spaces)
+# nuxeo.cors.urls=
