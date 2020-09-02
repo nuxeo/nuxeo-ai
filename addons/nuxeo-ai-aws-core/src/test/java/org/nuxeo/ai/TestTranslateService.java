@@ -23,7 +23,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
+import java.util.Collection;
+import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -35,8 +37,8 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import javax.inject.Inject;
-import java.util.Collection;
+
+import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
@@ -52,7 +54,7 @@ public class TestTranslateService {
         AWS.assumeCredentials();
 
         assertTranslation("aws.translate.en_es", "I am very disappointed", "Estoy muy decepcionado");
-        assertTranslation("aws.translate.en_pt", "I am very happy", "Estou muito feliz.");
+        assertTranslation("aws.translate.en_pt", "I am very happy", "Estou muito feliz");
         assertTranslation("aws.translate.en_fr", "I am very happy", "Je suis très heureux");
         try {
             assertTranslation("aws.translate.pt_unknown", "hoje faz bom tempo", "");
