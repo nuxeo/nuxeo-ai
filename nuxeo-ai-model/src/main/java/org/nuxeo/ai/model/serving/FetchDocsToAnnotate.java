@@ -63,42 +63,67 @@ import com.fasterxml.jackson.core.JsonGenerator;
  * Resolves all given properties for given documents <code>
  * Example:
  * <code>
- * [
+ *     [
  *     {
- *         "docId": "15c57344-1fdb-4101-8f6a-f4bc9f006085",
- *         "inputs": {
- *             "dc:description": "Description 18",
- *             "extrafile:docprop": {
- *                 "documentURL": null
+ *         "docId": "20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b",
+ *         "inputs": [
+ *             {
+ *                 "name": "dc:description",
+ *                 "type": "clob",
+ *                 "value": "Description 11"
  *             },
- *             "file:content": {
- *                 "name": "nxblob-12717528333129872822.tmp",
- *                 "mime-type": null,
- *                 "encoding": null,
- *                 "digestAlgorithm": "MD5",
- *                 "digest": "144d66206d7e2fd7c7bea9bb34362ff4",
- *                 "length": "1025580",
- *                 "data": "http://fake-url.nuxeo.com/nxfile/test/15c57344-1fdb-4101-8f6a-f4bc9f006085/file:content/nxblob-12717528333129872822.tmp?changeToken=0-0"
+ *             {
+ *                 "resolver": "userManagerResolver",
+ *                 "name": "dc:contributors",
+ *                 "type": "contributorList",
+ *                 "value": [
+ *                     {
+ *                         "entity-type": "user",
+ *                         "id": "system",
+ *                         "extendedGroups": [
+ *                             {
+ *                                 "name": "administrators",
+ *                                 "label": "Administrators group",
+ *                                 "url": "group/administrators"
+ *                             }
+ *                         ],
+ *                         "isAdministrator": true,
+ *                         "isAnonymous": false
+ *                     }
+ *                 ]
  *             },
- *             "dc:subjects": [
- *                 "art/architecture",
- *                 "art/danse"
- *             ],
- *             "dc:contributors": [
- *                 {
- *                     "entity-type": "user",
- *                     "id": "system",
- *                     "extendedGroups": [
- *                         {
- *                             "name": "administrators",
- *                             "label": "Administrators group",
- *                             "url": "group/administrators"
- *                         }
- *                     ],
- *                     "isAdministrator": true,
- *                     "isAnonymous": false
- *                 },
- *                 ......
+ *             {
+ *                 "name": "dc:subjects",
+ *                 "type": "subjectList",
+ *                 "value": [
+ *                     "art/architecture",
+ *                     "art/danse"
+ *                 ]
+ *             },
+ *             {
+ *                 "name": "file:content",
+ *                 "type": "content",
+ *                 "value": {
+ *                     "name": "nxblob-67186932984972622.tmp",
+ *                     "mime-type": null,
+ *                     "encoding": null,
+ *                     "digestAlgorithm": "MD5",
+ *                     "digest": "144d66206d7e2fd7c7bea9bb34362ff4",
+ *                     "length": "1025580",
+ *                     "data": "http://fake-url.nuxeo.com/nxfile/test/20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b/file:content/nxblob-67186932984972622.tmp?changeToken=0-0"
+ *                 }
+ *             },
+ *             {
+ *                 "resolver": "documentResolver",
+ *                 "name": "extrafile:docprop",
+ *                 "type": "docprop#anonymousType",
+ *                 "value": {
+ *                     "documentURL": null
+ *                 }
+ *             }
+ *         ]
+ *     },
+ *     ....
  * </code>
  */
 @Operation(id = FetchDocsToAnnotate.ID, category = Constants.CAT_DOCUMENT, description = "Fetch document(s) content given properties")
@@ -153,7 +178,7 @@ public class FetchDocsToAnnotate {
                                                            .get(),
                                 DocumentUrlJsonEnricher.class);
                         // workaround to be able to have the data url for a given blob
-                        Map<String, Object> inputs = new HashMap<>();
+                        List<Map<String, Object>> inputs = new ArrayList<>();
                         Map<String, Object> documents = new HashMap<>();
                         properties.forEach((propertyName) -> {
                             Field field = schemaManager.getField(propertyName);
@@ -172,6 +197,7 @@ public class FetchDocsToAnnotate {
                                             return;
                                         }
                                         DocumentModel doc = coreSession.getDocument(new IdRef((String) propertyValue));
+
                                         outWriter.reset();
                                         jg.writeStartObject();
                                         enricher.write(jg, doc);
@@ -185,7 +211,14 @@ public class FetchDocsToAnnotate {
                                 } catch (IOException e) {
                                     throw new NuxeoException(e);
                                 }
-                                inputs.put(propertyName, propertyValue);
+                                Map<String, Object> input = new HashMap<>();
+                                input.put("name", propertyName);
+                                input.put("value", propertyValue);
+                                if (Objects.nonNull(objectResolver)) {
+                                    input.put("resolver", objectResolver.getName());
+                                }
+                                input.put("type", type.getName());
+                                inputs.add(input);
                             }
                         });
                         documents.put("docId", documentModel.getId());
