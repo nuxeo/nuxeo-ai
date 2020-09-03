@@ -111,10 +111,12 @@ public class TestDocsToAnnotate extends BaseTest {
         assertThat(jsonNode.size()).isEqualTo(20);
         assertThat(jsonNode.get(0).get("docId")).isNotNull();
         JsonNode inputs = jsonNode.get(0).get("inputs");
-        assertThat(inputs.get("dc:description")).isNotNull();
-        assertThat(inputs.get("dc:subjects").isArray()).isTrue();
-        assertThat(inputs.get("dc:subjects")).isNotEmpty();
-        assertThat(inputs.get("file:content")).isNotNull();
-        assertThat(inputs.get("file:content").has("data")).isTrue();
+        assertThat(inputs.isArray()).isTrue();
+        assertThat(inputs.get(0).get("type")).isNotNull();
+        assertThat(inputs.get(0).get("name")).isNotNull();
+        assertThat(inputs.get(0).get("value")).isNotNull();
+        assertThat(inputs.get(2).get("value").isArray()).isTrue();
+        assertThat(inputs.get(2).get("value")).isNotEmpty();
+        assertThat(inputs.get(3).get("value").has("data")).isTrue();
     }
 }
