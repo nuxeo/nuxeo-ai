@@ -201,6 +201,7 @@ public class FetchDocsToAnnotate {
                                         outWriter.reset();
                                         jg.writeStartObject();
                                         enricher.write(jg, doc);
+                                        jg.writeStringField("title", documentModel.getName());
                                         jg.writeEndObject();
                                         jg.flush();
                                     } else {
