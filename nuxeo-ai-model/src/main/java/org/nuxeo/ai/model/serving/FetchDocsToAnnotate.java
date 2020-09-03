@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -58,6 +59,9 @@ import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Resolves all given properties for given documents <code>
@@ -139,6 +143,9 @@ public class FetchDocsToAnnotate {
     @Context
     public SchemaManager schemaManager;
 
+    @Context
+    protected OperationContext ctx;
+
     @Param(name = "uids")
     protected StringList uids;
 
@@ -167,14 +174,18 @@ public class FetchDocsToAnnotate {
                 docs.stream()
                     .filter((documentModel) -> coreSession.exists(documentModel.getRef()))
                     .forEach((documentModel) -> {
+                        HttpServletRequest request = (HttpServletRequest) ctx.get("request");
                         DocumentPropertyJsonWriter writer = registry.getInstance(
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .fetchInDoc("properties")
+                                                           .base(VirtualHostHelper.getBaseURL(request))
                                                            .get(),
                                 DocumentPropertyJsonWriter.class);
                         DocumentUrlJsonEnricher enricher = registry.getInstance(
                                 RenderingContext.CtxBuilder.param("document", documentModel)
+                                                           .session(coreSession)
                                                            .fetchInDoc("properties")
+                                                           .base(VirtualHostHelper.getBaseURL(request))
                                                            .get(),
                                 DocumentUrlJsonEnricher.class);
                         // workaround to be able to have the data url for a given blob
