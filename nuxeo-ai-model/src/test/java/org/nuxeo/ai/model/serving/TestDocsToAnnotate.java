@@ -95,7 +95,7 @@ public class TestDocsToAnnotate extends BaseTest {
         OperationContext ctx = new OperationContext(session);
         Map<String, Object> params = new HashMap<>();
         params.put("uids", uids);
-        List<String> properties = new ArrayList<String>() {
+        List<String> inputs = new ArrayList<String>() {
             {
                 add("dc:description");
                 add("dc:contributors");
@@ -104,19 +104,30 @@ public class TestDocsToAnnotate extends BaseTest {
                 add("extrafile:docprop");
             }
         };
-        params.put("properties", properties);
+        params.put("inputs", inputs);
+        List<String> outputs = new ArrayList<String>() {
+            {
+                add("dc:title");
+                add("dc:nature");
+                add("file:content");
+            }
+        };
+        params.put("outputs", outputs);
         JSONBlob results = (JSONBlob) automationService.run(ctx, FetchDocsToAnnotate.ID, params);
         JsonNode jsonNode = mapper.readTree(results.getString());
         assertThat(jsonNode.isArray()).isTrue();
         assertThat(jsonNode.size()).isEqualTo(20);
         assertThat(jsonNode.get(0).get("docId")).isNotNull();
-        JsonNode inputs = jsonNode.get(0).get("inputs");
-        assertThat(inputs.isArray()).isTrue();
-        assertThat(inputs.get(0).get("type")).isNotNull();
-        assertThat(inputs.get(0).get("name")).isNotNull();
-        assertThat(inputs.get(0).get("value")).isNotNull();
-        assertThat(inputs.get(2).get("value").isArray()).isTrue();
-        assertThat(inputs.get(2).get("value")).isNotEmpty();
-        assertThat(inputs.get(3).get("value").has("data")).isTrue();
+        JsonNode inputResults = jsonNode.get(0).get("inputs");
+        assertThat(inputResults.isArray()).isTrue();
+        assertThat(inputResults.get(0).get("type")).isNotNull();
+        assertThat(inputResults.get(0).get("name")).isNotNull();
+        assertThat(inputResults.get(0).get("value")).isNotNull();
+        assertThat(inputResults.get(2).get("value").isArray()).isTrue();
+        assertThat(inputResults.get(2).get("value")).isNotEmpty();
+        assertThat(inputResults.get(3).get("value").has("data")).isTrue();
+        JsonNode outputResults = jsonNode.get(0).get("outputs");
+        assertThat(inputResults.isArray()).isTrue();
+        assertThat(inputResults.get(0).get("type")).isNotNull();
     }
 }

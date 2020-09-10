@@ -125,7 +125,8 @@ import javax.servlet.http.HttpServletRequest;
  *                     "documentURL": null
  *                 }
  *             }
- *         ]
+ *         ],
+ *         "outputs": [...],
  *     },
  *     ....
  * </code>
@@ -149,8 +150,11 @@ public class FetchDocsToAnnotate {
     @Param(name = "uids")
     protected StringList uids;
 
-    @Param(name = "properties")
-    protected StringList properties;
+    @Param(name = "inputs")
+    protected StringList inputs;
+
+    @Param(name = "outputs")
+    protected StringList outputs;
 
     @Context
     protected MarshallerRegistry registry;
@@ -190,57 +194,66 @@ public class FetchDocsToAnnotate {
                                 DocumentUrlJsonEnricher.class);
                         // workaround to be able to have the data url for a given blob
                         List<Map<String, Object>> inputs = new ArrayList<>();
+                        List<Map<String, Object>> outputs = new ArrayList<>();
                         Map<String, Object> documents = new HashMap<>();
-                        properties.forEach((propertyName) -> {
-                            Field field = schemaManager.getField(propertyName);
-                            if (Objects.isNull(field)) {
-                                log.warn(propertyName + " is not a known property");
-                                return;
-                            }
-                            Type type = field.getType();
-                            Serializable propertyValue = documentModel.getPropertyValue(propertyName);
-                            if (propertyValue != null) {
-                                Property property = documentModel.getProperty(propertyName);
-                                ObjectResolver objectResolver = getObjectResolver(type);
-                                try {
-                                    if (objectResolver instanceof DocumentModelResolver) {
-                                        if (!coreSession.exists(new IdRef((String) propertyValue))) {
-                                            return;
-                                        }
-                                        DocumentModel doc = coreSession.getDocument(new IdRef((String) propertyValue));
-
-                                        outWriter.reset();
-                                        jg.writeStartObject();
-                                        enricher.write(jg, doc);
-                                        jg.writeStringField("title", documentModel.getName());
-                                        jg.writeEndObject();
-                                        jg.flush();
-                                    } else {
-                                        outWriter.reset();
-                                        writer.write(property, jg);
-                                    }
-                                    propertyValue = (Serializable) MAPPER.readTree(outWriter.toString());
-                                } catch (IOException e) {
-                                    throw new NuxeoException(e);
-                                }
-                                Map<String, Object> input = new HashMap<>();
-                                input.put("name", propertyName);
-                                input.put("value", propertyValue);
-                                if (Objects.nonNull(objectResolver)) {
-                                    input.put("resolver", objectResolver.getName());
-                                }
-                                input.put("type", type.getName());
-                                inputs.add(input);
-                            }
+                        this.inputs.forEach((propertyName) -> {
+                            mapProperties(outWriter, jg, documentModel, writer, enricher, inputs, propertyName);
+                        });
+                        this.outputs.forEach((propertyName) -> {
+                            mapProperties(outWriter, jg, documentModel, writer, enricher, outputs, propertyName);
                         });
                         documents.put("docId", documentModel.getId());
                         documents.put("inputs", inputs);
+                        documents.put("outputs", outputs);
                         results.add(documents);
                     });
             }
             return Blobs.createJSONBlob(MAPPER.writeValueAsString(results));
         } catch (IOException e) {
             throw new NuxeoException(e);
+        }
+    }
+
+    protected void mapProperties(ByteArrayOutputStream outWriter, JsonGenerator jg, DocumentModel documentModel, DocumentPropertyJsonWriter writer, DocumentUrlJsonEnricher enricher, List<Map<String, Object>> inputs, String propertyName) {
+        Field field = schemaManager.getField(propertyName);
+        if (Objects.isNull(field)) {
+            log.warn(propertyName + " is not a known property");
+            return;
+        }
+        Type type = field.getType();
+        Serializable propertyValue = documentModel.getPropertyValue(propertyName);
+        if (propertyValue != null) {
+            Property property = documentModel.getProperty(propertyName);
+            ObjectResolver objectResolver = getObjectResolver(type);
+            try {
+                if (objectResolver instanceof DocumentModelResolver) {
+                    if (!coreSession.exists(new IdRef((String) propertyValue))) {
+                        return;
+                    }
+                    DocumentModel doc = coreSession.getDocument(new IdRef((String) propertyValue));
+
+                    outWriter.reset();
+                    jg.writeStartObject();
+                    enricher.write(jg, doc);
+                    jg.writeStringField("title", documentModel.getName());
+                    jg.writeEndObject();
+                    jg.flush();
+                } else {
+                    outWriter.reset();
+                    writer.write(property, jg);
+                }
+                propertyValue = (Serializable) MAPPER.readTree(outWriter.toString());
+            } catch (IOException e) {
+                throw new NuxeoException(e);
+            }
+            Map<String, Object> input = new HashMap<>();
+            input.put("name", propertyName);
+            input.put("value", propertyValue);
+            if (Objects.nonNull(objectResolver)) {
+                input.put("resolver", objectResolver.getName());
+            }
+            input.put("type", type.getName());
+            inputs.add(input);
         }
     }
 
