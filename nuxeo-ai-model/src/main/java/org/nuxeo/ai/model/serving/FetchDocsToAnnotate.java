@@ -214,7 +214,9 @@ public class FetchDocsToAnnotate {
         }
     }
 
-    protected void mapProperties(ByteArrayOutputStream outWriter, JsonGenerator jg, DocumentModel documentModel, DocumentPropertyJsonWriter writer, DocumentUrlJsonEnricher enricher, List<Map<String, Object>> inputs, String propertyName) {
+    protected void mapProperties(ByteArrayOutputStream outWriter, JsonGenerator jg, DocumentModel documentModel,
+            DocumentPropertyJsonWriter writer, DocumentUrlJsonEnricher enricher, List<Map<String, Object>> inputs,
+            String propertyName) {
         Field field = schemaManager.getField(propertyName);
         if (Objects.isNull(field)) {
             log.warn(propertyName + " is not a known property");
@@ -222,9 +224,9 @@ public class FetchDocsToAnnotate {
         }
         Type type = field.getType();
         Serializable propertyValue = documentModel.getPropertyValue(propertyName);
+        Property property = documentModel.getProperty(propertyName);
+        ObjectResolver objectResolver = getObjectResolver(type);
         if (propertyValue != null) {
-            Property property = documentModel.getProperty(propertyName);
-            ObjectResolver objectResolver = getObjectResolver(type);
             try {
                 if (objectResolver instanceof DocumentModelResolver) {
                     if (!coreSession.exists(new IdRef((String) propertyValue))) {
@@ -246,15 +248,15 @@ public class FetchDocsToAnnotate {
             } catch (IOException e) {
                 throw new NuxeoException(e);
             }
-            Map<String, Object> input = new HashMap<>();
-            input.put("name", propertyName);
-            input.put("value", propertyValue);
-            if (Objects.nonNull(objectResolver)) {
-                input.put("resolver", objectResolver.getName());
-            }
-            input.put("type", type.getName());
-            inputs.add(input);
         }
+        Map<String, Object> input = new HashMap<>();
+        input.put("name", propertyName);
+        input.put("value", propertyValue);
+        if (Objects.nonNull(objectResolver)) {
+            input.put("resolver", objectResolver.getName());
+        }
+        input.put("type", type.getName());
+        inputs.add(input);
     }
 
     protected ObjectResolver getObjectResolver(Type type) {
