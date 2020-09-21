@@ -48,6 +48,7 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
+        PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
@@ -57,20 +58,52 @@ pipeline {
         MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
     }
     stages {
-        stage('Build') {
+        stage('Init') {
+            steps {
+                container('platform11') {
+                    sh """#!/bin/bash
+jx step git credentials
+git config credential.helper store
+"""
+                    sh """
+# skaffold
+curl -f -Lo skaffold https://storage.googleapis.com/skaffold/releases/v1.14.0/skaffold-linux-amd64
+chmod +x skaffold
+mv skaffold /usr/bin/
+
+# reg: Docker registry v2 command line client
+REG_SHA256="ade837fc5224acd8c34732bf54a94f579b47851cc6a7fd5899a98386b782e228"
+curl --retry 5 -fsSL "https://github.com/genuinetools/reg/releases/download/v0.16.1/reg-linux-amd64" -o /usr/bin/reg
+echo "\${REG_SHA256} /usr/bin/reg" | sha256sum -c - && chmod +x /usr/bin/reg
+"""
+                    script {
+                        PLATFORM_VERSION = sh(script: 'mvn help:evaluate -Dexpression=nuxeo.platform.version -q -DforceStdout', returnStdout: true).trim()
+                        if (env.CHANGE_TARGET) {
+                            echo "PR build: cleaning up the branch artifacts..."
+                            sh """
+reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
+"""
+                        }
+                    }
+                }
+            }
+        }
+        stage('Maven Build') {
             environment {
                 MAVEN_OPTS = "$MAVEN_OPTS -Xms512m -Xmx1g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
             steps {
-                setGitHubBuildStatus('build')
+                setGitHubBuildStatus('build/maven')
                 container('platform11') {
 //                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
-                        sh 'mvn ${MAVEN_ARGS}'
-                        sh "find . -name '*-reports' -type d"
+                        withMaven() {
+                            sh 'mvn ${MAVEN_ARGS}'
+                            sh "find . -name '*-reports' -type d"
+                        }
                     }
                 }
             }
@@ -80,7 +113,36 @@ pipeline {
                     archiveArtifacts artifacts: '**/log/*.log, **/nxserver/config/distribution.properties, ' +
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
-                    setGitHubBuildStatus('build')
+                    setGitHubBuildStatus('build/maven')
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                setGitHubBuildStatus('build/docker')
+                container('platform11') {
+                    sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
+                    withCredentials([usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
+                        sh '''
+curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download" -o docker/nuxeo-web-ui.zip
+'''
+                    }
+                    withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
+                        dir('docker') {
+                            echo "Build preview image"
+                            sh 'printenv|sort|grep VERSION'
+                            sh """
+envsubst < skaffold.yaml > skaffold.yaml~gen
+skaffold build -f skaffold.yaml~gen
+"""
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'docker/skaffold.yaml~gen'
+                    setGitHubBuildStatus('build/docker')
                 }
             }
         }
@@ -101,19 +163,6 @@ pipeline {
                 setGitHubBuildStatus('charts/preview')
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform11') {
-                        sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
-                        withCredentials([usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
-                            sh '''
-curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download" -o docker/nuxeo-web-ui.zip
-'''
-                        }
-                        dir('docker') {
-                            echo "Build preview image"
-                            sh """
-envsubst < skaffold.yaml > skaffold.yaml~gen
-skaffold build -f skaffold.yaml~gen
-"""
-                        }
                         withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
                             withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
                                 dir('charts/preview') {
