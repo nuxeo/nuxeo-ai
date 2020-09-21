@@ -71,7 +71,7 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
     public BlobTextFromDocument(DocumentModel doc) {
         this.id = doc.getId();
         this.repositoryName = doc.getRepositoryName();
-        this.parentId = doc.getParentRef().toString();
+        this.parentId = String.valueOf(doc.getParentRef());
         this.primaryType = doc.getType();
         this.facets = doc.getFacets();
     }
