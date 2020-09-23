@@ -34,6 +34,43 @@ String getVersion() {
     return env.TAG_NAME ? version : version + "-${env.BRANCH_NAME}"
 }
 
+/**
+ * Build repo job better corresponding to the current job, if exists.
+ * If we're in a PR, then find the corresponding PR (if exists), else use the same working branch.
+ * @param repo
+ */
+void buildJob(String repo) {
+    String targetBranch
+    if (env.CHANGE_TARGET) { // Current is a PR
+        targetBranch = env.CHANGE_BRANCH
+        def prNumber = getPR(repo, "nuxeo:${targetBranch}")
+        if (prNumber) {
+            targetBranch = "PR-$prNumber"
+        }
+    } else {
+        targetBranch = env.BRANCH_NAME
+    }
+    jobName = "/$repo/" + targetBranch.replace("/", "%2F")
+    if (Jenkins.instance.getItemByFullName(jobName)) {
+        echo "Triggering job /$repo build on branch $targetBranch"
+        build job: jobName, propagate: false, wait: false
+    } else {
+        println("No job ${jobName} to trigger")
+    }
+}
+
+String getPR(String repo, String branch) {
+    escapedBranch = branch.replace("/", "%2F")
+    withEnv(["REPO=${repo}", "BRANCH=${escapedBranch}"]) {
+        withCredentials([string(credentialsId: 'github_token', variable: 'GITHUB_TOKEN')]) {
+            String prNumber = sh(script: '''
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/pulls?head=$BRANCH|jq ".[].number"|head -n1
+''', returnStdout: true).trim()
+            return prNumber
+        }
+    }
+}
+
 pipeline {
     agent {
         label "jenkins-ai-nuxeo11"
@@ -218,6 +255,33 @@ done
                 always {
                     archiveArtifacts artifacts: PACKAGE_PATTERN.replaceAll(' ', ', '), allowEmptyArchive: false
                     setGitHubBuildStatus('package/push')
+                }
+            }
+        }
+        stage('Trigger Downstream Jobs') {
+            when {
+                not {
+                    tag '*'
+                }
+            }
+            steps {
+                container('platform11') {
+                    script {
+                        buildJob("nuxeo/nuxeo-ai-integration")
+                    }
+                }
+            }
+        }
+        stage('Upgrade PR on Downstream Jobs') {
+            when {
+                tag '*'
+            }
+            steps {
+                container('platform11') {
+                    sh """#!/bin/bash -xe
+# update Nuxeo AI Core version in the other repositories
+./tools/updatebot.sh ${AI_CORE_VERSION}
+"""
                 }
             }
         }
