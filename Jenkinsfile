@@ -29,9 +29,37 @@ String getMavenArgs() {
     return args
 }
 
+/**
+ * Normalize a string as a K8s namespace.
+ * The pattern is '[a-z0-9]([-a-z0-9]*[a-z0-9])?' with a max length of 63 characters.
+ */
+String normalizeNS(String namespace) {
+    namespace = namespace.trim().substring(0, Math.min(namespace.length(), 63)).toLowerCase().replaceAll("[^-a-z0-9]", "-")
+    assert namespace ==~ /[a-z0-9]([-a-z0-9]*[a-z0-9])?/
+    assert namespace.length() <= 63
+    return namespace
+}
+
+/**
+ * Normalize a string as a K8s label (prefix excluded).
+ * The pattern is '<prefix/>?[0-9A-Za-z\-._]+' with a max length of 63 characters after the prefix.
+ * 'jx preview' sets a default label '<Git Organisation> + "/" + <Git Name> + " PR-" + <PullRequestName?:-env.BRANCH_NAME>'.
+ * Here we want to normalize the branch name.
+ *
+ */
+String normalizeLabel(String branchName) {
+    int maxLength = 63 - "nuxeo/nuxeo-ai PR-".length()
+    branchName = branchName.trim().substring(0, Math.min(branchName.length(), maxLength)).replaceAll("[^-._a-z0-9A-Z]", "-")
+    assert branchName ==~ /[a-z0-9A-Z][-._0-9A-Za-z]*[a-z0-9A-Z]/
+    assert branchName.length() <= maxLength
+    return branchName
+}
+
 String getVersion() {
     String version = readMavenPom().getVersion()
-    return env.TAG_NAME ? version : version + "-${env.BRANCH_NAME}"
+    version = env.TAG_NAME ? version : version + "-" + env.BRANCH_NAME.replace('/', '-')
+    assert version ==~ /[0-9A-Za-z\-._]*/
+    return version
 }
 
 /**
@@ -87,7 +115,7 @@ pipeline {
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
         PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
-        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
+        PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         VERSION = "${getVersion()}"
         PERSISTENCE = "${BRANCH_NAME == 'master-10.10'}"
@@ -196,7 +224,7 @@ skaffold build -f skaffold.yaml~gen
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform1010') {
                         withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
-                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${normalizeLabel(BRANCH_NAME)}"]) {
                                 dir('charts/preview') {
                                     sh """#!/bin/bash -xe
 kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
