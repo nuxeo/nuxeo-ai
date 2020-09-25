@@ -31,7 +31,7 @@ String getMavenArgs() {
 
 String getVersion() {
     String version = readMavenPom().getVersion()
-    return env.TAG_NAME ? version : version + "-${env.BRANCH_NAME}"
+    return env.TAG_NAME ? version : version + "-" + env.BRANCH_NAME.replace("/", "-")
 }
 
 /**
@@ -87,7 +87,7 @@ pipeline {
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
         PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
-        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.toLowerCase()}"
+        PREVIEW_NAMESPACE = "$APP_NAME-${BRANCH_NAME.replace("/", "-").toLowerCase()}"
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         VERSION = "${getVersion()}"
         PERSISTENCE = "${BRANCH_NAME == 'master' || BRANCH_NAME ==~ 'master-.*'}"
@@ -201,7 +201,7 @@ skaffold build -f skaffold.yaml~gen
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform11') {
                         withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
-                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION"]) {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${BRANCH_NAME.replace("/", "-")}"]) {
                                 dir('charts/preview') {
                                     sh """#!/bin/bash -xe
 kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
