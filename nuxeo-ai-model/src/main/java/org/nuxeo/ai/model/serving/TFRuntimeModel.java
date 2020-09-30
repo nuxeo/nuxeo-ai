@@ -55,6 +55,7 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -113,7 +114,8 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
         }
         CloudClient client = Framework.getService(CloudClient.class);
         if (client.isAvailable()) {
-            String json = prepareRequest(inputValues);
+            TensorInstances tensorInstances = new TensorInstances(documentRef, inputValues);
+            String json = prepareRequest(tensorInstances);
             if (isNotBlank(json)) {
                 String uri = buildUri(client);
                 return client.post(uri, json, response -> {
@@ -195,9 +197,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     /**
      * Prepares the http request to send to Tensorflow serving
      */
-    protected String prepareRequest(Map<String, Tensor> inputs) {
+    protected String prepareRequest(TensorInstances instances) {
         try {
-            return MAPPER.writeValueAsString(new TensorInstances(inputs));
+            return MAPPER.writeValueAsString(instances);
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize model inputs", e);
             throw new NuxeoException("Unable to make a valid json request", e);
@@ -309,10 +311,15 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
      * A JSON representation of Tensorflow instance parameters
      */
     protected static class TensorInstances {
-        public final List<Map<String, Tensor>> instances = new ArrayList<>();
 
-        public TensorInstances(Map<String, Tensor> inputs) {
-            instances.add(inputs);
+        public final String docId;
+
+        public final List<Map<String, Tensor>> instances;
+
+        public TensorInstances(@JsonProperty("docId") String docId,
+                @JsonProperty("instances") Map<String, Tensor> inputs) {
+            this.docId = docId;
+            this.instances = Collections.singletonList(inputs);
         }
     }
 
