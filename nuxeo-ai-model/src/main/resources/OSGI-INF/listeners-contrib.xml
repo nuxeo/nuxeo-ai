@@ -3,8 +3,8 @@
 
   <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
     <listener name="continuesExportListener" async="true" postCommit="true" priority="99"
-              class="org.nuxeo.ai.listeners.ContinuesExportListener">
-      <event>startContinuesExport</event>
+              class="org.nuxeo.ai.listeners.ContinuousExportListener">
+      <event>startContinuousExport</event>
     </listener>
   </extension>
 
