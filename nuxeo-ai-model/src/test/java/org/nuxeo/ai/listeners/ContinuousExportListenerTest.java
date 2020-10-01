@@ -47,7 +47,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
-public class ContinuesExportListenerTest {
+public class ContinuousExportListenerTest {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().extensions(new ResponseTemplateTransformer(true))
@@ -61,9 +61,9 @@ public class ContinuesExportListenerTest {
     public void shouldLunchExportWithNoExceptions() {
         EventBundle bundle = new EventBundleImpl();
         EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
-        bundle.push(new EventImpl("startContinuesExport", ctx));
+        bundle.push(new EventImpl("startContinuousExport", ctx));
 
-        ContinuesExportListener listener = new ContinuesExportListener();
+        ContinuousExportListener listener = new ContinuousExportListener();
         listener.handleEvent(bundle);
     }
 }
