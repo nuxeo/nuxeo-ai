@@ -14,5 +14,4 @@ Nuxeo-Component: OSGI-INF/adapters-contrib.xml,
  OSGI-INF/ai-runtime-model-contrib.xml,
  OSGI-INF/ai-bulk.xml,
  OSGI-INF/listeners-contrib.xml,
- OSGI-INF/cron-continues-export-contrib.xml,
  OSGI-INF/pageprovider-contrib.xml
