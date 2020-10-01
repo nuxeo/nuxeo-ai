@@ -62,13 +62,13 @@ import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.runtime.api.Framework;
 
 /**
- * Asynchronous listener acting upon `startContinuesExport` event Performs REST Calls via {@link CloudClient} to obtain
+ * Asynchronous listener acting upon `startContinuousExport` event Performs REST Calls via {@link CloudClient} to obtain
  * all AI models and their corpora. The processing includes NXQL query modification for excluding previously exported
  * documents {@link DatasetExportService} will be called if and only if minimum documents were found in the repository
  */
-public class ContinuesExportListener implements PostCommitEventListener {
+public class ContinuousExportListener implements PostCommitEventListener {
 
-    private static final Logger log = LogManager.getLogger(ContinuesExportListener.class);
+    private static final Logger log = LogManager.getLogger(ContinuousExportListener.class);
 
     private static final String IS_VERSION_PROP = "ecm:isVersion";
 
