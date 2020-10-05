@@ -58,5 +58,4 @@ if [ "$DRY_RUN" = 'true' ]; then
     git show
 else
     git push origin "$BRANCH"
-    jx start pipeline nuxeo/nuxeo-ai --branch "v$RELEASE_VERSION" || true
 fi
