@@ -25,7 +25,7 @@ pipeline {
     }
     parameters {
         string(name: 'BRANCH', defaultValue: 'master-10.10', description: 'Branch to release from.')
-        string(name: 'VERSION', description: '''The version to release. 
+        string(name: 'VERSION', description: '''The version to release.
 Leave it unset to use the version of the Maven POM.
 The version must match "X.Y.Z[-PRERELEASE][+BUILD]"''')
         choice(name: 'INCREMENT', choices: ['patch', 'minor', 'major', 'release'], description: '''Semantic versioning increment.
@@ -44,10 +44,18 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
                 container('platform1010') {
                     withEnv(["BRANCH=${params.BRANCH}", "VERSION=${params.VERSION}", "INCREMENT=${params.INCREMENT}",
                              "DRY_RUN=${params.DRY_RUN}"]) {
-                        sh './tools/release.sh'
-                        def releaseProps = readProperties file: 'release.properties'
-                        build job: '/nuxeo/nuxeo-ai/v' + releaseProps['RELEASE_VERSION'].replace("/", "%2F"), propagate: false, wait: false
-                        sh 'chmod +r VERSION charts/*/templates/release.yaml || true'
+                        script {
+                            sh './tools/release.sh'
+                            sh 'chmod +r VERSION charts/*/templates/release.yaml || true'
+                            if ("$DRY_RUN" != 'true') {
+                                def releaseProps = readProperties file: 'release.properties'
+                                def jobName = '/nuxeo/nuxeo-ai/v' + releaseProps['RELEASE_VERSION']
+                                if (!Jenkins.instance.getItemByFullName(jobName)) {
+                                    build job: '/nuxeo/nuxeo-ai/', propagate: false, wait: true
+                                }
+                                build job: jobName, propagate: false, wait: false
+                            }
+                        }
                     }
                 }
             }
