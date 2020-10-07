@@ -54,6 +54,7 @@ import org.nuxeo.ecm.core.model.DocumentModelResolver;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.ListTypeImpl;
+import org.nuxeo.ecm.core.schema.types.SimpleTypeImpl;
 import org.nuxeo.ecm.core.schema.types.Type;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
@@ -73,11 +74,13 @@ import javax.servlet.http.HttpServletRequest;
  *         "inputs": [
  *             {
  *                 "name": "dc:description",
+ *                 "isArray": false,
  *                 "type": "clob",
  *                 "value": "Description 11"
  *             },
  *             {
  *                 "resolver": "userManagerResolver",
+ *                 "isArray": true,
  *                 "name": "dc:contributors",
  *                 "type": "contributorList",
  *                 "value": [
@@ -98,6 +101,7 @@ import javax.servlet.http.HttpServletRequest;
  *             },
  *             {
  *                 "name": "dc:subjects",
+ *                 "isArray": true,
  *                 "type": "subjectList",
  *                 "value": [
  *                     "art/architecture",
@@ -106,6 +110,7 @@ import javax.servlet.http.HttpServletRequest;
  *             },
  *             {
  *                 "name": "file:content",
+ *                 "isArray": false,
  *                 "type": "content",
  *                 "value": {
  *                     "name": "nxblob-67186932984972622.tmp",
@@ -119,8 +124,9 @@ import javax.servlet.http.HttpServletRequest;
  *             },
  *             {
  *                 "resolver": "documentResolver",
+ *                 "isArray": false,
  *                 "name": "extrafile:docprop",
- *                 "type": "docprop#anonymousType",
+ *                 "type": "string",
  *                 "value": {
  *                     "documentURL": null
  *                 }
@@ -255,7 +261,12 @@ public class FetchDocsToAnnotate {
         if (Objects.nonNull(objectResolver)) {
             input.put("resolver", objectResolver.getName());
         }
-        input.put("type", type.getName());
+        String typeName = type.getName();
+        if (type instanceof SimpleTypeImpl && typeName != null && typeName.contains("anonymousType")) {
+            typeName = ((SimpleTypeImpl) type).getPrimitiveType().getName();
+        }
+        input.put("type", typeName);
+        input.put("isArray", type instanceof ListTypeImpl);
         inputs.add(input);
     }
 
