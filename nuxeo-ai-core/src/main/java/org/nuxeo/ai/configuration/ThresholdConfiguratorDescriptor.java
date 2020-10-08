@@ -31,7 +31,6 @@ import org.nuxeo.runtime.model.Descriptor;
 @XObject("thresholdConfiguration")
 public class ThresholdConfiguratorDescriptor implements Descriptor {
 
-
     @XNode("@type")
     protected String type;
 
