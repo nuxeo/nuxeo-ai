@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.cloud.NuxeoClient.datasource.test" version="1.0">
+
+  <extension target="org.nuxeo.ai.cloud.NuxeoClient" point="config">
+    <config id="mockServer" readTimeout="5m"
+            connectTimeout="10s"
+            url="http://localhost:5089"
+            projectId="mockTestProject"
+            datasource="preprod">
+      <authentication token="20344556"/>
+    </config>
+  </extension>
+</component>
