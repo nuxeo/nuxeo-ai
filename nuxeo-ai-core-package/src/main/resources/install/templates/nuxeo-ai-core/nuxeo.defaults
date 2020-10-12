@@ -38,7 +38,7 @@ nuxeo.ai.export.threshold=
 
 # Nuxeo Client Config
 nuxeo.ai.insight.client.enable=false
-
+nuxeo.ai.insight.datasource.label=dev
 # If client enabled: set project id, insight url and token access (see AI team for setup)
 # nuxeo.ai.insight.client.projectid=
 # nuxeo.ai.insight.client.target.url=

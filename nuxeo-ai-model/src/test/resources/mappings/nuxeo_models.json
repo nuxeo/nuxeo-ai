@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/v1/ai/mockTestProject/models?enrichers.document=children"
+    "url": "/api/v1/ai/mockTestProject/dev/models?enrichers.document=children"
   },
   "response": {
     "status": 200,
