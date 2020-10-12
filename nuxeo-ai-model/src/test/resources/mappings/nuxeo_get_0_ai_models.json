@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/api/v1/ai/mockTestProject/preprod/models?properties=ai_model"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "entity-type": "documents",
+      "entries": []
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
