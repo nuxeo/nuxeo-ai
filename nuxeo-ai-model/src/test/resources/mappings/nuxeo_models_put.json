@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "PUT",
-    "url": "/api/v1/mockTestProject/models"
+    "url": "/api/v1/mockTestProject/dev/models"
   },
   "response": {
     "status": 200,

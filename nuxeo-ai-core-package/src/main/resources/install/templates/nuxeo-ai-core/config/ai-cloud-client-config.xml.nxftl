@@ -4,7 +4,10 @@
   <#if "${nuxeo.ai.insight.client.enable}" == "true">
 
   <extension target="org.nuxeo.ai.cloud.NuxeoClient" point="config">
-    <config id="njConfig" projectId="${nuxeo.ai.insight.client.projectid}" url="${nuxeo.ai.insight.client.target.url}">
+    <config id="njConfig"
+        projectId="${nuxeo.ai.insight.client.projectid}"
+        url="${nuxeo.ai.insight.client.target.url}"
+        datasource="${nuxeo.ai.insight.datasource.label}">
       <authentication token="${nuxeo.ai.insight.client.token}" />
     </config>
   </extension>
