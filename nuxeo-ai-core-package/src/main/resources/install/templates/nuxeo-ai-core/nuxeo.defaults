@@ -33,6 +33,9 @@ nuxeo.ai.export.threshold=
 # Nuxeo Client Config
 nuxeo.ai.insight.client.enable=false
 
+# Disable sameSite cookie attribute
+nuxeo.server.cookies.sameSite=none
+
 # If client enabled: set project id, insight url and token access (see AI team for setup)
 # nuxeo.ai.insight.client.projectid=
 # nuxeo.ai.insight.client.target.url=
