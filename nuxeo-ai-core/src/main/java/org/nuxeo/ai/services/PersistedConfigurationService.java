@@ -20,7 +20,9 @@
 package org.nuxeo.ai.services;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.nuxeo.runtime.model.Descriptor;
 
 /**
@@ -48,8 +50,24 @@ public interface PersistedConfigurationService {
      * Retrieves a representation of {@link Descriptor} under
      * 
      * @param key {@link String} as unique key
+     * @param xml {@link String} as the xml to persist
+     */
+    void persist(String key, String xml);
+
+    /**
+     * Retrieves a representation of {@link Descriptor} under
+     *
+     * @param key {@link String} as unique key
      * @return {@link Descriptor}
      * @throws IOException if read from Persistent layer fails
      */
     Descriptor retrieve(String key) throws IOException;
+
+    /**
+     * Retrieves all loaded {@link Descriptor}s
+     *
+     * @return descriptors
+     * @throws IOException
+     */
+    Pair<String, List<Descriptor>> retrieveAllDescriptors() throws IOException;
 }
