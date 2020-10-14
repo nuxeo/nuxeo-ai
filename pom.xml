@@ -25,6 +25,7 @@
     <module>nuxeo-ai-pipes</module>
     <module>nuxeo-ai-core</module>
     <module>nuxeo-ai-model</module>
+    <module>nuxeo-ai-config</module>
     <module>nuxeo-ai-web-ui</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
