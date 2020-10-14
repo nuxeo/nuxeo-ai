@@ -19,4 +19,5 @@ Nuxeo-Component: OSGI-INF/ai-contrib.xml,
  OSGI-INF/enrichment-core-types-contrib.xml,
  OSGI-INF/listeners-contrib.xml,
  OSGI-INF/ai-pageprovider-contrib.xml,
- OSGI-INF/ai-persisted-configuration-service.xml
+ OSGI-INF/ai-persisted-configuration-service.xml,
+ OSGI-INF/ai-configuration-service.xml
