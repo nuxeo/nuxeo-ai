@@ -27,7 +27,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
  * We can define different thresholds to different properties
  * In case of collision in configuration thresholds will be merged in favor of bigger values
  */
-public interface ThresholdService {
+public interface ThresholdService extends Reloadable {
 
     /**
      * Provides type/facet based threshold value from {@link ThresholdConfiguratorDescriptor}

@@ -14,22 +14,19 @@ package org.nuxeo.ai;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nuxeo.ai.configuration.ThresholdComponent;
-import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
+import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.restapi.test.BaseTest;
 import org.nuxeo.ecm.restapi.test.RestServerFeature;
 import org.nuxeo.jaxrs.test.CloseableClientResponse;
-import org.nuxeo.runtime.RuntimeService;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -60,26 +57,21 @@ public class TestAIConfigREST extends BaseTest {
     public void iCanSetThreshold() throws IOException {
         DocumentModel file = session.createDocumentModel("/", "file", FILE);
         file = session.createDocument(file);
-        ThresholdConfiguratorDescriptor thresholdConfiguratorDescriptor = new ThresholdConfiguratorDescriptor();
-        thresholdConfiguratorDescriptor.setGlobal(0.99f);
-        ThresholdConfiguratorDescriptor.Threshold threshold = new ThresholdConfiguratorDescriptor.Threshold();
-        threshold.setAutocorrect(0.88f);
-        threshold.setAutofillValue(0.88f);
-        threshold.setValue(0.88f);
-        threshold.setXpath(DC_DESCRIPTION);
-        List<ThresholdConfiguratorDescriptor.Threshold> thresholds = new ArrayList<>();
-        thresholds.add(threshold);
-        thresholdConfiguratorDescriptor.setThresholds(thresholds);
-        thresholdConfiguratorDescriptor.setType(FILE);
-        List<ThresholdConfiguratorDescriptor> descs = new ArrayList<>();
-        descs.add(thresholdConfiguratorDescriptor);
-        String body = mapper.writeValueAsString(descs);
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/threshold", body)) {
+
+        String threshold = "<thresholdConfiguration type=\"File\"\n" + //
+                "                            global=\"0.99\">\n" + //
+                "      <thresholds>\n" + //
+                "        <threshold xpath=\"dc:description\"\n" + //
+                "                   value=\"0.88\"\n" + //
+                "                   autofill=\"0.76\"\n" + //
+                "                   autocorrect=\"0.77\"/>\n" + //
+                "      </thresholds>\n" + //
+                "    </thresholdConfiguration>";
+
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds", threshold,
+                Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-            RuntimeService runtimeService = Framework.getRuntime();
-            ThresholdComponent thresholdComponent = (ThresholdComponent) runtimeService.getComponent(
-                    "org.nuxeo.ai.configuration.ThresholdComponent");
-            float thresholdValue = thresholdComponent.getThreshold(file, DC_DESCRIPTION);
+            float thresholdValue = Framework.getService(ThresholdService.class).getThreshold(file, DC_DESCRIPTION);
             assertThat(thresholdValue).isEqualTo(0.88f);
         }
     }
