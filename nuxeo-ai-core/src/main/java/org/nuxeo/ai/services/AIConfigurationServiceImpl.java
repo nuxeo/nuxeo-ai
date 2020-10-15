@@ -24,11 +24,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.nuxeo.ai.configuration.ThresholdComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
+import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.runtime.RuntimeService;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
 
@@ -37,43 +40,52 @@ import org.nuxeo.runtime.pubsub.PubSubService;
  *
  * @since 2.1.4
  */
-public class AIConfigurationServiceImpl implements AIConfigurationService {
+public class AIConfigurationServiceImpl extends DefaultComponent implements AIConfigurationService {
 
-    public static final String COMPONENT_NAME = "org.nuxeo.ai.configuration.ThresholdComponent";
-
-    protected final PubSubService pubSubService;
-
-    protected RuntimeService runtimeService;
-
-    protected PersistedConfigurationService persistedConfigurationService;
+    private static final Logger log = LogManager.getLogger(AIConfigurationServiceImpl.class);
 
     protected String TOPIC = "ai-configuration";
 
-    public AIConfigurationServiceImpl() {
-        runtimeService = Framework.getRuntime();
-        persistedConfigurationService = Framework.getService(PersistedConfigurationService.class);
-        persistedConfigurationService.register(ThresholdConfiguratorDescriptor.class);
-        pubSubService = Framework.getService(PubSubService.class);
-        pubSubService.registerSubscriber(TOPIC, this::thresholdSubscriber);
+    @Override
+    public void start(ComponentContext context) {
+        super.start(context);
+        PubSubService pubSubService = Framework.getService(PubSubService.class);
+        if (pubSubService != null) {
+            pubSubService.registerSubscriber(TOPIC, this::thresholdSubscriber);
+        } else {
+            log.warn("No Pub/Sub service available");
+        }
     }
 
     @Override
     public void setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException {
         String key = UUID.randomUUID().toString();
-        persistedConfigurationService.persist(key, thresholds);
-        pubSubService.publish(TOPIC, key.getBytes());
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        pcs.persist(key, thresholds);
+        publish(key.getBytes());
     }
 
     @Override
     public void setThresholds(String thresholdsXML) {
         String key = UUID.randomUUID().toString();
-        persistedConfigurationService.persist(key, thresholdsXML);
-        pubSubService.publish(TOPIC, key.getBytes());
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        pcs.persist(key, thresholdsXML);
+        publish(key.getBytes());
+    }
+
+    protected void publish(byte[] bytes) {
+        PubSubService service = Framework.getService(PubSubService.class);
+        if (service != null) {
+            service.publish(TOPIC, bytes);
+        } else {
+            log.warn("No Pub/Sub service available");
+        }
     }
 
     @Override
     public List<ThresholdConfiguratorDescriptor> getAllThresholds() throws IOException {
-        Pair<String, List<Descriptor>> allDescriptors = persistedConfigurationService.retrieveAllDescriptors();
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        Pair<String, List<Descriptor>> allDescriptors = pcs.retrieveAllDescriptors();
         return allDescriptors.getRight()
                              .stream()
                              .filter(descriptor -> descriptor instanceof ThresholdConfiguratorDescriptor)
@@ -83,16 +95,17 @@ public class AIConfigurationServiceImpl implements AIConfigurationService {
 
     @Override
     public String getAllThresholdsXML() throws IOException {
-        return persistedConfigurationService.retrieveAllDescriptors().getLeft();
+        return Framework.getService(PersistedConfigurationService.class).retrieveAllDescriptors().getLeft();
     }
 
     protected void thresholdSubscriber(String topic, byte[] message) {
         String contribKey = new String(message);
-        ThresholdComponent thresholdComponent = (ThresholdComponent) runtimeService.getComponent(COMPONENT_NAME);
+        ThresholdService service = Framework.getService(ThresholdService.class);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         try {
-            ThresholdConfiguratorDescriptor thresholdConfiguratorDescriptor = (ThresholdConfiguratorDescriptor) persistedConfigurationService.retrieve(
+            ThresholdConfiguratorDescriptor thresholdConfiguratorDescriptor = (ThresholdConfiguratorDescriptor) pcs.retrieve(
                     contribKey);
-            thresholdComponent.hotReload(thresholdConfiguratorDescriptor);
+            service.reload(thresholdConfiguratorDescriptor);
         } catch (IOException e) {
             throw new NuxeoException(e);
         }
