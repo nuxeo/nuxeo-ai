@@ -44,7 +44,7 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
 
     private static final Logger log = LogManager.getLogger(AIConfigurationServiceImpl.class);
 
-    protected String TOPIC = "ai-configuration";
+    public static final String TOPIC = "ai-configuration";
 
     @Override
     public void start(ComponentContext context) {
@@ -58,19 +58,21 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     }
 
     @Override
-    public void setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException {
+    public String setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException {
         String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         pcs.persist(key, thresholds);
         publish(key.getBytes());
+        return key;
     }
 
     @Override
-    public void setThresholds(String thresholdsXML) {
+    public String setThresholds(String thresholdsXML) {
         String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         pcs.persist(key, thresholdsXML);
         publish(key.getBytes());
+        return key;
     }
 
     protected void publish(byte[] bytes) {
