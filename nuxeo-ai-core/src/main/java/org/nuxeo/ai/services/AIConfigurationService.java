@@ -30,13 +30,15 @@ public interface AIConfigurationService {
 
     /**
      * Persist a thresholds descriptor in KVS and load it in the component registry via pubsub.
+     * @return
      */
-    void setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException;
+    String setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException;
 
     /**
      * Persist threshold XML contribution in KVS and load it in the component registry via pubsub.
+     * @return
      */
-    void setThresholds(String thresholdsXML);
+    String setThresholds(String thresholdsXML);
 
     /**
      * @return all a pair of all persisted thresholds in xml and as objects
