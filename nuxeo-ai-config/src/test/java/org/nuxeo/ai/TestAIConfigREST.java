@@ -12,6 +12,7 @@
 package org.nuxeo.ai;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -20,14 +21,17 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.restapi.test.BaseTest;
 import org.nuxeo.ecm.restapi.test.RestServerFeature;
 import org.nuxeo.jaxrs.test.CloseableClientResponse;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.impl.ExtensionDescriptorReader;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -39,7 +43,37 @@ public class TestAIConfigREST extends BaseTest {
 
     public static final String DC_DESCRIPTION = "dc:description";
 
-    public static final String FILE = "File";
+    protected String thresholdFile = "<thresholdConfiguration type=\"File\"\n" + //
+            "                            global=\"0.99\">\n" + //
+            "      <thresholds>\n" + //
+            "        <threshold xpath=\"dc:description\"\n" + //
+            "                   value=\"0.88\"\n" + //
+            "                   autofill=\"0.76\"\n" + //
+            "                   autocorrect=\"0.77\"/>\n" + //
+            "      </thresholds>\n" + //
+            "    </thresholdConfiguration>";
+
+    protected String thresholdFolder = "<thresholdConfiguration type=\"Folder\"\n" + //
+            "                            global=\"0.99\">\n" + //
+            "      <thresholds>\n" + //
+            "        <threshold xpath=\"dc:description\"\n" + //
+            "                   value=\"0.98\"\n" + //
+            "                   autofill=\"0.96\"\n" + //
+            "                   autocorrect=\"0.97\"/>\n" + //
+            "      </thresholds>\n" + //
+            "    </thresholdConfiguration>";
+
+    private DocumentModel folder;
+
+    private DocumentModel file;
+
+    @Before
+    public void setup() {
+        file = session.createDocumentModel("/", "file", "File");
+        file = session.createDocument(file);
+        folder = session.createDocumentModel("/", "folder", "Folder");
+        folder = session.createDocument(folder);
+    }
 
     @Test
     public void iCanSetNuxeoConfVar() throws IOException {
@@ -54,25 +88,37 @@ public class TestAIConfigREST extends BaseTest {
     }
 
     @Test
-    public void iCanSetThreshold() throws IOException {
-        DocumentModel file = session.createDocumentModel("/", "file", FILE);
-        file = session.createDocument(file);
-
-        String threshold = "<thresholdConfiguration type=\"File\"\n" + //
-                "                            global=\"0.99\">\n" + //
-                "      <thresholds>\n" + //
-                "        <threshold xpath=\"dc:description\"\n" + //
-                "                   value=\"0.88\"\n" + //
-                "                   autofill=\"0.76\"\n" + //
-                "                   autocorrect=\"0.77\"/>\n" + //
-                "      </thresholds>\n" + //
-                "    </thresholdConfiguration>";
-
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds", threshold,
+    public void iCanSetThreshold() {
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds", thresholdFile,
                 Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             float thresholdValue = Framework.getService(ThresholdService.class).getThreshold(file, DC_DESCRIPTION);
             assertThat(thresholdValue).isEqualTo(0.88f);
+        }
+    }
+
+    @Test
+    public void iCanRetrieveAllConfiguration() throws IOException {
+        this.injectThresholds();
+        try (CloseableClientResponse response = getResponse(RequestType.GET, "ai/extension/thresholds",
+                Collections.singletonMap("Accept", "application/xml"))) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+            String output = response.getEntity(String.class);
+            assertThat(output).isNotNull().isNotEmpty();
+            assertThat(output).contains("thresholdConfiguration type=");
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
+
+    protected void injectThresholds() {
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds", thresholdFile,
+                Collections.singletonMap("Content-Type", "application/xml"))) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        }
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds",
+                thresholdFolder, Collections.singletonMap("Content-Type", "application/xml"))) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         }
     }
 

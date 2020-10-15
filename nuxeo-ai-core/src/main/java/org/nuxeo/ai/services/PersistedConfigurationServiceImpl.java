@@ -93,15 +93,16 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
     public Pair<String, List<Descriptor>> retrieveAllDescriptors() throws IOException {
         Set<String> keys = getAllKeys();
         List<Descriptor> descriptors = new ArrayList<>();
-        String xmlPayLoad = "";
+        String xmlPayLoad = "<?xml version=\"1.0\"?><thresholds>";
         for (String key : keys) {
             byte[] bytes = getStore().get(key);
             XMap xmap = reader.getXMap();
-            xmlPayLoad.concat(new String(bytes));
+            xmlPayLoad = xmlPayLoad.concat(new String(bytes));
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
                 descriptors.add((Descriptor) xmap.load(bais));
             }
         }
+        xmlPayLoad = xmlPayLoad.concat("</thresholds>");
         return new ImmutablePair<>(xmlPayLoad, descriptors);
     }
 
