@@ -21,6 +21,7 @@ package org.nuxeo.ai.services;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -105,7 +106,12 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
     }
 
     protected Set<String> getAllKeys() {
-        String allKeys = new String(getStore().get(ALL_KEYS));
+        byte[] bytes = getStore().get(ALL_KEYS);
+        if (bytes == null) {
+            return new HashSet<>();
+        }
+
+        String allKeys = new String(bytes, StandardCharsets.UTF_8);
         return new HashSet<>(Arrays.asList(allKeys.split(",")));
     }
 
