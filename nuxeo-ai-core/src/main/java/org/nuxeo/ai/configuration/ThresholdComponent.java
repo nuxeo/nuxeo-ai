@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor.Threshold;
 import org.nuxeo.ai.services.AIConfigurationService;
+import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
@@ -65,15 +66,21 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
 
     protected final Map<String, Map<String, Threshold>> typeThresholds = new HashMap<>();
 
-    public void hotReload(ThresholdConfiguratorDescriptor desc) {
+    @Override
+    public void reload(Descriptor desc) {
         super.registerContribution(desc, THRESHOLD_CONFIGURATION_XP, null);
-        this.fillThresholds(desc);
+        this.fillThresholds((ThresholdConfiguratorDescriptor) desc);
     }
+
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        pcs.register(ThresholdConfiguratorDescriptor.class);
+
         setDefaultThresholds();
+
         List<Descriptor> descriptors = getDescriptors(THRESHOLD_CONFIGURATION_XP);
         AIConfigurationService aiConfigurationService = Framework.getService(AIConfigurationService.class);
         List<ThresholdConfiguratorDescriptor> kvsDescriptors = new ArrayList<>();
