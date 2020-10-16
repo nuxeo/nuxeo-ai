@@ -7,7 +7,7 @@ Bundle-Name: aws-core
 Bundle-ManifestVersion: 2
 Require-Bundle: org.nuxeo.ai.ai-core
 Bundle-SymbolicName: org.nuxeo.ai.aws.aws-core;singleton=true
-Nuxeo-WebModule: org.nuxeo.ecm.webengine.app.WebEngineModule;name=ai;package=org/nuxeo/ai/endpoint
+Nuxeo-WebModule: org.nuxeo.ecm.webengine.app.WebEngineModule;name=aiaddons;package=org/nuxeo/ai/endpoint
 Nuxeo-Component: OSGI-INF/aws-service-config.xml,
  OSGI-INF/rekognition-service.xml,
  OSGI-INF/comprehend-service.xml,
