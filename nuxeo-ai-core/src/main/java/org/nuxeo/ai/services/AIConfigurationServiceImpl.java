@@ -43,11 +43,6 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     public static final String TOPIC = "ai-configuration";
 
     @Override
-    public void start(ComponentContext context) {
-        super.start(context);
-    }
-
-    @Override
     public String set(Descriptor thresholds) throws IOException {
         String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
