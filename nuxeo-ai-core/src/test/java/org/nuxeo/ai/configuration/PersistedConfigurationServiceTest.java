@@ -33,11 +33,13 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
+import org.nuxeo.ai.services.PersistedConfigurationServiceImpl;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
@@ -52,17 +54,21 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @RunWith(FeaturesRunner.class)
 @Features({ CoreFeature.class })
 @Deploy({ "org.nuxeo.ai.ai-core" })
+@Deploy("org.nuxeo.runtime.pubsub")
 @RepositoryConfig(cleanup = Granularity.METHOD)
 public class PersistedConfigurationServiceTest {
 
     protected List<String> messages = new CopyOnWriteArrayList<>();
 
     @Inject
-    public AIConfigurationService aiConfigurationService;
+    protected AIConfigurationService aiConfigurationService;
+
+    @Inject
+    protected PersistedConfigurationService pcs;
 
     protected volatile CountDownLatch messageReceivedLatch;
 
-    protected String threshold = "<thresholdConfiguration type=\"File\"\n" + //
+    protected static final String threshold = "<thresholdConfiguration type=\"File\"\n" + //
             "                            global=\"0.88\">\n" + //
             "      <thresholds>\n" + //
             "        <threshold xpath=\"dc:title\"\n" + //
@@ -72,11 +78,14 @@ public class PersistedConfigurationServiceTest {
             "      </thresholds>\n" + //
             "    </thresholdConfiguration>";
 
+    @After
+    public void cleanUp() {
+        PersistedConfigurationServiceImpl impl = (PersistedConfigurationServiceImpl) this.pcs;
+        impl.clear();
+    }
+
     @Test
     public void shouldRetrieveConfiguration() throws IOException {
-        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        assertThat(pcs).isNotNull();
-
         pcs.register(ThresholdConfiguratorDescriptor.class);
 
         getStore().put("testKey", threshold);
@@ -95,12 +104,23 @@ public class PersistedConfigurationServiceTest {
     }
 
     @Test
+    public void shouldGetAllConfigsByClass() throws IOException {
+        String key = aiConfigurationService.set(threshold);
+        assertThat(key).isNotBlank();
+
+        List<ThresholdConfiguratorDescriptor> all = aiConfigurationService.getAll(
+                ThresholdConfiguratorDescriptor.class);
+        assertThat(all).hasSize(1);
+    }
+
+    @Test
     public void iCanPropagateConfiguration() throws InterruptedException {
         messageReceivedLatch = new CountDownLatch(1);
-        aiConfigurationService.setThresholds(threshold);
+        aiConfigurationService.set(threshold);
         if (!messageReceivedLatch.await(5, TimeUnit.SECONDS)) {
             fail("message not received in 5s");
         }
+
         assertEquals(Collections.singletonList(AIConfigurationServiceImpl.TOPIC + "=" + threshold), messages);
     }
 

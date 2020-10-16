@@ -32,12 +32,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor.Threshold;
 import org.nuxeo.ai.services.AIConfigurationService;
+import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
+import org.nuxeo.runtime.pubsub.PubSubService;
 
 /**
  * Implementation of the ThresholdService
@@ -72,10 +75,16 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
         this.fillThresholds((ThresholdConfiguratorDescriptor) desc);
     }
 
-
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        PubSubService pubSubService = Framework.getService(PubSubService.class);
+        if (pubSubService != null) {
+            pubSubService.registerSubscriber(AIConfigurationServiceImpl.TOPIC, this::thresholdSubscriber);
+        } else {
+            log.warn("No Pub/Sub service available");
+        }
+
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         pcs.register(ThresholdConfiguratorDescriptor.class);
 
@@ -83,33 +92,18 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
 
         List<Descriptor> descriptors = getDescriptors(THRESHOLD_CONFIGURATION_XP);
         AIConfigurationService aiConfigurationService = Framework.getService(AIConfigurationService.class);
-        List<ThresholdConfiguratorDescriptor> kvsDescriptors = new ArrayList<>();
+        List<ThresholdConfiguratorDescriptor> kvsDescriptors;
         try {
-            kvsDescriptors = aiConfigurationService.getAllThresholds();
+            kvsDescriptors = aiConfigurationService.getAll(ThresholdConfiguratorDescriptor.class);
         } catch (IOException e) {
             log.error("Getting descriptors from kvs failed", e);
+            kvsDescriptors = new ArrayList<>();
         }
+
         descriptors.addAll(kvsDescriptors);
         for (Descriptor d : descriptors) {
             ThresholdConfiguratorDescriptor descriptor = (ThresholdConfiguratorDescriptor) d;
             fillThresholds(descriptor);
-        }
-    }
-
-    protected void fillThresholds(ThresholdConfiguratorDescriptor descriptor) {
-        String type = descriptor.getType();
-
-        float typeGlobal = descriptor.getGlobal();
-        if (typeGlobal > 0.f && typeGlobal <= 1.f) {
-            typeDefaultThresholds.put(type, typeGlobal);
-        }
-
-        typeThresholds.computeIfAbsent(type, key -> new HashMap<>());
-
-        for (Threshold t : descriptor.getThresholds()) {
-            Map<String, Threshold> map = typeThresholds.get(type);
-            t.merge(map.get(t.getXPath()));
-            map.put(t.getXPath(), t);
         }
     }
 
@@ -201,6 +195,36 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
         }
 
         return result > 0.f ? result : globalAutocorrectThreshold;
+    }
+
+    protected void thresholdSubscriber(String topic, byte[] message) {
+        String contribKey = new String(message);
+        ThresholdService service = Framework.getService(ThresholdService.class);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        try {
+            ThresholdConfiguratorDescriptor thresholdConfiguratorDescriptor = (ThresholdConfiguratorDescriptor) pcs.retrieve(
+                    contribKey);
+            service.reload(thresholdConfiguratorDescriptor);
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
+    }
+
+    protected void fillThresholds(ThresholdConfiguratorDescriptor descriptor) {
+        String type = descriptor.getType();
+
+        float typeGlobal = descriptor.getGlobal();
+        if (typeGlobal > 0.f && typeGlobal <= 1.f) {
+            typeDefaultThresholds.put(type, typeGlobal);
+        }
+
+        typeThresholds.computeIfAbsent(type, key -> new HashMap<>());
+
+        for (Threshold t : descriptor.getThresholds()) {
+            Map<String, Threshold> map = typeThresholds.get(type);
+            t.merge(map.get(t.getXPath()));
+            map.put(t.getXPath(), t);
+        }
     }
 
     protected void setDefaultThresholds() {
