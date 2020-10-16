@@ -61,7 +61,7 @@ public class TestRekognition {
     public void shouldCreateNotification() throws IOException {
         ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
         arrayNode.add(new ObjectNode(JsonNodeFactory.instance));
-        WebResource webResource = client.resource(getBaseURL()).path("ai").path("rekognition").path("callback").path("labels");
+        WebResource webResource = client.resource(getBaseURL()).path("aiaddons").path("rekognition").path("callback").path("labels");
 
         File jsonPayload = FileUtils.getResourceFileFromContext("sns-success-resp.json");
         byte[] jsonData = Files.readAllBytes(Paths.get(jsonPayload.toURI()));
