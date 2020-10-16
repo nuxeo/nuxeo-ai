@@ -36,7 +36,6 @@ import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
-import org.nuxeo.runtime.RuntimeService;
 import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,35 +52,22 @@ public class AIRoot extends DefaultObject {
 
     private static final Logger log = LogManager.getLogger(AIRoot.class);
 
-    protected RuntimeService runtimeService;
-
-    protected AIConfigurationService aiConfigurationService;
-
     protected static final ObjectMapper MAPPER = new ObjectMapper();
 
-    protected static final TypeReference<Map<String, String>> NUXEOCONF = new TypeReference<Map<String, String>>() {
+    protected static final TypeReference<Map<String, String>> NUXEO_CONF_REF = new TypeReference<Map<String, String>>() {
     };
-
-    @Override
-    protected void initialize(Object... args) {
-        super.initialize(args);
-        runtimeService = Framework.getRuntime();
-        aiConfigurationService = Framework.getService(AIConfigurationService.class);
-    }
 
     @POST
     @Path("config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setNuxeoConfVars(String conf) throws JsonProcessingException {
-        Map<String, String> confMap = MAPPER.readValue(conf, NUXEOCONF);
+        Map<String, String> confMap = MAPPER.readValue(conf, NUXEO_CONF_REF);
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            confMap.keySet().forEach(key -> {
-                runtimeService.setProperty(key, confMap.get(key));
-            });
+            confMap.keySet().forEach(key -> Framework.getProperties().put(key, confMap.get(key)));
             return Response.status(Response.Status.OK).build();
         } catch (NuxeoException e) {
             log.error("Cannot set Nuxeo conf variables", e);
@@ -99,8 +85,9 @@ public class AIRoot extends DefaultObject {
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
+
         try {
-            aiConfigurationService.setThresholds(thresholds);
+            Framework.getService(AIConfigurationService.class).set(thresholds);
             return Response.status(Response.Status.OK).build();
         } catch (IOException | NuxeoException e) {
             log.error("Cannot set thresholds", e);
@@ -117,7 +104,7 @@ public class AIRoot extends DefaultObject {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            aiConfigurationService.setThresholds(thresholdsXML);
+            Framework.getService(AIConfigurationService.class).set(thresholdsXML);
             return Response.status(Response.Status.OK).build();
         } catch (NuxeoException e) {
             log.error("Cannot set thresholds", e);
@@ -133,7 +120,7 @@ public class AIRoot extends DefaultObject {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            String thresholds = aiConfigurationService.getAllThresholdsXML();
+            String thresholds = Framework.getService(AIConfigurationService.class).getAllXML("thresholds", ThresholdConfiguratorDescriptor.class);
             return Response.ok(thresholds).build();
         } catch (NuxeoException | IOException e) {
             log.error("Cannot get all thresholds", e);

@@ -28,8 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
@@ -90,20 +88,42 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
     }
 
     @Override
-    public Pair<String, List<Descriptor>> retrieveAllDescriptors() throws IOException {
+    public List<Descriptor> retrieveAllDescriptors() throws IOException {
         Set<String> keys = getAllKeys();
-        List<Descriptor> descriptors = new ArrayList<>();
-        String xmlPayLoad = "<?xml version=\"1.0\"?><thresholds>";
-        for (String key : keys) {
-            byte[] bytes = getStore().get(key);
-            XMap xmap = reader.getXMap();
-            xmlPayLoad = xmlPayLoad.concat(new String(bytes));
+        List<Descriptor> descriptors = new ArrayList<>(keys.size());
+        XMap xmap = reader.getXMap();
+
+        for (byte[] bytes : getStore().get(keys).values()) {
             try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
                 descriptors.add((Descriptor) xmap.load(bais));
             }
         }
-        xmlPayLoad = xmlPayLoad.concat("</thresholds>");
-        return new ImmutablePair<>(xmlPayLoad, descriptors);
+
+        return descriptors;
+    }
+
+    @Override
+    public String toXML(String tag, List<? extends Descriptor> descriptors) throws IOException {
+        StringBuilder builder = new StringBuilder("<?xml version=\"1.0\"?>");
+        builder.append("<");
+        builder.append(tag);
+        builder.append(">");
+
+        XMap xmap = reader.getXMap();
+        for (Descriptor descriptor : descriptors) {
+            String xml = xmap.toXML(descriptor);
+            builder.append(xml);
+        }
+
+        builder.append("</");
+        builder.append(tag);
+        builder.append(">");
+
+        return builder.toString();
+    }
+
+    public void clear() {
+        getAllKeys().forEach(key -> getStore().put(key, (byte[]) null));
     }
 
     protected Set<String> getAllKeys() {
