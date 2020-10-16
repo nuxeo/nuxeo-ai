@@ -23,12 +23,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
-import org.nuxeo.ai.configuration.ThresholdService;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
@@ -49,16 +45,10 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        PubSubService pubSubService = Framework.getService(PubSubService.class);
-        if (pubSubService != null) {
-            pubSubService.registerSubscriber(TOPIC, this::thresholdSubscriber);
-        } else {
-            log.warn("No Pub/Sub service available");
-        }
     }
 
     @Override
-    public String setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException {
+    public String set(Descriptor thresholds) throws IOException {
         String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         pcs.persist(key, thresholds);
@@ -67,10 +57,10 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     }
 
     @Override
-    public String setThresholds(String thresholdsXML) {
+    public String set(String xml) {
         String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        pcs.persist(key, thresholdsXML);
+        pcs.persist(key, xml);
         publish(key.getBytes());
         return key;
     }
@@ -85,31 +75,19 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     }
 
     @Override
-    public List<ThresholdConfiguratorDescriptor> getAllThresholds() throws IOException {
+    @SuppressWarnings("unchecked")
+    public <T extends Descriptor> List<T> getAll(Class<T> clazz) throws IOException {
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        Pair<String, List<Descriptor>> allDescriptors = pcs.retrieveAllDescriptors();
-        return allDescriptors.getRight()
-                             .stream()
-                             .filter(descriptor -> descriptor instanceof ThresholdConfiguratorDescriptor)
-                             .map(descriptor -> (ThresholdConfiguratorDescriptor) descriptor)
+        List<Descriptor> allDescriptors = pcs.retrieveAllDescriptors();
+        return allDescriptors.stream()
+                             .filter(descriptor -> descriptor.getClass().isAssignableFrom(clazz))
+                             .map(descriptor -> ((T) descriptor))
                              .collect(Collectors.toList());
     }
 
     @Override
-    public String getAllThresholdsXML() throws IOException {
-        return Framework.getService(PersistedConfigurationService.class).retrieveAllDescriptors().getLeft();
-    }
-
-    protected void thresholdSubscriber(String topic, byte[] message) {
-        String contribKey = new String(message);
-        ThresholdService service = Framework.getService(ThresholdService.class);
-        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        try {
-            ThresholdConfiguratorDescriptor thresholdConfiguratorDescriptor = (ThresholdConfiguratorDescriptor) pcs.retrieve(
-                    contribKey);
-            service.reload(thresholdConfiguratorDescriptor);
-        } catch (IOException e) {
-            throw new NuxeoException(e);
-        }
+    public <T extends Descriptor> String getAllXML(String tag, Class<T> clazz) throws IOException {
+        List<T> all = getAll(clazz);
+        return Framework.getService(PersistedConfigurationService.class).toXML(tag, all);
     }
 }
