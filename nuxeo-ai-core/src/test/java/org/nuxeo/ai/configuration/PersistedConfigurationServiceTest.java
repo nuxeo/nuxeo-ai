@@ -20,16 +20,14 @@
 package org.nuxeo.ai.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.services.PersistedConfigurationServiceImpl.KEY_VALUE_STORE;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -37,7 +35,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.services.AIConfigurationService;
-import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ai.services.PersistedConfigurationServiceImpl;
 import org.nuxeo.ecm.core.test.CoreFeature;
@@ -58,8 +55,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @RepositoryConfig(cleanup = Granularity.METHOD)
 public class PersistedConfigurationServiceTest {
 
-    protected List<String> messages = new CopyOnWriteArrayList<>();
-
     @Inject
     protected AIConfigurationService aiConfigurationService;
 
@@ -68,7 +63,17 @@ public class PersistedConfigurationServiceTest {
 
     protected volatile CountDownLatch messageReceivedLatch;
 
-    protected static final String threshold = "<thresholdConfiguration type=\"File\"\n" + //
+    protected static final String thresholdFile = "<thresholdConfiguration type=\"File\"\n" + //
+            "                            global=\"0.88\">\n" + //
+            "      <thresholds>\n" + //
+            "        <threshold xpath=\"dc:title\"\n" + //
+            "                   value=\"0.75\"\n" + //
+            "                   autofill=\"0.76\"\n" + //
+            "                   autocorrect=\"0.77\"/>\n" + //
+            "      </thresholds>\n" + //
+            "    </thresholdConfiguration>";
+
+    protected static final String thresholdFolder = "<thresholdConfiguration type=\"Folder\"\n" + //
             "                            global=\"0.88\">\n" + //
             "      <thresholds>\n" + //
             "        <threshold xpath=\"dc:title\"\n" + //
@@ -88,7 +93,7 @@ public class PersistedConfigurationServiceTest {
     public void shouldRetrieveConfiguration() throws IOException {
         pcs.register(ThresholdConfiguratorDescriptor.class);
 
-        getStore().put("testKey", threshold);
+        getStore().put("testKey", thresholdFile);
 
         Descriptor descriptor = pcs.retrieve("testKey");
         assertThat(descriptor).isNotNull().isInstanceOf(ThresholdConfiguratorDescriptor.class);
@@ -105,7 +110,7 @@ public class PersistedConfigurationServiceTest {
 
     @Test
     public void shouldGetAllConfigsByClass() throws IOException {
-        String key = aiConfigurationService.set(threshold);
+        String key = aiConfigurationService.set(thresholdFile);
         assertThat(key).isNotBlank();
 
         List<ThresholdConfiguratorDescriptor> all = aiConfigurationService.getAll(
@@ -115,13 +120,31 @@ public class PersistedConfigurationServiceTest {
 
     @Test
     public void iCanPropagateConfiguration() throws InterruptedException {
-        messageReceivedLatch = new CountDownLatch(1);
-        aiConfigurationService.set(threshold);
-        if (!messageReceivedLatch.await(5, TimeUnit.SECONDS)) {
-            fail("message not received in 5s");
+        int thresholdSize = ((ThresholdComponent) Framework.getRuntime()
+                                                           .getComponent(
+                                                                   "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
+        // TODO: AICORE-366
+        // messageReceivedLatch = new CountDownLatch(1);
+        aiConfigurationService.set(thresholdFolder);
+        // Then once the subscriber is called, add:
+        // messages.add(topic + "=" + msg);
+        // messageReceivedLatch.countDown();
+        // if (!messageReceivedLatch.await(5, TimeUnit.SECONDS)) {
+        // fail("message not received in 5s");
+        // }
+        // assertEquals(Collections.singletonList(AIConfigurationServiceImpl.TOPIC + "=" + threshold), messages);
+        final long deadline = System.currentTimeMillis() + 5000L;
+        int newThresholdSize;
+        while (System.currentTimeMillis() < deadline) {
+            newThresholdSize = ((ThresholdComponent) Framework.getRuntime()
+                                                              .getComponent(
+                                                                      "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
+            if (newThresholdSize == thresholdSize + 1) {
+                assertTrue(true);
+                return;
+            }
         }
-
-        assertEquals(Collections.singletonList(AIConfigurationServiceImpl.TOPIC + "=" + threshold), messages);
+        fail("PubSubservice didn't work in time");
     }
 
     protected KeyValueStore getStore() {
