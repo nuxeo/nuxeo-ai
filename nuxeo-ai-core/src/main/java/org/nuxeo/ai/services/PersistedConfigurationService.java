@@ -22,7 +22,6 @@ package org.nuxeo.ai.services;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.nuxeo.runtime.model.Descriptor;
 
 /**
@@ -69,5 +68,7 @@ public interface PersistedConfigurationService {
      * @return descriptors
      * @throws IOException
      */
-    Pair<String, List<Descriptor>> retrieveAllDescriptors() throws IOException;
+    List<Descriptor> retrieveAllDescriptors() throws IOException;
+
+    String toXML(String tag, List<? extends Descriptor> descriptors) throws IOException;
 }

@@ -21,7 +21,7 @@ package org.nuxeo.ai.services;
 import java.io.IOException;
 import java.util.List;
 
-import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
+import org.nuxeo.runtime.model.Descriptor;
 
 /**
  * @since 2.4.1
@@ -32,18 +32,18 @@ public interface AIConfigurationService {
      * Persist a thresholds descriptor in KVS and load it in the component registry via pubsub.
      * @return
      */
-    String setThresholds(ThresholdConfiguratorDescriptor thresholds) throws IOException;
+    String set(Descriptor descriptor) throws IOException;
 
     /**
      * Persist threshold XML contribution in KVS and load it in the component registry via pubsub.
      * @return
      */
-    String setThresholds(String thresholdsXML);
+    String set(String descriptorXML);
 
     /**
      * @return all a pair of all persisted thresholds in xml and as objects
      */
-    List<ThresholdConfiguratorDescriptor> getAllThresholds() throws IOException;
+    <T extends Descriptor> List<T> getAll(Class<T> clazz) throws IOException;
 
-    String getAllThresholdsXML() throws IOException;
+    <T extends Descriptor> String getAllXML(String tag, Class<T> clazz) throws IOException;
 }
