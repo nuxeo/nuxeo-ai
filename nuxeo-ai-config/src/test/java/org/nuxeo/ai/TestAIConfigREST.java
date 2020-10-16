@@ -110,7 +110,7 @@ public class TestAIConfigREST extends BaseTest {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             String output = response.getEntity(String.class);
             assertThat(output).isNotNull().isNotEmpty();
-            assertThat(output).contains("thresholdConfiguration type=");
+            assertThat(output).contains("<thresholdConfiguration");
         } catch (Exception e) {
             fail(e.getMessage());
         }
