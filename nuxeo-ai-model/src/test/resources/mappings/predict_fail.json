@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/v1/models/fail_testing/predict"
+    "url": "/v1/models/fail_testing/predict?datasource=dev"
   },
   "response": {
     "status": 303,
