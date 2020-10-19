@@ -213,7 +213,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
      * @param client
      */
     protected String buildUri(CloudClient client) {
-        return API_AI + client.byProjectId(String.format("/model/%s/", getName()) + modelPath + VERB_PREDICT);
+        String datasource = client.getCloudConfig().getDatasource();
+        return API_AI + client.byProjectId(
+                "/model/" + getName() + "/" + modelPath + VERB_PREDICT + "?datasource=" + datasource);
     }
 
     @Override
