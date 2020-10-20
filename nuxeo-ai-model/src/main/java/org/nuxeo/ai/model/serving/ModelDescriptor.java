@@ -22,9 +22,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.StringUtils;
+
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.common.xmap.annotation.XNode;
@@ -33,6 +34,8 @@ import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.model.Descriptor;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -40,7 +43,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Definition of an AI model at runtime
  */
 @XObject("model")
-public class ModelDescriptor {
+public class ModelDescriptor implements Descriptor {
 
     private static final Class<? extends RuntimeModel> DEFAULT_MODEL_CLASS = TFRuntimeModel.class;
 
@@ -96,6 +99,21 @@ public class ModelDescriptor {
         } catch (ReflectiveOperationException e) {
             throw new NuxeoException(String.format("ModelDescriptor for %s is invalid.", id), e);
         }
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public Descriptor merge(Descriptor other) {
+        return null;
+    }
+
+    @Override
+    public boolean doesRemove() {
+        return false;
     }
 
     @XObject("filter")

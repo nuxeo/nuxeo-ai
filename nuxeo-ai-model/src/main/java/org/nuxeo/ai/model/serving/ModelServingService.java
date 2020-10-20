@@ -26,11 +26,14 @@ import java.util.function.Predicate;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.runtime.model.Descriptor;
 
 /**
  * Serves runtime AI models
  */
 public interface ModelServingService {
+
+    void reload(Descriptor desc);
 
     /**
      * Add a AI Model at runtime, making it available for serving.

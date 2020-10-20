@@ -21,6 +21,7 @@ package org.nuxeo.ai.model.serving;
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -32,17 +33,22 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ai.services.AIConfigurationServiceImpl;
+import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.runtime.model.Descriptor;
+import org.nuxeo.runtime.pubsub.PubSubService;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -68,8 +74,15 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     /**
      * Makes a DocumentModel predicate including the properties
      */
-    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs, Predicate<DocumentModel> predicate) {
+    public static Predicate<DocumentModel> makePredicate(Set<ModelProperty> inputs,
+            Predicate<DocumentModel> predicate) {
         return predicate.and(d -> inputs.stream().allMatch(i -> notNull(d, i.getName())));
+    }
+
+    @Override
+    public void reload(Descriptor desc) {
+        super.registerContribution(desc, MODELS_AP, null);
+        this.addModel((ModelDescriptor) desc);
     }
 
     @Override
@@ -84,14 +97,35 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     public void start(ComponentContext context) {
         super.start(context);
         configs.forEach((key, value) -> addModel(value));
+        PubSubService pubSubService = Framework.getService(PubSubService.class);
+        if (pubSubService != null) {
+            pubSubService.registerSubscriber(AIConfigurationServiceImpl.TOPIC, this::modelSubscriber);
+        } else {
+            log.warn("No Pub/Sub service available");
+        }
+
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        pcs.register(ModelDescriptor.class);
+    }
+
+    protected void modelSubscriber(String topic, byte[] message) {
+        String contribKey = new String(message);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        try {
+            ModelDescriptor model = (ModelDescriptor) pcs.retrieve(contribKey);
+            this.reload(model);
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
     }
 
     @Override
     public void addModel(ModelDescriptor descriptor) {
 
         if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
-            throw new IllegalArgumentException(String.format("The input types %s for service %s must be defined in the %s vocabulary",
-                                                             descriptor.getInputs(), descriptor.id, AI_DATATYPES));
+            throw new IllegalArgumentException(
+                    String.format("The input types %s for service %s must be defined in the %s vocabulary",
+                            descriptor.getInputs(), descriptor.id, AI_DATATYPES));
         }
 
         log.debug("Registering a custom model as {}, info is {}.", descriptor.id, descriptor.info);
@@ -153,11 +187,11 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
      */
     protected DirectoryEntryResolver getInputTypesResolver() {
         if (inputTypesResolver == null) {
-            inputTypesResolver =
-                    (DirectoryEntryResolver) Framework.getService(ObjectResolverService.class)
-                                                      .getResolver(DirectoryEntryResolver.NAME,
-                                                                   singletonMap(DirectoryEntryResolver.PARAM_DIRECTORY,
-                                                                                AI_DATATYPES));
+            inputTypesResolver = (DirectoryEntryResolver) Framework.getService(ObjectResolverService.class)
+                                                                   .getResolver(DirectoryEntryResolver.NAME,
+                                                                           singletonMap(
+                                                                                   DirectoryEntryResolver.PARAM_DIRECTORY,
+                                                                                   AI_DATATYPES));
         }
         return inputTypesResolver;
     }
