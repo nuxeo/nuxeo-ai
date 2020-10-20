@@ -26,12 +26,14 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
+import org.nuxeo.ai.model.serving.ModelDescriptor;
 import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
@@ -120,10 +122,44 @@ public class AIRoot extends DefaultObject {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            String thresholds = Framework.getService(AIConfigurationService.class).getAllXML("thresholds", ThresholdConfiguratorDescriptor.class);
+            String thresholds = Framework.getService(AIConfigurationService.class)
+                                         .getXML("thresholds", ThresholdConfiguratorDescriptor.class);
             return Response.ok(thresholds).build();
         } catch (NuxeoException | IOException e) {
             log.error("Cannot get all thresholds", e);
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    @POST
+    @Path("extension/model")
+    @Consumes(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setModelFromXML(String modelXML) {
+        if (!ctx.getPrincipal().isAdministrator()) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        try {
+            Framework.getService(AIConfigurationService.class).set(modelXML);
+            return Response.status(Response.Status.OK).build();
+        } catch (NuxeoException e) {
+            log.error("Cannot set models", e);
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    @GET
+    @Path("extension/model/{id}")
+    @Produces(MediaType.APPLICATION_XML)
+    public Response getModel(@QueryParam("id") String id) {
+        if (!ctx.getPrincipal().isAdministrator()) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        try {
+            String model = Framework.getService(AIConfigurationService.class).getXML("model", ModelDescriptor.class);
+            return Response.ok(model).build();
+        } catch (NuxeoException | IOException e) {
+            log.error("Cannot get all models", e);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
