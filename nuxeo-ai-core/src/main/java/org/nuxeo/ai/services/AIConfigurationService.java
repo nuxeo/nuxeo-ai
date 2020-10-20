@@ -45,5 +45,5 @@ public interface AIConfigurationService {
      */
     <T extends Descriptor> List<T> getAll(Class<T> clazz) throws IOException;
 
-    <T extends Descriptor> String getAllXML(String tag, Class<T> clazz) throws IOException;
+    <T extends Descriptor> String getXML(String tag, Class<T> clazz) throws IOException;
 }
