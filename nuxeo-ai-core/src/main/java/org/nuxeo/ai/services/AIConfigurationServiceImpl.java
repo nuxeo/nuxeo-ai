@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
@@ -81,7 +80,7 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     }
 
     @Override
-    public <T extends Descriptor> String getAllXML(String tag, Class<T> clazz) throws IOException {
+    public <T extends Descriptor> String getXML(String tag, Class<T> clazz) throws IOException {
         List<T> all = getAll(clazz);
         return Framework.getService(PersistedConfigurationService.class).toXML(tag, all);
     }
