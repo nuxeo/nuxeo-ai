@@ -201,9 +201,10 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
         String contribKey = new String(message);
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         try {
-            ThresholdConfiguratorDescriptor thresholdConfiguratorDescriptor = (ThresholdConfiguratorDescriptor) pcs.retrieve(
-                    contribKey);
-            this.reload(thresholdConfiguratorDescriptor);
+            Descriptor desc = pcs.retrieve(contribKey);
+            if (desc instanceof ThresholdConfiguratorDescriptor) {
+                this.reload(desc);
+            }
         } catch (IOException e) {
             throw new NuxeoException(e);
         }
