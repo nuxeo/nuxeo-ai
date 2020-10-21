@@ -81,7 +81,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     @Override
     public void reload(Descriptor desc) {
-        super.registerContribution(desc, MODELS_AP, null);
+        this.registerContribution(desc, MODELS_AP, null);
         this.addModel((ModelDescriptor) desc);
     }
 
@@ -112,8 +112,10 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
         String contribKey = new String(message);
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         try {
-            ModelDescriptor model = (ModelDescriptor) pcs.retrieve(contribKey);
-            this.reload(model);
+            Descriptor desc = pcs.retrieve(contribKey);
+            if (desc instanceof ModelDescriptor) {
+                this.reload(desc);
+            }
         } catch (IOException e) {
             throw new NuxeoException(e);
         }

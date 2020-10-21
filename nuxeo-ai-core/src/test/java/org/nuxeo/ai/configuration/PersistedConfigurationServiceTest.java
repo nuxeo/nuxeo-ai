@@ -139,7 +139,6 @@ public class PersistedConfigurationServiceTest {
                                                               .getComponent(
                                                                       "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
             if (newThresholdSize == thresholdSize + 1) {
-                assertTrue(true);
                 return;
             }
         }
