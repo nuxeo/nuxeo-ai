@@ -26,7 +26,6 @@ import static org.nuxeo.ai.services.PersistedConfigurationServiceImpl.KEY_VALUE_
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 
 import javax.inject.Inject;
