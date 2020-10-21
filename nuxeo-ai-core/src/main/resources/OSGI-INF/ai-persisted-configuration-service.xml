@@ -11,9 +11,8 @@
   <extension target="org.nuxeo.ecm.core.transientstore.TransientStorageComponent" point="store">
     <store name="aiConfigurationStore"
            class="org.nuxeo.ecm.core.transientstore.keyvalueblob.KeyValueBlobTransientStore">
-      <property name="blobProvider">aiConfigurationBlobStore</property>
       <property name="keyValueStore">aiConfigurationKVStore</property>
-      <targetMaxSizeMB>100</targetMaxSizeMB>
+      <targetMaxSizeMB>1</targetMaxSizeMB>
       <absoluteMaxSizeMB>-1</absoluteMaxSizeMB>
       <firstLevelTTL>-1</firstLevelTTL>
       <secondLevelTTL>-1</secondLevelTTL>
