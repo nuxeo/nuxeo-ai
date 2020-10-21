@@ -26,8 +26,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.configuration.ThresholdService;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.model.serving.ModelServingService;
+import org.nuxeo.ai.model.serving.RuntimeModel;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.ecm.restapi.test.BaseTest;
 import org.nuxeo.ecm.restapi.test.RestServerFeature;
 import org.nuxeo.jaxrs.test.CloseableClientResponse;
@@ -36,12 +40,14 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import com.google.inject.Inject;
+
 @RunWith(FeaturesRunner.class)
-@Features(RestServerFeature.class)
-@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-config" })
+@Features({ RestServerFeature.class, EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-config", "org.nuxeo.ai.ai-model" })
 public class TestAIConfigREST extends BaseTest {
 
-    public static final String DC_DESCRIPTION = "dc:description";
+    protected static final String DC_DESCRIPTION = "dc:description";
 
     protected String thresholdFile = "<thresholdConfiguration type=\"File\"\n" + //
             "                            global=\"0.99\">\n" + //
@@ -63,9 +69,21 @@ public class TestAIConfigREST extends BaseTest {
             "      </thresholds>\n" + //
             "    </thresholdConfiguration>";
 
-    private DocumentModel folder;
+    protected String modelDefinition = "<model id=\"test\">\n" + "      <filter primaryType=\"FileRefDoc\"/>\n"
+            + "      <config name=\"transientStore\">testTransient</config>\n"
+            + "      <config name=\"useLabels\">false</config>\n" + "      <inputProperties>\n"
+            + "        <property name=\"dc:title\" type=\"txt\"/>\n"
+            + "        <property name=\"dc:subjects\" type=\"cat\"/>\n" + "      </inputProperties>\n"
+            + "      <outputProperties>\n" + "        <property name=\"dc:description\" type=\"txt\"/>\n"
+            + "      </outputProperties>\n" + "      <info name=\"modelName\">mockTestModel</info>\n"
+            + "      <info name=\"modelLabel\">testing</info>\n" + "    </model>";
 
-    private DocumentModel file;
+    protected DocumentModel folder;
+
+    protected DocumentModel file;
+
+    @Inject
+    protected ModelServingService modelService;
 
     @Before
     public void setup() {
@@ -103,7 +121,7 @@ public class TestAIConfigREST extends BaseTest {
     }
 
     @Test
-    public void iCanRetrieveAllConfiguration() throws IOException {
+    public void iCanRetrieveThresholds() {
         this.injectThresholds();
         try (CloseableClientResponse response = getResponse(RequestType.GET, "ai/extension/thresholds",
                 Collections.singletonMap("Accept", "application/xml"))) {
@@ -127,4 +145,25 @@ public class TestAIConfigREST extends BaseTest {
         }
     }
 
+    @Test
+    public void iCanSetRetrieveModelDefinition() {
+        String id = "test";
+        RuntimeModel model = modelService.getModel(id);
+        assertThat(model).isNull();
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/model", modelDefinition,
+                Collections.singletonMap("Content-Type", "application/xml"))) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+            model = modelService.getModel(id);
+            assertThat(model).isNotNull();
+        }
+        try (CloseableClientResponse response = getResponse(RequestType.GET, "ai/extension/model/" + id,
+                Collections.singletonMap("Accept", "application/xml"))) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+            String output = response.getEntity(String.class);
+            assertThat(output).isNotNull().isNotEmpty();
+            assertThat(output).contains("<model id=\"" + id);
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
 }
