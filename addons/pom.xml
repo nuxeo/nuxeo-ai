@@ -20,6 +20,8 @@
     <module>nuxeo-ai-image-quality-package</module>
     <module>nuxeo-ai-aws-core</module>
     <module>nuxeo-ai-aws-package</module>
+    <module>nuxeo-ai-gcp-core</module>
+    <module>nuxeo-ai-gcp-package</module>
   </modules>
 
   <dependencyManagement>
