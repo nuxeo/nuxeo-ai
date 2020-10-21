@@ -125,6 +125,7 @@ pipeline {
     stages {
         stage('Init') {
             steps {
+                setGitHubBuildStatus('init')
                 container('platform11') {
                     sh """#!/bin/bash
 jx step git credentials
@@ -150,6 +151,11 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
 """
                         }
                     }
+                }
+            }
+            post {
+                always {
+                    setGitHubBuildStatus('init')
                 }
             }
         }
