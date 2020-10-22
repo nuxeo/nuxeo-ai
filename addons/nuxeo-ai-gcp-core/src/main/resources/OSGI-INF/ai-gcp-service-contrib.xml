@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.ai.gcp.service">
+
+  <require>org.nuxeo.ecm.core.CoreExtensions</require>
+  <implementation class="org.nuxeo.ai.gcp.AIGoogleServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.gcp.AIGoogleService"/>
+  </service>
+
+</component>
