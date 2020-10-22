@@ -163,11 +163,19 @@ limitations under the License.
        * 3) update suggestions on suggestion widgets
        */
       updateWidgetSuggestions: (layout, path) => {
-        if (!layout || !layout.document) {
+        if (!layout || !layout.document
+            || !(layout.document.contextParameters && layout.document.contextParameters.aiModels)) { // don't call suggestions if there is no ai model provided
           return;
         }
-        const aiModels = layout.document.contextParameters && layout.document.contextParameters.aiModels;
-        const isModelInput = path && aiModels && aiModels.inputs.includes(path.replace('document.properties.', ''));
+
+        const aiModels = layout.document.contextParameters.aiModels;
+        const inputs = aiModels.inputs.map(item => item.name);
+        const allPresent = inputs.map(item => layout.document.properties[item]).filter(item => item).length === inputs.length;
+        if (!allPresent) {
+            // not all inputs required for the AI_Model present in the given Document
+            return;
+        }
+        const isModelInput = path && aiModels && inputs.includes(path.replace('document.properties.', ''));
         const noPropertyChanged = !path || 'document.properties'.startsWith(path);
 
         const model = _getBoundElements(layout, 'document.properties');
