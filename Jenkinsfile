@@ -18,11 +18,12 @@ void setGitHubBuildStatus(String context) {
 
 String getMavenArgs() {
     def args = '-V -B -Pmarketplace,ftest,aws clean install'
-    if (env.TAG_NAME || env.BRANCH_NAME == 'master-10.10') {
+    if (env.TAG_NAME) {
+        args += ' deploy -P-nexus,release -DskipTests'
+    } else if (env.BRANCH_NAME ==~ 'master.*') {
         args += ' deploy -P-nexus'
-        if (env.TAG_NAME) {
-            args += ' -Prelease -DskipTests'
-        }
+    } else if (env.BRANCH_NAME ==~ 'sprint.*') {
+        args += ' deploy -Pnexus'
     } else {
         args += ' package'
     }
@@ -161,7 +162,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
         }
         stage('Maven Build') {
             environment {
-                MAVEN_OPTS = "$MAVEN_OPTS -Xms512m -Xmx1g"
+                MAVEN_OPTS = "-Xms512m -Xmx1g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
