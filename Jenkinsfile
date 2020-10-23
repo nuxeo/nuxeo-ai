@@ -162,7 +162,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
         }
         stage('Maven Build') {
             environment {
-                MAVEN_OPTS = "$MAVEN_OPTS -Xms512m -Xmx1g"
+                MAVEN_OPTS = "-Xms512m -Xmx1g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
