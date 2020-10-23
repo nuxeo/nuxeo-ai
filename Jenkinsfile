@@ -18,11 +18,12 @@ void setGitHubBuildStatus(String context) {
 
 String getMavenArgs() {
     def args = '-V -B -Pmarketplace,ftest,aws clean install'
-    if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*') {
+    if (env.TAG_NAME) {
+        args += ' deploy -P-nexus,release -DskipTests'
+    } else if (env.BRANCH_NAME ==~ 'master.*') {
         args += ' deploy -P-nexus'
-        if (env.TAG_NAME) {
-            args += ' -Prelease -DskipTests'
-        }
+    } else if (env.BRANCH_NAME ==~ 'sprint.*') {
+        args += ' deploy -Pnexus'
     } else {
         args += ' package'
     }
