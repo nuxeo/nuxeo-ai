@@ -18,17 +18,20 @@
  */
 package org.nuxeo.ai.gcp;
 
-import static org.nuxeo.runtime.api.Framework.getProperty;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.common.Environment;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -50,37 +53,61 @@ public class AIGoogleServiceImpl extends DefaultComponent implements AIGoogleSer
      */
     public static final String GOOGLE_APPLICATION_CREDENTIALS = "nuxeo.gcp.credentials";
 
+    public static final String GOOGLE_CREDENTIALS_PATH_ENV = "GOOGLE_CREDENTIALS_PATH";
+
     public static final String GCP_JSON_FILE = "gcp-credentials.json";
 
     public static final String GOOGLE_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 
+    protected ImageAnnotatorSettings settings;
+
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        this.getOrCreateClient();
+        // this.getOrCreateClient();
     }
 
     @Override
     public ImageAnnotatorClient getOrCreateClient() {
-        try {
-            // File googleCredentials = new File(getProperty(GOOGLE_APPLICATION_CREDENTIALS));
-            File googleCredentials = new File("/Users/vp/Desktop/credentials.json");
-            String credentialsPath = googleCredentials.isFile() ? googleCredentials.getAbsolutePath()
-                    : new File(Environment.getDefault().getConfig(),
-                            getProperty(GOOGLE_APPLICATION_CREDENTIALS, GCP_JSON_FILE)).getAbsolutePath();
+        if (settings == null) {
+            synchronized (this) {
+                if (settings == null) {
+                    settings = createSettings();
+                }
+            }
+        }
 
-            GoogleCredentials credentials = GoogleCredentials.fromStream(
-                    new ByteArrayInputStream(Files.readAllBytes(Paths.get(credentialsPath))))
-                                                             .createScoped(GOOGLE_PLATFORM_SCOPE);
+        try {
+            // TODO: a better refresh mechanic should be introduced
+            settings.getCredentialsProvider().getCredentials().refresh();
+            return ImageAnnotatorClient.create(settings);
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
+    }
+
+    protected ImageAnnotatorSettings createSettings() {
+        String credentialPath = Framework.getProperty(GOOGLE_APPLICATION_CREDENTIALS);
+        if (StringUtils.isBlank(credentialPath)) {
+            credentialPath = System.getenv(GOOGLE_CREDENTIALS_PATH_ENV);
+        }
+
+        File googleCredentials = new File(credentialPath);
+        Path credentialsPath;
+        if (googleCredentials.isFile()) {
+            credentialsPath = googleCredentials.toPath();
+        } else {
+            credentialsPath = Paths.get(Environment.getDefault().getConfig().getAbsolutePath(),
+                    Framework.getProperty(GOOGLE_APPLICATION_CREDENTIALS, GCP_JSON_FILE));
+        }
+
+        try (InputStream is = new ByteArrayInputStream(Files.readAllBytes(credentialsPath))) {
+            GoogleCredentials credentials = GoogleCredentials.fromStream(is).createScoped(GOOGLE_PLATFORM_SCOPE);
             credentials.refreshIfExpired();
 
-            ImageAnnotatorSettings imageAnnotatorSettings = ImageAnnotatorSettings.newBuilder()
-                                                                                  .setCredentialsProvider(
-                                                                                          FixedCredentialsProvider.create(
-                                                                                                  credentials))
-                                                                                  .build();
-            return ImageAnnotatorClient.create(imageAnnotatorSettings);
-        } catch (Exception e) {
+            FixedCredentialsProvider provider = FixedCredentialsProvider.create(credentials);
+            return ImageAnnotatorSettings.newBuilder().setCredentialsProvider(provider).build();
+        } catch (IOException e) {
             throw new NuxeoException(e);
         }
     }
