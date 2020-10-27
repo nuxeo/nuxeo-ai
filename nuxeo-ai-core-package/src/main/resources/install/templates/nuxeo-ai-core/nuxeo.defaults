@@ -45,3 +45,8 @@ nuxeo.ai.insight.datasource.label=dev
 # nuxeo.ai.insight.client.token=
 # All additional urls to disable cors on (separated with spaces)
 # nuxeo.cors.urls=
+
+# Continuous Export - this flag is checked during runtime in org.nuxeo.ai.listeners.ContinuousExportListener
+nuxeo.ai.continuous.export.enable=false
+# At 03:00 AM, every 7 days
+nuxeo.ai.continuous.export.cron.interval=0 0 3 */7 * ?
