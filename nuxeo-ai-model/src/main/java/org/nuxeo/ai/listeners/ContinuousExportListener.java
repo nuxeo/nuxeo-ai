@@ -51,6 +51,7 @@ import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventBundle;
+import org.nuxeo.ecm.core.event.EventContext;
 import org.nuxeo.ecm.core.event.PostCommitEventListener;
 import org.nuxeo.ecm.core.query.sql.SQLQueryParser;
 import org.nuxeo.ecm.core.query.sql.model.DateLiteral;
@@ -76,6 +77,12 @@ public class ContinuousExportListener implements PostCommitEventListener {
 
     private static final String DEFAULT_REPO = "default";
 
+    public static final String START_CONTINUOUS_EXPORT = "startContinuousExport";
+
+    public static final String FORCE_EXPORT = "forceContinuousExport";
+
+    public static final String NUXEO_AI_CONTINUOUS_EXPORT_ENABLE = "nuxeo.ai.continuous.export.enable";
+
     private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ,
             new IntegerLiteral(0));
 
@@ -83,6 +90,13 @@ public class ContinuousExportListener implements PostCommitEventListener {
     public void handleEvent(EventBundle eb) {
         if (eb == null || eb.isEmpty()) {
             return;
+        }
+
+        if (!Boolean.parseBoolean(Framework.getProperty(NUXEO_AI_CONTINUOUS_EXPORT_ENABLE))) {
+            EventContext eventContext = eb.peek().getContext();
+            if (!eventContext.hasProperty(FORCE_EXPORT)) {
+                return;
+            }
         }
 
         CloudClient client = Framework.getService(CloudClient.class);

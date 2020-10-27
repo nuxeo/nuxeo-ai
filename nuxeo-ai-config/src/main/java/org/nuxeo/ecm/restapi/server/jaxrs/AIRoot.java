@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ecm.restapi.server.jaxrs;
 
+import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOUS_EXPORT_ENABLE;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -49,7 +51,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  * @since 2.4.1
  */
-@WebObject(type = "ai")
+@WebObject(type = "aicore")
 public class AIRoot extends DefaultObject {
 
     private static final Logger log = LogManager.getLogger(AIRoot.class);
@@ -69,12 +71,24 @@ public class AIRoot extends DefaultObject {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            confMap.keySet().forEach(key -> Framework.getProperties().put(key, confMap.get(key)));
+            confMap.keySet().forEach((key) -> {
+                Framework.getProperties().put(key, confMap.get(key));
+                Framework.getService(AIConfigurationService.class).setConfVar(key, confMap.get(key));
+            });
             return Response.status(Response.Status.OK).build();
         } catch (NuxeoException e) {
             log.error("Cannot set Nuxeo conf variables", e);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    @GET
+    @Path("config/export")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response isExportActivated() {
+        String isActivated = (String) Framework.getProperties()
+                                               .getOrDefault(NUXEO_AI_CONTINUOUS_EXPORT_ENABLE, "false");
+        return Response.ok(isActivated).build();
     }
 
     @POST
