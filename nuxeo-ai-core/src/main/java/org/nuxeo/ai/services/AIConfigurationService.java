@@ -29,16 +29,24 @@ import org.nuxeo.runtime.model.Descriptor;
 public interface AIConfigurationService {
 
     /**
-     * Persist a thresholds descriptor in KVS and load it in the component registry via pubsub.
-     * @return
+     * Persist a descriptor in KVS and load it in the component registry via pubsub.
+     * @return the associated key
      */
     String set(Descriptor descriptor) throws IOException;
 
     /**
-     * Persist threshold XML contribution in KVS and load it in the component registry via pubsub.
-     * @return
+     * Persist XML contribution in KVS and load it in the component registry via pubsub.
+     * @return the associated key
      */
     String set(String descriptorXML);
+
+    /**
+     * Persist threshold XML contribution in KVS and load it in the component registry via pubsub.
+     * @return the associated key
+     * @param key
+     * @param value
+     */
+    String setConfVar(String key, String value);
 
     /**
      * @return all a pair of all persisted thresholds in xml and as objects

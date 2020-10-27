@@ -63,6 +63,21 @@ public interface PersistedConfigurationService {
     Descriptor retrieve(String key) throws IOException;
 
     /**
+     * Retrieves a conf variable
+     *
+     * @param key {@link String} as unique key
+     * @return Value
+     */
+    String retrieveConfVar(String key);
+
+    /**
+     * Stores a conf variable
+     *
+     * @param key {@link String} as unique key
+     */
+    void persistConfVar(String key, String value);
+
+    /**
      * Retrieves all loaded {@link Descriptor}s
      *
      * @return descriptors

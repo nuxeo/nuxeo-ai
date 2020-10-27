@@ -88,6 +88,16 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
     }
 
     @Override
+    public String retrieveConfVar(String key) {
+        return new String(getStore().get(key));
+    }
+
+    @Override
+    public void persistConfVar(String key, String value) {
+        getStore().put(key, value);
+    }
+
+    @Override
     public List<Descriptor> retrieveAllDescriptors() throws IOException {
         Set<String> keys = getAllKeys();
         List<Descriptor> descriptors = new ArrayList<>(keys.size());
