@@ -104,7 +104,7 @@ public class TestAIConfigREST extends BaseTest {
         Map<String, String> confVar = new HashMap<>();
         confVar.put("test", "some value");
         String body = mapper.writeValueAsString(confVar);
-        try (CloseableClientResponse response = getResponse(BaseTest.RequestType.POST, "ai/config", body)) {
+        try (CloseableClientResponse response = getResponse(BaseTest.RequestType.POST, "aicore/config", body)) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             assertThat(Framework.getProperty("test")).isNotNull().isNotEmpty();
         }
@@ -112,7 +112,7 @@ public class TestAIConfigREST extends BaseTest {
 
     @Test
     public void iCanSetThreshold() {
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds", thresholdFile,
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/thresholds", thresholdFile,
                 Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             float thresholdValue = Framework.getService(ThresholdService.class).getThreshold(file, DC_DESCRIPTION);
@@ -123,7 +123,7 @@ public class TestAIConfigREST extends BaseTest {
     @Test
     public void iCanRetrieveThresholds() {
         this.injectThresholds();
-        try (CloseableClientResponse response = getResponse(RequestType.GET, "ai/extension/thresholds",
+        try (CloseableClientResponse response = getResponse(RequestType.GET, "aicore/extension/thresholds",
                 Collections.singletonMap("Accept", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             String output = response.getEntity(String.class);
@@ -135,7 +135,7 @@ public class TestAIConfigREST extends BaseTest {
     }
 
     protected void injectThresholds() {
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/thresholds", thresholdFile,
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/thresholds", thresholdFile,
                 Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         }
@@ -150,13 +150,13 @@ public class TestAIConfigREST extends BaseTest {
         String id = "test";
         RuntimeModel model = modelService.getModel(id);
         assertThat(model).isNull();
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "ai/extension/model", modelDefinition,
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/model", modelDefinition,
                 Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             model = modelService.getModel(id);
             assertThat(model).isNotNull();
         }
-        try (CloseableClientResponse response = getResponse(RequestType.GET, "ai/extension/model/" + id,
+        try (CloseableClientResponse response = getResponse(RequestType.GET, "aicore/extension/model/" + id,
                 Collections.singletonMap("Accept", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             String output = response.getEntity(String.class);
