@@ -22,8 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.nuxeo.ai.gcp.AIGoogleServiceImpl.GCP_JSON_FILE;
-import static org.nuxeo.ai.gcp.AIGoogleServiceImpl.GOOGLE_APPLICATION_CREDENTIALS;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 
 import java.io.File;
@@ -37,7 +35,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +52,6 @@ import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -88,8 +84,7 @@ public class TestService {
 
     @Before
     public void assumeCredentials() {
-        Assume.assumeFalse("GCP tests deactivation is set",
-                Framework.getProperty(GOOGLE_APPLICATION_CREDENTIALS, GCP_JSON_FILE) == null);
+        GCP.assumeCredentials();
     }
 
     @Test

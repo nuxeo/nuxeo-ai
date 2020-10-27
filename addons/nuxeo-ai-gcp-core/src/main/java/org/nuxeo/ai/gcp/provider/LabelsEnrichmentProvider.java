@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Contributors:
- *     Gethin James
+ *     anechaev
  */
 package org.nuxeo.ai.gcp.provider;
 
