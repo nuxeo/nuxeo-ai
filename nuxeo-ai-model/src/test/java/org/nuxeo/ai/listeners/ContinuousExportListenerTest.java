@@ -20,6 +20,7 @@
 package org.nuxeo.ai.listeners;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.START_CONTINUOUS_EXPORT;
 
 import javax.inject.Inject;
 
@@ -61,7 +62,7 @@ public class ContinuousExportListenerTest {
     public void shouldLunchExportWithNoExceptions() {
         EventBundle bundle = new EventBundleImpl();
         EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
-        bundle.push(new EventImpl("startContinuousExport", ctx));
+        bundle.push(new EventImpl(START_CONTINUOUS_EXPORT, ctx));
 
         ContinuousExportListener listener = new ContinuousExportListener();
         listener.handleEvent(bundle);
