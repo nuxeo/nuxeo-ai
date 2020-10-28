@@ -1,0 +1,27 @@
+<!-- See documentation at http://doc.nuxeo.com/x/HgIz -->
+<package type="addon" name="nuxeo-ai-gcp" version="@VERSION@">
+  <title>Nuxeo AI GCP Integrations</title>
+  <description>
+    <p>Integrate enrichment services from GCP with Nuxeo AI.</p>
+  </description>
+  <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
+  <vendor>Nuxeo</vendor>
+  <installer restart="true" />
+  <uninstaller restart="true" />
+  <nuxeo-validation>nuxeo_certified</nuxeo-validation>
+  <!-- Production State: production_ready | testing | proto -->
+  <production-state>production_ready</production-state>
+  <supported>true</supported>
+  <platforms>
+    <platform>server-@DISTRIB_VERSION@</platform>
+    <platform>server-@DISTRIB_VERSION@-HF*</platform>
+  </platforms>
+  <!-- Dependencies on other packages -->
+  <dependencies>
+    <package>nuxeo-ai-core:@VERSION@</package>
+  </dependencies>
+  <license>Apache License, Version 2.0</license>
+  <license-url>http://www.apache.org/licenses/LICENSE-2.0</license-url>
+  <!-- Visibility: PRIVATE | MARKETPLACE | DEV | PUBLIC -->
+  <visibility>MARKETPLACE</visibility>
+</package>

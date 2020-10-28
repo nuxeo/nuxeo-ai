@@ -14,6 +14,7 @@
   <properties>
     <ai-core.version>${project.version}</ai-core.version>
     <wiremock.version>2.18.0</wiremock.version>
+    <gcp.version>13.1.0</gcp.version>
   </properties>
 
   <modules>
@@ -21,6 +22,8 @@
     <module>nuxeo-ai-image-quality-package</module>
     <module>nuxeo-ai-aws-core</module>
     <module>nuxeo-ai-aws-package</module>
+    <module>nuxeo-ai-gcp-core</module>
+    <module>nuxeo-ai-gcp-package</module>
   </modules>
 
   <dependencyManagement>
@@ -80,6 +83,13 @@
         <artifactId>nuxeo-ai-core</artifactId>
         <version>${ai-core.version}</version>
         <classifier>tests</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>libraries-bom</artifactId>
+        <version>${gcp.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
