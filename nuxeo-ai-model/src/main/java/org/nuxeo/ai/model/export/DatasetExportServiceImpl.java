@@ -285,7 +285,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     protected void addCount(List<Statistic> stats, NxQueryBuilder qb) {
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
         stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
-                esResult.getElasticsearchResponse().getHits().getTotalHits()));
+                esResult.getElasticsearchResponse().getHits().getTotalHits().value));
     }
 
     /**
@@ -316,7 +316,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
         stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
-        long total = esResult.getElasticsearchResponse().getHits().getTotalHits();
+        long total = esResult.getElasticsearchResponse().getHits().getTotalHits().value;
         stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, null, total));
 
         return total;
