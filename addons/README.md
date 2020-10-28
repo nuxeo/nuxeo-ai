@@ -4,6 +4,9 @@
 Currently there are the following AI Addons:
   * [nuxeo-ai-image-quality](https://github.com/nuxeo/nuxeo-ai/tree/master/addons/nuxeo-ai-image-quality-core#nuxeo-ai-image-quality) - Enrichment services that uses [Sightengine](https://sightengine.com/).
   * [nuxeo-ai-aws](https://github.com/nuxeo/nuxeo-ai/blob/master/addons/nuxeo-ai-aws-core/README.md#nuxeo-ai-aws-integration) - Enrichment services that use [Amazon Web Services](https://aws.amazon.com).
+  * [nuxeo-ai-image-quality](https://github.com/nuxeo/nuxeo-ai/tree/master-10.10/addons/nuxeo-ai-image-quality-core#nuxeo-ai-image-quality) - Enrichment services that uses [Sightengine](https://sightengine.com/).
+  * [nuxeo-ai-aws](https://github.com/nuxeo/nuxeo-ai/blob/master-10.10/addons/nuxeo-ai-aws-core/README.md#nuxeo-ai-aws-integration) - Enrichment services that use [Amazon Web Services](https://aws.amazon.com).
+  * [nuxeo-ai-gcp](https://github.com/nuxeo/nuxeo-ai/blob/master-10.10/addons/nuxeo-ai-gcp-core/README.md) - Enrichment services that use [Google Vision](https://cloud.google.com/vision/).
 
 ## Implementing a custom addon
 

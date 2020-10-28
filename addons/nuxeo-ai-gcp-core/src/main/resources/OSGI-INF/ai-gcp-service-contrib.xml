@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.ai.gcp.service">
+
+  <require>org.nuxeo.ecm.core.CoreExtensions</require>
+  <implementation class="org.nuxeo.ai.gcp.AIGoogleServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.gcp.AIGoogleService"/>
+  </service>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="gcp.imageLabels" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.gcp.provider.LabelsEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">75</option>
+    </enrichment>
+
+    <enrichment name="gcp.textDetection" kind="/tagging/imageText"
+                class="org.nuxeo.ai.gcp.provider.TextEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+    </enrichment>
+
+    <enrichment name="gcp.faceDetection" kind="/tagging/face"
+                class="org.nuxeo.ai.gcp.provider.FaceEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+    </enrichment>
+
+    <enrichment name="gcp.logoDetection" kind="/tagging/logo"
+                class="org.nuxeo.ai.gcp.provider.LogoEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">75</option>
+    </enrichment>
+
+    <enrichment name="gcp.landmarkDetection" kind="/tagging/landmark"
+                class="org.nuxeo.ai.gcp.provider.LandmarkEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">75</option>
+    </enrichment>
+
+    <enrichment name="gcp.objectLocalizer" kind="/tagging/localizer"
+                class="org.nuxeo.ai.gcp.provider.ObjectLocalizerEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">75</option>
+    </enrichment>
+  </extension>
+
+</component>

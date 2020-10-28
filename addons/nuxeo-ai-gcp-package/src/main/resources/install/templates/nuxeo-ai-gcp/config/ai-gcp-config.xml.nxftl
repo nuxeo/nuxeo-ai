@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.gcp.config" version="1.0">
+    <require>org.nuxeo.ai.services.AIComponent</require>
+
+<#if "${nuxeo.enrichment.gcp.images}" == "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentProviderName">gcp.imageLabels</option>
+      <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentProviderName">gcp.textDetection</option>
+      <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="faceProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentProviderName">gcp.faceDetection</option>
+      <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="logoProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentProviderName">gcp.logoDetection</option>
+      <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="landmarkProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">images</option>
+      <option name="sink">enrichment.in</option>
+      <option name="enrichmentProviderName">gcp.landmarkDetection</option>
+      <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+      <streamProcessor name="objectLocalizerProcessor" defaultConcurrency="1" defaultPartitions="4"
+                       logConfig="${nuxeo.ai.stream.config.name}"
+                       class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+        <option name="source">images</option>
+        <option name="sink">enrichment.in</option>
+        <option name="enrichmentProviderName">gcp.objectLocalizer</option>
+        <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
+      </streamProcessor>
+    </extension>
+</#if>
+
+</component>

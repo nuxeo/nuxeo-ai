@@ -1,6 +1,6 @@
 # Nuxeo AI AWS integration
 
-Currently provides the following enrichment services:
+Currently, provides the following enrichment services:
   * aws.imageLabels - Calls AWS Rekognition for object detection in images
   * aws.textSentiment - Call AWS Comprehend for sentiment analysis
   * aws.unsafeImages - Calls AWS Rekognition to detect unsafe images

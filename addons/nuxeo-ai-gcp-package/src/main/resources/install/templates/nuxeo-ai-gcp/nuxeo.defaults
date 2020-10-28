@@ -1,0 +1,5 @@
+## Edit this file to customize your configuration ##
+
+nuxeo.enrichment.gcp.images=false
+nuxeo.enrichment.gcp.cache=true
+

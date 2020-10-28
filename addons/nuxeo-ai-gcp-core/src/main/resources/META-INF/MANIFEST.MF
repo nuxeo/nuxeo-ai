@@ -1,0 +1,11 @@
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Manifest-Version: 1.0
+Bundle-Vendor: org.nuxeo.ai.aws
+Bundle-Version: 1.0.0
+Bundle-Name: aws-core
+Bundle-ManifestVersion: 2
+Require-Bundle: org.nuxeo.ai.ai-core
+Bundle-SymbolicName: org.nuxeo.ai.gcp.gcp-core;singleton=true
+Nuxeo-WebModule: org.nuxeo.ecm.webengine.app.WebEngineModule;name=ai;package=org/nuxeo/ai/endpoint
+Nuxeo-Component: OSGI-INF/ai-gcp-service-contrib.xml
