@@ -17,6 +17,8 @@
  *   Contributors:
  *       anechaev
  */
+package org.nuxeo.ai.gcp.provider;
+
 import static com.google.cloud.vision.v1.Feature.Type.LOGO_DETECTION;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
@@ -26,8 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.gcp.provider.AbstractTagProvider;
-import org.nuxeo.ai.gcp.provider.Polygonal;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;

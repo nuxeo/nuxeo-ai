@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.ai.aws.config" version="1.0">
+<component name="org.nuxeo.ai.gcp.config" version="1.0">
     <require>org.nuxeo.ai.services.AIComponent</require>
 
 <#if "${nuxeo.enrichment.gcp.images}" == "true">
@@ -31,7 +31,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
-      <option name="enrichmentProviderName">aws.faceDetection</option>
+      <option name="enrichmentProviderName">gcp.faceDetection</option>
       <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
     </streamProcessor>
   </extension>

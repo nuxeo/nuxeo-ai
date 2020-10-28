@@ -1,4 +1,4 @@
-# Nuxeo AI AWS integration
+# Nuxeo AI GCP integration
 
 Currently, provides the following enrichment services:
   * gcp.imageLabels - Calls GCP for object detection in images to produce labels
@@ -9,15 +9,12 @@ Currently, provides the following enrichment services:
   * gcp.objectLocalizer - Calls GCP to detect objects, and their bounding boxes in images
   
 #### Credentials
-Credentials discovery using `nuxeo-runtime-aws`.
-The chain searches for credentials in order: Nuxeo's AWSConfigurationService, environment variables, system properties, profile credentials, EC2Container credentials.
-
 If you choose to use nuxeo.conf then the properties are:
 ```
 nuxeo.gcp.credentials=your_PATH_TO_GCP_KEY
 ```
 
-or have Environment variable GOOGLE_CREDENTIALS_PATH in your system 
+or you may want to have Environment variable `GOOGLE_CREDENTIALS_PATH` in your system 
 
 ## Installation
 #### Quick start
