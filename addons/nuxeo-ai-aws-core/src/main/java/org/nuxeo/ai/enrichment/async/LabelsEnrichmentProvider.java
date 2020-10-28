@@ -37,7 +37,6 @@ import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -46,6 +45,7 @@ import org.nuxeo.runtime.kv.KeyValueStore;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
 import com.amazonaws.services.rekognition.model.Label;
+
 import net.jodah.failsafe.RetryPolicy;
 
 /**
@@ -106,20 +106,20 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
     }
 
     public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                        GetLabelDetectionResult result) {
+            GetLabelDetectionResult result) {
         List<EnrichmentMetadata.Label> labels = result.getLabels()
-                .stream()
-                .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
-                .collect(Collectors.toList());
+                                                      .stream()
+                                                      .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
+                                                      .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getLabels()));
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                .withLabels(asLabels(labels))
-                .withRawKey(rawKey)
-                .withDocumentProperties(singleton(propName))
-                .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
     }
 
     @Override
