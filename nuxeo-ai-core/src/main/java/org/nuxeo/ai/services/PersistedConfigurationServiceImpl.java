@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -132,6 +133,22 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
         return builder.toString();
     }
 
+    @Override
+    public void remove(String id) {
+        getStore().put(id, (byte[]) null);
+    }
+
+    @Override
+    public void removeFromKeys(String contribKey) {
+        byte[] bytes = getStore().get(ALL_KEYS);
+        if (bytes != null) {
+            Predicate<String> isEntry = item -> item.equals(contribKey);
+            String allKeys = new String(bytes, StandardCharsets.UTF_8);
+            Arrays.asList(allKeys.split(",")).removeIf(isEntry);
+            getStore().put(ALL_KEYS, allKeys);
+        }
+    }
+
     public void clear() {
         getAllKeys().forEach(key -> getStore().put(key, (byte[]) null));
     }
@@ -141,7 +158,6 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
         if (bytes == null) {
             return new HashSet<>();
         }
-
         String allKeys = new String(bytes, StandardCharsets.UTF_8);
         return new HashSet<>(Arrays.asList(allKeys.split(",")));
     }
