@@ -22,8 +22,10 @@ import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOU
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -115,12 +117,27 @@ public class AIRoot extends DefaultObject {
     @Path("extension/thresholds")
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setThresholdsFromXML(String thresholdsXML) {
+    public Response setThresholdsFromXML(@QueryParam("docType") String docType, String thresholdsXML) {
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            Framework.getService(AIConfigurationService.class).set(thresholdsXML);
+            Framework.getService(AIConfigurationService.class).set(docType, thresholdsXML);
+            return Response.status(Response.Status.OK).build();
+        } catch (NuxeoException e) {
+            log.error("Cannot set thresholds", e);
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    @DELETE
+    @Path("extension/thresholds")
+    public Response removeThreshold(@QueryParam("docType") String docType) {
+        if (!ctx.getPrincipal().isAdministrator()) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        try {
+            Framework.getService(AIConfigurationService.class).remove(docType);
             return Response.status(Response.Status.OK).build();
         } catch (NuxeoException e) {
             log.error("Cannot set thresholds", e);
@@ -154,7 +171,8 @@ public class AIRoot extends DefaultObject {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            Framework.getService(AIConfigurationService.class).set(modelXML);
+            String id = UUID.randomUUID().toString();
+            Framework.getService(AIConfigurationService.class).set(id, modelXML);
             return Response.status(Response.Status.OK).build();
         } catch (NuxeoException e) {
             log.error("Cannot set models", e);
