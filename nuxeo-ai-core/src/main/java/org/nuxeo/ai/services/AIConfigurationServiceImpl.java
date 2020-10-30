@@ -25,8 +25,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
@@ -64,17 +62,16 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     }
 
     @Override
-    public String set(Descriptor thresholds) throws IOException {
+    public String set(Descriptor desc) throws IOException {
         String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        pcs.persist(key, thresholds);
+        pcs.persist(key, desc);
         publish(key.getBytes());
         return key;
     }
 
     @Override
-    public String set(String xml) {
-        String key = UUID.randomUUID().toString();
+    public String set(String key, String xml) {
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         pcs.persist(key, xml);
         publish(key.getBytes());
@@ -122,5 +119,11 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
     public <T extends Descriptor> String getXML(String tag, Class<T> clazz) throws IOException {
         List<T> all = getAll(clazz);
         return Framework.getService(PersistedConfigurationService.class).toXML(tag, all);
+    }
+
+    @Override
+    public void remove(String id) {
+        Framework.getService(PersistedConfigurationService.class).remove(id);
+        publish(id.getBytes());
     }
 }

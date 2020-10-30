@@ -20,12 +20,12 @@
 package org.nuxeo.ai.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.services.PersistedConfigurationServiceImpl.KEY_VALUE_STORE;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 import javax.inject.Inject;
@@ -109,7 +109,7 @@ public class PersistedConfigurationServiceTest {
 
     @Test
     public void shouldGetAllConfigsByClass() throws IOException {
-        String key = aiConfigurationService.set(thresholdFile);
+        String key = aiConfigurationService.set(UUID.randomUUID().toString(), thresholdFile);
         assertThat(key).isNotBlank();
 
         List<ThresholdConfiguratorDescriptor> all = aiConfigurationService.getAll(
@@ -124,7 +124,7 @@ public class PersistedConfigurationServiceTest {
                                                                    "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
         // TODO: AICORE-366
         // messageReceivedLatch = new CountDownLatch(1);
-        aiConfigurationService.set(thresholdFolder);
+        aiConfigurationService.set(UUID.randomUUID().toString(), thresholdFolder);
         // Then once the subscriber is called, add:
         // messages.add(topic + "=" + msg);
         // messageReceivedLatch.countDown();
