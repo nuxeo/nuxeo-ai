@@ -38,7 +38,7 @@ public interface AIConfigurationService {
      * Persist XML contribution in KVS and load it in the component registry via pubsub.
      * @return the associated key
      */
-    String set(String descriptorXML);
+    String set(String key, String xml);
 
     /**
      * Persist threshold XML contribution in KVS and load it in the component registry via pubsub.
@@ -54,4 +54,6 @@ public interface AIConfigurationService {
     <T extends Descriptor> List<T> getAll(Class<T> clazz) throws IOException;
 
     <T extends Descriptor> String getXML(String tag, Class<T> clazz) throws IOException;
+
+    void remove(String id);
 }

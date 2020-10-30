@@ -86,4 +86,8 @@ public interface PersistedConfigurationService {
     List<Descriptor> retrieveAllDescriptors() throws IOException;
 
     String toXML(String tag, List<? extends Descriptor> descriptors) throws IOException;
+
+    void remove(String id);
+
+    void removeFromKeys(String contribKey);
 }

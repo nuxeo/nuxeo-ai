@@ -206,7 +206,8 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
                 this.reload(desc);
             }
         } catch (IOException e) {
-            throw new NuxeoException(e);
+            log.error("Cannot retrieve the descriptor with " + contribKey , e);
+            pcs.removeFromKeys(contribKey);
         }
     }
 
