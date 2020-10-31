@@ -22,7 +22,6 @@ import java.util.Map;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +42,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 import com.google.inject.Inject;
+import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 @RunWith(FeaturesRunner.class)
 @Features({ RestServerFeature.class, EnrichmentTestFeature.class, PlatformFeature.class })
@@ -114,9 +114,10 @@ public class TestAIConfigREST extends BaseTest {
 
     @Test
     public void iCanSetThreshold() {
-        try (CloseableClientResponse response = getResponse(RequestType.POST,
-                "aicore/extension/thresholds?docType=File", thresholdFile,
-                Collections.singletonMap("Content-Type", "application/xml"))) {
+        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        queryParams.putSingle("docType", "File");
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/thresholds",
+                thresholdFile, queryParams, null, Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             float thresholdValue = Framework.getService(ThresholdService.class).getThreshold(file, DC_DESCRIPTION);
             assertThat(thresholdValue).isEqualTo(0.88f);
