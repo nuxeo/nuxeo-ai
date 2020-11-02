@@ -37,20 +37,20 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
 
     @Override
     public void accept(EnrichmentMetadata metadata) {
-        TransactionHelper.runInTransaction(
-                () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
-                    DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
-                    DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
-                    if (doc != null) {
-                        try {
-                            session.saveDocument(doc);
-                        } catch (DocumentValidationException e) {
-                            log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
-                        }
-                    } else {
-                        log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);
-                    }
-                })
-        );
+        TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
+            DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
+            DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
+            if (doc != null) {
+                try {
+                    session.saveDocument(doc);
+                } catch (DocumentValidationException e) {
+                    log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
+                }
+            } else {
+                log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);
+            }
+
+            return null;
+        }));
     }
 }

@@ -65,7 +65,6 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
 
     @Override
     public Topology getTopology(Map<String, String> options) {
-
         String outputStream = options.get(STREAM_NAME);
         return Topology.builder()
                        .addComputation(DocEnrichingComputation::new,

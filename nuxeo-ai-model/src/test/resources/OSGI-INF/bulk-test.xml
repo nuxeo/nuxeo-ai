@@ -1,6 +1,13 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.model.bulk.enrich.test" version="1.0">
 
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="insight" kind="/prediction/custommodel"
+                class="org.nuxeo.ai.model.serving.InsightProvider" maxSize="10000000">
+    </enrichment>
+  </extension>
+
+
   <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
     <model id="basicBulkModel">
       <filter primaryType="File"/>
@@ -34,15 +41,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <option name="source">ai/bulkEnriched</option>
       <option name="sink">test/enrichment-in</option>
-      <option name="enrichmentProviderName">basicBulkModel</option>
-    </streamProcessor>
-  </extension>
-  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="descProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">ai/bulkEnriched</option>
-      <option name="sink">test/enrichment-in</option>
-      <option name="enrichmentProviderName">descBulkModel</option>
+      <option name="enrichmentProviderName">insight</option>
     </streamProcessor>
   </extension>
 
@@ -50,7 +49,7 @@
     <streamProcessor name="saveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <option name="source">test/enrichment-in</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 </component>
