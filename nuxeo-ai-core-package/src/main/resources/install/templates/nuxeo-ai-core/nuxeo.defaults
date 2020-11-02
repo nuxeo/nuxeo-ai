@@ -15,6 +15,9 @@ nuxeo.enrichment.raiseEvent=true
 
 nuxeo.ai.export.tensorflow=true
 
+# Enable Nuxeo Insight Enrichment providers
+nuxeo.ai.insight.enrichment.enabled=true
+
 # Configuration for Export Stream
 nuxeo.ai.export.batch.size=
 nuxeo.ai.export.bucket.size=

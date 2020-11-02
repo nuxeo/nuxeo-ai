@@ -336,6 +336,11 @@ For example to send `MY_EVENT` to a stream called `mystream` you would use the f
 ```
 Transforming an input Event into an output stream is done using a function specified by the `function` parameter. Functions are explained below.
 
+##### Nuxeo Insight Cloud enrichments
+
+To enable/disable Nuxeo Insight Cloud enrichers based on your custom model set `nuxeo.ai.insight.enrichment.enabled` to the desired value.
+Default value is `true`
+
 ##### Custom enrichment services
  New enrichment services can be added by implementing `EnrichmentProvider`.  `AbstractEnrichmentProvider` is a good starting point.
  If you wish to call a custom rest api then extending `RestEnrichmentProvider` would allow access to the various `RestClient`
