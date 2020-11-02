@@ -142,7 +142,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     protected EnrichmentMetadata handlePredict(String content, String repositoryName, String documentRef) {
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
-            EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(getKind(), getId(), inputNames,
+            EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, getId(), inputNames,
                     repositoryName, documentRef, Collections.emptySet());
             List<LabelSuggestion> labelSuggestions = new ArrayList<>();
             labelledResults.forEach((output, labels) -> labelSuggestions.add(new LabelSuggestion(output, labels)));

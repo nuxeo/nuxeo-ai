@@ -122,7 +122,6 @@ public class BulkEnrichmentTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkEnrich() throws Exception {
-
         DocumentModel testRoot = setupTestData();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
                 testRoot.getId());
