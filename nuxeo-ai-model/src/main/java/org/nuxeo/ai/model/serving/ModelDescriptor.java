@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -82,6 +81,10 @@ public class ModelDescriptor implements Descriptor {
 
     public Set<ModelProperty> getOutputs() {
         return outputProperties.properties;
+    }
+
+    public Map<String, String> getInfo() {
+        return info;
     }
 
     /**
