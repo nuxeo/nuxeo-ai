@@ -22,22 +22,21 @@ import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOU
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
-import org.nuxeo.ai.model.serving.ModelDescriptor;
 import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
@@ -114,10 +113,14 @@ public class AIRoot extends DefaultObject {
     }
 
     @POST
-    @Path("extension/thresholds")
+    @Path("extension/thresholds/{docType}")
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setThresholdsFromXML(@QueryParam("docType") String docType, String thresholdsXML) {
+    public Response setThresholdsFromXML(@PathParam("docType") String docType, String thresholdsXML) {
+        if (docType == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST).entity("docType parameter is mandatory").build());
+        }
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
@@ -131,14 +134,18 @@ public class AIRoot extends DefaultObject {
     }
 
     @DELETE
-    @Path("extension/thresholds")
-    public Response removeThreshold(@QueryParam("docType") String docType) {
+    @Path("extension/thresholds/{docType}")
+    public Response removeThreshold(@PathParam("docType") String docType) {
+        if (docType == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST).entity("docType parameter is mandatory").build());
+        }
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
             Framework.getService(AIConfigurationService.class).remove(docType);
-            return Response.status(Response.Status.OK).build();
+            return Response.status(Response.Status.NO_CONTENT).build();
         } catch (NuxeoException e) {
             log.error("Cannot set thresholds", e);
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -163,16 +170,15 @@ public class AIRoot extends DefaultObject {
     }
 
     @POST
-    @Path("extension/model")
+    @Path("extension/model/{modelId}")
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setModelFromXML(String modelXML) {
+    public Response setModelFromXML(@PathParam("modelId") String modelId, String modelXML) {
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            String id = UUID.randomUUID().toString();
-            Framework.getService(AIConfigurationService.class).set(id, modelXML);
+            Framework.getService(AIConfigurationService.class).set(modelId, modelXML);
             return Response.status(Response.Status.OK).build();
         } catch (NuxeoException e) {
             log.error("Cannot set models", e);
@@ -180,17 +186,20 @@ public class AIRoot extends DefaultObject {
         }
     }
 
-    @GET
-    @Path("extension/model/{id}")
-    @Produces(MediaType.APPLICATION_XML)
-    public Response getModel(@QueryParam("id") String id) {
+    @DELETE
+    @Path("extension/model/{modelId}")
+    public Response deleteModel(@PathParam("modelId") String modelId) {
+        if (modelId == null) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST).entity("modelId parameter is mandatory").build());
+        }
         if (!ctx.getPrincipal().isAdministrator()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
-            String model = Framework.getService(AIConfigurationService.class).getXML("model", ModelDescriptor.class);
-            return Response.ok(model).build();
-        } catch (NuxeoException | IOException e) {
+            Framework.getService(AIConfigurationService.class).remove(modelId);
+            return Response.noContent().build();
+        } catch (NuxeoException e) {
             log.error("Cannot get all models", e);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
