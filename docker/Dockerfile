@@ -1,4 +1,12 @@
 ARG PLATFORM_VERSION
+FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION} as builder
+
+USER $NUXEO_USER
+ARG CLID
+COPY *.zip /docker-entrypoint-initnuxeo.d/
+RUN NUXEO_CLID="${CLID}" /docker-entrypoint.sh nuxeoctl mp-list && \
+    rm $NUXEO_HOME/configured
+
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
 ARG PLATFORM_VERSION
@@ -18,12 +26,5 @@ LABEL org.opencontainers.image.authors="Nuxeo AI <ai-team@nuxeo.com>"
 LABEL org.opencontainers.image.vendor="Nuxeo"
 LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo.com/)."
 
-#USER 0
-#RUN curl -f -Lo /install-packages.sh https://raw.githubusercontent.com/nuxeo/nuxeo/master/docker/slim/install-packages.sh && \
-#  chmod a+rx /install-packages.sh
-#
-#USER $NUXEO_USER
-COPY nuxeo-ai-core-*.zip /tmp/nuxeo-ai-core.zip
-#COPY $NUXEO_CONF $NUXEO_HOME/bin/nuxeo.conf
-#COPY /etc/nuxeo/nuxeo.conf.template $NUXEO_HOME/bin/nuxeo.conf
-#RUN /install-packages.sh --clid ${CLID} /tmp/nuxeo-ai-core.zip
+RUN rm -rf /opt/nuxeo/server/*
+COPY --chown=$NUXEO_USER --from=builder $NUXEO_HOME/ /opt/nuxeo/server
