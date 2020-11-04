@@ -63,7 +63,7 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
 
     @Override
     public String getId() {
-        return UUID.randomUUID().toString();
+        return type;
     }
 
     @XObject("threshold")

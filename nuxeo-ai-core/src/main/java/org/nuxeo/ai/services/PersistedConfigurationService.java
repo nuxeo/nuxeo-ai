@@ -22,6 +22,8 @@ package org.nuxeo.ai.services;
 import java.io.IOException;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import org.nuxeo.runtime.model.Descriptor;
 
 /**
@@ -60,6 +62,7 @@ public interface PersistedConfigurationService {
      * @return {@link Descriptor}
      * @throws IOException if read from Persistent layer fails
      */
+    @Nullable
     Descriptor retrieve(String key) throws IOException;
 
     /**

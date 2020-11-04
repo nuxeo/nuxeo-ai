@@ -89,6 +89,9 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
     @Override
     public Descriptor retrieve(String key) throws IOException {
         byte[] bytes = getStore().get(key);
+        if (bytes == null) {
+            return null;
+        }
         XMap xmap = reader.getXMap();
         Descriptor descriptor;
         try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
@@ -147,7 +150,8 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
 
     @Override
     public void remove(String id) {
-        getStore().put(id, (byte[]) null);
+        getStore().put(id, (byte[]) null, 1L);
+        this.removeFromKeys(id);
     }
 
     @Override
@@ -156,7 +160,9 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
         if (bytes != null) {
             Predicate<String> isEntry = item -> item.equals(contribKey);
             String allKeys = new String(bytes, StandardCharsets.UTF_8);
-            Arrays.asList(allKeys.split(",")).removeIf(isEntry);
+            List<String> allKeysList = new ArrayList<>(Arrays.asList(allKeys.split(",")));
+            allKeysList.removeIf(isEntry);
+            allKeys = String.join("'", allKeysList);
             getStore().put(ALL_KEYS, allKeys);
         }
     }
