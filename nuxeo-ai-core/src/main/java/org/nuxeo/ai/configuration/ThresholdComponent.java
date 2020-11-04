@@ -35,7 +35,6 @@ import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
@@ -202,11 +201,14 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         try {
             Descriptor desc = pcs.retrieve(contribKey);
+            if (desc == null) {
+                this.typeThresholds.remove(contribKey);
+            }
             if (desc instanceof ThresholdConfiguratorDescriptor) {
                 this.reload(desc);
             }
         } catch (IOException e) {
-            log.error("Cannot retrieve the descriptor with " + contribKey , e);
+            log.error("Cannot retrieve the descriptor with " + contribKey, e);
             pcs.removeFromKeys(contribKey);
         }
     }
