@@ -126,6 +126,7 @@ pipeline {
     stages {
         stage('Init') {
             steps {
+                setGitHubBuildStatus('init')
                 container('platform1010') {
                     sh """#!/bin/bash
 jx step git credentials
@@ -151,6 +152,11 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
 """
                         }
                     }
+                }
+            }
+            post {
+                always {
+                    setGitHubBuildStatus('init')
                 }
             }
         }
@@ -187,15 +193,17 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
             steps {
                 setGitHubBuildStatus('build/docker')
                 container('platform1010') {
-                    sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
-                    withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
-                        dir('docker') {
-                            echo "Build preview image"
-                            sh 'printenv|sort|grep VERSION'
-                            sh """
+                    sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/nuxeo-ai-core.zip"
+                    withCredentials([string(credentialsId: 'instance-clid', variable: 'CLID')]) {
+                        withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
+                            dir('docker') {
+                                echo "Build preview image"
+                                sh 'printenv|sort|grep VERSION'
+                                sh """
 envsubst < skaffold.yaml > skaffold.yaml~gen
 skaffold build -f skaffold.yaml~gen
 """
+                            }
                         }
                     }
                 }
@@ -224,6 +232,7 @@ skaffold build -f skaffold.yaml~gen
                 setGitHubBuildStatus('charts/preview')
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform1010') {
+                        echo "Deploying AI Core as ${PREVIEW_URL}/nuxeo"
                         withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
                             withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${normalizeLabel(BRANCH_NAME)}"]) {
                                 dir('charts/preview') {

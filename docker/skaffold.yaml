@@ -13,6 +13,7 @@ build:
           SCM_REF: "${SCM_REF}"
           VERSION: "${VERSION}"
           PLATFORM_VERSION: "${PLATFORM_VERSION}"
+          CLID: "${CLID}"
         cache:
           repo: ${DOCKER_REGISTRY}/${ORG}/cache
   cluster:
