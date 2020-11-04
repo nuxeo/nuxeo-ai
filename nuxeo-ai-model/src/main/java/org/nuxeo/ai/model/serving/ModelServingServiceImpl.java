@@ -81,6 +81,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     @Override
     public void reload(Descriptor desc) {
+        String labels =((ModelDescriptor)desc).getInfo().get("modelLabel");
+        // TODO
         this.registerContribution(desc, MODELS_AP, null);
         this.addModel((ModelDescriptor) desc);
     }
@@ -113,6 +115,11 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         try {
             Descriptor desc = pcs.retrieve(contribKey);
+            if (desc == null) {
+                this.models.remove(contribKey);
+                this.predicates.remove(contribKey);
+                this.filterPredicates.remove(contribKey);
+            }
             if (desc instanceof ModelDescriptor) {
                 this.reload(desc);
             }
