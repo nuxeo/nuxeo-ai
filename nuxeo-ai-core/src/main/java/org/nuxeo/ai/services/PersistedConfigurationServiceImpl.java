@@ -89,6 +89,9 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
     @Override
     public Descriptor retrieve(String key) throws IOException {
         byte[] bytes = getStore().get(key);
+        if (bytes == null) {
+            return null;
+        }
         XMap xmap = reader.getXMap();
         Descriptor descriptor;
         try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {

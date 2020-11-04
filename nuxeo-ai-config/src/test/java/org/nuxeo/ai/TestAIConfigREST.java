@@ -12,7 +12,6 @@
 package org.nuxeo.ai;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -125,7 +124,7 @@ public class TestAIConfigREST extends BaseTest {
     }
 
     @Test
-    public void iCanRetrieveThresholds() {
+    public void iCanRetrieveDeleteThresholds() {
         this.injectThresholds();
         try (CloseableClientResponse response = getResponse(RequestType.GET, "aicore/extension/thresholds",
                 Collections.singletonMap("Accept", "application/xml"))) {
@@ -133,8 +132,12 @@ public class TestAIConfigREST extends BaseTest {
             String output = response.getEntity(String.class);
             assertThat(output).isNotNull().isNotEmpty();
             assertThat(output).contains("<thresholdConfiguration");
-        } catch (Exception e) {
-            fail(e.getMessage());
+        }
+        try (CloseableClientResponse response = getResponse(RequestType.DELETE, "aicore/extension/thresholds/File",
+                Collections.singletonMap("Accept", "application/xml"))) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.NO_CONTENT.getStatusCode());
+            float thresholdValue = Framework.getService(ThresholdService.class).getThreshold(file, DC_DESCRIPTION);
+            assertThat(thresholdValue).isNull();
         }
     }
 
@@ -153,24 +156,20 @@ public class TestAIConfigREST extends BaseTest {
     }
 
     @Test
-    public void iCanSetRetrieveModelDefinition() {
+    public void iCanSetDeleteModelDefinition() {
         String id = "test";
         RuntimeModel model = modelService.getModel(id);
         assertThat(model).isNull();
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/model", modelDefinition,
-                Collections.singletonMap("Content-Type", "application/xml"))) {
+        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/model/" + id,
+                modelDefinition, Collections.singletonMap("Content-Type", "application/xml"))) {
             assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
             model = modelService.getModel(id);
             assertThat(model).isNotNull();
         }
-        try (CloseableClientResponse response = getResponse(RequestType.GET, "aicore/extension/model/" + id,
-                Collections.singletonMap("Accept", "application/xml"))) {
-            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-            String output = response.getEntity(String.class);
-            assertThat(output).isNotNull().isNotEmpty();
-            assertThat(output).contains("<model id=\"" + id);
-        } catch (Exception e) {
-            fail(e.getMessage());
+        try (CloseableClientResponse response = getResponse(RequestType.DELETE, "aicore/extension/model/" + id)) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.NO_CONTENT.getStatusCode());
+            model = modelService.getModel(id);
+            assertThat(model).isNull();
         }
     }
 }

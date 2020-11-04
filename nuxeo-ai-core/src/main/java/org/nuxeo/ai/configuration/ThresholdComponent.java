@@ -202,6 +202,9 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         try {
             Descriptor desc = pcs.retrieve(contribKey);
+            if(desc==null){
+
+            }
             if (desc instanceof ThresholdConfiguratorDescriptor) {
                 this.reload(desc);
             }
