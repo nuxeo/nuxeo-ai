@@ -123,18 +123,20 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     @Override
     public void addModel(ModelDescriptor descriptor) {
-
         if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
             throw new IllegalArgumentException(
                     String.format("The input types %s for service %s must be defined in the %s vocabulary",
                             descriptor.getInputs(), descriptor.id, AI_DATATYPES));
         }
 
+        configs.putIfAbsent(descriptor.id, descriptor);
+
         log.debug("Registering a custom model as {}, info is {}.", descriptor.id, descriptor.info);
         RuntimeModel model = descriptor.getModel();
         if (model instanceof EnrichmentProvider) {
             Framework.getService(AIComponent.class).addEnrichmentProvider(descriptor.id, (EnrichmentProvider) model);
         }
+
         models.put(descriptor.id, model);
         predicates.put(descriptor.id, makePredicate(descriptor.getInputs(), descriptor.filter.get()));
         filterPredicates.put(descriptor.id, descriptor.filter.get());

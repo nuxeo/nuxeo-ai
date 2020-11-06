@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.model.serving.update.ModelServing.test" version="1.0">
+
+  <extension target="org.nuxeo.ecm.directory.GenericDirectory" point="directories">
+
+    <directory name="template-directory" template="true">
+      <createTablePolicy>on_missing_columns</createTablePolicy>
+      <idField>id</idField>
+    </directory>
+
+    <directory name="template-vocabulary" template="true" extends="template-directory">
+      <schema>vocabulary</schema>
+      <idField>id</idField>
+    </directory>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
+    <schema name="complexSchema" src="schema/complex-schema.xsd" prefix="cs" />
+    <schema name="documentResolver" src="schema/documentResolver.xsd" prefix="dr" />
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
+    <doctype name="FileRefDoc" extends="File">
+      <schema name="documentResolver" />
+    </doctype>
+  </extension>
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="xyz">
+      <filter primaryType="FileRefDoc"/>
+      <config name="transientStore">testTransient</config>
+      <config name="conversionService">superSpecialConverter</config>
+      <config name="liveness.uri">http://localhost:5089/health</config>
+      <config name="liveness.methodName">GET</config>
+      <config name="minConfidence">0.45</config>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+        <property name="file:content" type="img"/>
+        <property name="ecm:mixinType" type="cat"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
+      <info name="modelName">mockTestModel</info>
+      <info name="modelVersion">1</info>
+      <info name="modelLabel">testing</info>
+    </model>
+  </extension>
+
+  <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
+    <model id="customSuggest">
+      <filter primaryType="FileRefDoc"/>
+      <config name="transientStore">testTransient</config>
+      <config name="useLabels">false</config>
+      <inputProperties>
+        <property name="dc:title" type="txt"/>
+        <property name="dc:subjects" type="cat"/>
+      </inputProperties>
+      <outputProperties>
+        <property name="dc:description" type="txt"/>
+      </outputProperties>
+      <info name="modelName">mockTestModel</info>
+      <info name="modelLabel">testing</info>
+    </model>
+  </extension>
+
+</component>

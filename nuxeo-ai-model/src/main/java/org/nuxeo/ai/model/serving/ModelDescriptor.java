@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -67,10 +66,10 @@ public class ModelDescriptor implements Descriptor {
     public DocumentPredicate filter;
 
     @XNode("inputProperties")
-    protected InputProperties inputProperties;
+    public InputProperties inputProperties;
 
     @XNode("outputProperties")
-    protected OutputProperties outputProperties;
+    public OutputProperties outputProperties;
 
     @XNode("@class")
     @JsonIgnore
@@ -121,7 +120,7 @@ public class ModelDescriptor implements Descriptor {
 
         @XNode("@primaryType")
         @JsonProperty
-        String primaryType;
+        public String primaryType;
 
         @Override
         public Predicate<DocumentModel> get() {
@@ -131,14 +130,24 @@ public class ModelDescriptor implements Descriptor {
 
     @XObject("inputProperties")
     public static class InputProperties {
+
         @XNodeList(value = "property", type = HashSet.class, componentType = ModelProperty.class)
         protected Set<ModelProperty> properties = new HashSet<>();
+
+        public void setProperties(Set<ModelProperty> properties) {
+            this.properties = properties;
+        }
     }
 
     @XObject("outputProperties")
     public static class OutputProperties {
+
         @XNodeList(value = "property", type = HashSet.class, componentType = ModelProperty.class)
         protected Set<ModelProperty> properties = new HashSet<>();
+
+        public void setProperties(Set<ModelProperty> properties) {
+            this.properties = properties;
+        }
     }
 
 }

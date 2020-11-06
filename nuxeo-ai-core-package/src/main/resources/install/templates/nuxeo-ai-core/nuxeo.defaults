@@ -47,3 +47,6 @@ nuxeo.ai.insight.datasource.label=dev
 nuxeo.ai.continuous.export.enable=false
 # At 03:00 AM, every 7 days
 nuxeo.ai.continuous.export.cron.interval=0 0 3 */7 * ?
+
+# Every hour
+nuxeo.ai.model.serving.cron.update.interval=0/1 0 * ? * * *
