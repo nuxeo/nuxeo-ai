@@ -187,7 +187,7 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldGetModelsFromCloud() throws IOException {
-        JSONBlob models = client.getCloudAIModels();
+        JSONBlob models = client.getAllModels();
         @SuppressWarnings("unchecked")
         Map<String, Serializable> map = LOCAL_OM.readValue(models.getString(), Map.class);
         assertThat(map).containsKey("entries");
@@ -195,9 +195,9 @@ public class CloudClientTest {
     }
 
     @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-datasource-test.xml")
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-bad-test.xml")
     public void shouldGetEmptyModelsOnWrongDatasource() throws IOException {
-        JSONBlob models = client.getCloudAIModels();
+        JSONBlob models = client.getModelsByDatasource();
 
         @SuppressWarnings("unchecked")
         Map<String, Serializable> map = LOCAL_OM.readValue(models.getString(), Map.class);

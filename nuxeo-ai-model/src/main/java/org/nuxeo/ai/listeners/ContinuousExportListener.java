@@ -116,7 +116,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
      */
     protected List<String> getModelIds(CloudClient client) {
         try {
-            JSONBlob models = client.getCloudAIModels();
+            JSONBlob models = client.getModelsByDatasource();
             @SuppressWarnings("unchecked")
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {

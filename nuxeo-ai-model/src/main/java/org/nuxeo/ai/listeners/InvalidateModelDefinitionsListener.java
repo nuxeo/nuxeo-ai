@@ -84,7 +84,7 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
         Map<String, ModelDescriptor> all;
         try {
             CloudClient cc = Framework.getService(CloudClient.class);
-            JSONBlob models = cc.getCloudAIModels();
+            JSONBlob models = cc.getPublishedModels();
             @SuppressWarnings("unchecked")
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {
