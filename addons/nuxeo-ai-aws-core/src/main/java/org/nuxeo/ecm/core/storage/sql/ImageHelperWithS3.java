@@ -19,10 +19,13 @@
 package org.nuxeo.ecm.core.storage.sql;
 
 import java.util.function.BiFunction;
+
+import org.nuxeo.ecm.blob.s3.S3BlobProvider;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
+
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.Video;
 import com.amazonaws.services.textract.model.Document;
@@ -39,11 +42,9 @@ public class ImageHelperWithS3 {
      * Gets the image from the S3BinaryManager as a reference to an S3 object
      */
     public Image getImage(ManagedBlob blob) {
-        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (s3BinaryManager, key) ->
-                new com.amazonaws.services.rekognition.model
-                        .S3Object()
-                        .withName(key)
-                        .withBucket(s3BinaryManager.getBucketName()));
+        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (blobProvider,
+                key) -> new com.amazonaws.services.rekognition.model.S3Object().withName(key)
+                                                                               .withBucket(bucketName(blobProvider)));
         if (s3Object != null) {
             return new Image().withS3Object(s3Object);
         }
@@ -54,11 +55,9 @@ public class ImageHelperWithS3 {
      * Gets the image from the S3BinaryManager as a reference to an S3 object
      */
     public Video getVideo(ManagedBlob blob) {
-        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (s3BinaryManager, key) ->
-                new com.amazonaws.services.rekognition.model
-                        .S3Object()
-                        .withName(key)
-                        .withBucket(s3BinaryManager.getBucketName()));
+        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (blobProvider,
+                key) -> new com.amazonaws.services.rekognition.model.S3Object().withName(key)
+                                                                               .withBucket(bucketName(blobProvider)));
         if (s3Object != null) {
             return new Video().withS3Object(s3Object);
         }
@@ -67,14 +66,13 @@ public class ImageHelperWithS3 {
 
     /**
      * Gets the image from the S3BinaryManager as a reference to an S3 object as a Document
+     * 
      * @since 2.1.2
      */
     public Document getDocument(ManagedBlob blob) {
-        com.amazonaws.services.textract.model.S3Object s3Object = getS3Object(blob, (s3BinaryManager, key) ->
-                new com.amazonaws.services.textract.model
-                        .S3Object()
-                        .withName(key)
-                        .withBucket(s3BinaryManager.bucketName));
+        com.amazonaws.services.textract.model.S3Object s3Object = getS3Object(blob, (blobProvider,
+                key) -> new com.amazonaws.services.textract.model.S3Object().withName(key)
+                                                                            .withBucket(bucketName(blobProvider)));
         if (s3Object != null) {
             return new Document().withS3Object(s3Object);
         }
@@ -84,15 +82,27 @@ public class ImageHelperWithS3 {
     /**
      * Gets the S3Object from the S3BinaryManager
      */
-    public <R> R getS3Object(ManagedBlob blob, BiFunction<S3BinaryManager, String, R> s3ObjectSupplier) {
+    public <R> R getS3Object(ManagedBlob blob, BiFunction<BlobProvider, String, R> s3ObjectSupplier) {
         BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         if (blobProvider instanceof S3BinaryManager) {
             S3BinaryManager s3BinaryManager = (S3BinaryManager) blobProvider;
-            R s3Object = s3ObjectSupplier.apply(s3BinaryManager, s3BinaryManager.getBucketPrefix() + blob.getKey());
-            if (s3Object != null) {
-                return s3Object;
-            }
+            return s3ObjectSupplier.apply(s3BinaryManager, s3BinaryManager.getBucketPrefix() + blob.getKey());
+        } else if (blobProvider instanceof S3BlobProvider) {
+            S3BlobProvider provider = (S3BlobProvider) blobProvider;
+            return s3ObjectSupplier.apply(provider, provider.config.bucketPrefix + blob.getKey());
         }
+
+        return null;
+    }
+
+    public String bucketName(BlobProvider provider) {
+        if (provider instanceof S3BinaryManager) {
+            return ((S3BinaryManager) provider).bucketName;
+        } else if (provider instanceof S3BlobProvider) {
+            return ((S3BlobProvider) provider).config.bucketName;
+
+        }
+
         return null;
     }
 

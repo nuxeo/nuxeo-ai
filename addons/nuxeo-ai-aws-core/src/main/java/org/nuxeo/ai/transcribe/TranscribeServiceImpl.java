@@ -20,15 +20,11 @@
 package org.nuxeo.ai.transcribe;
 
 import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
-import static org.nuxeo.ai.transcribe.TranscribeWork.DEFAULT_LANG_CODE;
-import static org.nuxeo.ecm.core.storage.sql.S3BinaryManager.BUCKET_NAME_PROPERTY;
-import static org.nuxeo.ecm.core.storage.sql.S3BinaryManager.BUCKET_PREFIX_PROPERTY;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ecm.blob.s3.S3BlobProvider;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobManager;
@@ -140,11 +137,20 @@ public class TranscribeServiceImpl implements TranscribeService {
             throw new NuxeoException("Cannot set URI: provided Blob is null");
         }
 
-        if (provider instanceof S3BinaryManager) {
-            S3BinaryManager s3bm = (S3BinaryManager) provider.getBinaryManager();
-            Map<String, String> props = s3bm.getProperties();
-            String bucket = props.get(BUCKET_NAME_PROPERTY);
-            String prefix = props.get(BUCKET_PREFIX_PROPERTY);
+        if ((provider instanceof S3BinaryManager) || (provider instanceof S3BlobProvider)) {
+
+            String bucket;
+            String prefix;
+
+            if (provider instanceof S3BinaryManager) {
+                S3BinaryManager s3bm = (S3BinaryManager) provider;
+                bucket = s3bm.getBucketName();
+                prefix = s3bm.getBucketPrefix();
+            } else {
+                S3BlobProvider s3bp = (S3BlobProvider) provider;
+                bucket = s3bp.config.bucketName;
+                prefix = s3bp.config.bucketPrefix;
+            }
 
             try {
                 return new URI("s3://"
