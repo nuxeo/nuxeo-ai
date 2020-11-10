@@ -47,6 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Supplier;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -71,6 +72,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+
 import okhttp3.Response;
 
 /**
@@ -362,8 +364,27 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public JSONBlob getCloudAIModels() throws IOException {
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, datasource, "models?properties=ai_model");
+    public JSONBlob getAllModels() throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
+                "models?properties=ai_model");
+        return getModels(modelsPath);
+    }
+
+    @Override
+    public JSONBlob getModelsByDatasource() throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
+                "models?properties=ai_model&datasource=" + datasource);
+        return getModels(modelsPath);
+    }
+
+    @Override
+    public JSONBlob getPublishedModels() throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
+                "models?properties=ai_model&publishState=published&label=" + datasource);
+        return getModels(modelsPath);
+    }
+
+    protected JSONBlob getModels(Path modelsPath) throws IOException {
         Response response = getClient().get(modelsPath.toString());
         if (response.body() == null) {
             log.warn("Could not resolve any AI Models");
@@ -373,6 +394,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         String body = response.body().string();
         return new JSONBlob(body);
     }
+
 
     @Nullable
     @Override
