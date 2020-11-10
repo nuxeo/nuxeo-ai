@@ -6,6 +6,12 @@
               class="org.nuxeo.ai.listeners.ContinuousExportListener">
       <event>startContinuousExport</event>
     </listener>
+
+    <listener name="deletedModelListener" async="false" postCommit="false"
+              class="org.nuxeo.ai.listeners.DeletedModelListener" priority="10">
+      <event>versionRemoved</event>
+      <event>documentRemoved</event>
+    </listener>
   </extension>
 
 </component>
