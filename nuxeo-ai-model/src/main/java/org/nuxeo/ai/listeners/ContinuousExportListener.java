@@ -73,10 +73,10 @@ public class ContinuousExportListener implements PostCommitEventListener {
 
     private static final String IS_VERSION_PROP = "ecm:isVersion";
 
-    private static final String ENTRIES_KEY = "entries";
+    protected static final String DEFAULT_REPO = "default";
 
-    private static final String DEFAULT_REPO = "default";
-    
+    public static final String ENTRIES_KEY = "entries";
+
     public static final String START_CONTINUOUS_EXPORT = "startContinuousExport";
 
     public static final String FORCE_EXPORT = "forceContinuousExport";
@@ -116,7 +116,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
      */
     protected List<String> getModelIds(CloudClient client) {
         try {
-            JSONBlob models = client.getCloudAIModels();
+            JSONBlob models = client.getModelsByDatasource();
             @SuppressWarnings("unchecked")
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {

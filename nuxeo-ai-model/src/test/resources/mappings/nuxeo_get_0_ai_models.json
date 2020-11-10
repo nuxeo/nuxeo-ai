@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/v1/ai/mockTestProject/preprod/models?properties=ai_model"
+    "url": "/api/v1/ai/mockBadProject/models?properties=ai_model&datasource=dev"
   },
   "response": {
     "status": 200,
