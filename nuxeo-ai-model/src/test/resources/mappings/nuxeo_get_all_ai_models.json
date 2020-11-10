@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/api/v1/ai/mockTestProject/models?properties=ai_model&publishState=published&label=dev"
+    "url": "/api/v1/ai/mockTestProject/models?properties=ai_model"
   },
   "response": {
     "status": 200,

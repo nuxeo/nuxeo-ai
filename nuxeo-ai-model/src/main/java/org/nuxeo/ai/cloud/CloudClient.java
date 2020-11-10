@@ -72,7 +72,19 @@ public interface CloudClient {
      * @return a list of AI Models retrieved from AI Cloud
      * @throws IOException
      */
-    JSONBlob getCloudAIModels() throws IOException;
+    JSONBlob getAllModels() throws IOException;
+
+    /**
+     * @return a list of AI Models filtered by datasource retrieved from AI Cloud
+     * @throws IOException
+     */
+    JSONBlob getModelsByDatasource() throws IOException;
+
+    /**
+     * @return a list of AI Models that's been published retrieved from AI Cloud
+     * @throws IOException
+     */
+    JSONBlob getPublishedModels() throws IOException;
 
     /**
      * @param modelId of AI_Model
