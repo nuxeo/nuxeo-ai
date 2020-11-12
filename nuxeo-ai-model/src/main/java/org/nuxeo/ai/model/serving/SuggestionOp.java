@@ -95,7 +95,9 @@ public class SuggestionOp {
         if (updatedDoc != null) {
             for (String schema : doc.getSchemas()) {
                 for (Property prop : updatedDoc.getPropertyObjects(schema)) {
-                    doc.setPropertyValue(prop.getName(), prop.getValue());
+                    if (prop.getValue() != null) {
+                        doc.setPropertyValue(prop.getName(), prop.getValue());
+                    }
                 }
             }
         }
