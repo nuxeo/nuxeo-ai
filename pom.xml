@@ -9,7 +9,7 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>3.0.0-sprint3a-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
