@@ -29,7 +29,6 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MIN_DOC_COUNT_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
@@ -92,12 +91,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String DEFAULT_NUM_TERMS = "200";
 
-    public static final String DEFAULT_MIN_TERMS = "15";
-
     static {
         TERM_PROPS = new Properties();
         TERM_PROPS.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
-        TERM_PROPS.setProperty(AGG_MIN_DOC_COUNT_PROP, DEFAULT_MIN_TERMS);
     }
 
     protected static final Properties EMPTY_PROPS = new Properties();
