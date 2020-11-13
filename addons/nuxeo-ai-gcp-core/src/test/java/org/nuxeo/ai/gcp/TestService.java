@@ -271,6 +271,25 @@ public class TestService {
         return blobTextFromDoc;
     }
 
+    @Test
+    public void shouldCallGCPImagePropertiesProvider() throws IOException {
+        EnrichmentProvider ep = aic.getEnrichmentProvider("gcp.imageProperties");
+        assertThat(ep).isNotNull();
+
+        BlobTextFromDocument btd = setupBlobTextFromDocument("sacre_coeur.jpg");
+        Collection<EnrichmentMetadata> metadataCollection = ep.enrich(btd);
+        assertEquals(1, metadataCollection.size());
+        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        assertNotNull(metadata);
+        assertEquals(btd.getRepositoryName(), metadata.context.repositoryName);
+        assertEquals(btd.getId(), metadata.context.documentRef);
+        assertEquals(1, metadata.context.digests.size());
+        assertEquals(btd.getBlobs().entrySet().iterator().next().getValue().getDigest(),
+                metadata.context.digests.iterator().next());
+        assertThat(metadata.getLabels()).isNotEmpty();
+    }
+
+
     protected ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key, key, blob.getEncoding(), blob.getLength());
     }
