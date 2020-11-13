@@ -60,6 +60,15 @@
       </mimeTypes>
       <option name="minConfidence">75</option>
     </enrichment>
+
+    <enrichment name="gcp.imageProperties" kind="/tagging/imageProperties"
+                class="org.nuxeo.ai.gcp.provider.ImagePropertiesEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">10</option>
+    </enrichment>
   </extension>
 
 </component>
