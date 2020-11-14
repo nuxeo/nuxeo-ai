@@ -45,6 +45,7 @@ import org.nuxeo.ecm.core.io.avro.AvroConstants;
 import org.nuxeo.ecm.core.schema.types.QName;
 import org.nuxeo.ecm.platform.picture.api.PictureView;
 import org.nuxeo.ecm.platform.picture.api.adapters.MultiviewPicture;
+import org.nuxeo.runtime.api.Framework;
 
 /**
  * Utilities to work with document properties
@@ -74,6 +75,15 @@ public class PropertyUtils {
     public static final String TEXT_TYPE = "txt";
 
     public static final String CATEGORY_TYPE = "cat";
+
+    public static final String AI_BLOB_MAX_SIZE_CONF_VAR = "nuxeo.ai.conversion.maxSize";
+
+    // 2GB Max by default
+    public static final String AI_BLOB_MAX_SIZE_VALUE = "2000000000";
+
+    public static final String AI_BLOB_RENDITION = "nuxeo.ai.conversion.rendition";
+
+    public static final String AI_BLOB_RENDITION_DEFAULT_VALUE = "Small";
 
     private static final Logger log = LogManager.getLogger(PropertyUtils.class);
 
@@ -225,13 +235,15 @@ public class PropertyUtils {
     /**
      * Get the best conversion of the original blob if exist. If not return the original blob.
      */
-    private static ManagedBlob getPictureConversion(DocumentModel doc, ManagedBlob originalContent) {
+    public static ManagedBlob getPictureConversion(DocumentModel doc, ManagedBlob originalContent) {
         MultiviewPicture managedConversion = doc.getAdapter(MultiviewPicture.class);
         // Check if multiview picture adapter can be accessible
         if (managedConversion == null) {
             return originalContent;
         }
+        String renditionName = Framework.getProperty(AI_BLOB_RENDITION, AI_BLOB_RENDITION_DEFAULT_VALUE);
         Optional<PictureView> pictureView = Arrays.stream(managedConversion.getViews())
+                                                  .filter(view -> renditionName.equals(view.getTitle()))
                                                   .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
                                                   .filter(view -> !view.getFilename().startsWith("empty_picture"))
                                                   .min(Comparator.comparingInt(PictureView::getWidth));

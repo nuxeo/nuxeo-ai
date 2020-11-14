@@ -24,10 +24,13 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
@@ -50,7 +53,10 @@ import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -65,10 +71,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
  */
 public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentProvider {
 
-    public static final String VERB_CLASSIFY = "classify";
-
-    public static final String VERB_REGRESS = "regress";
-
     public static final String VERB_PREDICT = "predict";
 
     public static final String PREDICTION_CUSTOM = "/prediction/custommodel";
@@ -82,8 +84,6 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     public static final String JSON_OUTPUTS = "output_names";
 
     public static final String JSON_LABELS = "_labels";
-
-    public static final String JSON_PROBABILITIES = "_prob";
 
     protected Set<String> inputNames;
 
@@ -119,7 +119,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             if (isNotBlank(json)) {
                 String uri = buildUri(client);
                 return client.post(uri, json, response -> {
-                    if (response.isSuccessful()) {
+                    if (response.isSuccessful() && response.body() != null) {
                         EnrichmentMetadata meta = handlePredict(response.body().string(), repositoryName, documentRef);
                         if (log.isDebugEnabled()) {
                             log.debug(getName() + ": prediction metadata is: " + MAPPER.writeValueAsString(meta));
@@ -166,28 +166,29 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 log.debug(getName() + ": response is: " + content);
             }
             JsonNode jsonResponse = MAPPER.readTree(content);
-            jsonResponse.get(JSON_RESULTS).elements().forEachRemaining(resultsNode -> {
-                resultsNode.get(JSON_OUTPUTS).elements().forEachRemaining(outputNode -> {
-                    String outputName = outputNode.asText();
-                    ArrayNode outputProbabilities = (ArrayNode) resultsNode.get(outputName);
-                    ArrayNode outputLabels = (ArrayNode) resultsNode.get(outputName + JSON_LABELS);
-                    List<EnrichmentMetadata.Label> labels = new ArrayList<>();
-                    if (outputLabels.size() == outputProbabilities.size()) {
-                        for (int i = 0; i < outputLabels.size(); i++) {
-                            float confidence = outputProbabilities.get(i).floatValue();
-                            if (confidence > minConfidence) {
-                                labels.add(new EnrichmentMetadata.Label(outputLabels.get(i).asText(), confidence, 0L));
-                            }
-                        }
-                    } else {
-                        log.warn("Mismatch of labels and probabilities cardinality");
-                    }
-                    if (!labels.isEmpty()) {
-                        results.put(outputName, labels);
-                    }
-                });
-
-            });
+            jsonResponse.get(JSON_RESULTS)
+                        .elements()
+                        .forEachRemaining(
+                                resultsNode -> resultsNode.get(JSON_OUTPUTS).elements().forEachRemaining(outputNode -> {
+                                    String outputName = outputNode.asText();
+                                    ArrayNode outputProbabilities = (ArrayNode) resultsNode.get(outputName);
+                                    ArrayNode outputLabels = (ArrayNode) resultsNode.get(outputName + JSON_LABELS);
+                                    List<EnrichmentMetadata.Label> labels = new ArrayList<>();
+                                    if (outputLabels.size() == outputProbabilities.size()) {
+                                        for (int i = 0; i < outputLabels.size(); i++) {
+                                            float confidence = outputProbabilities.get(i).floatValue();
+                                            if (confidence > minConfidence) {
+                                                labels.add(new EnrichmentMetadata.Label(outputLabels.get(i).asText(),
+                                                        confidence, 0L));
+                                            }
+                                        }
+                                    } else {
+                                        log.warn("Mismatch of labels and probabilities cardinality");
+                                    }
+                                    if (!labels.isEmpty()) {
+                                        results.put(outputName, labels);
+                                    }
+                                }));
         } catch (NullPointerException | IOException e) {
             log.warn(String.format("Unable to read the json response: %s", content), e);
         }
@@ -230,11 +231,21 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
         Map<String, Tensor> props = new HashMap<>(inputs.size());
         for (ModelProperty input : inputs) {
             String type = input.getType() == null ? "none" : input.getType();
-
             switch (type) {
             case IMAGE_TYPE:
-                props.put(input.getName(),
-                        Tensor.image(convertImageBlob(getPropertyValue(doc, input.getName(), Blob.class))));
+                Blob blob = getPropertyValue(doc, input.getName(), Blob.class);
+                if (blob == null) {
+                    return null;
+                }
+                // Get rendition if it exists
+                Blob rendition = getPictureConversion(doc, (ManagedBlob) blob);
+                // If Blob size is too big, just abort by returning null
+                if (rendition.getLength() < Long.parseLong(
+                        Framework.getProperty(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE))) {
+                    props.put(input.getName(), Tensor.image(convertImageBlob(rendition)));
+                } else {
+                    return null;
+                }
                 break;
             case TEXT_TYPE:
                 Serializable propVal = getPropertyValue(doc, input.getName());
@@ -258,8 +269,8 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             }
         }
 
-        String repoName = null;
-        String docId = null;
+        String repoName;
+        String docId;
 
         try {
             repoName = doc.getRepositoryName();
@@ -272,13 +283,30 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
         return predict(props, repoName, docId);
     }
 
-    @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {
         Map<String, Tensor> inputProperties = new HashMap<>();
-
+        CoreSession session = CoreInstance.getCoreSessionSystem(blobtext.getRepositoryName());
         for (Map.Entry<PropertyType, ManagedBlob> blobEntry : blobtext.computePropertyBlobs().entrySet()) {
             if (IMAGE_TYPE.equals(blobEntry.getKey().getType())) {
-                inputProperties.put(blobEntry.getKey().getName(), Tensor.image(convertImageBlob(blobEntry.getValue())));
+                ManagedBlob blob = blobEntry.getValue();
+                if (blob == null) {
+                    return emptyList();
+                }
+                Blob rendition = blob;
+                try {
+                    DocumentModel doc = session.getDocument(new IdRef(blobtext.getId()));
+                    // Get rendition if it exists
+                    rendition = getPictureConversion(doc, blob);
+                } catch (NuxeoException e) {
+                    log.warn("Cannot fall back on picture rendition", e);
+                }
+                // If Blob size is too big, just abort by returning null
+                if (rendition.getLength() < Long.parseLong(
+                        Framework.getProperty(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE))) {
+                    inputProperties.put(blobEntry.getKey().getName(), Tensor.image(convertImageBlob(rendition)));
+                } else {
+                    return emptyList();
+                }
             } else if (TEXT_TYPE.equals(blobEntry.getKey().getType())) {
                 inputProperties.put(blobEntry.getKey().getName(), Tensor.text(convertTextBlob(blobEntry.getValue())));
             }
