@@ -21,10 +21,13 @@ package org.nuxeo.ai.model.serving;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static junit.framework.TestCase.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.io.registry.context.RenderingContext.CtxBuilder.enrichDoc;
@@ -37,7 +40,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
 import javax.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,6 +72,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -152,6 +158,30 @@ public class TestModelServing {
 
         service = aiComponent.getEnrichmentProvider("customSuggest");
         assertNotNull(service);
+        Collection<EnrichmentMetadata> suggest = service.enrich(blobTextFromDoc);
+        EnrichmentMetadata enrichmentMetadata = suggest.iterator().next();
+        assertEquals(4, enrichmentMetadata.getLabels().size());
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void iCanConfigConversionMaxSize() throws IOException {
+        // Init conf var to very small blob size
+        Framework.getProperties().put(AI_BLOB_MAX_SIZE_CONF_VAR, "300");
+
+        // Init Enrichment
+        BlobTextFromDocument blobTextFromDoc = blobTestImage(manager);
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("xyz");
+        assertNotNull(service);
+        blobTextFromDoc.addProperty("dc:title", "My test doc");
+        blobTextFromDoc.addProperty("ecm:mixinType", "Versionable | Downloadable");
+
+        // Should return none as max size has been reached
+        Collection<EnrichmentMetadata> enriched = service.enrich(blobTextFromDoc);
+        assertThat(enriched).isEmpty();
+
+        // Put back conf var to very small blob size
+        Framework.getProperties().put(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE);
         Collection<EnrichmentMetadata> suggest = service.enrich(blobTextFromDoc);
         EnrichmentMetadata enrichmentMetadata = suggest.iterator().next();
         assertEquals(4, enrichmentMetadata.getLabels().size());
