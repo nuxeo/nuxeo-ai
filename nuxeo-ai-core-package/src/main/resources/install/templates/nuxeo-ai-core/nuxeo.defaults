@@ -15,6 +15,12 @@ nuxeo.enrichment.raiseEvent=true
 
 nuxeo.ai.export.tensorflow=true
 
+# Max size of blobs for conversion during predictions/exports (500MB by default)
+nuxeo.ai.conversion.maxSize=500000000
+
+# Rendition title for multipicture views to return for predictions/exports  (choices among Small, Medium, OriginalJpeg or custom one)
+nuxeo.ai.conversion.rendition=Small
+
 # Configuration for Export Stream
 nuxeo.ai.export.batch.size=
 nuxeo.ai.export.bucket.size=
