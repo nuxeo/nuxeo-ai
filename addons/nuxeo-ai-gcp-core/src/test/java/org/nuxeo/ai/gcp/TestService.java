@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.common.utils.FileUtils;
@@ -287,6 +288,28 @@ public class TestService {
         assertEquals(btd.getBlobs().entrySet().iterator().next().getValue().getDigest(),
                 metadata.context.digests.iterator().next());
         assertThat(metadata.getLabels()).isNotEmpty();
+    }
+
+    @Test
+    public void shouldCallGCPImageCropHintsProvider() throws IOException {
+        EnrichmentProvider ep = aic.getEnrichmentProvider("gcp.imageCropHints");
+        assertThat(ep).isNotNull();
+
+        BlobTextFromDocument btd = setupBlobTextFromDocument("sacre_coeur.jpg");
+        Collection<EnrichmentMetadata> metadataCollection = ep.enrich(btd);
+        assertEquals(1, metadataCollection.size());
+        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        assertNotNull(metadata);
+        assertEquals(btd.getRepositoryName(), metadata.context.repositoryName);
+        assertEquals(btd.getId(), metadata.context.documentRef);
+        assertEquals(1, metadata.context.digests.size());
+        assertEquals(btd.getBlobs().entrySet().iterator().next().getValue().getDigest(),
+                metadata.context.digests.iterator().next());
+        assertThat(metadata.getTags()).isNotEmpty();
+        assertThat(!metadata.getTags().get(0).getValues().isEmpty());
+        AIMetadata.Tag tag = metadata.getTags().get(0).getValues().get(0);
+        assertThat(tag.box.width > 0);
+        assertThat(tag.box.height > 0);
     }
 
 
