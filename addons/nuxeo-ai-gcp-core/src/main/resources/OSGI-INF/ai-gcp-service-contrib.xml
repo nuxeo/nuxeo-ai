@@ -69,6 +69,17 @@
       </mimeTypes>
       <option name="minConfidence">10</option>
     </enrichment>
+
+    <enrichment name="gcp.imageCropHints" kind="/tagging/imageCropHints"
+                class="org.nuxeo.ai.gcp.provider.CropHintsEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="minConfidence">10</option>
+      <option name="ratios">8.08,1.77,1.50,1.00</option>
+    </enrichment>
+
   </extension>
 
 </component>
