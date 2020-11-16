@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.textract;
 
-import java.util.Collections;
 import java.util.List;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;

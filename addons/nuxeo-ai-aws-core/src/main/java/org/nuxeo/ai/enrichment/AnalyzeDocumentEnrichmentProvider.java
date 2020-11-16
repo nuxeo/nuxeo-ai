@@ -30,12 +30,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ai.textract.TextractService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -47,6 +47,7 @@ import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Analyzes text in a document using AWS TextractService.
+ *
  * @since 2.1.2
  */
 public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
@@ -83,8 +84,8 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                AnalyzeDocumentResult result =
-                        Framework.getService(TextractService.class).analyzeDocument(blob.getValue(), features);
+                AnalyzeDocumentResult result = Framework.getService(TextractService.class)
+                                                        .analyzeDocument(blob.getValue(), features);
                 if (result != null && !result.getBlocks().isEmpty()) {
                     enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
                 }
@@ -97,24 +98,20 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
      * Process the result of the call
      */
     protected Collection<? extends EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc,
-                                                                      String propName,
-                                                                      List<Block> blocks) {
+            String propName, List<Block> blocks) {
 
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc);
         processWithProcessors(blobTextFromDoc, blocks, builder, name);
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", blocks));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(builder
-                                                 .withRawKey(rawKey)
-                                                 .withDocumentProperties(singleton(propName))
-                                                 .build());
+        return Collections.singletonList(
+                builder.withRawKey(rawKey).withDocumentProperties(singleton(propName)).build());
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return new RetryPolicy()
-                .abortOn(NuxeoException.class, FatalEnrichmentError.class)
-                .withMaxRetries(2)
-                .withBackoff(10, 60, TimeUnit.SECONDS);
+        return new RetryPolicy().abortOn(NuxeoException.class, FatalEnrichmentError.class)
+                                .withMaxRetries(2)
+                                .withBackoff(10, 60, TimeUnit.SECONDS);
     }
 }

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.StringUtils;
+
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.common.xmap.annotation.XNode;

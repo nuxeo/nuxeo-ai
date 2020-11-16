@@ -90,7 +90,7 @@ public class AWSHelper {
         try {
             Class.forName(S3_MANAGER_NAME);
             imageHelperWithS3 = Framework.getService(ConfigurationService.class)
-                                         .isBooleanPropertyFalse(CONFIG_USE_S3) ? null : new ImageHelperWithS3();
+                                         .isBooleanFalse(CONFIG_USE_S3) ? null : new ImageHelperWithS3();
         } catch (ClassNotFoundException e) {
             imageHelperWithS3 = null;
         }

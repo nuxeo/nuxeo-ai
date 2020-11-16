@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.pipes.functions;
 
-import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -72,9 +71,6 @@ public class FunctionsTest {
         Event event = getTestEvent(session);
 
         PreFilterFunction<Event, Event> func = new PreFilterFunction<>(event(), e -> e);
-        assertEquals("Filter passed so must be an event", event, func.apply(event));
-
-        func = new PreFilterFunction<>(event().and(Event::isPublic), e -> e);
         assertEquals("Filter passed so must be an event", event, func.apply(event));
 
         func = new PreFilterFunction<>(event().and(e -> !e.isImmediate()), e -> e);

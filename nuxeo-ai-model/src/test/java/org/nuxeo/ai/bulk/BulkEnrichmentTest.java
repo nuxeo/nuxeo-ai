@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -143,11 +143,10 @@ public class BulkEnrichmentTest {
         }
 
         // Call with Model param
-        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME,
-                nxql).user(session.getPrincipal().getName())
-                     .repository(session.getRepositoryName())
-                     .param(PARAM_MODEL, "basicBulkModel")
-                     .build();
+        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql,
+                session.getPrincipal().getName()).repository(session.getRepositoryName())
+                                                 .param(PARAM_MODEL, "basicBulkModel")
+                                                 .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
 
@@ -161,11 +160,10 @@ public class BulkEnrichmentTest {
         }
 
         // Call with XPaths param
-        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME,
-                nxql).user(session.getPrincipal().getName())
-                     .repository(session.getRepositoryName())
-                     .param(PARAM_XPATHS, (Serializable) Arrays.asList("dc:title"))
-                     .build();
+        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql,
+                session.getPrincipal().getName()).repository(session.getRepositoryName())
+                                                 .param(PARAM_XPATHS, (Serializable) Arrays.asList("dc:title"))
+                                                 .build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
 
@@ -177,7 +175,7 @@ public class BulkEnrichmentTest {
         }
 
         // Call with no params
-        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
+        removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(removed);
         txFeature.nextTransaction();
@@ -211,9 +209,9 @@ public class BulkEnrichmentTest {
         String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
                 testRoot.getId());
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
 
-        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang).user(
+        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
 
         DocumentModel fakeDE = session.createDocumentModel("/", "FakeDE", DATASET_EXPORT_TYPE);

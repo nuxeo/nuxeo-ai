@@ -25,7 +25,7 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.bulk.BulkDatasetExportAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
+import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,7 +41,7 @@ import org.nuxeo.ai.pipes.types.ExportStatus;
 import org.nuxeo.ai.pipes.types.ExportRecord;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.CloseableCoreSession;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.bulk.BulkService;
@@ -96,12 +96,11 @@ public class DatasetUpdateComputation extends AbstractComputation {
                 String blobId = export.getId();
                 if (writer.exists(blobId)) {
                     try {
-                        writer.complete(blobId)
-                                .ifPresent(blob -> {
-                                    if (command != null) {
-                                        updateDatasetDocument(command, blob, TRAINING_COMPUTATION.equals(name), export);
-                                    }
-                                });
+                        writer.complete(blobId).ifPresent(blob -> {
+                            if (command != null) {
+                                updateDatasetDocument(command, blob, TRAINING_COMPUTATION.equals(name), export);
+                            }
+                        });
                     } catch (IOException e) {
                         throw new NuxeoException("Unable to complete action " + commandId, e);
                     }
@@ -130,22 +129,20 @@ public class DatasetUpdateComputation extends AbstractComputation {
 
     private void updateDatasetDocument(BulkCommand cmd, Blob blob, boolean isTraining, ExportRecord export) {
         TransactionHelper.runInTransaction(() -> {
-            try (CloseableCoreSession session = openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
-                DocumentModel document = Framework.getService(DatasetExportService.class)
-                        .getCorpusOfBatch(session, export.getCommandId(), export.getId());
+            CoreSession session = getCoreSessionSystem(cmd.getRepository(), cmd.getUsername());
+            DocumentModel document = Framework.getService(DatasetExportService.class)
+                                              .getCorpusOfBatch(session, export.getCommandId(), export.getId());
 
-                if (document != null) {
-                    document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, getCount(export.getId()));
+            if (document != null) {
+                document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, getCount(export.getId()));
 
-                    String prop = isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA;
-                    document.setPropertyValue(prop, (Serializable) blob);
-                    session.saveDocument(document);
-                } else {
-                    log.warn("Unable to save blob {} for command {}.", blob.getDigest(), export.getCommandId());
-                    throw new NuxeoException("Unable to find DatasetExport with command " + export.getCommandId());
-                }
+                String prop = isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA;
+                document.setPropertyValue(prop, (Serializable) blob);
+                session.saveDocument(document);
+            } else {
+                log.warn("Unable to save blob {} for command {}.", blob.getDigest(), export.getCommandId());
+                throw new NuxeoException("Unable to find DatasetExport with command " + export.getCommandId());
             }
-
             return null;
         });
     }

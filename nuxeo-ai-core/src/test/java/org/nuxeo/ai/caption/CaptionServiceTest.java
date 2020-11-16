@@ -20,7 +20,7 @@
 package org.nuxeo.ai.caption;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.services.CaptionServiceImpl.TEXT_VTT_MIME_TYPE;

@@ -19,7 +19,6 @@
 package org.nuxeo.ai.pipes.services;
 
 import static org.nuxeo.ai.pipes.events.DirtyEventListener.DIRTY_EVENT_NAME;
-import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.RECORD_CODEC;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,7 +44,6 @@ import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.codec.CodecService;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.model.ComponentContext;
@@ -98,12 +96,9 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     public void start(ComponentContext context) {
         super.start(context);
         this.configs.forEach((key, value) -> addPipe(value));
-        this.textConfigs.forEach(d ->
-                                 d.consumer.streams.forEach(s ->
-                                     addBinaryTextListener(d.eventName, s.name, s.size,
-                                                           d.propertyName, d.inputPropertyName, d.windowSize)
-                                 )
-        );
+        this.textConfigs.forEach(d -> d.consumer.streams.forEach(
+                s -> addBinaryTextListener(d.eventName, s.name, s.size, d.propertyName, d.inputPropertyName,
+                        d.windowSize)));
     }
 
     @Override
@@ -140,8 +135,8 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Listening for %s event and sending it to %s", e, consumer.toString()));
                     }
-                    addEventPipe(e.name, descriptor.id, descriptor.getFunction(e),
-                                 descriptor.isAsync, descriptor.isPostCommit, consumer);
+                    addEventPipe(e.name, descriptor.id, descriptor.getFunction(e), descriptor.isAsync,
+                            descriptor.isPostCommit, consumer);
                 });
             });
         }
@@ -160,9 +155,10 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
      */
     @Override
     public void addBinaryTextListener(String eventName, String logName, int partitions, String propertyName,
-                                      String inputProperty, int windowSizeSeconds) {
+            String inputProperty, int windowSizeSeconds) {
         addLogConsumer(logName, partitions);
-        BinaryTextListener textListener = new BinaryTextListener(logName, propertyName, inputProperty, windowSizeSeconds);
+        BinaryTextListener textListener = new BinaryTextListener(logName, propertyName, inputProperty,
+                windowSizeSeconds);
         addEventListener(eventName, false, false, textListener);
     }
 
@@ -172,8 +168,8 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     }
 
     @Override
-    public <R> void addEventPipe(String eventName, String supplierId,
-                                 Function<Event, Collection<R>> eventFunction, boolean isAsync, boolean isPostCommit, Consumer<R> consumer) {
+    public <R> void addEventPipe(String eventName, String supplierId, Function<Event, Collection<R>> eventFunction,
+            boolean isAsync, boolean isPostCommit, Consumer<R> consumer) {
         EventConsumer<R> eventConsumer = new EventConsumer<>(eventFunction, consumer);
         NuxeoMetricSet pipeMetrics = new NuxeoMetricSet("nuxeo", "ai", "streams", eventName, supplierId);
         try {
@@ -181,7 +177,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
             registry.registerAll(pipeMetrics);
         } catch (IllegalArgumentException e) {
             log.warn(String.format("Metrics are already registered for %s %s, do you have a duplicate definition?",
-                                   eventName, supplierId));
+                    eventName, supplierId));
         }
         addEventListener(eventName, isAsync, isPostCommit, eventConsumer);
     }
@@ -192,7 +188,8 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
     @Override
     public void addEventListener(String eventName, boolean isAsync, boolean isPostCommit, EventListener eventConsumer) {
         EventService eventService = Framework.getService(EventService.class);
-        EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer, isAsync, isPostCommit);
+        EventListenerDescriptor listenerDescriptor = new DynamicEventListenerDescriptor(eventName, eventConsumer,
+                isAsync, isPostCommit);
         listenerDescriptors.add(listenerDescriptor);
         eventService.addEventListener(listenerDescriptor);
     }
@@ -204,10 +201,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
         Name log = Name.ofUrn(logName);
         manager.createIfNotExists(log, size);
-        CloseableLogAppender<Record> appender =
-                (CloseableLogAppender) manager.getAppender(log,
-                                                           Framework.getService(CodecService.class)
-                                                                    .getCodec(RECORD_CODEC, Record.class));
+        CloseableLogAppender<Record> appender = (CloseableLogAppender) manager.getAppender(log);
         LogAppenderConsumer consumer = new LogAppenderConsumer(appender);
         logAppenderConsumers.put(logName, consumer);
         return consumer;
