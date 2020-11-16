@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.google.cloud.vision.v1.ImageContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
@@ -101,7 +102,8 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
             Image img = Image.newBuilder().setContent(imgBytes).build();
             // TODO: Consider chaining via `setType` overload
             Feature feat = Feature.newBuilder().setType(getType()).setMaxResults(maxResults).build();
-            AnnotateImageRequest request = AnnotateImageRequest.newBuilder().addFeatures(feat).setImage(img).build();
+            AnnotateImageRequest request = AnnotateImageRequest.newBuilder().addFeatures(feat).
+                    setImageContext(getImageContext()).setImage(img).build();
             requests.add(request);
         }
 
@@ -149,6 +151,14 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
      * @return {@link com.google.cloud.vision.v1.Feature.Type} as the type of request
      */
     protected abstract Feature.Type getType();
+
+
+    /**
+     * @return {@link com.google.cloud.vision.v1.ImageContext} which contains parameters
+     */
+    protected ImageContext getImageContext() {
+        return ImageContext.getDefaultInstance();
+    }
 
     /**
      * @param response {@link AnnotateImageResponse} from GCP
