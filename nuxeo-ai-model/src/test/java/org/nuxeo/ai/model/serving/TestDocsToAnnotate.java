@@ -55,8 +55,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @RunWith(FeaturesRunner.class)
 @Features({ PlatformFeature.class, AutomationFeature.class })
 @Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/override-file-doctype.xml",
-        "org.nuxeo.ecm.platform.url.api", "org.nuxeo.ecm.platform.url.core", "org.nuxeo.ecm.platform.types.api",
-        "org.nuxeo.ecm.platform.types.core" })
+        "org.nuxeo.ecm.platform.url", "org.nuxeo.ecm.platform.types", "org.nuxeo.ecm.platform.types" })
 public class TestDocsToAnnotate extends BaseTest {
 
     @Rule
