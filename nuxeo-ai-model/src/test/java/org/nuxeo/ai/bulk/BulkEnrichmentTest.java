@@ -75,8 +75,7 @@ import com.google.common.collect.Sets;
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class,
         RepositoryElasticSearchFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
-@Deploy("org.nuxeo.ecm.platform.video.convert")
-@Deploy("org.nuxeo.ecm.platform.video.core")
+@Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
