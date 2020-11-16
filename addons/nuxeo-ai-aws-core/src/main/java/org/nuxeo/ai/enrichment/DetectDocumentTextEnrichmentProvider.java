@@ -33,7 +33,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ai.textract.TextractProcessor;
 import org.nuxeo.ai.textract.TextractService;
 import org.nuxeo.ecm.core.api.CoreInstance;

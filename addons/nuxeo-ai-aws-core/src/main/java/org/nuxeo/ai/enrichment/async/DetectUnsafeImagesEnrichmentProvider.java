@@ -36,7 +36,6 @@ import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;

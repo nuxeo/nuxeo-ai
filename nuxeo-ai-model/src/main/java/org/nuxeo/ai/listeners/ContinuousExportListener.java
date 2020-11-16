@@ -122,39 +122,38 @@ public class ContinuousExportListener implements PostCommitEventListener {
     /**
      * Initiates export of data defined by Corpus Delta of each AI_Model
      *
-     * @param client {@link CloudClient} Nuxeo Insight Cloud Client for REST communication
-     * @param uids a {@link List} of AI_Model ids
+     * @param client     {@link CloudClient} Nuxeo Insight Cloud Client for REST communication
+     * @param uids       a {@link List} of AI_Model ids
      * @param repository Nuxeo repository to use for System Session
      */
     protected void initiateExport(CloudClient client, List<String> uids, String repository) {
         DatasetExportService exportService = Framework.getService(DatasetExportService.class);
-        try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(repository)) {
-            for (String uid : uids) {
-                try {
-                    JSONBlob json = client.getCorpusDelta(uid);
-                    if (json == null) {
-                        continue;
-                    }
-
-                    CorpusDelta delta = MAPPER.readValue(json.getStream(), CorpusDelta.class);
-                    if (delta.isEmpty()) {
-                        continue;
-                    }
-                    String original = delta.getQuery();
-                    String modified = modifyQuery(original, delta.getEnd());
-                    if (checkMinimum(session, modified, delta.getMinSize())) {
-                        String corporaId = delta.getCorporaId();
-                        Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, corporaId);
-
-                        String jobId = exportService.export(session, modified, delta.getInputs(), delta.getOutputs(),
-                                DEFAULT_SPLIT, params);
-                        log.info("Initiating continues export for " + uid + " with job id " + jobId);
-                    } else {
-                        log.info("Not enough documents to export; skipping");
-                    }
-                } catch (IOException e) {
-                    log.error("Could not get corpus delta for model id " + uid, e);
+        CoreSession session = CoreInstance.getCoreSessionSystem(repository);
+        for (String uid : uids) {
+            try {
+                JSONBlob json = client.getCorpusDelta(uid);
+                if (json == null) {
+                    continue;
                 }
+
+                CorpusDelta delta = MAPPER.readValue(json.getStream(), CorpusDelta.class);
+                if (delta.isEmpty()) {
+                    continue;
+                }
+                String original = delta.getQuery();
+                String modified = modifyQuery(original, delta.getEnd());
+                if (checkMinimum(session, modified, delta.getMinSize())) {
+                    String corporaId = delta.getCorporaId();
+                    Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, corporaId);
+
+                    String jobId = exportService.export(session, modified, delta.getInputs(), delta.getOutputs(),
+                            DEFAULT_SPLIT, params);
+                    log.info("Initiating continues export for " + uid + " with job id " + jobId);
+                } else {
+                    log.info("Not enough documents to export; skipping");
+                }
+            } catch (IOException e) {
+                log.error("Could not get corpus delta for model id " + uid, e);
             }
         }
     }

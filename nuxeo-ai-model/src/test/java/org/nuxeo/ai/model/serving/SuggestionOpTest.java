@@ -72,8 +72,8 @@ import com.fasterxml.jackson.databind.node.TextNode;
  * Unit Tests the Suggestion Operation.
  */
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class, MockitoFeature.class})
-@Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class, MockitoFeature.class })
+@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml" })
 public class SuggestionOpTest {
 
     @Inject
@@ -153,7 +153,8 @@ public class SuggestionOpTest {
 
     @Test
     public void shouldResolvePropertiesFromSimpleDoc() throws OperationException {
-        SimpleDocumentModel simple = new SimpleDocumentModel("uid", "file", "common", "files", "dublincore", "relatedtext");
+        SimpleDocumentModel simple = SimpleDocumentModel.ofSchemas("uid", "file", "common", "files", "dublincore",
+                "relatedtext");
         simple.setPropertyValue("dc:title", "Been updated");
         simple.setPropertyValue("dc:description", "Coming from the update");
 
@@ -212,14 +213,12 @@ public class SuggestionOpTest {
     protected List<EnrichmentMetadata> getSamplePrediction() {
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder("/prediction/custommodel", "xyz",
                 Collections.emptySet(), "repoName", "docRef", Collections.emptySet());
-        builder.withLabels(Arrays.asList(
-                new LabelSuggestion("dr:docIdOnlyRef",
+        builder.withLabels(Arrays.asList(new LabelSuggestion("dr:docIdOnlyRef",
                         Arrays.asList(new AIMetadata.Label("123456", 0.8528175f),
-                                new AIMetadata.Label("not_finding_this_one", 0.864372f))),
-                new LabelSuggestion("dc:creator",
+                                new AIMetadata.Label("not_finding_this_one", 0.864372f))), new LabelSuggestion("dc:creator",
                         Arrays.asList(new AIMetadata.Label("me", 0.9528175f),
-                                new AIMetadata.Label("Administrator", 0.83437204f))),
-                new LabelSuggestion("dc:nature", Collections.singletonList(new AIMetadata.Label("report", 0.83437204f))),
+                                new AIMetadata.Label("Administrator", 0.83437204f))), new LabelSuggestion("dc:nature",
+                        Collections.singletonList(new AIMetadata.Label("report", 0.83437204f))),
                 new LabelSuggestion("dc:subjects", Arrays.asList(new AIMetadata.Label("NO_MATCH", 0.8650408f),
                         new AIMetadata.Label("music", 0.83437204f)))));
 
@@ -247,20 +246,20 @@ public class SuggestionOpTest {
         for (JsonNode suggestion : suggestions) {
             List<JsonNode> asProperty = suggestion.get("values").findValues("value");
             Set<String> entityType = asProperty.stream()
-                    .map(jsonNode -> jsonNode.get("entity-type"))
-                    .filter(Objects::nonNull)
-                    .map(JsonNode::asText)
-                    .collect(Collectors.toSet());
+                                               .map(jsonNode -> jsonNode.get("entity-type"))
+                                               .filter(Objects::nonNull)
+                                               .map(JsonNode::asText)
+                                               .collect(Collectors.toSet());
             switch (suggestion.get("property").asText()) {
-                case "dr:docIdOnlyRef":
-                    assertFalse(entityType.contains("document"));
-                    break;
-                case "dc:creator":
-                    assertTrue(entityType.contains("user"));
-                    break;
-                default:
-                    assertTrue(entityType.contains("directoryEntry"));
-                    break;
+            case "dr:docIdOnlyRef":
+                assertFalse(entityType.contains("document"));
+                break;
+            case "dc:creator":
+                assertTrue(entityType.contains("user"));
+                break;
+            default:
+                assertTrue(entityType.contains("directoryEntry"));
+                break;
             }
         }
     }

@@ -122,8 +122,8 @@ public class TestSuggestionOp {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldCall() throws OperationException, IOException {
 
-        DocumentModel referencedDoc = new DocumentModelImpl(null, "File", "123456", new Path("referenced doc"), null, null,
-                null, null, null, null, null);
+        DocumentModel referencedDoc = new DocumentModelImpl("File", "123456", new Path("referenced doc"), null,
+                null, null, null, null, false, null, null, null);
         session.importDocuments(Collections.singletonList(referencedDoc));
 
         String title = "My document suggestion";

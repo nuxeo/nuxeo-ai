@@ -19,7 +19,7 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;

@@ -20,7 +20,7 @@ package org.nuxeo.ai.bulk;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.stream.Collectors.groupingBy;
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

@@ -26,8 +26,8 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.types.ExportStatus;
-import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
@@ -67,26 +67,23 @@ public class DatasetUploadComputation extends AbstractComputation {
     }
 
     protected void uploadDataset(ExportStatus export, String commandId, BulkCommand command) {
-        try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(command.getRepository(),
-                command.getUsername())) {
-            DocumentModel document = Framework.getService(DatasetExportService.class)
-                    .getCorpusOfBatch(session, commandId, export.getId());
+        CoreSession session = CoreInstance.getCoreSessionSystem(command.getRepository(), command.getUsername());
+        DocumentModel document = Framework.getService(DatasetExportService.class)
+                                          .getCorpusOfBatch(session, commandId, export.getId());
 
-            if (document != null) {
-                CloudClient client = Framework.getService(CloudClient.class);
-                if (client.isAvailable()) {
-                    log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId,
-                            document.getId());
+        if (document != null) {
+            CloudClient client = Framework.getService(CloudClient.class);
+            if (client.isAvailable()) {
+                log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId, document.getId());
 
-                    // TODO: Attach corpus to corpora
-                    client.uploadedDataset(document);
-                } else {
-                    log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}",
-                            commandId, document.getId(), client.isAvailable());
-                }
+                // TODO: Attach corpus to corpora
+                client.uploadedDataset(document);
             } else {
-                log.error("Unable to find DatasetExport with job id " + commandId);
+                log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}", commandId,
+                        document.getId(), client.isAvailable());
             }
+        } else {
+            log.error("Unable to find DatasetExport with job id " + commandId);
         }
     }
 

@@ -69,7 +69,6 @@ import org.nuxeo.ai.pipes.types.ExportRecord;
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -133,15 +132,25 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
         @SuppressWarnings("unchecked")
         // re-create the properties for input and output
-        Set<PropertyType> outputs = ((List<Map<String, Serializable>>) properties.get(
-                OUTPUT_PARAMETERS)).stream()
-                                   .map(p -> new PropertyType((String) p.get("name"), (String) p.get("type")))
-                                   .collect(Collectors.toSet());
+        Set<PropertyType> outputs = ((List<Map<String, Serializable>>) properties.get(OUTPUT_PARAMETERS)).stream()
+                                                                                                         .map(p -> new PropertyType(
+                                                                                                                 (String) p
+                                                                                                                         .get("name"),
+                                                                                                                 (String) p
+                                                                                                                         .get("type")))
+                                                                                                         .collect(
+                                                                                                                 Collectors
+                                                                                                                         .toSet());
         @SuppressWarnings("unchecked")
-        Set<PropertyType> inputs = ((List<Map<String, Serializable>>) properties.get(
-                INPUT_PARAMETERS)).stream()
-                                  .map(p -> new PropertyType((String) p.get("name"), (String) p.get("type")))
-                                  .collect(Collectors.toSet());
+        Set<PropertyType> inputs = ((List<Map<String, Serializable>>) properties.get(INPUT_PARAMETERS)).stream()
+                                                                                                       .map(p -> new PropertyType(
+                                                                                                               (String) p
+                                                                                                                       .get("name"),
+                                                                                                               (String) p
+                                                                                                                       .get("type")))
+                                                                                                       .collect(
+                                                                                                               Collectors
+                                                                                                                       .toSet());
 
         String nxql = buildQueryFrom(docs);
         Blob stats = getStatisticsBlob(session, nxql, inputs, outputs);
@@ -191,21 +200,19 @@ public class ExportInitComputation extends AbstractBulkComputation {
     protected DatasetExport createDataset(CoreSession session, String original, Map<String, Serializable> modelParams,
             Set<PropertyType> inputs, Set<PropertyType> outputs, Blob stats, String batchId, int split) {
         return ExportHelper.runInTransaction(() -> {
-            try (CloseableCoreSession sess = CoreInstance.openCoreSessionSystem(session.getRepositoryName(),
-                    session.getPrincipal().getName())) {
+            CoreSession sess = CoreInstance.getCoreSessionSystem(session.getRepositoryName(),
+                    session.getPrincipal().getName());
+            setCorporaId(sess, original, outputs, inputs, modelParams);
+            DatasetExport dataset = createDataset(sess, original, inputs, outputs, split, stats, batchId);
+            dataset.setJobId(command.getId());
+            dataset.setBatchId(batchId);
 
-                setCorporaId(sess, original, outputs, inputs, modelParams);
-                DatasetExport dataset = createDataset(sess, original, inputs, outputs, split, stats, batchId);
-                dataset.setJobId(command.getId());
-                dataset.setBatchId(batchId);
+            DocumentModel document = dataset.getDocument();
 
-                DocumentModel document = dataset.getDocument();
+            propagateParameters(document, modelParams);
 
-                propagateParameters(document, modelParams);
-
-                sess.createDocument(document);
-                return dataset;
-            }
+            sess.createDocument(document);
+            return dataset;
         });
     }
 

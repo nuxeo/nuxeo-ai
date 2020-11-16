@@ -19,7 +19,7 @@
 package org.nuxeo.ai.cloud;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
