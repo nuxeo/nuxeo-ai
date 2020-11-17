@@ -14,32 +14,51 @@
       <xs:element name="digest" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
+
+  <xs:complexType name="prediction">
+    <xs:sequence>
+      <xs:element name="xpath" type="xs:string"/>
+      <xs:element name="model" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="predictionList">
+    <xs:sequence>
+      <xs:element name="prediction" type="nxrich:prediction" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:simpleType name="stringList">
     <xs:list itemType="xs:string"/>
   </xs:simpleType>
+
   <xs:complexType name="labelSuggestion">
     <xs:sequence>
       <xs:element name="label" type="xs:string" nillable="false" nxsv:nillable="false"/>
-      <xs:element name="confidence" type="xs:float"  nillable="false" nxsv:nillable="false"/>
+      <xs:element name="confidence" type="xs:float" nillable="false" nxsv:nillable="false"/>
       <xs:element name="timestamp" type="xs:long" nillable="true" nxsv:nillable="true"/>
     </xs:sequence>
   </xs:complexType>
+
   <xs:complexType name="labelSuggestionsListType">
     <xs:sequence>
       <xs:element name="value" type="nxrich:labelSuggestion" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
+
   <xs:complexType name="suggestionType">
     <xs:sequence>
       <xs:element name="property" type="xs:string" nillable="false" nxsv:nillable="false"/>
       <xs:element name="labels" type="nxrich:labelSuggestionsListType"/>
     </xs:sequence>
   </xs:complexType>
+
   <xs:complexType name="suggestionListType">
     <xs:sequence>
       <xs:element name="suggestion" type="nxrich:suggestionType" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
+
   <xs:complexType name="itemsType">
     <xs:sequence>
       <xs:element name="model" type="xs:string" nillable="false" nxsv:nillable="false"/>
@@ -56,7 +75,7 @@
   </xs:complexType>
 
   <xs:element name="items" type="nxrich:itemsListType"/>
-  <xs:element name="filled" type="nxrich:stringList"/>
+  <xs:element name="filled" type="nxrich:predictionList"/>
   <xs:element name="corrected" type="nxrich:stringList"/>
   <xs:element name="history" type="nxrich:content"/>
 </xs:schema>

@@ -21,11 +21,11 @@
     </xs:sequence>
   </xs:complexType>
 
-  <xs:complexType name="captionList">
+  <xs:complexType name="captionMap">
     <xs:sequence>
       <xs:element name="caption" type="cap:vtt_lang" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
   </xs:complexType>
 
-  <xs:element name="captions" type="cap:captionList"/>
+  <xs:element name="captions" type="cap:captionMap"/>
 </xs:schema>

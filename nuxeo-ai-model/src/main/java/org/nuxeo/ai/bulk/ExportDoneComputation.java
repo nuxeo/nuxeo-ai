@@ -59,10 +59,7 @@ public class ExportDoneComputation extends AbstractComputation {
             Message message = log.getMessageFactory().newMessage(EXPORT_ACTION_NAME
                             + " for commandId {} has completed.\nProcessed {} records with {} errors",
                     cmd.getId(), status.getProcessed(), status.getErrorCount());
-
             log.warn(message.getFormattedMessage());
-
-            // TODO: Notify client on export Done
 
             AuditLogger logger = Framework.getService(AuditLogger.class);
             LogEntry entry = logger.newLogEntry();
