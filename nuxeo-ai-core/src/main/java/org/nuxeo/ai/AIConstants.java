@@ -27,27 +27,46 @@ public class AIConstants {
 
     //Enrichment
     public static final String ENRICHMENT_FACET = "Enrichable";
+
     public static final String ENRICHMENT_SCHEMA_NAME = "enrichment";
+
     public static final String ENRICHMENT_SCHEMA_PREFIX = "enrichment:";
+
     public static final String ENRICHMENT_ITEMS = "items";
+
     public static final String ENRICHMENT_MODEL = "model";
+
     public static final String ENRICHMENT_INPUT_DOCPROP_PROPERTY = "inputProperties";
+
     public static final String NORMALIZED_PROPERTY = "normalized";
+
     public static final String ENRICHMENT_RAW_KEY_PROPERTY = "raw";
 
     public static final String SUGGESTION_PROPERTY = "property";
+
     public static final String SUGGESTION_SUGGESTIONS = "suggestions";
+
     public static final String SUGGESTION_LABEL = "label";
+
     public static final String SUGGESTION_CONFIDENCE = "confidence";
+
     public static final String SUGGESTION_TIMESTAMP = "timestamp";
+
     public static final String SUGGESTION_LABELS = "labels";
-    public static final String AUTO_FILLED = "filled";
-    public static final String AUTO_CORRECTED = "corrected";
-    public static final String AUTO_HISTORY = "history";
 
     public static final String EXPORT_ACTION_NAME = "bulkDatasetExport";
+
     public static final String EXPORT_ACTION_STREAM = "ai/bulkDatasetExport";
+
     public static final String EXPORT_SPLIT_PARAM = "split";
+
+    public enum AUTO {
+        FILLED, CORRECTED, HISTORY;
+
+        public String lowerName() {
+            return this.name().toLowerCase();
+        }
+    }
 
     private AIConstants() {
         // just Constants

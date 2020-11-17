@@ -20,6 +20,7 @@ package org.nuxeo.ai.auto;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.configuration.ThresholdService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
@@ -39,8 +40,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
-import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
 import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
@@ -128,31 +127,31 @@ public class AutoServiceImpl implements AutoService {
             log.debug(comment);
 
             Framework.getService(DocMetadataService.class)
-                    .updateAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, null, comment);
+                    .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, null, comment);
             docMetadata.addAutoFilled(xpath);
         } else if (alreadyAutofilled) {
             // We autofilled but now the value didn't autofill so lets reset it
             Framework.getService(DocMetadataService.class)
-                    .resetAuto(docMetadata.getDoc(), AUTO_FILLED, xpath, true);
+                    .resetAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, true);
         }
     }
 
-    protected void calculateAutoCorrect(SuggestionMetadataWrapper docMetadata, String xpath) {
-        if (xpath.startsWith(UNSET) || docMetadata.isAutoFilled(xpath)) {
+    protected void calculateAutoCorrect(SuggestionMetadataWrapper metadata, String xpath) {
+        if (xpath.startsWith(UNSET) || metadata.isAutoFilled(xpath)) {
             // Nothing to do
             return;
         }
         float threshold = Framework.getService(ThresholdService.class)
-                                   .getAutoCorrectThreshold(docMetadata.getDoc(), xpath);
+                                   .getAutoCorrectThreshold(metadata.getDoc(), xpath);
         if (threshold > 1 || threshold <= 0) {
             // Impossible threshold
             return;
         }
 
         DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
-        DocumentModel doc = docMetadata.getDoc();
+        DocumentModel doc = metadata.getDoc();
         Property property;
-        boolean alreadyAutoCorrected = docMetadata.isAutoCorrected(xpath);
+        boolean alreadyAutoCorrected = metadata.isAutoCorrected(xpath);
         try {
             property = doc.getProperty(xpath);
         } catch (PropertyNotFoundException e) {
@@ -160,7 +159,7 @@ public class AutoServiceImpl implements AutoService {
             return;
         }
 
-        AIMetadata.Label max = calculateMaxLabel(docMetadata.getSuggestionsByProperty(xpath), threshold);
+        AIMetadata.Label max = calculateMaxLabel(metadata.getSuggestionsByProperty(xpath), threshold);
         if (max != null) {
             Serializable oldValue = property.getValue();
             if (setProperty(doc.getCoreSession(), doc, xpath, oldValue, max.getName())) {
@@ -171,12 +170,13 @@ public class AutoServiceImpl implements AutoService {
                     // We already auto corrected so we don't need to save the value in the history
                     oldValue = null;
                 }
-                metadataService.updateAuto(docMetadata.getDoc(), AUTO_CORRECTED, xpath, oldValue, comment);
+
+                metadataService.updateAuto(metadata.getDoc(), AUTO.CORRECTED, xpath, oldValue, comment);
             }
         } else {
             if (alreadyAutoCorrected) {
                 // We auto corrected but now the value didn't auto correct so lets reset it
-                metadataService.resetAuto(docMetadata.getDoc(), AUTO_CORRECTED, xpath, true);
+                metadataService.resetAuto(metadata.getDoc(), AUTO.CORRECTED, xpath, true);
             }
         }
     }
@@ -219,8 +219,8 @@ public class AutoServiceImpl implements AutoService {
     @Override
     public void approveAutoProperty(DocumentModel doc, String xPath) {
         DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
-        metadataService.resetAuto(doc, AUTO_CORRECTED, xPath, false);
-        metadataService.resetAuto(doc, AUTO_FILLED, xPath, false);
+        metadataService.resetAuto(doc, AUTO.CORRECTED, xPath, false);
+        metadataService.resetAuto(doc, AUTO.FILLED, xPath, false);
         metadataService.removeSuggestionsForTargetProperty(doc, xPath);
     }
 
