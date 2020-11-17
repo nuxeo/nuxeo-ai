@@ -18,54 +18,11 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static java.util.stream.Collectors.groupingBy;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.ABORTED;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -103,11 +60,53 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.collect.Sets;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static java.util.stream.Collectors.groupingBy;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
+import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.ABORTED;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
@@ -231,17 +230,17 @@ public class DatasetExportTest {
         assertNotNull(status.getProcessingStartTime());
         assertNotNull(status.getProcessingEndTime());
         assertEquals(COMPLETED, status.getState());
-        // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
-        assertEquals(450, status.getProcessed());
+        // 5 null records have been discarded so we are left with 45 entries, split roughly 60 to 40 %
+        assertEquals(135, status.getProcessed());
         DocumentModelList docs = des.getDatasetExports(session, "nonsense");
         assertThat(docs).isEmpty();
 
         docs = des.getDatasetExports(session, commandId);
         assertNotNull(docs);
-        assertThat(docs).isNotEmpty().hasSize(5);
+        assertThat(docs).isNotEmpty().hasSize(2);
 
         Blob first = (Blob) docs.get(0).getPropertyValue(DATASET_EXPORT_STATS);
-        Blob last = (Blob) docs.get(4).getPropertyValue(DATASET_EXPORT_STATS);
+        Blob last = (Blob) docs.get(1).getPropertyValue(DATASET_EXPORT_STATS);
 
         List<Statistic> statsFirst = MAPPER.readValue(first.getFile(), List.class);
         List<Statistic> statsLast = MAPPER.readValue(last.getFile(), List.class);
@@ -263,8 +262,8 @@ public class DatasetExportTest {
                        .collect(Collectors.toList())).isNotEmpty().allMatch(val -> val.equals(corporaId));
 
         assertThat(trainingCount).isGreaterThan(validationCount);
-        assertEquals("We should have discarded 50 bad blobs.", 400, trainingCount + validationCount);
-        assertEquals("50 bad blobs.", 50, status.getErrorCount());
+        assertEquals("We should have discarded 30 bad blobs.", 120, trainingCount + validationCount);
+        assertEquals("15 bad blobs.", 15, status.getErrorCount());
     }
 
     @Test
@@ -346,7 +345,7 @@ public class DatasetExportTest {
 
         DocumentModel test = session.getDocument(testRoot.getRef());
 
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < 150; ++i) {
             DocumentModel doc = session.createDocumentModel(test.getPathAsString(), "doc" + i, "File");
             doc.setPropertyValue("dc:title", "doc_" + i % 2);
             doc.setPropertyValue("dc:description", "desc" + i % 4);
@@ -386,7 +385,7 @@ public class DatasetExportTest {
         assertNotNull(status);
         assertEquals(COMPLETED, status.getState());
         // All 500 records are processed, even the 50 records that have null subjects
-        assertEquals(500, status.getProcessed());
+        assertEquals(150, status.getProcessed());
 
         DocumentModelList docs = des.getDatasetExports(session, "nonsense");
         assertThat(docs).isEmpty();
@@ -402,7 +401,7 @@ public class DatasetExportTest {
         }
 
         assertThat(trainingCount).isGreaterThan(validationCount);
-        assertEquals(500, trainingCount + validationCount);
+        assertEquals(150, trainingCount + validationCount);
     }
 
     @Test
@@ -424,9 +423,9 @@ public class DatasetExportTest {
         Map<String, List<Statistic>> byField = statistics.stream().collect(groupingBy(Statistic::getField));
         assertEquals("There should be 3 aggregates + 2 total = 5", 5, byType.size());
         Statistic total = byType.get(STATS_TOTAL).get(0);
-        assertEquals(500, total.getNumericValue().intValue());
+        assertEquals(150, total.getNumericValue().intValue());
         total = byType.get(STATS_COUNT).get(0);
-        assertEquals("There are 450 rows where all fields are not null.", 450, total.getNumericValue().intValue());
+        assertEquals("There are 54 rows where all fields are not null.", 135, total.getNumericValue().intValue());
         assertEquals("There should be 4 fields + 2 total = 6", 6, byField.size());
         Statistic cardDesc = byType.get(AGG_CARDINALITY)
                                    .stream()
@@ -444,13 +443,14 @@ public class DatasetExportTest {
                                       .filter(a -> "dc:language".equals(a.getField()))
                                       .findFirst()
                                       .get();
-        assertEquals(250, missingLang.getNumericValue().intValue());
+
+        assertEquals(75, missingLang.getNumericValue().intValue());
         Statistic missingContent = byType.get(AGG_MISSING)
                                          .stream()
                                          .filter(a -> "file:content".equals(a.getField()))
                                          .findFirst()
                                          .get();
-        assertEquals(50, missingContent.getNumericValue().intValue());
+        assertEquals(15, missingContent.getNumericValue().intValue());
     }
 
     @Test
