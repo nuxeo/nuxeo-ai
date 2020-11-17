@@ -18,11 +18,12 @@ void setGitHubBuildStatus(String context) {
 
 String getMavenArgs() {
     def args = '-V -B -Pmarketplace,ftest,aws clean install'
-    if (env.TAG_NAME || env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'master-.*') {
+    if (env.TAG_NAME) {
+        args += ' deploy -P-nexus,release -DskipTests'
+    } else if (env.BRANCH_NAME ==~ 'master.*') {
         args += ' deploy -P-nexus'
-        if (env.TAG_NAME) {
-            args += ' -Prelease -DskipTests'
-        }
+    } else if (env.BRANCH_NAME ==~ 'sprint.*') {
+        args += ' deploy -Pnexus'
     } else {
         args += ' package'
     }
@@ -125,6 +126,7 @@ pipeline {
     stages {
         stage('Init') {
             steps {
+                setGitHubBuildStatus('init')
                 container('platform11') {
                     sh """#!/bin/bash
 jx step git credentials
@@ -152,10 +154,15 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                     }
                 }
             }
+            post {
+                always {
+                    setGitHubBuildStatus('init')
+                }
+            }
         }
         stage('Maven Build') {
             environment {
-                MAVEN_OPTS = "$MAVEN_OPTS -Xms512m -Xmx1g"
+                MAVEN_OPTS = "-Xms512m -Xmx1g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }

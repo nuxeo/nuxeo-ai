@@ -42,4 +42,18 @@
   </extension>
 </#if>
 
+<extension target="org.nuxeo.ecm.core.scheduler.SchedulerService" point="schedule">
+<schedule id="continuous_export_default">
+    <event>startContinuousExport</event>
+    <cronExpression>${nuxeo.ai.continuous.export.cron.interval}</cronExpression>
+</schedule>
+</extension>
+
+<extension target="org.nuxeo.ecm.core.scheduler.SchedulerService" point="schedule">
+    <schedule id="model_serving_update">
+        <event>invalidateModelDefinitions</event>
+        <cronExpression>${nuxeo.ai.model.serving.cron.update.interval}</cronExpression>
+    </schedule>
+</extension>
+
 </component>

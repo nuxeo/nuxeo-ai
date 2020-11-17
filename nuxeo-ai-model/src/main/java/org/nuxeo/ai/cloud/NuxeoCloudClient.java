@@ -19,7 +19,7 @@
 package org.nuxeo.ai.cloud;
 
 import static javax.ws.rs.core.Response.Status.OK;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
@@ -102,6 +102,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     protected NuxeoClient client;
 
+    protected String datasource;
+
     @Override
     public void start(ComponentContext context) {
         super.start(context);
@@ -138,9 +140,16 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
             projectId = descriptor.projectId;
             url = descriptor.url; // The client doesn't seem to export the URL to use
-            if (isBlank(url) || isBlank(projectId)) {
+            if (isAnyBlank(url, projectId)) {
                 throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
             }
+
+            datasource = descriptor.datasource;
+            if (StringUtils.isBlank(datasource)) {
+                datasource = "dev";
+                log.warn("Datasource wasn't set; using `{}` as the default", datasource);
+            }
+
             client = builder.connect();
             log.debug("Nuxeo Cloud Client {} is configured for {}.", projectId, url);
         } catch (NuxeoClientRemoteException e) {
@@ -355,8 +364,27 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public JSONBlob getCloudAIModels() throws IOException {
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, "models?properties=ai_model");
+    public JSONBlob getAllModels() throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
+                "models?properties=ai_model");
+        return getModels(modelsPath);
+    }
+
+    @Override
+    public JSONBlob getModelsByDatasource() throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
+                "models?properties=ai_model&datasource=" + datasource);
+        return getModels(modelsPath);
+    }
+
+    @Override
+    public JSONBlob getPublishedModels() throws IOException {
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
+                "models?properties=ai_model&publishState=published&label=" + datasource);
+        return getModels(modelsPath);
+    }
+
+    protected JSONBlob getModels(Path modelsPath) throws IOException {
         Response response = getClient().get(modelsPath.toString());
         if (response.body() == null) {
             log.warn("Could not resolve any AI Models");
@@ -366,6 +394,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         String body = response.body().string();
         return new JSONBlob(body);
     }
+
 
     @Nullable
     @Override

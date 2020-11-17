@@ -13,6 +13,9 @@ nuxeo.enrichment.save.tags=false
 nuxeo.enrichment.save.facets=true
 nuxeo.enrichment.raiseEvent=true
 
+# Enable Nuxeo Insight Enrichment providers
+nuxeo.ai.insight.enrichment.enabled=true
+
 nuxeo.ai.export.tensorflow=true
 
 # Max size of blobs for conversion during predictions/exports (500MB by default)
@@ -38,10 +41,18 @@ nuxeo.ai.export.threshold=
 
 # Nuxeo Client Config
 nuxeo.ai.insight.client.enable=false
-
+nuxeo.ai.insight.datasource.label=dev
 # If client enabled: set project id, insight url and token access (see AI team for setup)
 # nuxeo.ai.insight.client.projectid=
 # nuxeo.ai.insight.client.target.url=
 # nuxeo.ai.insight.client.token=
 # All additional urls to disable cors on (separated with spaces)
 # nuxeo.cors.urls=
+
+# Continuous Export - this flag is checked during runtime in org.nuxeo.ai.listeners.ContinuousExportListener
+nuxeo.ai.continuous.export.enable=false
+# At 03:00 AM, every 7 days
+nuxeo.ai.continuous.export.cron.interval=0 0 3 */7 * ?
+
+# Every hour
+nuxeo.ai.model.serving.cron.update.interval=0/1 0 * ? * * *

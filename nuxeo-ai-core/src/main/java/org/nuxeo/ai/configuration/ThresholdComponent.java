@@ -19,6 +19,8 @@
  */
 package org.nuxeo.ai.configuration;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -29,11 +31,15 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor.Threshold;
+import org.nuxeo.ai.services.AIConfigurationService;
+import org.nuxeo.ai.services.AIConfigurationServiceImpl;
+import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
+import org.nuxeo.runtime.pubsub.PubSubService;
 
 /**
  * Implementation of the ThresholdService
@@ -63,31 +69,42 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
     protected final Map<String, Map<String, Threshold>> typeThresholds = new HashMap<>();
 
     @Override
+    public void reload(Descriptor desc) {
+        super.registerContribution(desc, THRESHOLD_CONFIGURATION_XP, null);
+        this.fillThresholds((ThresholdConfiguratorDescriptor) desc);
+    }
+
+    @Override
     public void start(ComponentContext context) {
         super.start(context);
+        PubSubService pubSubService = Framework.getService(PubSubService.class);
+        if (pubSubService != null) {
+            pubSubService.registerSubscriber(AIConfigurationServiceImpl.TOPIC, this::thresholdSubscriber);
+        } else {
+            log.warn("No Pub/Sub service available");
+        }
+
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        pcs.register(ThresholdConfiguratorDescriptor.class);
+
         setDefaultThresholds();
 
         List<Descriptor> descriptors = getDescriptors(THRESHOLD_CONFIGURATION_XP);
+        AIConfigurationService aiConfigurationService = Framework.getService(AIConfigurationService.class);
+        List<ThresholdConfiguratorDescriptor> kvsDescriptors;
+        try {
+            kvsDescriptors = aiConfigurationService.getAll(ThresholdConfiguratorDescriptor.class);
+        } catch (IOException e) {
+            log.error("Getting descriptors from kvs failed", e);
+            kvsDescriptors = new ArrayList<>();
+        }
+
+        descriptors.addAll(kvsDescriptors);
         for (Descriptor d : descriptors) {
             ThresholdConfiguratorDescriptor descriptor = (ThresholdConfiguratorDescriptor) d;
-
-            String type = descriptor.getType();
-
-            float typeGlobal = descriptor.getGlobal();
-            if (typeGlobal > 0.f && typeGlobal <= 1.f) {
-                typeDefaultThresholds.put(type, typeGlobal);
-            }
-
-            typeThresholds.computeIfAbsent(type, key -> new HashMap<>());
-
-            for (Threshold t : descriptor.getThresholds()) {
-                Map<String, Threshold> map = typeThresholds.get(type);
-                t.merge(map.get(t.getXPath()));
-                map.put(t.getXPath(), t);
-            }
+            fillThresholds(descriptor);
         }
     }
-
 
     @Override
     public float getThreshold(DocumentModel doc, String xpath) {
@@ -112,7 +129,7 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
             }
         }
 
-        if (result < 0.f &&  (typeDefaultThresholds.containsKey(docType) || hasFacet)) {
+        if (result < 0.f && (typeDefaultThresholds.containsKey(docType) || hasFacet)) {
             result = getThresholdFor(docType, facets);
         }
 
@@ -142,13 +159,12 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
             }
         }
 
-        if (result < 0.f &&  (typeDefaultThresholds.containsKey(docType) || hasFacet)) {
+        if (result < 0.f && (typeDefaultThresholds.containsKey(docType) || hasFacet)) {
             result = getThresholdFor(docType, facets);
         }
 
         return result > 0.f ? result : globalAutofillThreshold;
     }
-
 
     @Override
     public float getAutoCorrectThreshold(DocumentModel doc, String xpath) {
@@ -173,17 +189,52 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
             }
         }
 
-        if (result < 0.f &&  (typeDefaultThresholds.containsKey(docType) || hasFacet)) {
+        if (result < 0.f && (typeDefaultThresholds.containsKey(docType) || hasFacet)) {
             result = getThresholdFor(docType, facets);
         }
 
         return result > 0.f ? result : globalAutocorrectThreshold;
     }
 
+    protected void thresholdSubscriber(String topic, byte[] message) {
+        String contribKey = new String(message);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        try {
+            Descriptor desc = pcs.retrieve(contribKey);
+            if (desc == null) {
+                this.typeThresholds.remove(contribKey);
+            }
+            if (desc instanceof ThresholdConfiguratorDescriptor) {
+                this.reload(desc);
+            }
+        } catch (IOException e) {
+            log.error("Cannot retrieve the descriptor with " + contribKey, e);
+            pcs.removeFromKeys(contribKey);
+        }
+    }
+
+    protected void fillThresholds(ThresholdConfiguratorDescriptor descriptor) {
+        String type = descriptor.getType();
+
+        float typeGlobal = descriptor.getGlobal();
+        if (typeGlobal > 0.f && typeGlobal <= 1.f) {
+            typeDefaultThresholds.put(type, typeGlobal);
+        }
+
+        typeThresholds.computeIfAbsent(type, key -> new HashMap<>());
+
+        for (Threshold t : descriptor.getThresholds()) {
+            Map<String, Threshold> map = typeThresholds.get(type);
+            t.merge(map.get(t.getXPath()));
+            map.put(t.getXPath(), t);
+        }
+    }
+
     protected void setDefaultThresholds() {
         globalThreshold = getDefaultThresholdFor(DEFAULT_THRESHOLD_VALUE).orElse(UNREACHABLE_CONFIDENCE_LEVEL);
         globalAutofillThreshold = getDefaultThresholdFor(AUTOFILL_DEFAULT_VALUE).orElse(UNREACHABLE_CONFIDENCE_LEVEL);
-        globalAutocorrectThreshold = getDefaultThresholdFor(AUTO_CORRECT_DEFAULT_VALUE).orElse(UNREACHABLE_CONFIDENCE_LEVEL);
+        globalAutocorrectThreshold = getDefaultThresholdFor(AUTO_CORRECT_DEFAULT_VALUE).orElse(
+                UNREACHABLE_CONFIDENCE_LEVEL);
     }
 
     public Optional<Float> getDefaultThresholdFor(String key) {

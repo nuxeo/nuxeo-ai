@@ -60,8 +60,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Endpoints responsible for listening notifications from external services such as AWS SNS
  */
-@Path("/ai/rekognition")
-@WebObject(type = "ai")
+@Path("/aiaddons/rekognition")
+@WebObject(type = "aiaddons")
 public class Rekognition {
 
     private static final Logger log = LogManager.getLogger(Rekognition.class);

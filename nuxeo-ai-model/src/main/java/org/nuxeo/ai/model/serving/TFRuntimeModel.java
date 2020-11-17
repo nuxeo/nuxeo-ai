@@ -142,7 +142,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     protected EnrichmentMetadata handlePredict(String content, String repositoryName, String documentRef) {
         Map<String, List<EnrichmentMetadata.Label>> labelledResults = parseResponse(content);
         if (!labelledResults.isEmpty()) {
-            EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(getKind(), getId(), inputNames,
+            EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, getId(), inputNames,
                     repositoryName, documentRef, Collections.emptySet());
             List<LabelSuggestion> labelSuggestions = new ArrayList<>();
             labelledResults.forEach((output, labels) -> labelSuggestions.add(new LabelSuggestion(output, labels)));
@@ -213,7 +213,9 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
      * @param client
      */
     protected String buildUri(CloudClient client) {
-        return API_AI + client.byProjectId(String.format("/model/%s/", getName()) + modelPath + VERB_PREDICT);
+        String datasource = client.getCloudConfig().getDatasource();
+        return API_AI + client.byProjectId(
+                "/model/" + getName() + "/" + modelPath + VERB_PREDICT + "?datasource=" + datasource);
     }
 
     @Override

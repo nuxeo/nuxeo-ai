@@ -9,7 +9,7 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.0.0-sprint3a-SNAPSHOT</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
@@ -26,6 +26,7 @@
     <module>nuxeo-ai-pipes</module>
     <module>nuxeo-ai-core</module>
     <module>nuxeo-ai-model</module>
+    <module>nuxeo-ai-config</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
   </modules>

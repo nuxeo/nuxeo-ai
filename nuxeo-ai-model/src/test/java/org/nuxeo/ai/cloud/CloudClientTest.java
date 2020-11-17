@@ -72,6 +72,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -79,6 +80,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Features({ PlatformFeature.class, AutomationFeature.class })
 @Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model" })
 public class CloudClientTest {
+
+    private static final ObjectMapper LOCAL_OM = new ObjectMapper();
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(
@@ -167,16 +170,16 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testGetPut() throws IOException {
-        String result = client.get(API_AI + client.byProjectId("/models?enrichers.document=children"),
+        String result = client.get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
                 response -> response.isSuccessful() ? response.body().string() : null);
 
-        String result2 = client.getByProject("/models?enrichers.document=children",
+        String result2 = client.getByProject("/dev/models?enrichers.document=children",
                 response -> response.isSuccessful() ? response.body().string() : null);
 
         assertEquals(result, result2);
 
         String putBody = "could be anything";
-        String resBody = client.put(client.byProjectId("/models"), putBody,
+        String resBody = client.put(client.byProjectId("/dev/models"), putBody,
                 response -> response.isSuccessful() ? response.body().string() : null);
         assertTrue(resBody.contains(putBody));
     }
@@ -184,15 +187,22 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldGetModelsFromCloud() throws IOException {
-        JSONBlob models = client.getCloudAIModels();
-        assertThat(models.toString()).isNotEmpty();
+        JSONBlob models = client.getAllModels();
+        @SuppressWarnings("unchecked")
+        Map<String, Serializable> map = LOCAL_OM.readValue(models.getString(), Map.class);
+        assertThat(map).containsKey("entries");
+        assertThat(map.get("entries")).asList().isNotEmpty();
     }
 
     @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void shouldGetCorpusFromCloud() throws IOException {
-        JSONBlob models = client.getCloudAIModels();
-        assertThat(models.toString()).isNotEmpty();
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-bad-test.xml")
+    public void shouldGetEmptyModelsOnWrongDatasource() throws IOException {
+        JSONBlob models = client.getModelsByDatasource();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Serializable> map = LOCAL_OM.readValue(models.getString(), Map.class);
+        assertThat(map).containsKey("entries");
+        assertThat(map.get("entries")).asList().isEmpty();
     }
 
     @Test
