@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
@@ -55,8 +56,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
-import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
@@ -222,14 +221,25 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     }
 
     @Override
-    public DocumentModel updateAuto(DocumentModel doc, String autoField, String xPath, Serializable oldValue,
+    public DocumentModel updateAuto(DocumentModel doc, AUTO autoField, String xPath, Serializable oldValue,
             String comment) {
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
         }
-        Set<String> autoProps = getAutoPropAsSet(doc, autoField);
-        autoProps.add(xPath);
-        doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField, autoProps);
+
+        if (autoField == AUTO.CORRECTED) {
+            Set<String> autoProps = getAutoPropAsSet(doc, autoField.lowerName());
+            autoProps.add(xPath);
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), autoProps);
+        } else if (autoField == AUTO.FILLED) {
+            Set<Map<String, String>> autoProps = getAutoPropAsSet(doc, autoField.lowerName());
+            HashMap<String, String> prediction = new HashMap<>();
+            prediction.put("xpath", xPath);
+            // TODO: fix it
+            prediction.put("model", "unknown");
+            autoProps.add(prediction);
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), autoProps);
+        }
         doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
 
         if (oldValue != null) {
@@ -241,42 +251,73 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             history.add(new AutoHistory(xPath, oldValue));
             setAutoHistory(doc, history);
         }
-        raiseEvent(doc, AUTO_ADDED + autoField.toUpperCase(), Collections.singleton(xPath), comment);
+
+        raiseEvent(doc, AUTO_ADDED + autoField.name(), Collections.singleton(xPath), comment);
+
         return doc;
     }
 
     @Override
-    public DocumentModel resetAuto(DocumentModel doc, String autoField, String xPath, boolean resetValue) {
-        Set<String> autoProps = getAutoPropAsSet(doc, autoField);
-        Object previousValue = null;
-        if (autoProps.contains(xPath)) {
-            autoProps.remove(xPath);
+    public DocumentModel resetAuto(DocumentModel doc, AUTO autoField, String xPath, boolean resetValue) {
+        List<AutoHistory> history = getAutoHistory(doc);
+        Optional<AutoHistory> previous = history.stream()
+                                                .filter(h -> xPath.equals(h.getProperty()))
+                                                .findFirst();
+        boolean present = previous.isPresent();
 
-            if (AUTO_CORRECTED.equals(autoField)) {
-                List<AutoHistory> history = getAutoHistory(doc);
-                Optional<AutoHistory> previous = history.stream()
-                                                        .filter(h -> xPath.equals(h.getProperty()))
-                                                        .findFirst();
-                if (previous.isPresent()) {
+        if (autoField == AUTO.FILLED) {
+            Set<Map<String, String>> set = getAutoPropAsSet(doc, autoField.lowerName());
+            Set<Map<String, String>> noOldXpath = set.stream()
+                                                     .filter(val -> !val.get("xpath").equals(xPath))
+                                                     .collect(Collectors.toSet());
+            Object previousValue = null;
+            if (set.size() > noOldXpath.size()) {
+                if (present) {
                     previousValue = previous.get().getPreviousValue();
                     history.remove(previous.get());
                     setAutoHistory(doc, history);
                 }
+                //Set the value
+                doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), noOldXpath);
+                if (resetValue) {
+                    doc.setPropertyValue(xPath, (Serializable) previousValue);
+                }
             }
-            //Set the value
-            doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField, autoProps);
-            if (resetValue) {
-                doc.setPropertyValue(xPath, (Serializable) previousValue);
+        } else {
+            Set<String> autoProps = getAutoPropAsSet(doc, autoField.lowerName());
+
+            Object previousValue = null;
+            if (autoProps.remove(xPath)) {
+                if (present) {
+                    previousValue = previous.get().getPreviousValue();
+                    history.remove(previous.get());
+                    setAutoHistory(doc, history);
+                }
+                //Set the value
+                doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), autoProps);
+                if (resetValue) {
+                    doc.setPropertyValue(xPath, (Serializable) previousValue);
+                }
             }
         }
+
         return doc;
     }
 
-    public Set<String> getAutoPropAsSet(DocumentModel doc, String autoPropertyName) {
-        Set<String> autoProps = new HashSet<>(1);
-        String[] autoVals = (String[]) doc.getProperty(ENRICHMENT_SCHEMA_NAME, autoPropertyName);
-        if (autoVals != null) {
-            autoProps.addAll(Arrays.asList(autoVals));
+    public <T> Set<T> getAutoPropAsSet(DocumentModel doc, String autoPropertyName) {
+        Set<T> autoProps = new HashSet<>(1);
+        if (AUTO.FILLED.lowerName().equals(autoPropertyName)) {
+            @SuppressWarnings("unchecked")
+            List<T> filled = (List<T>) doc.getProperty(ENRICHMENT_SCHEMA_NAME, autoPropertyName);
+            if (filled != null) {
+                autoProps.addAll(filled);
+            }
+        } else {
+            @SuppressWarnings("unchecked")
+            T[] autoVals = (T[]) doc.getProperty(ENRICHMENT_SCHEMA_NAME, autoPropertyName);
+            if (autoVals != null) {
+                autoProps.addAll(Arrays.asList(autoVals));
+            }
         }
         return autoProps;
     }
@@ -363,7 +404,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     @Override
     public List<AutoHistory> getAutoHistory(DocumentModel doc) {
         try {
-            Blob autoBlob = (Blob) doc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY);
+            Blob autoBlob = (Blob) doc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO.HISTORY.lowerName());
             if (autoBlob != null) {
                 return MAPPER.readValue(autoBlob.getByteArray(), HISTORY_TYPE);
             }
@@ -381,8 +422,10 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             if (!doc.hasFacet(ENRICHMENT_FACET)) {
                 doc.addFacet(ENRICHMENT_FACET);
             }
-            autoBlob.setFilename(AUTO_HISTORY + "_" + doc.getName() + ".json");
-            doc.setProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY, autoBlob);
+
+            String autoHistory = AUTO.HISTORY.lowerName();
+            autoBlob.setFilename(autoHistory + "_" + doc.getName() + ".json");
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoHistory, autoBlob);
         } catch (IOException e) {
             log.warn("Failed to set auto history blob", e);
         }
