@@ -61,15 +61,15 @@ public class AutoServiceImpl implements AutoService {
         SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
         for (String xpath : wrapper.getAutoProperties()) {
             switch (action) {
-                case ALL:
-                    calculateAutoFill(wrapper, xpath);
-                    calculateAutoCorrect(wrapper, xpath);
-                    break;
-                case CORRECT:
-                    calculateAutoCorrect(wrapper, xpath);
-                    break;
-                case FILL:
-                    calculateAutoFill(wrapper, xpath);
+            case ALL:
+                calculateAutoFill(wrapper, xpath);
+                calculateAutoCorrect(wrapper, xpath);
+                break;
+            case CORRECT:
+                calculateAutoCorrect(wrapper, xpath);
+                break;
+            case FILL:
+                calculateAutoFill(wrapper, xpath);
             }
         }
     }
@@ -89,7 +89,7 @@ public class AutoServiceImpl implements AutoService {
         boolean alreadyAutofilled = docMetadata.isAutoFilled(xpath);
         if (!alreadyAutofilled && docMetadata.hasValue(xpath)) {
             log.debug("Unable to autofill property {} for doc {} because it has a value.", xpath,
-                      docMetadata.getDoc().getId());
+                    docMetadata.getDoc().getId());
             return;
         }
 
@@ -100,9 +100,9 @@ public class AutoServiceImpl implements AutoService {
         Property property = doc.getProperty(xpath);
         if (property.isList()) {
             List<String> values = suggestions.stream()
-                    .filter(suggestion -> suggestion.getConfidence() >= threshold)
-                    .map(AIMetadata.Label::getName)
-                    .collect(Collectors.toList());
+                                             .filter(suggestion -> suggestion.getConfidence() >= threshold)
+                                             .map(AIMetadata.Label::getName)
+                                             .collect(Collectors.toList());
             if (!values.isEmpty()) {
                 doc.setPropertyValue(xpath, (Serializable) values);
                 autofilled = true;
@@ -110,29 +110,27 @@ public class AutoServiceImpl implements AutoService {
         } else {
             AIMetadata.Label max = calculateMaxLabel(suggestions, threshold);
             if (max != null) {
-               autofilled = setProperty(doc.getCoreSession(), doc, xpath, null, max.getName());
-               maxConfidence = max.getConfidence();
+                autofilled = setProperty(doc.getCoreSession(), doc, xpath, null, max.getName());
+                maxConfidence = max.getConfidence();
             }
         }
 
         if (autofilled) {
             String comment;
             if (property.isList()) {
-                comment = String.format("Auto filled a list %s. (Threshold %s)",
-                        xpath, threshold);
+                comment = String.format("Auto filled a list %s. (Threshold %s)", xpath, threshold);
             } else {
-                comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)",
-                        xpath, maxConfidence, threshold);
+                comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)", xpath, maxConfidence,
+                        threshold);
             }
             log.debug(comment);
 
             Framework.getService(DocMetadataService.class)
-                    .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, null, comment);
-            docMetadata.addAutoFilled(xpath);
+                     .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, null, comment);
+            docMetadata.addAutoFilled(xpath, "unknown");
         } else if (alreadyAutofilled) {
             // We autofilled but now the value didn't autofill so lets reset it
-            Framework.getService(DocMetadataService.class)
-                    .resetAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, true);
+            Framework.getService(DocMetadataService.class).resetAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, true);
         }
     }
 
@@ -163,8 +161,8 @@ public class AutoServiceImpl implements AutoService {
         if (max != null) {
             Serializable oldValue = property.getValue();
             if (setProperty(doc.getCoreSession(), doc, xpath, oldValue, max.getName())) {
-                String comment = String.format("Auto corrected %s. (Confidence %s , Threshold %s)",
-                                               xpath, max.getConfidence(), threshold);
+                String comment = String.format("Auto corrected %s. (Confidence %s , Threshold %s)", xpath,
+                        max.getConfidence(), threshold);
                 log.debug(comment);
                 if (alreadyAutoCorrected) {
                     // We already auto corrected so we don't need to save the value in the history
@@ -181,7 +179,8 @@ public class AutoServiceImpl implements AutoService {
         }
     }
 
-    protected boolean setProperty(CoreSession session, DocumentModel doc, String key, Serializable currentValue, String newValue) {
+    protected boolean setProperty(CoreSession session, DocumentModel doc, String key, Serializable currentValue,
+            String newValue) {
         if (!newValue.equals(currentValue)) {
             try {
                 DocumentHelper.setProperty(session, doc, key, newValue);

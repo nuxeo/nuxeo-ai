@@ -76,6 +76,6 @@
 
   <xs:element name="items" type="nxrich:itemsListType"/>
   <xs:element name="filled" type="nxrich:predictionList"/>
-  <xs:element name="corrected" type="nxrich:stringList"/>
+  <xs:element name="corrected" type="nxrich:predictionList"/>
   <xs:element name="history" type="nxrich:content"/>
 </xs:schema>
