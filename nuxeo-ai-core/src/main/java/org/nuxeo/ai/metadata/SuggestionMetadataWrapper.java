@@ -29,7 +29,7 @@ import org.nuxeo.ecm.core.schema.types.primitives.StringType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,15 +60,15 @@ public class SuggestionMetadataWrapper {
 
     protected Set<String> models = new HashSet<>();
 
-    protected Set<String> autoFilled = new HashSet<>();
+    protected Set<Map<String, String>> autoFilled = new HashSet<>();
 
-    protected Set<String> autoCorrected = new HashSet<>();
+    protected Set<Map<String, String>> autoCorrected = new HashSet<>();
 
     protected Set<String> autoProperties = new HashSet<>();
 
     protected Map<String, List<LabelSuggestion>> suggestionsByModelId = new HashMap<>();
 
-    protected Map<String, List<AIMetadata.Label>> suggestionsByProperty = new HashMap<>();
+        protected Map<String, List<AIMetadata.Label>> suggestionsByProperty = new HashMap<>();
 
     public SuggestionMetadataWrapper(DocumentModel doc) {
         this.doc = doc;
@@ -84,19 +84,22 @@ public class SuggestionMetadataWrapper {
             return;
         }
 
-        List<Map<String, String>> filled = (List<Map<String, String>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO.FILLED.lowerName());
+        List<Map<String, String>> filled = (List<Map<String, String>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME,
+                AUTO.FILLED.lowerName());
         if (filled != null) {
             autoFilled.clear();
-            autoFilled.addAll(filled.stream().map(val -> val.get("xpath")).collect(Collectors.toSet()));
+            autoFilled.addAll(filled);
         }
 
-        String[] corrected = (String[]) doc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO.CORRECTED.lowerName());
+        List<Map<String, String>> corrected = (List<Map<String, String>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME,
+                AUTO.CORRECTED.lowerName());
         if (corrected != null) {
             autoCorrected.clear();
-            autoCorrected.addAll(Arrays.asList(corrected));
+            autoCorrected.addAll(corrected);
         }
 
-        List<Map<String, Object>> suggestList = (List<Map<String, Object>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        List<Map<String, Object>> suggestList = (List<Map<String, Object>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME,
+                ENRICHMENT_ITEMS);
         if (suggestList == null) {
             return;
         }
@@ -110,24 +113,28 @@ public class SuggestionMetadataWrapper {
                 List<Map<String, Object>> values = (List<Map<String, Object>>) suggestion.get(SUGGESTION_LABELS);
                 List<AIMetadata.Label> labels = values.stream()
                                                       .map(v -> new AIMetadata.Label((String) v.get(SUGGESTION_LABEL),
-                                                              ((Double) v.get(SUGGESTION_CONFIDENCE)).floatValue(),
-                                                              0L))
+                                                              ((Double) v.get(SUGGESTION_CONFIDENCE)).floatValue(), 0L))
                                                       .collect(Collectors.toList());
                 LabelSuggestion label = new LabelSuggestion(property, labels);
                 models.add(modelId);
                 List<LabelSuggestion> byModel = suggestionsByModelId.getOrDefault(modelId, new ArrayList<>());
                 byModel.add(label);
+
                 suggestionsByModelId.put(modelId, byModel);
-                List<AIMetadata.Label> byProperty = suggestionsByProperty.getOrDefault(property, new ArrayList<>());
-                byProperty.addAll(labels);
-                suggestionsByProperty.put(property, byProperty);
+                                List<AIMetadata.Label> byProperty = suggestionsByProperty.getOrDefault(property, new ArrayList<>());
+                                byProperty.addAll(labels);
+                                suggestionsByProperty.put(property, byProperty);
             }
 
         });
 
-        autoProperties.addAll(suggestionsByProperty.keySet());
-        autoProperties.addAll(autoFilled);
-        autoProperties.addAll(autoCorrected);
+        autoProperties.addAll(suggestionsByModelId.values()
+                                                  .stream()
+                                                  .flatMap(Collection::stream)
+                                                  .map(val -> val.property)
+                                                  .collect(Collectors.toSet()));
+        autoProperties.addAll(autoFilled.stream().map(val -> val.get("xpath")).collect(Collectors.toSet()));
+        autoProperties.addAll(autoCorrected.stream().map(val -> val.get("xpath")).collect(Collectors.toSet()));
     }
 
     public DocumentModel getDoc() {
@@ -153,36 +160,39 @@ public class SuggestionMetadataWrapper {
         return autoProperties;
     }
 
-    public Set<String> getAutoFilled() {
+    public Set<Map<String, String>> getAutoFilled() {
         return autoFilled;
     }
 
     /**
      * Update auto filled values for sequential operations
+     *
      * @param xpath {@link DocumentModel} property path
      * @return {@link Boolean#TRUE} if successfully added
      */
-    public boolean addAutoFilled(String xpath) {
-        return autoFilled.add(xpath);
+    public boolean addAutoFilled(String xpath, String model) {
+        Map<String, String> props = new HashMap<>();
+        props.put("xpath", xpath);
+        props.put("model", model);
+        return autoFilled.add(props);
     }
 
-    public Set<String> getAutoCorrected() {
+    public Set<Map<String, String>> getAutoCorrected() {
         return autoCorrected;
     }
 
     public boolean isAutoFilled(String propertyName) {
-        return autoFilled.contains(propertyName);
+        return autoFilled.stream().map(filled -> filled.get("xpath")).anyMatch(xpath -> xpath.equals(propertyName));
     }
 
     public boolean isAutoCorrected(String propertyName) {
-        return autoCorrected.contains(propertyName);
+        return autoCorrected.stream().map(filled -> filled.get("xpath")).anyMatch(xpath -> xpath.equals(propertyName));
     }
 
     /**
      * Indicates if a property has a value.
      */
     public boolean hasValue(String xpath) {
-
         try {
             Property property = doc.getProperty(xpath);
             Serializable propValue = property.getValue();
@@ -196,7 +206,8 @@ public class SuggestionMetadataWrapper {
                 if (propValue instanceof Object[]) {
                     return ((Object[]) propValue).length != 0;
                 } else {
-                    List list = (List) propValue;
+                    @SuppressWarnings("unchecked")
+                    List<Object> list = (List<Object>) propValue;
                     return !list.isEmpty();
                 }
             }
