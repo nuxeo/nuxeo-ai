@@ -19,40 +19,7 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static java.util.Collections.shuffle;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
-import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY_PARAM;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,7 +51,40 @@ import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.shuffle;
+import static java.util.stream.Collectors.toMap;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
+import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETERS;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PARAMETERS;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY_PARAM;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
 
 /**
  * Splits document into batches and randomly splits it into 2 groups for training and validation.
@@ -331,17 +331,13 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     protected ExportRecord createRecordFromDoc(String id, Set<PropertyType> props, DocumentModel doc) {
         Map<String, String> nameTypePair = props.stream()
-                                                .collect(
-                                                        Collectors.toMap(PropertyType::getName, PropertyType::getType));
+                                                .filter(prop -> Objects.nonNull(prop.getType()))
+                                                .collect(toMap(PropertyType::getName, PropertyType::getType));
 
         if (doc.hasFacet(ENRICHMENT_FACET)) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
-            for (String removeProperty : wrapper.getAutoFilled()) {
-                nameTypePair.remove(removeProperty);
-            }
-            for (String removeProperty : wrapper.getAutoCorrected()) {
-                nameTypePair.remove(removeProperty);
-            }
+            wrapper.getAutoFilled().stream().map(val -> val.get("xpath")).forEach(nameTypePair::remove);
+            wrapper.getAutoCorrected().stream().map(val -> val.get("xpath")).forEach(nameTypePair::remove);
         }
 
         BlobTextFromDocument subDoc = null;
