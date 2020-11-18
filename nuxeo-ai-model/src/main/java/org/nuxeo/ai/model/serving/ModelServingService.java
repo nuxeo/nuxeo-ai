@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import org.nuxeo.ai.configuration.Reloadable;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -30,7 +31,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 /**
  * Serves runtime AI models
  */
-public interface ModelServingService {
+public interface ModelServingService extends Reloadable {
 
     /**
      * Add a AI Model at runtime, making it available for serving.

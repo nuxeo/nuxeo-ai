@@ -21,7 +21,7 @@
   </platforms>
   <!-- Dependencies on other packages -->
   <dependencies>
-    <package>nuxeo-ai-core:@VERSION@</package>
+    <package>nuxeo-ai-core:@VERSION@:@VERSION@</package>
     <!-- If you require JSF UI package:  -->
     <!-- <package>nuxeo-jsf-ui</package> -->
     <!-- If you require WEB UI package:  -->

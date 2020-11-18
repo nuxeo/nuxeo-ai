@@ -3,7 +3,8 @@
 
   <extension target="org.nuxeo.ai.cloud.NuxeoClient" point="config">
     <config id="mockServer" readTimeout="5m" connectTimeout="10s"
-            url="http://localhost:5089" projectId="mockTestProject">
+            url="http://localhost:5089" projectId="mockTestProject"
+            datasource="dev">
       <authentication token="20344556"/>
     </config>
   </extension>

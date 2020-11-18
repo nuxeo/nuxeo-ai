@@ -11,4 +11,8 @@
     </documentation>
     <object class="org.nuxeo.ai.cloud.CloudConfigDescriptor"/>
   </extension-point>
+
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="org.nuxeo.ai.cloud.DatasourceOperation"/>
+  </extension>
 </component>

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.StringUtils;
+
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.common.xmap.annotation.XNode;
@@ -33,6 +33,8 @@ import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.model.Descriptor;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -40,7 +42,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Definition of an AI model at runtime
  */
 @XObject("model")
-public class ModelDescriptor {
+public class ModelDescriptor implements Descriptor {
 
     private static final Class<? extends RuntimeModel> DEFAULT_MODEL_CLASS = TFRuntimeModel.class;
 
@@ -64,10 +66,10 @@ public class ModelDescriptor {
     public DocumentPredicate filter;
 
     @XNode("inputProperties")
-    protected InputProperties inputProperties;
+    public InputProperties inputProperties;
 
     @XNode("outputProperties")
-    protected OutputProperties outputProperties;
+    public OutputProperties outputProperties;
 
     @XNode("@class")
     @JsonIgnore
@@ -79,6 +81,10 @@ public class ModelDescriptor {
 
     public Set<ModelProperty> getOutputs() {
         return outputProperties.properties;
+    }
+
+    public Map<String, String> getInfo() {
+        return info;
     }
 
     /**
@@ -98,12 +104,27 @@ public class ModelDescriptor {
         }
     }
 
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public Descriptor merge(Descriptor other) {
+        return null;
+    }
+
+    @Override
+    public boolean doesRemove() {
+        return false;
+    }
+
     @XObject("filter")
     public static class DocumentPredicate implements Supplier<Predicate<DocumentModel>> {
 
         @XNode("@primaryType")
         @JsonProperty
-        String primaryType;
+        public String primaryType;
 
         @Override
         public Predicate<DocumentModel> get() {
@@ -113,14 +134,24 @@ public class ModelDescriptor {
 
     @XObject("inputProperties")
     public static class InputProperties {
+
         @XNodeList(value = "property", type = HashSet.class, componentType = ModelProperty.class)
         protected Set<ModelProperty> properties = new HashSet<>();
+
+        public void setProperties(Set<ModelProperty> properties) {
+            this.properties = properties;
+        }
     }
 
     @XObject("outputProperties")
     public static class OutputProperties {
+
         @XNodeList(value = "property", type = HashSet.class, componentType = ModelProperty.class)
         protected Set<ModelProperty> properties = new HashSet<>();
+
+        public void setProperties(Set<ModelProperty> properties) {
+            this.properties = properties;
+        }
     }
 
 }
