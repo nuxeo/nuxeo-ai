@@ -300,7 +300,7 @@ public class TestAutoServices {
 
         List<AutoHistory> history = docMetadataService.getAutoHistory(testDoc);
         assertTrue(history.isEmpty());
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", null, comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "unknown", null, comment);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);
@@ -308,20 +308,20 @@ public class TestAutoServices {
         assertTrue("History must be empty because there is no old value.", history.isEmpty());
         assertTrue("dc:title was auto filled with no history.", wrapper.isAutoFilled("dc:title"));
 
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "I_AM_OLD", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "unknown", "I_AM_OLD", comment);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(1, history.size());
 
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "NOT_OLD", comment);
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "OLD", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "","NOT_OLD", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "","OLD", comment);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(2, history.size());
 
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "OLDISH", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "","OLDISH", comment);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);

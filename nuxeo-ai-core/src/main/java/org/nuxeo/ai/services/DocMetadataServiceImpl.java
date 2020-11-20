@@ -201,7 +201,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     }
 
     @Override
-    public DocumentModel updateAuto(DocumentModel doc, AUTO autoField, String xPath, Serializable oldValue,
+    public DocumentModel updateAuto(DocumentModel doc, AUTO autoField, String xPath, String model, Serializable oldValue,
             String comment) {
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
@@ -210,8 +210,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         Set<Map<String, String>> autoProps = getAutoPropAsSet(doc, autoField.lowerName());
         HashMap<String, String> prediction = new HashMap<>();
         prediction.put("xpath", xPath);
-        // TODO: fix it
-        prediction.put("model", "unknown");
+        prediction.put("model", model);
         autoProps.add(prediction);
         doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), autoProps);
         doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
