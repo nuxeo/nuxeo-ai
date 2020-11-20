@@ -68,8 +68,6 @@ public class SuggestionMetadataWrapper {
 
     protected Map<String, List<LabelSuggestion>> suggestionsByModelId = new HashMap<>();
 
-        protected Map<String, List<AIMetadata.Label>> suggestionsByProperty = new HashMap<>();
-
     public SuggestionMetadataWrapper(DocumentModel doc) {
         this.doc = doc;
         init();
@@ -121,9 +119,6 @@ public class SuggestionMetadataWrapper {
                 byModel.add(label);
 
                 suggestionsByModelId.put(modelId, byModel);
-                                List<AIMetadata.Label> byProperty = suggestionsByProperty.getOrDefault(property, new ArrayList<>());
-                                byProperty.addAll(labels);
-                                suggestionsByProperty.put(property, byProperty);
             }
 
         });
@@ -149,8 +144,18 @@ public class SuggestionMetadataWrapper {
         return suggestionsByModelId.getOrDefault(modelId, Collections.emptyList());
     }
 
-    public List<AIMetadata.Label> getSuggestionsByProperty(String propertyName) {
-        return suggestionsByProperty.getOrDefault(propertyName, Collections.emptyList());
+    public List<PropertyHolder> getSuggestionsByProperty(String propertyName) {
+        //        return suggestionsByProperty.getOrDefault(propertyName, Collections.emptyList());
+        List<PropertyHolder> list = new ArrayList<>();
+        for (String key : suggestionsByModelId.keySet()) {
+            for (LabelSuggestion labelSuggestion : suggestionsByModelId.get(key)) {
+                if (propertyName.equals(labelSuggestion.property)) {
+                    list.add(PropertyHolder.of(key, labelSuggestion.values));
+                }
+            }
+        }
+
+        return list;
     }
 
     /**
@@ -226,5 +231,29 @@ public class SuggestionMetadataWrapper {
      */
     public boolean hasHumanValue(String propertyName) {
         return hasValue(propertyName) && !(isAutoFilled(propertyName) || isAutoCorrected(propertyName));
+    }
+
+    public static class PropertyHolder {
+
+        protected String model;
+
+        protected List<AIMetadata.Label> labels;
+
+        protected PropertyHolder(String model, List<AIMetadata.Label> labels) {
+            this.model = model;
+            this.labels = labels;
+        }
+
+        public static PropertyHolder of(String model, List<AIMetadata.Label> labels) {
+            return new PropertyHolder(model, labels);
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public List<AIMetadata.Label> getLabels() {
+            return labels;
+        }
     }
 }
