@@ -46,7 +46,7 @@ public interface DocMetadataService {
     /**
      * Sets the document properties for autofill/auto correct and history information.
      */
-    DocumentModel updateAuto(DocumentModel doc, AIConstants.AUTO autoType, String xPath, Serializable oldValue,
+    DocumentModel updateAuto(DocumentModel doc, AIConstants.AUTO autoType, String xPath, String model, Serializable oldValue,
             String comment);
 
     /**
