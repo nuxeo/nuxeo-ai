@@ -18,30 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptySet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-
+import junit.framework.TestCase;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,11 +40,32 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import junit.framework.TestCase;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.Collections.emptySet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml" })
 public class TestDocMetadataService {
 
     public static final String SERVICE_NAME = "reverse";
@@ -92,27 +90,21 @@ public class TestDocMetadataService {
     protected TransactionalFeature txFeature;
 
     public static EnrichmentMetadata setupTestEnrichmentMetadata(DocumentModel testDoc) {
-        List<EnrichmentMetadata.Label> labels = Arrays.asList(
-                new AIMetadata.Label("girl", 0.5f, 0L),
-                new AIMetadata.Label("boy", 0.4f, 0L)
-        );
+        List<EnrichmentMetadata.Label> labels = Arrays.asList(new AIMetadata.Label("girl", 0.5f, 0L),
+                new AIMetadata.Label("boy", 0.4f, 0L));
         List<EnrichmentMetadata.Label> labelz = Collections.singletonList(new AIMetadata.Label("cat", 0.9f, 0L));
-        List<EnrichmentMetadata.Label> labelzz = Arrays.asList(
-                new AIMetadata.Label("unicorn", 0.6f, 0L),
-                new AIMetadata.Label("dragon", 0.55f, 0L),
-                new AIMetadata.Label("pegasus", 0.5f, 0L),
-                new AIMetadata.Label("yeti", 0.4f, 0L)
-        );
+        List<EnrichmentMetadata.Label> labelzz = Arrays.asList(new AIMetadata.Label("unicorn", 0.6f, 0L),
+                new AIMetadata.Label("dragon", 0.55f, 0L), new AIMetadata.Label("pegasus", 0.5f, 0L),
+                new AIMetadata.Label("yeti", 0.4f, 0L));
 
         LabelSuggestion suggestion = new LabelSuggestion("dc:title", labels);
         LabelSuggestion suggestion2 = new LabelSuggestion("dc:format", labelz);
         LabelSuggestion suggestionMultiVal = new LabelSuggestion("complexTest:testList", labelzz);
 
-        return new EnrichmentMetadata.Builder("m1", "stest", emptySet(),
-                testDoc.getRepositoryName(), testDoc.getId(), emptySet())
-                .withLabels(Arrays.asList(suggestion, suggestion2, suggestionMultiVal))
-                .withCreator("bob")
-                .build();
+        return new EnrichmentMetadata.Builder("m1", "stest", emptySet(), testDoc.getRepositoryName(), testDoc.getId(),
+                emptySet()).withLabels(Arrays.asList(suggestion, suggestion2, suggestionMultiVal))
+                           .withCreator("bob")
+                           .build();
     }
 
     @SuppressWarnings("unchecked")
@@ -147,8 +139,7 @@ public class TestDocMetadataService {
 
         // Check when there's no metadata to save
         EnrichmentMetadata meta = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
-                new AIMetadata.Context(doc.getRepositoryName(), doc
-                        .getId(), null, null)).build();
+                new AIMetadata.Context(doc.getRepositoryName(), doc.getId(), null, null)).build();
         doc = docMetadataService.saveEnrichment(session, meta);
         txFeature.nextTransaction();
         classProp = doc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
@@ -159,6 +150,7 @@ public class TestDocMetadataService {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testSavesSuggestions() {
         assertNotNull(docMetadataService);
         DocumentModel testDoc = session.createDocumentModel("/", "My Suggestion Doc", "File");
@@ -178,6 +170,7 @@ public class TestDocMetadataService {
 
         Property classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
+
         List<Map<String, Object>> suggested = classProp.getValue(List.class);
         assertEquals("There must be 1 suggestion", 1, suggested.size());
         Map<String, Object> suggest = suggested.get(0);
@@ -185,24 +178,48 @@ public class TestDocMetadataService {
 
         SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
         assertTrue(wrapper.getModels().contains("stest"));
-        assertEquals(2, wrapper.getSuggestionsByProperty("dc:title").size());
-        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format").size());
-        assertEquals(7, wrapper.getSuggestionsByModel("stest")
-                .stream().mapToInt(l -> l.getValues().size()).sum());
+
+        assertEquals(2, wrapper.getSuggestionsByProperty("dc:title")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
+        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
+        assertEquals(7, wrapper.getSuggestionsByModel("stest").stream().mapToInt(l -> l.getValues().size()).sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:title");
         wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertTrue(wrapper.getSuggestionsByProperty("dc:title").isEmpty());
-        assertFalse(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertEquals(0, wrapper.getSuggestionsByProperty("dc:title")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
+        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:format");
         wrapper = new SuggestionMetadataWrapper(testDoc);
         classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
-        assertTrue(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertEquals(0, wrapper.getSuggestionsByProperty("dc:format")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "complexTest:testList");
         wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertTrue(wrapper.getSuggestionsByProperty("complexTest:testList").isEmpty());
+        assertEquals(0, wrapper.getSuggestionsByProperty("complexTest:testList")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
 
         suggested = classProp.getValue(List.class);
         assertTrue("No longer any suggestions.", suggested.isEmpty());
@@ -240,8 +257,7 @@ public class TestDocMetadataService {
         txFeature.nextTransaction();
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(testDoc.getId(), testDoc.getRepositoryName(),
-                testDoc.getParentRef().toString(), testDoc
-                .getType(), testDoc.getFacets());
+                testDoc.getParentRef().toString(), testDoc.getType(), testDoc.getFacets());
         blobTextFromDoc.addProperty(TEST_PROPERTY, SOME_TEXT);
         EnrichmentProvider service = aiComponent.getEnrichmentProvider(SERVICE_NAME);
         Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
