@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
@@ -93,45 +94,71 @@ public class AutoServiceImpl implements AutoService {
             return;
         }
 
-        boolean autofilled = false;
-        float maxConfidence = 0.0f;
+        List<SuggestionMetadataWrapper.PropertyHolder> modelSuggestions = docMetadata.getSuggestionsByProperty(xpath);
 
-        List<AIMetadata.Label> suggestions = docMetadata.getSuggestionsByProperty(xpath);
+        boolean autofilled = false;
         Property property = doc.getProperty(xpath);
         if (property.isList()) {
-            List<String> values = suggestions.stream()
-                                             .filter(suggestion -> suggestion.getConfidence() >= threshold)
-                                             .map(AIMetadata.Label::getName)
-                                             .collect(Collectors.toList());
-            if (!values.isEmpty()) {
-                doc.setPropertyValue(xpath, (Serializable) values);
-                autofilled = true;
+            for (SuggestionMetadataWrapper.PropertyHolder modelSuggestion : modelSuggestions) {
+                String model = modelSuggestion.getModel();
+                List<AIMetadata.Label> labels = modelSuggestion.getLabels();
+
+                List<String> values = labels.stream()
+                                            .filter(suggestion -> suggestion.getConfidence() >= threshold)
+                                            .map(AIMetadata.Label::getName)
+                                            .collect(Collectors.toList());
+
+                if (!values.isEmpty()) {
+                    doc.setPropertyValue(xpath, (Serializable) values);
+                    String comment = String.format("Auto filled a list %s. (Threshold %s)", xpath, threshold);
+                    log.debug(comment);
+
+                    Framework.getService(DocMetadataService.class)
+                             .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, model, null, comment);
+                    docMetadata.addAutoFilled(xpath, model);
+                    autofilled = true;
+                }
             }
         } else {
-            AIMetadata.Label max = calculateMaxLabel(suggestions, threshold);
-            if (max != null) {
-                autofilled = setProperty(doc.getCoreSession(), doc, xpath, null, max.getName());
-                maxConfidence = max.getConfidence();
+            SuggestionMetadataWrapper.PropertyHolder reduce = modelSuggestions.stream()
+                                                                              .reduce(reduceLabels(threshold))
+                                                                              .orElse(null);
+            if (reduce != null) {
+                AIMetadata.Label max = calculateMaxLabel(reduce.getLabels(), threshold);
+                if (max != null) {
+                    float maxConfidence = max.getConfidence();
+
+                    if (setProperty(doc.getCoreSession(), doc, xpath, null, max.getName())) {
+                        String comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)", xpath,
+                                maxConfidence, threshold);
+                        log.debug(comment);
+
+                        Framework.getService(DocMetadataService.class)
+                                 .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, reduce.getModel(), null,
+                                         comment);
+                        docMetadata.addAutoFilled(xpath, reduce.getModel());
+                        autofilled = true;
+                    }
+                }
             }
         }
 
-        if (autofilled) {
-            String comment;
-            if (property.isList()) {
-                comment = String.format("Auto filled a list %s. (Threshold %s)", xpath, threshold);
-            } else {
-                comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)", xpath, maxConfidence,
-                        threshold);
-            }
-            log.debug(comment);
-
-            Framework.getService(DocMetadataService.class)
-                     .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, null, comment);
-            docMetadata.addAutoFilled(xpath, "unknown");
-        } else if (alreadyAutofilled) {
+        if (!autofilled && alreadyAutofilled) {
             // We autofilled but now the value didn't autofill so lets reset it
             Framework.getService(DocMetadataService.class).resetAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, true);
         }
+    }
+
+    private BinaryOperator<SuggestionMetadataWrapper.PropertyHolder> reduceLabels(float threshold) {
+        return (o1, o2) -> {
+            AIMetadata.Label maxO1 = calculateMaxLabel(o1.getLabels(), threshold);
+            AIMetadata.Label maxO2 = calculateMaxLabel(o2.getLabels(), threshold);
+            if (maxO1 == null || maxO2 == null) {
+                return maxO1 == null ? o2 : o1;
+            }
+
+            return maxO1.getConfidence() > maxO2.getConfidence() ? o1 : o2;
+        };
     }
 
     protected void calculateAutoCorrect(SuggestionMetadataWrapper metadata, String xpath) {
@@ -157,7 +184,15 @@ public class AutoServiceImpl implements AutoService {
             return;
         }
 
-        AIMetadata.Label max = calculateMaxLabel(metadata.getSuggestionsByProperty(xpath), threshold);
+        SuggestionMetadataWrapper.PropertyHolder reduce = metadata.getSuggestionsByProperty(xpath)
+                                                                  .stream()
+                                                                  .reduce(reduceLabels(threshold))
+                                                                  .orElse(null);
+        AIMetadata.Label max = null;
+        if (reduce != null) {
+            max = calculateMaxLabel(reduce.getLabels(), threshold);
+        }
+
         if (max != null) {
             Serializable oldValue = property.getValue();
             if (setProperty(doc.getCoreSession(), doc, xpath, oldValue, max.getName())) {
@@ -169,7 +204,8 @@ public class AutoServiceImpl implements AutoService {
                     oldValue = null;
                 }
 
-                metadataService.updateAuto(metadata.getDoc(), AUTO.CORRECTED, xpath, oldValue, comment);
+                metadataService.updateAuto(metadata.getDoc(), AUTO.CORRECTED, xpath, reduce.getModel(), oldValue,
+                        comment);
             }
         } else {
             if (alreadyAutoCorrected) {
