@@ -194,12 +194,13 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                 setGitHubBuildStatus('build/docker')
                 container('platform11') {
                     sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
-                    withCredentials([usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
-                        sh '''
-curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download" -o docker/nuxeo-web-ui.zip
-'''
-                    }
                     withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
+                        withCredentials([usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
+                            sh '''
+curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download" -o docker/nuxeo-web-ui.zip
+curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip
+'''
+                        }
                         dir('docker') {
                             echo "Build preview image"
                             sh 'printenv|sort|grep VERSION'
