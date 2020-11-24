@@ -20,6 +20,8 @@ package org.nuxeo.ai.auto;
 
 import org.nuxeo.ecm.core.api.DocumentModel;
 
+import java.util.Map;
+
 /**
  * Autofill and AutoCorrect services
  * This service deals with the logic of "auto properties", modifying the actual document enrichment facet is done by the
@@ -46,6 +48,13 @@ public interface AutoService {
      * Remove the property from the list of auto updated values and remove suggestions.
      */
     void approveAutoProperty(DocumentModel doc, String xPath);
+
+    /**
+     * @return Suggestions, autofilled and autocorrect global metrics along with categories
+     */
+    Map<String, AutoServiceImpl.Metrics> getGlobalMetrics();
+
+    AutoServiceImpl.TimeSeriesMetrics getPerformanceMetrics();
 
     enum AUTO_ACTION {
         FILL, CORRECT, ALL

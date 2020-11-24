@@ -3,7 +3,7 @@ Bundle-ClassPath: .
 Manifest-Version: 1.0
 Bundle-Vendor: org.nuxeo.ai
 Bundle-Version: 1.0.0
-Bundle-Name: ai-config
+Bundle-Name: ai-jaxrs
 Bundle-ManifestVersion: 2
-Bundle-SymbolicName: org.nuxeo.ai.ai-config;singleton=true
+Bundle-SymbolicName: org.nuxeo.ai.ai-jaxrs;singleton=true
 Fragment-Host: org.nuxeo.ecm.platform.restapi.server

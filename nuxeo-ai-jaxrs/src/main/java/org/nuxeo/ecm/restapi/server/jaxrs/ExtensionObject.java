@@ -18,10 +18,7 @@
  */
 package org.nuxeo.ecm.restapi.server.jaxrs;
 
-import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOUS_EXPORT_ENABLE;
-
 import java.io.IOException;
-import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -40,60 +37,29 @@ import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
 import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
-import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
+import org.nuxeo.ecm.webengine.model.impl.AbstractResource;
+import org.nuxeo.ecm.webengine.model.impl.ResourceTypeImpl;
 import org.nuxeo.runtime.api.Framework;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Start endpoint for AI Core Config custom REST api.
+ * Extensions endpoints.
  *
- * @since 2.4.1
+ * @since 2.5.0
  */
-@WebObject(type = "aicore")
-public class AIRoot extends DefaultObject {
+@WebObject(type = ExtensionObject.TYPE)
+public class ExtensionObject extends AbstractResource<ResourceTypeImpl> {
 
-    private static final Logger log = LogManager.getLogger(AIRoot.class);
+    private static final Logger log = LogManager.getLogger(ExtensionObject.class);
+
+    public static final String TYPE = "aicore.config";
 
     protected static final ObjectMapper MAPPER = new ObjectMapper();
 
-    protected static final TypeReference<Map<String, String>> NUXEO_CONF_REF = new TypeReference<Map<String, String>>() {
-    };
-
     @POST
-    @Path("config")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response setNuxeoConfVars(String conf) throws JsonProcessingException {
-        Map<String, String> confMap = MAPPER.readValue(conf, NUXEO_CONF_REF);
-        if (!ctx.getPrincipal().isAdministrator()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-        try {
-            confMap.keySet().forEach((key) -> {
-                Framework.getProperties().put(key, confMap.get(key));
-                Framework.getService(AIConfigurationService.class).setConfVar(key, confMap.get(key));
-            });
-            return Response.status(Response.Status.OK).build();
-        } catch (NuxeoException e) {
-            log.error("Cannot set Nuxeo conf variables", e);
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-    }
-
-    @GET
-    @Path("config/export")
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response isExportActivated() {
-        String isActivated = (String) Framework.getProperties()
-                                               .getOrDefault(NUXEO_AI_CONTINUOUS_EXPORT_ENABLE, "false");
-        return Response.ok(isActivated).build();
-    }
-
-    @POST
-    @Path("extension/threshold")
+    @Path("threshold")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setThresholdsFromJSON(String thresholdsJSON) throws JsonProcessingException {
@@ -113,7 +79,7 @@ public class AIRoot extends DefaultObject {
     }
 
     @POST
-    @Path("extension/thresholds/{docType}")
+    @Path("thresholds/{docType}")
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setThresholdsFromXML(@PathParam("docType") String docType, String thresholdsXML) {
@@ -134,7 +100,7 @@ public class AIRoot extends DefaultObject {
     }
 
     @DELETE
-    @Path("extension/thresholds/{docType}")
+    @Path("thresholds/{docType}")
     public Response removeThreshold(@PathParam("docType") String docType) {
         if (docType == null) {
             throw new WebApplicationException(
@@ -153,7 +119,7 @@ public class AIRoot extends DefaultObject {
     }
 
     @GET
-    @Path("extension/thresholds")
+    @Path("thresholds")
     @Produces(MediaType.APPLICATION_XML)
     public Response getAllThresholds() {
         if (!ctx.getPrincipal().isAdministrator()) {
@@ -170,7 +136,7 @@ public class AIRoot extends DefaultObject {
     }
 
     @POST
-    @Path("extension/model/{modelId}")
+    @Path("model/{modelId}")
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setModelFromXML(@PathParam("modelId") String modelId, String modelXML) {
@@ -187,7 +153,7 @@ public class AIRoot extends DefaultObject {
     }
 
     @DELETE
-    @Path("extension/model/{modelId}")
+    @Path("model/{modelId}")
     public Response deleteModel(@PathParam("modelId") String modelId) {
         if (modelId == null) {
             throw new WebApplicationException(

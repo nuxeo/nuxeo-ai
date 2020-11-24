@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -224,4 +226,100 @@ public class AutoServiceImpl implements AutoService {
         metadataService.removeSuggestionsForTargetProperty(doc, xPath);
     }
 
+    @Override
+    public Map<String, Metrics> getGlobalMetrics() {
+        Map<String, Metrics> metrics = new HashMap<>();
+        Metrics autofilled = Metrics.builder().value(100L).categories(new String[] { "cat1", "cat2" }).build();
+        metrics.put("autofilled", autofilled);
+        return metrics;
+    }
+
+    @Override
+    public TimeSeriesMetrics getPerformanceMetrics() {
+        Map<String, Long> autofilled = new HashMap<>();
+        autofilled.put("timestamp0", 100L);
+        TimeSeriesMetrics metrics = TimeSeriesMetrics.builder().autoFilled(autofilled).build();
+        return metrics;
+    }
+    
+    public static class Metrics {
+
+        long value;
+
+        String[] categories;
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        private Metrics() {
+        }
+
+        public static class Builder {
+
+            protected Metrics metrics;
+
+            public Builder() {
+                metrics = new Metrics();
+            }
+
+            public Metrics build() {
+                return metrics;
+            }
+
+            public Builder value(long value) {
+                metrics.value = value;
+                return this;
+            }
+
+            public Builder categories(String[] categories) {
+                metrics.categories = categories;
+                return this;
+            }
+        }
+    }
+
+    public static class TimeSeriesMetrics {
+
+        Map<String, Long> autoFilled;
+
+        Map<String, Long> autoCorrected;
+
+        Map<String, Long> backtrack;
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        private TimeSeriesMetrics() {
+        }
+
+        public static class Builder {
+
+            protected TimeSeriesMetrics timeSeriesMetrics;
+
+            public Builder() {
+                timeSeriesMetrics = new TimeSeriesMetrics();
+            }
+
+            public TimeSeriesMetrics build() {
+                return timeSeriesMetrics;
+            }
+
+            public Builder autoFilled(Map<String, Long> autoFilled) {
+                timeSeriesMetrics.autoFilled = autoFilled;
+                return this;
+            }
+
+            public Builder autoCorrected(Map<String, Long> autoCorrected) {
+                timeSeriesMetrics.autoCorrected = autoCorrected;
+                return this;
+            }
+
+            public Builder backtrack(Map<String, Long> backtrack) {
+                timeSeriesMetrics.backtrack = backtrack;
+                return this;
+            }
+        }
+    }
 }

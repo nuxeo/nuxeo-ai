@@ -43,7 +43,7 @@ import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
 @Features({ RestServerFeature.class, EnrichmentTestFeature.class, PlatformFeature.class })
-@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-config", "org.nuxeo.ai.ai-model" })
+@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-jaxrs", "org.nuxeo.ai.ai-model" })
 public class TestAIConfigREST extends BaseTest {
 
     protected static final String DC_DESCRIPTION = "dc:description";
