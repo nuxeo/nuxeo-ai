@@ -116,6 +116,11 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-config</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.nuxeo.elasticsearch</groupId>
         <artifactId>nuxeo-elasticsearch-core</artifactId>
         <classifier>tests</classifier>
