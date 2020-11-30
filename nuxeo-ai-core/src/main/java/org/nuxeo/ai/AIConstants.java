@@ -60,15 +60,21 @@ public class AIConstants {
 
     public static final String EXPORT_SPLIT_PARAM = "split";
 
+    private AIConstants() {
+        // just Constants
+    }
+
     public enum AUTO {
         FILLED, CORRECTED, HISTORY;
+
+        private static final String AUTO_ADDED = "AUTO_";
 
         public String lowerName() {
             return this.name().toLowerCase();
         }
-    }
 
-    private AIConstants() {
-        // just Constants
+        public String eventName() {
+            return AUTO_ADDED + this.name();
+        }
     }
 }
