@@ -99,25 +99,23 @@ public class AutoServiceImpl implements AutoService {
         boolean autofilled = false;
         Property property = doc.getProperty(xpath);
         if (property.isList()) {
-            for (SuggestionMetadataWrapper.PropertyHolder modelSuggestion : modelSuggestions) {
-                String model = modelSuggestion.getModel();
-                List<AIMetadata.Label> labels = modelSuggestion.getLabels();
-
-                List<String> values = labels.stream()
-                                            .filter(suggestion -> suggestion.getConfidence() >= threshold)
+            SuggestionMetadataWrapper.PropertyHolder reduce = modelSuggestions.stream()
+                                                                              .reduce(reduceLabels(threshold))
+                                                                              .orElse(null);
+            if (reduce != null) {
+                List<String> values = reduce.getLabels()
+                                            .stream()
+                                            .filter(label -> label.getConfidence() >= threshold)
                                             .map(AIMetadata.Label::getName)
                                             .collect(Collectors.toList());
+                doc.setPropertyValue(xpath, (Serializable) values);
+                String comment = String.format("Auto filled a list %s. (Threshold %s)", xpath, threshold);
+                log.debug(comment);
 
-                if (!values.isEmpty()) {
-                    doc.setPropertyValue(xpath, (Serializable) values);
-                    String comment = String.format("Auto filled a list %s. (Threshold %s)", xpath, threshold);
-                    log.debug(comment);
-
-                    Framework.getService(DocMetadataService.class)
-                             .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, model, null, comment);
-                    docMetadata.addAutoFilled(xpath, model);
-                    autofilled = true;
-                }
+                Framework.getService(DocMetadataService.class)
+                         .updateAuto(docMetadata.getDoc(), AUTO.FILLED, xpath, reduce.getModel(), null, comment);
+                docMetadata.addAutoFilled(xpath, reduce.getModel());
+                autofilled = true;
             }
         } else {
             SuggestionMetadataWrapper.PropertyHolder reduce = modelSuggestions.stream()
