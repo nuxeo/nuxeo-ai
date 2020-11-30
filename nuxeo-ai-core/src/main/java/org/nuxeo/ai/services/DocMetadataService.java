@@ -32,8 +32,6 @@ import java.util.List;
  */
 public interface DocMetadataService {
 
-    String AUTO_ADDED = "AUTO_";
-
     String ENRICHMENT_MODIFIED = "ENRICHMENT_MODIFIED";
 
     String PATHS = "xPaths";
