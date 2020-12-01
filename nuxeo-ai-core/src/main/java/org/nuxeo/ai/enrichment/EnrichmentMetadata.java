@@ -18,25 +18,49 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.TagSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.runtime.api.Framework;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
+import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_TIMESTAMP;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * A normalized view of the result of an Enrichment Service. This class is designed to be serialized as JSON.
@@ -46,13 +70,15 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
 
     private static final long serialVersionUID = -8838535848960975096L;
 
+    private static final Logger log = LogManager.getLogger(EnrichmentMetadata.class);
+
     private final List<LabelSuggestion> labelSuggestions;
 
     private final List<TagSuggestion> tagSuggestions;
 
     private EnrichmentMetadata(Builder builder) {
         super(builder.modelName, builder.kind, builder.getContext(), builder.getCreator(), builder.created,
-              builder.getRawKey());
+                builder.getRawKey());
         labelSuggestions = unmodifiableList(builder.labelSuggestions);
         tagSuggestions = unmodifiableList(builder.tagSuggestions);
     }
@@ -77,8 +103,8 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
             return false;
         }
         EnrichmentMetadata metadata = (EnrichmentMetadata) o;
-        return Objects.equals(labelSuggestions, metadata.labelSuggestions)
-                && Objects.equals(tagSuggestions, metadata.tagSuggestions);
+        return Objects.equals(labelSuggestions, metadata.labelSuggestions) && Objects.equals(tagSuggestions,
+                metadata.tagSuggestions);
     }
 
     @Override
@@ -106,9 +132,65 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
         } catch (CloneNotSupportedException e) {
             Context ctx = this.getContext();
             return new EnrichmentMetadata(
-                    new Builder(this.kind, this.modelName, ctx.inputProperties, ctx.repositoryName, ctx.documentRef, ctx.digests)
-            );
+                    new Builder(this.kind, this.modelName, ctx.inputProperties, ctx.repositoryName, ctx.documentRef,
+                            ctx.digests));
         }
+    }
+
+    /**
+     * Create a enrichment Map using the enrichment metadata
+     */
+    public Map<String, Object> toMap() {
+        List<Map<String, Object>> suggestions = new ArrayList<>(getLabels().size());
+        getLabels().forEach(suggestion -> {
+            Map<String, Object> anEntry = new HashMap<>();
+            anEntry.put(SUGGESTION_PROPERTY, suggestion.getProperty());
+            List<Map<String, Object>> values = new ArrayList<>(suggestion.getValues().size());
+            suggestion.getValues().forEach(value -> {
+                Map<String, Object> val = new HashMap<>(2);
+                val.put(SUGGESTION_LABEL, value.getName());
+                val.put(SUGGESTION_CONFIDENCE, value.getConfidence());
+                val.put(SUGGESTION_TIMESTAMP, value.getTimestamp());
+                values.add(val);
+            });
+            anEntry.put(SUGGESTION_LABELS, values);
+            suggestions.add(anEntry);
+        });
+
+        Map<String, Object> anEntry = new HashMap<>();
+        AIComponent aiComponent = Framework.getService(AIComponent.class);
+
+        if (!suggestions.isEmpty()) {
+            anEntry.put(SUGGESTION_SUGGESTIONS, suggestions);
+        }
+
+        try {
+            if (StringUtils.isNotEmpty(getRawKey())) {
+                TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentProvider(getModelName());
+
+                List<Blob> rawBlobs = transientStore.getBlobs(getRawKey());
+                if (rawBlobs != null && rawBlobs.size() == 1) {
+                    anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlobs.get(0));
+                } else {
+                    log.warn("Unexpected transient store raw blob information for {}. "
+                            + "A single raw blob is expected.", modelName);
+                }
+            }
+
+            EnrichmentMetadata clone = (EnrichmentMetadata) clone();
+            clone.getLabels().forEach(LabelSuggestion::keepUniqueOnly);
+            Blob metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(clone));
+            anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
+        } catch (IOException e) {
+            throw new NuxeoException("Unable to process metadata blob", e);
+        }
+
+        anEntry.put(ENRICHMENT_MODEL, modelName);
+        anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, context.inputProperties);
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Enriching doc %s with %s", context.documentRef, suggestions));
+        }
+        return anEntry;
     }
 
     public static class Builder extends AbstractMetaDataBuilder {
@@ -117,8 +199,8 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
 
         private List<TagSuggestion> tagSuggestions;
 
-        public Builder(String kind, String modelName, Set<String> inputProperties,
-                String repositoryName, String documentRef, Set<String> digests) {
+        public Builder(String kind, String modelName, Set<String> inputProperties, String repositoryName,
+                String documentRef, Set<String> digests) {
             super(Instant.now(), kind, modelName, repositoryName, documentRef, digests, inputProperties);
             labelSuggestions = new ArrayList<>();
             tagSuggestions = new ArrayList<>();
