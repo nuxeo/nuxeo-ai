@@ -1,0 +1,5 @@
+<component name="org.nuxeo.ai.core.internal.operations">
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="operations">
+    <operation class="org.nuxeo.ai.internal.InitAudit" />
+  </extension>
+</component>
