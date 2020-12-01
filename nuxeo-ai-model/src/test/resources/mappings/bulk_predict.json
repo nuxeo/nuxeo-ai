@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/api/v1/ai/mockTestProject/model/mockBulkModel/testing/predict?datasource=dev"
+    "url": "/api/v1/ai/mockTestProject/model/mockBulkModel/dev/predict?datasource=dev"
   },
   "response": {
     "status": 200,

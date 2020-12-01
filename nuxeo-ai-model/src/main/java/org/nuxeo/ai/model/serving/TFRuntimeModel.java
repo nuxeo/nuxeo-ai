@@ -18,34 +18,10 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
@@ -62,10 +38,32 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * A runtime model that calls TensorFlow Serving rest api
@@ -210,13 +208,13 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
 
     /**
      * Builds the uri.
-     * 
+     *
      * @param client
      */
     protected String buildUri(CloudClient client) {
         String datasource = client.getCloudConfig().getDatasource();
         return API_AI + client.byProjectId(
-                "/model/" + getName() + "/" + modelPath + VERB_PREDICT + "?datasource=" + datasource);
+                "/model/" + getName() + "/" + datasource + "/" + VERB_PREDICT + "?datasource=" + datasource);
     }
 
     @Override
