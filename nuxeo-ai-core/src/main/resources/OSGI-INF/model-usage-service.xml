@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.services.ModelUsageService" version="1.0">
+
+  <implementation class="org.nuxeo.ai.services.ModelUsageServiceImpl"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.services.ModelUsageService"/>
+  </service>
+</component>
