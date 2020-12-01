@@ -25,20 +25,21 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.event.CoreEventConstants;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.ecm.platform.audit.api.AuditLogger;
+import org.nuxeo.ecm.platform.audit.api.ExtendedInfo;
+import org.nuxeo.ecm.platform.audit.api.LogEntry;
+import org.nuxeo.ecm.platform.audit.impl.ExtendedInfoImpl;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,15 +62,9 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_TIMESTAMP;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
 
@@ -84,6 +80,26 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     private static final Logger log = LogManager.getLogger(DocMetadataServiceImpl.class);
 
+    /**
+     * Have one of the supplied properties been modified?
+     */
+    public static boolean hadBeenModified(DocumentModel doc, Set<String> props) {
+
+        if (props != null) {
+            for (String propName : props) {
+                try {
+                    Property prop = doc.getProperty(propName);
+                    if (prop != null && prop.isDirty()) {
+                        return true;
+                    }
+                } catch (PropertyNotFoundException e) {
+                    // Just ignore
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public DocumentModel saveEnrichment(CoreSession session, EnrichmentMetadata metadata) {
         // TODO: Handle versions here?
@@ -95,8 +111,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             return null;
         }
 
-        Map<String, Object> anItem = createEnrichment(metadata);
-
+        Map<String, Object> anItem = metadata.toMap();
         if (anItem != null) {
             if (!doc.hasFacet(ENRICHMENT_FACET)) {
                 doc.addFacet(ENRICHMENT_FACET);
@@ -142,66 +157,9 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         return suggestion.get(ENRICHMENT_MODEL) + input;
     }
 
-    /**
-     * Create a enrichment Map using the enrichment metadata
-     */
-    protected Map<String, Object> createEnrichment(EnrichmentMetadata metadata) {
-        List<Map<String, Object>> suggestions = new ArrayList<>(metadata.getLabels().size());
-        metadata.getLabels().forEach(suggestion -> {
-            Map<String, Object> anEntry = new HashMap<>();
-            anEntry.put(SUGGESTION_PROPERTY, suggestion.getProperty());
-            List<Map<String, Object>> values = new ArrayList<>(suggestion.getValues().size());
-            suggestion.getValues().forEach(value -> {
-                Map<String, Object> val = new HashMap<>(2);
-                val.put(SUGGESTION_LABEL, value.getName());
-                val.put(SUGGESTION_CONFIDENCE, value.getConfidence());
-                val.put(SUGGESTION_TIMESTAMP, value.getTimestamp());
-                values.add(val);
-            });
-            anEntry.put(SUGGESTION_LABELS, values);
-            suggestions.add(anEntry);
-        });
-
-        Map<String, Object> anEntry = new HashMap<>();
-        AIComponent aiComponent = Framework.getService(AIComponent.class);
-
-        if (!suggestions.isEmpty()) {
-            anEntry.put(SUGGESTION_SUGGESTIONS, suggestions);
-        }
-
-        try {
-            if (StringUtils.isNotEmpty(metadata.getRawKey())) {
-                TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentProvider(
-                        metadata.getModelName());
-
-                List<Blob> rawBlobs = transientStore.getBlobs(metadata.getRawKey());
-                if (rawBlobs != null && rawBlobs.size() == 1) {
-                    anEntry.put(ENRICHMENT_RAW_KEY_PROPERTY, rawBlobs.get(0));
-                } else {
-                    log.warn("Unexpected transient store raw blob information for {}. "
-                            + "A single raw blob is expected.", metadata.getModelName());
-                }
-            }
-
-            EnrichmentMetadata clone = (EnrichmentMetadata) metadata.clone();
-            clone.getLabels().forEach(LabelSuggestion::keepUniqueOnly);
-            Blob metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(clone));
-            anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
-        } catch (IOException e) {
-            throw new NuxeoException("Unable to process metadata blob", e);
-        }
-
-        anEntry.put(ENRICHMENT_MODEL, metadata.getModelName());
-        anEntry.put(ENRICHMENT_INPUT_DOCPROP_PROPERTY, metadata.context.inputProperties);
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Enriching doc %s with %s", metadata.context.documentRef, suggestions));
-        }
-        return anEntry;
-    }
-
     @Override
-    public DocumentModel updateAuto(DocumentModel doc, AUTO autoField, String xPath, String model, Serializable oldValue,
-            String comment) {
+    public DocumentModel updateAuto(DocumentModel doc, AUTO autoField, String xPath, String model,
+            Serializable oldValue, String comment) {
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
         }
@@ -224,9 +182,36 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             setAutoHistory(doc, history);
         }
 
-        raiseEvent(doc, AUTO_ADDED + autoField.name(), Collections.singleton(xPath), comment);
+        raiseEvent(doc, autoField.eventName(), Collections.singleton(xPath), comment);
+
+        storeAudit(doc, autoField, model, 1L, comment);
 
         return doc;
+    }
+
+    private void storeAudit(DocumentModel doc, AUTO autoField, String model, long value, String comment) {
+        AuditLogger audit = Framework.getService(AuditLogger.class);
+        if (audit != null) {
+            LogEntry logEntry = audit.newLogEntry();
+            logEntry.setCategory("AI");
+            logEntry.setEventId(autoField.eventName());
+            logEntry.setComment(comment);
+            logEntry.setDocUUID(doc.getId());
+            logEntry.setDocPath(doc.getPathAsString());
+            logEntry.setEventDate(new Date());
+
+            ExtendedInfoImpl.StringInfo modelInfo = new ExtendedInfoImpl.StringInfo(model);
+            ExtendedInfoImpl.LongInfo one = new ExtendedInfoImpl.LongInfo(value);
+
+            HashMap<String, ExtendedInfo> infos = new HashMap<>();
+            infos.put("model", modelInfo);
+            infos.put("value", one);
+            logEntry.setExtendedInfos(infos);
+
+            audit.addLogEntries(Collections.singletonList(logEntry));
+        } else {
+            log.warn("Audit Logger is not available");
+        }
     }
 
     @Override
@@ -234,7 +219,8 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         List<AutoHistory> history = getAutoHistory(doc);
         Optional<AutoHistory> previous = history.stream().filter(h -> xPath.equals(h.getProperty())).findFirst();
         boolean present = previous.isPresent();
-
+        // TODO: get the notion of what's going on and audit each auto enrich mechanism accordingly
+        // based on it we need write AuditLog
         Set<Map<String, String>> set = getAutoPropAsSet(doc, autoField.lowerName());
         Set<Map<String, String>> noOldXpath = set.stream()
                                                  .filter(val -> !val.get("xpath").equals(xPath))
@@ -345,26 +331,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             raiseEvent(doc, ENRICHMENT_MODIFIED, removedTargetProperties, "Dirty inputs");
         }
         return doc;
-    }
-
-    /**
-     * Have one of the supplied properties been modified?
-     */
-    public static boolean hadBeenModified(DocumentModel doc, Set<String> props) {
-
-        if (props != null) {
-            for (String propName : props) {
-                try {
-                    Property prop = doc.getProperty(propName);
-                    if (prop != null && prop.isDirty()) {
-                        return true;
-                    }
-                } catch (PropertyNotFoundException e) {
-                    // Just ignore
-                }
-            }
-        }
-        return false;
     }
 
     @Override
