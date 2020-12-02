@@ -1,13 +1,6 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.model.bulk.enrich.test" version="1.0">
 
-  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="insight" kind="/prediction/custommodel"
-                class="org.nuxeo.ai.model.serving.InsightProvider" maxSize="10000000">
-    </enrichment>
-  </extension>
-
-
   <extension point="models" target="org.nuxeo.ai.model.serving.ModelServing">
     <model id="basicBulkModel">
       <filter primaryType="File"/>
@@ -37,11 +30,12 @@
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">ai/bulkEnriched</option>
+    <streamProcessor name="insightProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor"
+                     logConfig="bulk">
+      <option name="source">test/bulkEnrich</option>
       <option name="sink">test/enrichment-in</option>
-      <option name="enrichmentProviderName">insight</option>
+      <option name="enrichmentProviderName">insight.customModel</option>
     </streamProcessor>
   </extension>
 
