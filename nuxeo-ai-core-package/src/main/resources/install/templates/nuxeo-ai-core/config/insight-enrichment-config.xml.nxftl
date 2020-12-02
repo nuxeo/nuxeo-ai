@@ -2,20 +2,23 @@
 <component name="org.nuxeo.ai.insight.enrichment.configs">
 
 <#if "${nuxeo.ai.insight.enrichment.enabled}" == "true">
-  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="insight" kind="/prediction/custommodel"
-                class="org.nuxeo.ai.model.serving.InsightProvider" maxSize="10000000">
-    </enrichment>
-  </extension>
-
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-      <streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="4"
+      <streamProcessor name="insightProcessor" defaultConcurrency="1" defaultPartitions="4"
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor"
-                       logConfig="${nuxeo.ai.stream.config.name}">
-        <option name="source">ai/bulkEnriched</option>
-        <option name="sink">${nuxeo.enrichment.source.stream}</option>
-        <option name="enrichmentProviderName">insight</option>
+                       logConfig="bulk">
+        <option name="source">bulk.enrich</option>
+        <option name="sink">insight.${nuxeo.enrichment.source.stream}</option>
+        <option name="enrichmentProviderName">insight.customModel</option>
       </streamProcessor>
+    </extension>
+
+    <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+        <streamProcessor name="insightSaveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
+                         logConfig="bulk"
+                         class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
+          <option name="source">insight.${nuxeo.enrichment.source.stream}</option>
+          <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+        </streamProcessor>
     </extension>
 </#if>
 </component>

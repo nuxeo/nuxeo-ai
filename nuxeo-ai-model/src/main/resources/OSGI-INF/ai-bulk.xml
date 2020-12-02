@@ -20,6 +20,7 @@
           <option name="storeTTL">4h</option>
         </filter>
       </stream>
+
       <stream name="exp-validation" partitions="1">
         <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
@@ -27,6 +28,7 @@
           <option name="storeTTL">4h</option>
         </filter>
       </stream>
+
       <stream name="exp-dataset-update" partitions="1">
         <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
@@ -35,14 +37,23 @@
         </filter>
       </stream>
     </streamProcessor>
+
     <streamProcessor name="bulkEnrich" class="org.nuxeo.ai.bulk.BulkEnrichmentAction" logConfig="bulk"
                      defaultConcurrency="2" defaultPartitions="2">
       <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
       <option name="streamName">bulk.enrich</option>
     </streamProcessor>
+
     <streamProcessor name="bulkEnrichRemove" class="org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction" logConfig="bulk"
                      defaultConcurrency="2" defaultPartitions="2">
       <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
     </streamProcessor>
+
+  </extension>
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="insight.customModel" kind="/prediction/custommodel"
+                class="org.nuxeo.ai.model.serving.InsightProvider" maxSize="10000000">
+    </enrichment>
   </extension>
 </component>
