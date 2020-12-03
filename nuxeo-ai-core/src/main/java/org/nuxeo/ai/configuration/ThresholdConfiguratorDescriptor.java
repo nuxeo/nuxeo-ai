@@ -19,14 +19,13 @@
  */
 package org.nuxeo.ai.configuration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.runtime.model.Descriptor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @XObject("thresholdConfiguration")
 public class ThresholdConfiguratorDescriptor implements Descriptor {
@@ -44,7 +43,7 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
      * @return global threshold for the {@link ThresholdConfiguratorDescriptor#type}
      */
     public float getGlobal() {
-        return global;
+        return normalize(global);
     }
 
     /**
@@ -89,9 +88,9 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
             if (that == null) {
                 return;
             }
-            value = Math.max(value, that.value);
-            autofillValue = Math.max(autofillValue, that.autofillValue);
-            autocorrect = Math.max(autocorrect, that.autocorrect);
+            value = Math.max(getValue(), that.getValue());
+            autofillValue = Math.max(getAutofillValue(), that.getAutofillValue());
+            autocorrect = Math.max(getAutocorrect(), that.getAutocorrect());
         }
 
         /**
@@ -105,21 +104,25 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
          * @return threshold value
          */
         public float getValue() {
-            return value;
+            return normalize(value);
         }
 
         /**
          * @return Threshold for autofill
          */
         public float getAutofillValue() {
-            return autofillValue;
+            return normalize(autofillValue);
         }
 
         /**
          * @return Threshold for auto-correct
          */
         public float getAutocorrect() {
-            return autocorrect;
+            return normalize(autocorrect);
         }
+    }
+
+    public static float normalize(float original) {
+        return original > 1.f ? original / 100.f : original;
     }
 }
