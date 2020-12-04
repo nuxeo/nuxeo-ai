@@ -88,6 +88,7 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
             if (that == null) {
                 return;
             }
+
             value = Math.max(getValue(), that.getValue());
             autofillValue = Math.max(getAutofillValue(), that.getAutofillValue());
             autocorrect = Math.max(getAutocorrect(), that.getAutocorrect());
@@ -123,6 +124,6 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
     }
 
     public static float normalize(float original) {
-        return original > 1.f ? original / 100.f : original;
+        return (original >= 1.f ? original / 100.f : original);
     }
 }
