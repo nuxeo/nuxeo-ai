@@ -19,13 +19,8 @@
  */
 package org.nuxeo.ai.listeners;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,10 +36,15 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import javax.inject.Inject;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(FeaturesRunner.class)
 @Features({ PlatformFeature.class })
@@ -69,11 +69,13 @@ public class InvalidateModelDefinitionsListenerTest {
     @Inject
     protected TransactionalFeature txf;
 
-    @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void shouldLunchExportWithNoExceptions() {
-        assertThat(mss.listModels()).hasSize(2);
+    @Inject
+    protected HotDeployer hotDeployer;
 
+    @Test
+    public void shouldLunchExportWithNoExceptions() throws Exception {
+        assertThat(mss.listModels()).hasSize(2);
+        hotDeployer.deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml");
         EventBundle bundle = new EventBundleImpl();
         EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
         bundle.push(new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx));

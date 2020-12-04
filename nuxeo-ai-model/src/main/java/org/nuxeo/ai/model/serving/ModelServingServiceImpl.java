@@ -18,8 +18,29 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static java.util.Collections.singletonMap;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
+import org.nuxeo.ai.listeners.InvalidateModelDefinitionsListener;
+import org.nuxeo.ai.model.ModelProperty;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ai.services.AIConfigurationServiceImpl;
+import org.nuxeo.ai.services.PersistedConfigurationService;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.EventService;
+import org.nuxeo.ecm.core.event.impl.EventContextImpl;
+import org.nuxeo.ecm.core.event.impl.EventImpl;
+import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
+import org.nuxeo.ecm.directory.DirectoryEntryResolver;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.ComponentInstance;
+import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.runtime.model.Descriptor;
+import org.nuxeo.runtime.pubsub.PubSubService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -31,24 +52,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentProvider;
-import org.nuxeo.ai.model.ModelProperty;
-import org.nuxeo.ai.services.AIComponent;
-import org.nuxeo.ai.services.AIConfigurationServiceImpl;
-import org.nuxeo.ai.services.PersistedConfigurationService;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
-import org.nuxeo.ecm.directory.DirectoryEntryResolver;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.ComponentContext;
-import org.nuxeo.runtime.model.ComponentInstance;
-import org.nuxeo.runtime.model.DefaultComponent;
-import org.nuxeo.runtime.model.Descriptor;
-import org.nuxeo.runtime.pubsub.PubSubService;
+import static java.util.Collections.singletonMap;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -81,7 +86,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     @Override
     public void reload(Descriptor desc) {
-        String labels =((ModelDescriptor)desc).getInfo().get("modelLabel");
+        String labels = ((ModelDescriptor) desc).getInfo().get("modelLabel");
         // TODO
         this.registerContribution(desc, MODELS_AP, null);
         this.addModel((ModelDescriptor) desc);
@@ -108,6 +113,14 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         pcs.register(ModelDescriptor.class);
+
+        fireInvalidationEvent();
+    }
+
+    protected void fireInvalidationEvent() {
+        EventContextImpl ctx = new EventContextImpl();
+        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
+        Framework.getService(EventService.class).fireEvent(event);
     }
 
     protected void modelSubscriber(String topic, byte[] message) {
