@@ -103,6 +103,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
 
         List<String> uids = getModelIds(client);
         if (uids.isEmpty()) {
+            log.warn("Models listing is empty for continuous export");
             return;
         }
 
@@ -145,6 +146,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
         try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(repository)) {
             for (String uid : uids) {
                 try {
+                    log.info("Preparing export for model " + uid);
                     JSONBlob json = client.getCorpusDelta(uid);
                     if (json == null) {
                         continue;
@@ -152,6 +154,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
 
                     CorpusDelta delta = MAPPER.readValue(json.getStream(), CorpusDelta.class);
                     if (delta.isEmpty()) {
+                        log.info("Delta is empty for model " + uid);
                         continue;
                     }
                     String original = delta.getQuery();
