@@ -314,7 +314,7 @@ wait
             when {
                 anyOf {
                     tag '*'
-                    branch 'master'
+                    branch 'master*'
                     branch 'sprint-*'
                 }
             }
@@ -375,7 +375,7 @@ jx step create pr regex --regex 'version: (.*)' --version $VERSION --files packa
     post {
         always {
             script {
-                if (env.BRANCH_NAME == 'master' || env.TAG_NAME || env.BRANCH_NAME ==~ 'sprint-.*') {
+                if (env.BRANCH_NAME ==~ 'master.*' || env.TAG_NAME || env.BRANCH_NAME ==~ 'sprint-.*') {
                     step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                 }
             }
