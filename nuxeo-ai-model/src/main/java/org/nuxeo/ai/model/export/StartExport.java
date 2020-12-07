@@ -27,8 +27,11 @@ import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.event.EventProducer;
+import org.nuxeo.ecm.core.event.EventBundle;
+import org.nuxeo.ecm.core.event.EventService;
+import org.nuxeo.ecm.core.event.impl.EventBundleImpl;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
+import org.nuxeo.ecm.core.event.impl.EventImpl;
 import org.nuxeo.runtime.api.Framework;
 
 @Operation(id = StartExport.ID, category = CAT_LOCAL_CONFIGURATION, label = "Start Export", description = "Start Export Operation")
@@ -41,8 +44,10 @@ public class StartExport {
 
     @OperationMethod
     public void run() {
-        EventContextImpl evctx = new EventContextImpl(session, session.getPrincipal());
-        evctx.setProperty(FORCE_EXPORT, true);
-        Framework.getService(EventProducer.class).fireEvent(evctx.newEvent(START_CONTINUOUS_EXPORT));
+        EventBundle bundle = new EventBundleImpl();
+        EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
+        ctx.setProperty(FORCE_EXPORT, true);
+        bundle.push(new EventImpl(START_CONTINUOUS_EXPORT, ctx));
+        Framework.getService(EventService.class).fireEventBundle(bundle);
     }
 }

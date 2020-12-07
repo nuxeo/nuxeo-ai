@@ -9,7 +9,7 @@
   </extension>
 
   <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
-    <listener name="continuesExportListener" async="true" postCommit="true" priority="99"
+    <listener name="invalidateModelDefinitionsListener" async="true" postCommit="true" priority="99"
               class="org.nuxeo.ai.listeners.InvalidateModelDefinitionsListener">
       <event>invalidateModelDefinitions</event>
     </listener>
