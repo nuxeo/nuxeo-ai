@@ -1,10 +1,20 @@
 /*
- * (C) Copyright 2020 Nuxeo (http://nuxeo.com/).
- * This is unpublished proprietary source code of Nuxeo SA. All rights reserved.
- * Notice of copyright on this source code does not indicate publication.
+ * (C) Copyright 2020 Nuxeo (http://nuxeo.com/) and others.
  *
- * Contributors:
- *     Julien Carsique <jcarsique@nuxeo.com>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *  Contributors:
+ *      jcarsique
  */
 
 void setGitHubBuildStatus(String context) {
@@ -140,6 +150,7 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
+        WEBUI_VERSION = readMavenPom().getProperties().getProperty('nuxeo.webui.version')
         PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%H%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
@@ -222,9 +233,10 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                 container('platform11') {
                     sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
                     withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
-                        withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS_PROD')]) {
+                        withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS_PROD'),
+                                         usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
                             sh '''
-curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=3.1.0-SNAPSHOT" -o docker/nuxeo-web-ui.zip --retry 10 --retry-max-time 600
+curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download?version=$WEBUI_VERSION" -o docker/nuxeo-web-ui.zip --retry 10 --retry-max-time 600
 curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip --retry 10 --retry-max-time 600
 '''
                         }
