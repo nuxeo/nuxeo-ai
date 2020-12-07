@@ -13,8 +13,7 @@
   <production-state>production_ready</production-state>
   <supported>true</supported>
   <platforms>
-    <platform>server-@DISTRIB_VERSION@</platform>
-    <platform>server-@DISTRIB_VERSION@-HF*</platform>
+    <platform>@DISTRIBUTION_NAME@-@TARGET_VERSION@</platform>
   </platforms>
   <!-- Dependencies on other packages -->
   <dependencies>
