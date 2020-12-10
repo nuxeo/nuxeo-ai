@@ -18,6 +18,7 @@
     <operation class="org.nuxeo.ai.model.serving.SuggestionOp"/>
     <operation class="org.nuxeo.ai.model.serving.FetchInsightURI"/>
     <operation class="org.nuxeo.ai.model.serving.FetchDocsToAnnotate"/>
+    <operation class="org.nuxeo.ai.model.serving.AnnotationConfirm"/>
   </extension>
 
   <extension point="marshallers" target="org.nuxeo.ecm.core.io.MarshallerRegistry">
