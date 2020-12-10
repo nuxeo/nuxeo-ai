@@ -213,7 +213,6 @@ public class TestDocMetadataService {
 
     @Test
     public void testEnrichedFacetRemoval() {
-
         // Confirm our test document is enriched
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Enriched document", "File");
         EnrichmentMetadata metadata = enrichTestDoc(testDoc);
