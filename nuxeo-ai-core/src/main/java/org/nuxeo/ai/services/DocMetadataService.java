@@ -18,12 +18,13 @@
  */
 package org.nuxeo.ai.services;
 
-import java.io.Serializable;
-import java.util.List;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * Works with metadata for the Enrichment facet.

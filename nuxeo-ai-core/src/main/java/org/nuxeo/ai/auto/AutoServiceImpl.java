@@ -18,20 +18,6 @@
  */
 package org.nuxeo.ai.auto;
 
-import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
-import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
-import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
-import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdService;
@@ -44,6 +30,20 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.runtime.api.Framework;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
+import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
+import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
+import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
 
 /**
  * Autofill and AutoCorrect services.
