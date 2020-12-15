@@ -39,5 +39,6 @@ LABEL org.opencontainers.image.authors="Nuxeo AI <ai-team@nuxeo.com>"
 LABEL org.opencontainers.image.vendor="Nuxeo"
 LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo.com/)."
 
+COPY --chown=$NUXEO_USER log4j2.xml /opt/nuxeo/server/lib/log4j2.xml
 COPY *.zip /tmp/
 RUN /install-packages.sh /tmp/nuxeo-ai-core.zip /tmp/nuxeo-ai-image-quality-package.zip /tmp/nuxeo-web-ui.zip /tmp/nuxeo-csv.zip
