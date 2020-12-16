@@ -162,7 +162,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
         }
         stage('Maven Build') {
             environment {
-                MAVEN_OPTS = "-Xms512m -Xmx1g"
+                MAVEN_OPTS = "-Xms1g -Xmx2g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
@@ -172,15 +172,14 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
 //                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
-                        withMaven() {
-                            sh 'mvn ${MAVEN_ARGS}'
-                            sh "find . -name '*-reports' -type d"
-                        }
+                        sh 'mvn ${MAVEN_ARGS}'
+                        sh "find . -name '*-reports' -type d"
                     }
                 }
             }
             post {
                 always {
+                    junit allowEmptyResults: true, testResults: '**/target/*-reports/*.xml'
                     archiveArtifacts artifacts: '**/log/*.log, **/nxserver/config/distribution.properties, ' +
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
