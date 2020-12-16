@@ -29,3 +29,4 @@ LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo
 RUN rm -rf /opt/nuxeo/server/*
 COPY --chown=$NUXEO_USER --from=builder $NUXEO_HOME/ /opt/nuxeo/server
 COPY --chown=$NUXEO_USER log4j2.xml /opt/nuxeo/server/lib/log4j2.xml
+COPY --chown=$NUXEO_USER --from=builder /etc/nuxeo/nuxeo.conf /etc/nuxeo/nuxeo.conf.build

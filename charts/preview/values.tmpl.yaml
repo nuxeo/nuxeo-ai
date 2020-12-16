@@ -44,6 +44,7 @@ nuxeo:
       pullPolicy: Always
     packages: "nuxeo-jira-ai-${JIRA_AI_VERSION}"
     custom_params: |-
+      nuxeo.templates=default,nuxeo-ai-core
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira
       nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
