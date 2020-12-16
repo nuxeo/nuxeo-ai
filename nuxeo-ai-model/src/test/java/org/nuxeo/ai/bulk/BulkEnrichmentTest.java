@@ -65,6 +65,7 @@ import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.RandomBug;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -116,6 +117,7 @@ public class BulkEnrichmentTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     public void testBulkEnrich() throws Exception {
         DocumentModel testRoot = setupTestData();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
