@@ -100,6 +100,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.RandomBug;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
@@ -213,6 +214,7 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     @SuppressWarnings("unchecked")
     public void testBulkExport() throws Exception {
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
@@ -269,6 +271,7 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     public void shouldCallWithParameters() throws InterruptedException {
         Map<String, Serializable> params = new HashMap<>();
 
