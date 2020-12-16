@@ -179,7 +179,6 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: '**/target/*-reports/*.xml'
                     archiveArtifacts artifacts: '**/log/*.log, **/nxserver/config/distribution.properties, ' +
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
