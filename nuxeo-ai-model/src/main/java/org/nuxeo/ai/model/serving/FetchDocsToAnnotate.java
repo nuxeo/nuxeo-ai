@@ -18,18 +18,7 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -57,12 +46,22 @@ import org.nuxeo.ecm.core.schema.types.ListTypeImpl;
 import org.nuxeo.ecm.core.schema.types.SimpleTypeImpl;
 import org.nuxeo.ecm.core.schema.types.Type;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
+import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
-
-import com.fasterxml.jackson.core.JsonGenerator;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * Resolves all given properties for given documents <code>
@@ -260,6 +259,10 @@ public class FetchDocsToAnnotate {
         input.put("value", propertyValue);
         if (Objects.nonNull(objectResolver)) {
             input.put("resolver", objectResolver.getName());
+            if (objectResolver instanceof DirectoryEntryResolver) {
+                DirectoryEntryResolver der = (DirectoryEntryResolver) objectResolver;
+                input.put("directoryName", der.getDirectory().getName());
+            }
         }
         String typeName = type.getName();
         if (type instanceof SimpleTypeImpl && typeName != null && typeName.contains("anonymousType")) {

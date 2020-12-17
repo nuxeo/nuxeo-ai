@@ -18,11 +18,8 @@
  */
 package org.nuxeo.ai.model.analyzis;
 
-import static org.nuxeo.ai.model.analyzis.DatasetStatsService.getInputType;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonRawValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -34,8 +31,10 @@ import org.nuxeo.elasticsearch.aggregate.SingleBucketAggregate;
 import org.nuxeo.elasticsearch.aggregate.SingleValueMetricAggregate;
 import org.nuxeo.runtime.api.Framework;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
+
+import static org.nuxeo.ai.model.analyzis.DatasetStatsService.getInputType;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * A POJO representation of a Dataset Statistic

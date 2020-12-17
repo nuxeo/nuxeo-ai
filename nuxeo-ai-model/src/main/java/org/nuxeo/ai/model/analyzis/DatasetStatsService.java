@@ -18,10 +18,14 @@
  */
 package org.nuxeo.ai.model.analyzis;
 
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_COUNT;
+import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.schema.TypeConstants;
+import org.nuxeo.ecm.core.schema.types.Field;
+import org.nuxeo.ecm.core.schema.types.ListType;
+import org.nuxeo.ecm.core.schema.types.Type;
+import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
+import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,14 +36,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.schema.TypeConstants;
-import org.nuxeo.ecm.core.schema.types.Field;
-import org.nuxeo.ecm.core.schema.types.ListType;
-import org.nuxeo.ecm.core.schema.types.Type;
-import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
-import org.nuxeo.ecm.directory.DirectoryEntryResolver;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_COUNT;
 
 /**
  * For a given dataset provides statistics.
