@@ -18,30 +18,8 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
-import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
-import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
-
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-
-import javax.inject.Inject;
-
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.Sets;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +27,6 @@ import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
@@ -68,16 +45,37 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.collect.Sets;
+import javax.inject.Inject;
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
+import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
+import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class,
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class,
         RepositoryElasticSearchFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class BulkEnrichmentTest {
 

@@ -18,18 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
-
-import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -46,6 +34,19 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
+import javax.inject.Inject;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
+
 /**
  * Tests the overall AIComponent
  */
@@ -61,8 +62,8 @@ public class TestAIComponent {
     public void testBasicComponent() {
         assertNotNull(aiComponent);
         assertEquals(5, aiComponent.getEnrichmentProviders().size());
-        EnrichmentProvider service = aiComponent.getEnrichmentProvider("e1");
-        assertEquals("e1", service.getName());
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("test.e1");
+        assertEquals("test.e1", service.getName());
 
         ComputationContext testContext = new ComputationContextImpl(null);
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
@@ -70,9 +71,9 @@ public class TestAIComponent {
                 new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
         Record record = toRecord("k", blobTextFromDoc);
 
-        EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("e1");
+        EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test.e1");
         EnrichingStreamProcessor.EnrichmentComputation computation = new EnrichingStreamProcessor.EnrichmentComputation(
-                1, "test", "e1", metrics, false);
+                1, "test", "test.e1", metrics, false);
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         assertEquals(0, metrics.errors);
@@ -80,7 +81,7 @@ public class TestAIComponent {
         assertEquals(0, metrics.success);
         assertEquals("PDF isn't a supported mimetype", 1, metrics.unsupported);
 
-        service = aiComponent.getEnrichmentProvider("logging");
+        service = aiComponent.getEnrichmentProvider("test.logging");
         service.enrich(blobTextFromDoc);
     }
 

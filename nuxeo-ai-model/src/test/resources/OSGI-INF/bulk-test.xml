@@ -33,7 +33,7 @@
     <streamProcessor name="insightProcessor" defaultConcurrency="1" defaultPartitions="4"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor"
                      logConfig="bulk">
-      <option name="source">test/bulkEnrich</option>
+      <option name="source">ai/bulkEnriched</option>
       <option name="sink">test/enrichment-in</option>
       <option name="enrichmentProviderName">insight.customModel</option>
     </streamProcessor>

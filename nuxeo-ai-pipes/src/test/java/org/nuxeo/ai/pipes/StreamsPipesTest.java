@@ -18,22 +18,6 @@
  */
 package org.nuxeo.ai.pipes;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
-import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
-import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
-
-import java.time.Duration;
-import java.util.List;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -56,6 +40,21 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
+import javax.inject.Inject;
+import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
+import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 
 
 @RunWith(FeaturesRunner.class)
@@ -194,12 +193,15 @@ public class StreamsPipesTest {
                 "ai/aname_void", buildName("aname", null, null)
         );
         assertEquals("ai/king_bob_hope", buildName("king", "bob", "hope"));
-        assertEquals("ai/king_bob_hope_rope", buildName("king", "bob", "hope,rope"));
+        assertEquals("ai/king_bob_hope-rope", buildName("king", "bob", "hope,rope"));
 
         assertEquals("ai/king_bob", buildName("king", "bob", null));
         assertEquals("ai/king_void_kong", buildName("king", null, "kong"));
 
-        assertEquals("ai/functionClass_stream-source_stream-sink1_stream-sink2",
+        assertEquals("ai/functionClass_stream-source_stream-sink1-stream-sink2",
                 buildName("functionClass", "stream/source", "stream/sink1,stream/sink2"));
+
+        assertEquals("ai/insight-custom_stream-source_stream-sink",
+                buildName("insight.custom", "stream/source", "stream/sink"));
     }
 }

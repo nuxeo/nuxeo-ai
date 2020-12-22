@@ -18,30 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.emptySet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-
+import junit.framework.TestCase;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,14 +40,36 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import junit.framework.TestCase;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.Collections.emptySet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.AIConstants.NORMALIZED_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
 @Deploy({"org.nuxeo.ecm.platform.tag", "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-core:OSGI-INF/enrichment-test.xml"})
 public class TestDocMetadataService {
 
-    public static final String SERVICE_NAME = "reverse";
+    public static final String SERVICE_NAME = "test.reverse";
 
     public static final String SOME_TEXT = "You can change me";
 
