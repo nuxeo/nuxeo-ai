@@ -477,9 +477,9 @@ curl -s -X GET "localhost:8080/nuxeo/api/v1/bulk/$COMMAND_ID" -u Administrator:A
 
 The documentation on [Debugging The Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/#debugging) has more useful stream commands.  Some further examples are:
 ```
-./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l bulkDatasetExport
-./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l exp-training
-./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l exp-validation
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l ai/bulkDatasetExport
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l ai/training
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l ai/validation
 ./bin/stream.sh tail -n 8 --chronicle /var/lib/nuxeo/data/stream/bulk -l done --codec avro --schema-store /var/lib/nuxeo/data/avro/ --data-size 3000
 ./bin/stream.sh tail -n 8 --chronicle /var/lib/nuxeo/data/stream/bulk -l command --codec avro --schema-store /var/lib/nuxeo/data/avro/ --data-size 3000
 ```

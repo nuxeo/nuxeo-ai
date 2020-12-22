@@ -23,7 +23,7 @@
         </filter>
       </stream>
 
-      <stream name="exp-validation" partitions="1">
+      <stream name="ai/validation" partitions="1">
         <filter name="overflow"
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
@@ -32,7 +32,7 @@
         </filter>
       </stream>
 
-      <stream name="exp-dataset-update" partitions="1">
+      <stream name="ai/dataset-update" partitions="1">
         <filter name="overflow"
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
@@ -45,7 +45,7 @@
     <streamProcessor name="bulkEnrich" class="org.nuxeo.ai.bulk.BulkEnrichmentAction" logConfig="bulk"
                      defaultConcurrency="2" defaultPartitions="2">
       <policy name="default" maxRetries="3" delay="1s" maxDelay="10s" continueOnFailure="true"/>
-      <option name="streamName">bulk.enrich</option>
+      <option name="streamName">ai/bulkEnriched</option>
     </streamProcessor>
 
     <streamProcessor name="bulkEnrichRemove" class="org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction" logConfig="bulk"

@@ -18,28 +18,9 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.MetricRegistry;
+import io.dropwizard.metrics5.SharedMetricRegistries;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,9 +50,26 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import io.dropwizard.metrics5.Gauge;
-import io.dropwizard.metrics5.MetricRegistry;
-import io.dropwizard.metrics5.SharedMetricRegistries;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 /**
  * Tests a fully configured stream processor
@@ -82,7 +80,7 @@ import io.dropwizard.metrics5.SharedMetricRegistries;
         "org.nuxeo.ai.ai-core:OSGI-INF/stream-test.xml" })
 public class TestConfiguredStreamProcessors {
 
-    protected static final String METRICS_PREFIX = "nuxeo.ai.enrichment.ai/simpleTest_test-images_test-images-out.";
+    protected static final String METRICS_PREFIX = "nuxeo.ai.enrichment.ai/test-simpleEnrich_test-images_test-images-out.";
 
     protected static final Name TEST_IMAGES = Name.ofUrn("test/images");
 
@@ -151,7 +149,7 @@ public class TestConfiguredStreamProcessors {
         assertTrue("The document must have the enrichment facet", enrichedDoc.hasFacet(ENRICHMENT_FACET));
         Property classProp = enrichedDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         Assert.assertNotNull(classProp);
-        assertEquals("simpleTest", classProp.get(0).get(ENRICHMENT_MODEL).getValue());
+        assertEquals("test.simpleEnrich", classProp.get(0).get(ENRICHMENT_MODEL).getValue());
 
         // Confirm event listeners fired
         String description = (String) enrichedDoc.getPropertyValue("dc:description");
@@ -208,7 +206,6 @@ public class TestConfiguredStreamProcessors {
 
     @Test
     public void testSuggestConsumer() throws IOException, InterruptedException {
-
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
         blobTextFromDoc.setId("mydocId");
         blobTextFromDoc.setRepositoryName("text");

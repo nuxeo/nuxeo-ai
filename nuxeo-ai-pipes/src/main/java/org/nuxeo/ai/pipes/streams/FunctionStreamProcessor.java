@@ -18,14 +18,8 @@
  */
 package org.nuxeo.ai.pipes.streams;
 
-import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-
+import io.dropwizard.metrics5.MetricRegistry;
+import io.dropwizard.metrics5.SharedMetricRegistries;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,8 +31,13 @@ import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 
-import io.dropwizard.metrics5.MetricRegistry;
-import io.dropwizard.metrics5.SharedMetricRegistries;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
 
 /**
  * A stream processor using a Function.
@@ -70,10 +69,18 @@ public class FunctionStreamProcessor {
         return streams;
     }
 
+    protected static final String NOT_ALLOWED_RX = "[/.,]";
+
     public static String buildName(String simpleName, String streamIn, String streamOut) {
-        String in = streamIn != null ? streamIn.replace("/", "-") : "void";
-        String out = streamOut != null ? "_" + streamOut.replace("/", "-").replace(",", "_") : "";
-        return "ai/" + simpleName + "_" + in + out;
+        String name = toValid(simpleName);
+        String in = streamIn != null ? toValid(streamIn) : "void";
+        String out = streamOut != null ? "_" + toValid(streamOut): "";
+
+        return "ai/" + name + "_" +  in + out;
+    }
+
+    protected static String toValid(String in) {
+        return in.replaceAll(NOT_ALLOWED_RX, "-");
     }
 
     public Topology getTopology(Function<Record, Optional<Record>> function, Map<String, String> options) {
