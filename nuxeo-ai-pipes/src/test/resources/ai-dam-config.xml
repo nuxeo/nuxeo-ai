@@ -16,7 +16,7 @@
         </event>
       </supplier>
       <consumer>
-        <stream name="images"/>
+        <stream name="ai/images"/>
       </consumer>
       <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
         <option name="blobProperties">picture:views/3/content</option>
