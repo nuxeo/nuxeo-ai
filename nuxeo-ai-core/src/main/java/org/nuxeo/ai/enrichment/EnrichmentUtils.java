@@ -20,6 +20,7 @@
 package org.nuxeo.ai.enrichment;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_RAW_KEY_PROPERTY;
 import static org.nuxeo.ai.convert.AiPDFConverter.AI_PDF_CONVERTER;
 import static org.nuxeo.ai.convert.AiPDFConverter.PDF_MIME_TYPE;
 
@@ -37,6 +38,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -148,6 +150,10 @@ public class EnrichmentUtils {
     public static String saveRawBlob(Blob rawBlob, String transientStoreName) {
         TransientStore transientStore = Framework.getService(TransientStoreService.class).getStore(transientStoreName);
         String blobKey = UUID.randomUUID().toString();
+        if (StringUtils.isEmpty(rawBlob.getFilename())) {
+            rawBlob.setFilename(ENRICHMENT_RAW_KEY_PROPERTY + ".json");
+        }
+
         transientStore.putBlobs(blobKey, Collections.singletonList(rawBlob));
         return blobKey;
     }
