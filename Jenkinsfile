@@ -307,16 +307,17 @@ done
                 }
             }
         }
-        stage('Upgrade PR on Downstream Jobs') {
+        stage('Upgrade version stream') {
             when {
                 tag '*'
             }
             steps {
-                container('platform11') {
-                    sh """#!/bin/bash -xe
-# update Nuxeo AI Core version in the other repositories
-./tools/updatebot.sh ${AI_CORE_VERSION}
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    container('platform1010') {
+                        sh """#!/bin/bash -xe
+jx step create pr regex --regex 'version: (.*)' --version $VERSION --files packages/nuxeo-ai.yml -r https://github.com/nuxeo/jx-ai-versions
 """
+                    }
                 }
             }
         }

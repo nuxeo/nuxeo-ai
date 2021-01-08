@@ -62,7 +62,27 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
             post {
                 always {
                     setGitHubBuildStatus('release')
-                    archiveArtifacts artifacts: 'VERSION, charts/*/templates/release.yaml, release.properties', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'release.properties, charts/*/templates/release.yaml', allowEmptyArchive: true
+                }
+            }
+        }
+        stage('Update downstream repos') {
+            steps {
+                setGitHubBuildStatus('post-release')
+                container('platform1010') {
+                    withEnv(["DRY_RUN=${params.DRY_RUN}"]) {
+                        script {
+                            def nextVersion = readProperties(file: 'release.properties')['NEXT_VERSION'].trim()
+                            sh """#!/bin/bash -xe
+./tools/updatebot.sh ${nextVersion}
+"""
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    setGitHubBuildStatus('post-release')
                 }
             }
         }
