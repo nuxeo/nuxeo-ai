@@ -305,16 +305,18 @@ done
                 }
             }
         }
-        stage('Upgrade PR on Downstream Jobs') {
+        stage('Upgrade version stream') {
             when {
                 tag '*'
             }
             steps {
-                container('platform1010') {
-                    sh """#!/bin/bash -xe
-# update Nuxeo AI Core version in the other repositories
-./tools/updatebot.sh ${AI_CORE_VERSION}
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    container('platform1010') {
+                        sh """#!/bin/bash -xe
+jx step create pr regex --regex 'version: (.*)' --version $VERSION --files packages/nuxeo-ai.yml \
+    -r https://github.com/nuxeo/jx-ai-versions --base core-2.x --branch core-2.x
 """
+                    }
                 }
             }
         }
@@ -322,7 +324,7 @@ done
     post {
         always {
             script {
-                if (env.TAG_NAME || env.BRANCH_NAME == 'master-10.10' || env.BRANCH_NAME ==~ 'Sprint-.*') {
+                if (env.TAG_NAME || env.BRANCH_NAME == 'master-10.10' || env.BRANCH_NAME ==~ 'sprint-.*') {
                     step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                 }
             }
