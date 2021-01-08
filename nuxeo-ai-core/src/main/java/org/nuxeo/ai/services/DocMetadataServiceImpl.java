@@ -206,8 +206,9 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
             EnrichmentMetadata clone = (EnrichmentMetadata) metadata.clone();
             clone.getLabels().forEach(LabelSuggestion::keepUniqueOnly);
-            Blob metaDataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(clone));
-            anEntry.put(NORMALIZED_PROPERTY, metaDataBlob);
+            Blob metadataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(clone));
+            metadataBlob.setFilename(NORMALIZED_PROPERTY + ".json");
+            anEntry.put(NORMALIZED_PROPERTY, metadataBlob);
         } catch (IOException e) {
             throw new NuxeoException("Unable to process metadata blob", e);
         }
