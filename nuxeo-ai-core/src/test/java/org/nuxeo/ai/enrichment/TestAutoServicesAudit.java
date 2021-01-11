@@ -185,6 +185,10 @@ public class TestAutoServicesAudit {
                                                                       .get("model")
                                                                       .getValue(String.class)
                                                                       .equals("stest"))
+                                                .filter(entry -> entry.getExtendedInfos()
+                                                                      .get("value")
+                                                                      .getValue(Long.class)
+                                                                      .equals(1L))
                                                 .collect(Collectors.toSet());
         assertThat(perModelAudit).hasSize(1);
     }
