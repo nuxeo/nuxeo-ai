@@ -19,6 +19,7 @@
 package org.nuxeo.ai.services;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -189,7 +190,52 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         return doc;
     }
 
-    private void storeAudit(DocumentModel doc, AUTO autoField, String model, long value, String comment) {
+    @Override
+    public DocumentModel resetAuto(DocumentModel doc, AUTO autoField, String xPath, boolean resetValue) {
+        List<AutoHistory> history = getAutoHistory(doc);
+        Optional<AutoHistory> previous = history.stream().filter(h -> xPath.equals(h.getProperty())).findFirst();
+        boolean present = previous.isPresent();
+        Set<Map<String, String>> set = getAutoPropAsSet(doc, autoField.lowerName());
+        Set<Map<String, String>> toReset = set.stream()
+                                              .filter(val -> val.get("xpath").equals(xPath))
+                                              .collect(Collectors.toSet());
+        @SuppressWarnings("unchecked")
+        Collection<Map<String, String>> noOldXpath = CollectionUtils.disjunction(set, toReset);
+        Object previousValue = null;
+        if (set.size() > noOldXpath.size()) {
+            if (present) {
+                previousValue = previous.get().getPreviousValue();
+                history.remove(previous.get());
+                setAutoHistory(doc, history);
+            }
+            //Set the value
+            doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), noOldXpath);
+            String comment = "Resetting " + xPath + " property";
+            toReset.forEach(map -> {
+                storeAudit(doc, autoField, map.get("model"), -1L, comment);
+            });
+
+            if (resetValue) {
+                doc.setPropertyValue(xPath, (Serializable) previousValue);
+            }
+        }
+
+        return doc;
+    }
+
+    protected Set<Map<String, String>> getAutoPropAsSet(DocumentModel doc, String autoPropertyName) {
+        Set<Map<String, String>> autoProps = new HashSet<>(1);
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> filled = (List<Map<String, String>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME,
+                autoPropertyName);
+        if (filled != null) {
+            autoProps.addAll(filled);
+        }
+
+        return autoProps;
+    }
+
+    protected void storeAudit(DocumentModel doc, AUTO autoField, String model, long value, String comment) {
         AuditLogger audit = Framework.getService(AuditLogger.class);
         if (audit != null) {
             LogEntry logEntry = audit.newLogEntry();
@@ -212,46 +258,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         } else {
             log.warn("Audit Logger is not available");
         }
-    }
-
-    @Override
-    public DocumentModel resetAuto(DocumentModel doc, AUTO autoField, String xPath, boolean resetValue) {
-        List<AutoHistory> history = getAutoHistory(doc);
-        Optional<AutoHistory> previous = history.stream().filter(h -> xPath.equals(h.getProperty())).findFirst();
-        boolean present = previous.isPresent();
-        // TODO: get the notion of what's going on and audit each auto enrich mechanism accordingly
-        // based on it we need write AuditLog
-        Set<Map<String, String>> set = getAutoPropAsSet(doc, autoField.lowerName());
-        Set<Map<String, String>> noOldXpath = set.stream()
-                                                 .filter(val -> !val.get("xpath").equals(xPath))
-                                                 .collect(Collectors.toSet());
-        Object previousValue = null;
-        if (set.size() > noOldXpath.size()) {
-            if (present) {
-                previousValue = previous.get().getPreviousValue();
-                history.remove(previous.get());
-                setAutoHistory(doc, history);
-            }
-            //Set the value
-            doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), noOldXpath);
-            if (resetValue) {
-                doc.setPropertyValue(xPath, (Serializable) previousValue);
-            }
-        }
-
-        return doc;
-    }
-
-    public Set<Map<String, String>> getAutoPropAsSet(DocumentModel doc, String autoPropertyName) {
-        Set<Map<String, String>> autoProps = new HashSet<>(1);
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> filled = (List<Map<String, String>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME,
-                autoPropertyName);
-        if (filled != null) {
-            autoProps.addAll(filled);
-        }
-
-        return autoProps;
     }
 
     protected void raiseEvent(DocumentModel doc, String eventName, Set<String> xPaths, String comment) {
