@@ -28,11 +28,11 @@
 jx step git credentials
 git config credential.helper store
 
-RELEASE_VERSION=${VERSION:-$(jx-release-version)}
+RELEASE_VERSION=${VERSION:-$(jx-release-version -same-release)}
 INCREMENT=${INCREMENT:-patch}
 NEXT_VERSION=$(semver bump "$INCREMENT" "$RELEASE_VERSION")
 
-printf "Releasing %s\n\tVersion:\t%s\n\tNext version:\t%s\n" $(git remote get-url origin) "$RELEASE_VERSION" "$NEXT_VERSION"
+printf "Releasing %s\n\tVersion:\t%s\n\tNext version:\t%s\n" "$(git remote get-url origin)" "$RELEASE_VERSION" "$NEXT_VERSION"
 echo "RELEASE_VERSION=$RELEASE_VERSION" > release.properties
 echo "INCREMENT=$INCREMENT" >> release.properties
 echo "NEXT_VERSION=$NEXT_VERSION" >> release.properties
