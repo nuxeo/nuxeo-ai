@@ -9,6 +9,8 @@
 "celebrity","Celebrity Detection","tagging","0"
 "imageLabels","Object Detection in images","classification","0"
 "sentiment","Sentiment Analysis","classification","0"
+"keyphrase","Keyphrase Extraction","classification","0"
+"entities","Entities Analysis","classification","0"
 "custom","Custom Model Classification","classification","0"
 "custommodel","Prediction using a Custom Model","prediction","0"
 "imageText","Text Detection in Images","tagging","0"
