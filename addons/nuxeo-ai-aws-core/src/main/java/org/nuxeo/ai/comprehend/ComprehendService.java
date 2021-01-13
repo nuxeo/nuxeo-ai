@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.comprehend;
 
+import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 
 /**
@@ -29,4 +30,13 @@ public interface ComprehendService {
      * Detect sentiment for the provided text
      */
     DetectSentimentResult detectSentiment(String text, String languageCode);
+
+    /**
+     * Extract key phrases from the given text
+     *
+     * @param text         provided for extraction
+     * @param languageCode code of the language to use for extraction (ie `en`)
+     * @return {@link DetectKeyPhrasesResult} as a response value of the service
+     */
+    DetectKeyPhrasesResult extractKeyphrase(String text, String languageCode);
 }

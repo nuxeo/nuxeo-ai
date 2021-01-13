@@ -1,15 +1,18 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.comprehend.ComprehendService" version="1.0">
 
-  <implementation class="org.nuxeo.ai.comprehend.ComprehendServiceImpl" />
+  <implementation class="org.nuxeo.ai.comprehend.ComprehendServiceImpl"/>
 
   <service>
-    <provide interface="org.nuxeo.ai.comprehend.ComprehendService" />
+    <provide interface="org.nuxeo.ai.comprehend.ComprehendService"/>
   </service>
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="aws.textSentiment" kind="/classification/sentiment"
-                class="org.nuxeo.ai.enrichment.SentimentEnrichmentProvider" />
+                class="org.nuxeo.ai.enrichment.SentimentEnrichmentProvider"/>
+
+    <enrichment name="aws.textKeyphrase" kind="/classification/keyphrase"
+                class="org.nuxeo.ai.enrichment.KeyphraseExtractionProvider"/>
   </extension>
 
 </component>
