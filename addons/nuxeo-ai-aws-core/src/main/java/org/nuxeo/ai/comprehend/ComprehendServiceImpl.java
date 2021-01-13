@@ -18,15 +18,19 @@
  */
 package org.nuxeo.ai.comprehend;
 
+import com.amazonaws.services.comprehend.AmazonComprehend;
+import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
+import com.amazonaws.services.comprehend.model.DetectEntitiesRequest;
+import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
+import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
+import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
+import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
+import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
-import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 
 /**
  * Calls AWS Comprehend apis
@@ -43,6 +47,51 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
         client = null;
     }
 
+    @Override
+    public DetectSentimentResult detectSentiment(String text, String languageCode) {
+        if (log.isDebugEnabled()) {
+            log.debug("Calling DetectSentiment for " + text);
+        }
+
+        DetectSentimentRequest request = new DetectSentimentRequest().withText(text).withLanguageCode(languageCode);
+        DetectSentimentResult result = getClient().detectSentiment(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("DetectSentimentResult is " + result);
+        }
+        return result;
+    }
+
+    @Override
+    public DetectKeyPhrasesResult extractKeyphrase(String text, String languageCode) {
+        if (log.isDebugEnabled()) {
+            log.debug("Calling DetectKeyPhrases for " + text);
+        }
+
+        DetectKeyPhrasesRequest request = new DetectKeyPhrasesRequest().withText(text).withLanguageCode(languageCode);
+        DetectKeyPhrasesResult result = getClient().detectKeyPhrases(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("DetectKeyPhrasesResult is " + result);
+        }
+        return result;
+    }
+
+    @Override
+    public DetectEntitiesResult detectEntities(String text, String languageCode) {
+        if (log.isDebugEnabled()) {
+            log.debug("Calling DetectEntities for " + text);
+        }
+
+        DetectEntitiesRequest request = new DetectEntitiesRequest().withText(text).withLanguageCode(languageCode);
+        DetectEntitiesResult result = getClient().detectEntities(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("DetectEntitiesResult is " + result);
+        }
+        return result;
+    }
+
     /**
      * Get the AmazonComprehend client
      */
@@ -52,31 +101,17 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
             synchronized (this) {
                 localClient = client;
                 if (localClient == null) {
-                    AmazonComprehendClientBuilder builder =
-                            AmazonComprehendClientBuilder.standard()
-                                                         .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
-                                                         .withRegion(AWSHelper.getInstance().getRegion());
+                    AmazonComprehendClientBuilder builder = AmazonComprehendClientBuilder.standard()
+                                                                                         .withCredentials(
+                                                                                                 AWSHelper.getInstance()
+                                                                                                          .getCredentialsProvider())
+                                                                                         .withRegion(
+                                                                                                 AWSHelper.getInstance()
+                                                                                                          .getRegion());
                     client = localClient = builder.build();
                 }
             }
         }
         return localClient;
-    }
-
-    @Override
-    public DetectSentimentResult detectSentiment(String text, String languageCode) {
-
-        if (log.isDebugEnabled()) {
-            log.debug("Calling DetectSentiment for " + text);
-        }
-
-        DetectSentimentRequest detectSentimentRequest = new DetectSentimentRequest().withText(text)
-                                                                                    .withLanguageCode(languageCode);
-        DetectSentimentResult detectSentimentResult = getClient().detectSentiment(detectSentimentRequest);
-
-        if (log.isDebugEnabled()) {
-            log.debug("DetectSentimentResult is " + detectSentimentResult);
-        }
-        return detectSentimentResult;
     }
 }
