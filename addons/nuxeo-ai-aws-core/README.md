@@ -4,6 +4,7 @@ Currently, provides the following enrichment services:
   * aws.imageLabels - Calls AWS Rekognition for object detection in images
   * aws.textSentiment - Call AWS Comprehend for sentiment analysis
   * aws.textKeyphrase - Call AWS Comprehend for keyphrase extraction
+  * aws.textEntities - Call AWS Comprehend for entities analysis
   * aws.unsafeImages - Calls AWS Rekognition to detect unsafe images
   * aws.textDetection - Calls AWS Rekognition to detect text in images
   * aws.faceDetection - Calls AWS Rekognition to detect faces in images

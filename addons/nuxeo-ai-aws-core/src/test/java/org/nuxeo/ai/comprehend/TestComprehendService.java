@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.comprehend;
 
+import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
 import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 import com.amazonaws.services.comprehend.model.SentimentScore;
@@ -103,6 +104,31 @@ public class TestComprehendService {
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
         assertEquals("Instagram", result.getLabels().get(0).getValues().get(0).getName());
+    }
+
+    @Test
+    public void testTextEntities() {
+        AWS.assumeCredentials();
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textEntities");
+        assertNotNull(service);
+
+        DetectEntitiesResult results = Framework.getService(ComprehendService.class)
+                                                .detectEntities("One of the Nuxeo headquarters located in Paris", "en");
+        assertNotNull(results);
+        assertThat(results.getEntities()).isNotEmpty();
+
+        BlobTextFromDocument textStream = new BlobTextFromDocument();
+        textStream.setId("docId");
+        textStream.setRepositoryName("test");
+        textStream.addProperty("dc:title", "Another one in London and one more in New York");
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
+        assertEquals(1, metadataCollection.size());
+        EnrichmentMetadata result = metadataCollection.iterator().next();
+        assertEquals("London", result.getLabels().get(0).getValues().get(0).getName());
+        textStream.addProperty("dc:title", "Nuxeo is a young and promising company");
+        metadataCollection = service.enrich(textStream);
+        result = metadataCollection.iterator().next();
+        assertEquals("Nuxeo", result.getLabels().get(0).getValues().get(0).getName());
     }
 
     @Test

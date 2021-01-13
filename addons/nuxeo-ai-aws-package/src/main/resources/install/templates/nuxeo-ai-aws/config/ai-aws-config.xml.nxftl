@@ -82,6 +82,16 @@
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textEntitiesProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">ai/text</option>
+      <option name="sink">ai/enrichment-in</option>
+      <option name="enrichmentProviderName">aws.textEntities</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
 </#if>
 
 <#if "${nuxeo.enrichment.aws.document.text}" == "true">
