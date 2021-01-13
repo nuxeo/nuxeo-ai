@@ -101,17 +101,17 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
             synchronized (this) {
                 localClient = client;
                 if (localClient == null) {
-                    AmazonComprehendClientBuilder builder = AmazonComprehendClientBuilder.standard()
-                                                                                         .withCredentials(
-                                                                                                 AWSHelper.getInstance()
-                                                                                                          .getCredentialsProvider())
-                                                                                         .withRegion(
-                                                                                                 AWSHelper.getInstance()
-                                                                                                          .getRegion());
+                    AmazonComprehendClientBuilder builder = buildClient();
                     client = localClient = builder.build();
                 }
             }
         }
         return localClient;
+    }
+
+    protected AmazonComprehendClientBuilder buildClient() {
+        return AmazonComprehendClientBuilder.standard()
+                                            .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
+                                            .withRegion(AWSHelper.getInstance().getRegion());
     }
 }

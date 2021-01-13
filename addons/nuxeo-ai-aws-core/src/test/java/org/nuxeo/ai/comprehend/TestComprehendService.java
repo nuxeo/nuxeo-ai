@@ -65,7 +65,7 @@ public class TestComprehendService {
         DetectSentimentResult results = Framework.getService(ComprehendService.class)
                                                  .detectSentiment("I am happy", "en");
         assertNotNull(results);
-        assertTrue(SentimentType.POSITIVE.toString().equals(results.getSentiment()));
+        assertEquals(SentimentType.POSITIVE.toString(), results.getSentiment());
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
