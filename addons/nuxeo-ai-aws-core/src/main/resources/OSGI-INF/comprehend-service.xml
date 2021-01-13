@@ -13,6 +13,9 @@
 
     <enrichment name="aws.textKeyphrase" kind="/classification/keyphrase"
                 class="org.nuxeo.ai.enrichment.KeyphraseExtractionProvider"/>
+
+    <enrichment name="aws.textEntities" kind="/classification/entities"
+                class="org.nuxeo.ai.enrichment.TextEntitiesProvider"/>
   </extension>
 
 </component>

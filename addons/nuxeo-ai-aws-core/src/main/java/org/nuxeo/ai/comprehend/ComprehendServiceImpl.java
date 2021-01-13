@@ -20,6 +20,8 @@ package org.nuxeo.ai.comprehend;
 
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
+import com.amazonaws.services.comprehend.model.DetectEntitiesRequest;
+import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
 import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
 import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
 import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
@@ -75,6 +77,20 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
         return result;
     }
 
+    @Override
+    public DetectEntitiesResult detectEntities(String text, String languageCode) {
+        if (log.isDebugEnabled()) {
+            log.debug("Calling DetectEntities for " + text);
+        }
+
+        DetectEntitiesRequest request = new DetectEntitiesRequest().withText(text).withLanguageCode(languageCode);
+        DetectEntitiesResult result = getClient().detectEntities(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("DetectEntitiesResult is " + result);
+        }
+        return result;
+    }
 
     /**
      * Get the AmazonComprehend client
