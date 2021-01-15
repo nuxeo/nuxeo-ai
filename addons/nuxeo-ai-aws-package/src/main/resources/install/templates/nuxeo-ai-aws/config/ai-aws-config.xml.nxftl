@@ -1,6 +1,15 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.aws.config" version="1.0">
     <require>org.nuxeo.ai.services.AIComponent</require>
+<#if "${nuxeo.enrichment.aws.calls.tracing}" == "true">
+    <extension target="org.nuxeo.activate.log4j.service.Log4jComponent" point="log4j">
+      <log4j name="aws-calls">
+        <loggers>
+          <Logger name="com.amazonaws.request" level="DEBUG"/>
+        </loggers>
+      </log4j>
+    </extension>
+</#if>
 
 <#if "${nuxeo.enrichment.aws.images}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
@@ -186,6 +195,13 @@
       <topic topicArn="${nuxeo.enrichment.aws.sns.topic.arn}"
              type="detect"
              path="/nuxeo/site/ai/rekognition/callback/labels"/>
+  </extension>
+</#if>
+
+<#if "${nuxeo.enrichment.aws.video.transcribe}" == "true">
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+             point="automaticVideoConversions">
+    <automaticVideoConversion name="WAV 16K" order="999"/>
   </extension>
 </#if>
 
