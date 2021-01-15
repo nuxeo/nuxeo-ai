@@ -18,40 +18,9 @@
  */
 package org.nuxeo.ai.cloud;
 
-import static javax.ws.rs.core.Response.Status.OK;
-import static org.apache.commons.lang3.StringUtils.isAnyBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
-import static org.nuxeo.client.ConstantsV1.API_PATH;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.function.Supplier;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,23 +39,43 @@ import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.function.Supplier;
 
-import okhttp3.Response;
+import static javax.ws.rs.core.Response.Status.OK;
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
+import static org.nuxeo.client.ConstantsV1.API_PATH;
 
 /**
  * A client that connects to Nuxeo Cloud AI
  */
 public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
-
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-
-    private static final int CHUNK_100_MB = 1024 * 1024 * 100;
-
-    static {
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
 
     public static final String XP_CONFIG = "config";
 
@@ -94,7 +83,15 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     public static final String API_EXPORT_AI = "ai_export/";
 
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+
+    private static final int CHUNK_100_MB = 1024 * 1024 * 100;
+
     private static final Logger log = LogManager.getLogger(NuxeoCloudClient.class);
+
+    static {
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
     protected String projectId;
 
@@ -365,26 +362,26 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Override
     public JSONBlob getAllModels() throws IOException {
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
-                "models?properties=ai_model");
-        return getModels(modelsPath);
+        return getModels("models?properties=ai_model");
     }
 
     @Override
     public JSONBlob getModelsByDatasource() throws IOException {
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
-                "models?properties=ai_model&datasource=" + datasource);
-        return getModels(modelsPath);
+        return getModels("models?properties=ai_model&datasource=" + datasource);
     }
 
     @Override
     public JSONBlob getPublishedModels() throws IOException {
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId,
-                "models?properties=ai_model&publishState=published&label=" + datasource);
-        return getModels(modelsPath);
+        return getModels("models?properties=ai_model&publishState=published&label=" + datasource);
     }
 
-    protected JSONBlob getModels(Path modelsPath) throws IOException {
+    protected JSONBlob getModels(String parameters) throws IOException {
+        if (!isReady()) {
+            log.warn("Attempting to use Insight Client before initialization");
+            return new JSONBlob("{}");
+        }
+
+        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, parameters);
         Response response = getClient().get(modelsPath.toString());
         if (response.body() == null) {
             log.warn("Could not resolve any AI Models");
@@ -395,6 +392,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         return new JSONBlob(body);
     }
 
+    protected boolean isReady() {
+        return StringUtils.isNoneEmpty(projectId, datasource, url);
+    }
 
     @Nullable
     @Override
@@ -497,9 +497,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
         /**
          * Resolve path based on
-         * 
+         *
          * @param project Id of a client
-         * @param id of a document
+         * @param id      of a document
          * @return {@link String} as uri
          */
         public String toPath(@Nonnull String project, String id) {
@@ -517,9 +517,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
         /**
          * Resolve path between
-         * 
-         * @param project Id of a client
-         * @param modelId of AI_Model
+         *
+         * @param project   Id of a client
+         * @param modelId   of AI_Model
          * @param corporaId of AI_Corpora
          * @return {@link String} as uri
          */
