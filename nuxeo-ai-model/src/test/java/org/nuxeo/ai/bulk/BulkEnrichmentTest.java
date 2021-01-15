@@ -18,18 +18,22 @@
  */
 package org.nuxeo.ai.bulk;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
@@ -58,7 +62,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
@@ -66,6 +72,7 @@ import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 @RunWith(FeaturesRunner.class)
@@ -197,6 +204,67 @@ public class BulkEnrichmentTest {
             assertEquals(2, wrapper.getModels().size());
             assertEquals(4, wrapper.getAutoProperties().size());
         }
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void shouldNotBacktrackConfirmedValue() throws Exception {
+        DocumentModel testRoot = setupTestData();
+        String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
+                testRoot.getId());
+        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(
+                session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
+        submitAndAssert(command);
+
+        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+
+        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
+        txFeature.nextTransaction();
+
+        List<DocumentModel> docs = getSomeDocuments(nxql);
+        assertThat(docs).isNotEmpty();
+
+        DocumentModel workingDoc = docs.get(0);
+        assertThat((String) workingDoc.getPropertyValue("dc:title")).isEqualTo("you");
+        List<AutoHistory> autoHistories = getAutoHistories(workingDoc);
+        AutoHistory onTitle = autoHistories.stream()
+                                           .filter(h -> h.getProperty().equals("dc:title"))
+                                           .findFirst()
+                                           .orElse(null);
+        assertThat(autoHistories).hasSize(2);
+        assertThat(onTitle).isNotNull();
+
+        Property property = workingDoc.getProperty("dc:title");
+        property.setValue("you");
+        property.setForceDirty(true);
+
+        session.saveDocument(workingDoc);
+        txFeature.nextTransaction();
+
+        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
+                session.getPrincipal().getName())
+                                                                                                   .repository(
+                                                                                                           session.getRepositoryName())
+                                                                                                   .param(PARAM_MODEL,
+                                                                                                           "descBulkModel")
+                                                                                                   .build();
+        submitAndAssert(removed);
+
+        txFeature.nextTransaction();
+
+        workingDoc = session.getDocument(workingDoc.getRef());
+        assertThat(workingDoc.getPropertyValue("dc:title")).isEqualTo("you");
+    }
+
+    private List<AutoHistory> getAutoHistories(DocumentModel workingDoc) throws java.io.IOException {
+        Blob autoBlob = (Blob) workingDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY);
+        assertThat(autoBlob).isNotNull();
+
+        TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
+        };
+        List<AutoHistory> autoHistories = MAPPER.readValue(autoBlob.getByteArray(), HISTORY_TYPE);
+        assertThat(autoHistories).isNotEmpty();
+        return autoHistories;
     }
 
     @Test

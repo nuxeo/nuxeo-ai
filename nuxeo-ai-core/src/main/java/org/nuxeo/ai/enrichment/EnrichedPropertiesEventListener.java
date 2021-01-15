@@ -18,10 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.services.DocMetadataServiceImpl.ENRICHMENT_ADDED;
-
-import java.io.Serializable;
 import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -29,6 +25,11 @@ import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.runtime.api.Framework;
+
+import java.io.Serializable;
+
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.services.DocMetadataServiceImpl.ENRICHMENT_ADDED;
 
 /**
  * Listen for modifications that were used to create enrichment metadata.
