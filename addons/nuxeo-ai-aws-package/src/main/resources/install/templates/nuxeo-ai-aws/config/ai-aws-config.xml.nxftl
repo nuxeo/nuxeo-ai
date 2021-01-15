@@ -10,6 +10,7 @@
       </log4j>
     </extension>
 </#if>
+
 <#if "${nuxeo.enrichment.aws.images}" == "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
@@ -171,6 +172,13 @@
       <topic topicArn="${nuxeo.enrichment.aws.sns.topic.arn}"
              type="detect"
              path="/nuxeo/site/ai/rekognition/callback/labels"/>
+  </extension>
+</#if>
+
+<#if "${nuxeo.enrichment.aws.video.transcribe}" == "true">
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+             point="automaticVideoConversions">
+    <automaticVideoConversion name="WAV 16K" order="999"/>
   </extension>
 </#if>
 

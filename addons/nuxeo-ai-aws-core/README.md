@@ -69,6 +69,11 @@ nuxeo.enrichment.aws.document.analyze=false
 nuxeo.enrichment.save.facets=true
 ```
 
+To enable AWS Transcribe on video, enable it via:
+```
+nuxeo.enrichment.aws.video.transcribe=true
+```
+
 For AWS Rekognition video analysis:
 Video analysis relies on AWS SNS. Make sure the used role has permissions to create SNS topics.
 SNS will send a notification upon completion to the defined endpoint at
