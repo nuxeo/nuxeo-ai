@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.bulk;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 import org.junit.Rule;
@@ -28,6 +29,7 @@ import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
@@ -60,7 +62,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
@@ -68,6 +72,7 @@ import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 @RunWith(FeaturesRunner.class)
@@ -212,7 +217,8 @@ public class BulkEnrichmentTest {
         submitAndAssert(command);
 
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
-        waitForNoLag(manager, "enrichment.in", "enrichment.in$SaveEnrichmentFunction", Duration.ofSeconds(5));
+
+        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
         txFeature.nextTransaction();
 
         List<DocumentModel> docs = getSomeDocuments(nxql);
