@@ -44,13 +44,6 @@
                      rendition="true"/>
   </extension>
 
-  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
-             point="automaticVideoConversions">
-
-    <automaticVideoConversion name="WAV 16K" order="20"/>
-
-  </extension>
-
   <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl"
              point="converter">
     <converter name="aiPDF2text" class="org.nuxeo.ai.convert.AiPDFConverter">
