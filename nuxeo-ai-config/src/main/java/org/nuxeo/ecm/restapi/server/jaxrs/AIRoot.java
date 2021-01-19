@@ -39,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
 import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.webengine.model.Resource;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
 import org.nuxeo.runtime.api.Framework;
@@ -203,5 +204,15 @@ public class AIRoot extends DefaultObject {
             log.error("Cannot get all models", e);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    /**
+     * This api is retrieving document ids to annotate.
+     *
+     * @return document ids to annotate
+     */
+    @Path("search")
+    public Resource getDocumentsToAnnotate() {
+        return ctx.newObject(AISearchObject.TYPE);
     }
 }
