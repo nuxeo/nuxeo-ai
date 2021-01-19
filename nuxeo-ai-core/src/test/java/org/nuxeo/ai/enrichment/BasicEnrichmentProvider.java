@@ -18,7 +18,8 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,8 +27,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
 public class BasicEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
@@ -41,22 +42,20 @@ public class BasicEnrichmentProvider extends AbstractEnrichmentProvider implemen
         String labelsList = descriptor.options.getOrDefault("labels", "king,kong");
         if (StringUtils.isNotBlank(labelsList)) {
             String[] theLabels = labelsList.split(",");
-            labels = Arrays.stream(theLabels).map(l -> new EnrichmentMetadata.Label(l, 0.8f, 0L))
+            labels = Arrays.stream(theLabels)
+                           .map(l -> new EnrichmentMetadata.Label(l, 0.8f, 0L))
                            .collect(Collectors.toList());
-            tags = Collections
-                    .singletonList(new EnrichmentMetadata.Tag(name, "/classification/custom", null, null, labels, 0.75f));
+            labels.add(new EnrichmentMetadata.Label("/", 0.8f, 0L));
+            tags = Collections.singletonList(
+                    new EnrichmentMetadata.Tag(name, "/classification/custom", null, null, labels, 0.75f));
         }
     }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return Collections.singletonList(
-                new EnrichmentMetadata.Builder("/classification/custom",
-                                               name,
-                                               blobTextFromDoc)
-                        .withLabels(asLabels(labels))
-                        .withTags(asTags(tags))
-                        .build());
+                new EnrichmentMetadata.Builder("/classification/custom", name, blobTextFromDoc).withLabels(
+                        asLabels(labels)).withTags(asTags(tags)).build());
     }
 
     @Override
