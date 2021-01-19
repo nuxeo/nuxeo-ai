@@ -18,33 +18,48 @@
  */
 package org.nuxeo.ai.functions;
 
-import java.util.Set;
-
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
-import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.metadata.TagSuggestion;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import java.util.regex.Pattern;
 
 /**
  * A stream processor that saves enrichment labels as tags.
  */
 public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
 
+    protected static final Pattern ALLOWED_PATTERN = Pattern.compile("[/'\\\\ %]");
+
     @Override
     public void accept(EnrichmentMetadata metadata) {
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
             TagService tagService = Framework.getService(TagService.class);
-            for (LabelSuggestion ls : metadata.getLabels()) {
-                ls.getValues().forEach(l -> tagService.tag(session, metadata.context.documentRef, l.getName()));
-            }
-            for (TagSuggestion ts : metadata.getTags()) {
-                Set<String> tags = EnrichmentUtils.getTagLabels(ts.getValues());
-                tags.forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
-            }
+            metadata.getLabels()
+                    .stream()
+                    .flatMap(label -> label.getValues().stream())
+                    .map(this::toTag)
+                    .filter(StringUtils::isNotBlank)
+                    .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
+            metadata.getTags()
+                    .stream()
+                    .flatMap(tag -> EnrichmentUtils.getTagLabels(tag.getValues()).stream())
+                    .map(this::toTag)
+                    .filter(StringUtils::isNotBlank)
+                    .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
         }));
+    }
+
+    protected String toTag(AIMetadata.Label label) {
+        return ALLOWED_PATTERN.matcher(label.getName()).replaceAll("");
+    }
+
+    protected String toTag(String tag) {
+        return ALLOWED_PATTERN.matcher(tag).replaceAll("");
     }
 }
