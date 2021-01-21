@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.ecm.blob.s3.S3BlobProvider;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -57,6 +58,12 @@ public class TranscribeServiceImpl implements TranscribeService {
     private static final int DEFAULT_HZ = 16_000;
 
     protected AmazonTranscribe client;
+
+    protected AWSMetrics awsMetrics;
+
+    public TranscribeServiceImpl() {
+        awsMetrics = Framework.getService(AWSMetrics.class);
+    }
 
     public static URI getBlobURI(Blob blob, boolean signed) throws NuxeoException {
         BlobManager bm = Framework.getService(BlobManager.class);
@@ -131,6 +138,7 @@ public class TranscribeServiceImpl implements TranscribeService {
         StartTranscriptionJobResult result;
         try {
             result = getClient().startTranscriptionJob(request);
+            awsMetrics.getTranscribeGlobalCalls().inc();
         } catch (ConflictException e) {
             String jobName = getJobName(blob, AUTOMATIC_LANG);
             log.error("Job already exist {}; Deleting it", jobName);

@@ -15,6 +15,7 @@
   <packaging>pom</packaging>
   <properties>
     <nuxeo.ai.version>3.1.0-SNAPSHOT</nuxeo.ai.version>
+    <dropwizard.version>4.1.17</dropwizard.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>11.*</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
@@ -123,12 +124,6 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.nuxeo.elasticsearch</groupId>
-        <artifactId>nuxeo-elasticsearch-core</artifactId>
-        <classifier>tests</classifier>
-        <version>${nuxeo.distribution.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-web-ui</artifactId>
         <version>${project.version}</version>
@@ -157,6 +152,11 @@
         <groupId>org.tensorflow</groupId>
         <artifactId>proto</artifactId>
         <version>${tensorflow.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${dropwizard.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

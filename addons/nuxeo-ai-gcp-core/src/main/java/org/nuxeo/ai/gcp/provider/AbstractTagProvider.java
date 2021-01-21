@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.cloud.vision.v1.ImageContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
@@ -38,6 +37,7 @@ import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.gcp.AIGoogleService;
+import org.nuxeo.ai.gcp.metrics.GCPMetrics;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
@@ -51,6 +51,7 @@ import com.google.cloud.vision.v1.BatchAnnotateImagesResponse;
 import com.google.cloud.vision.v1.Feature;
 import com.google.cloud.vision.v1.Image;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
+import com.google.cloud.vision.v1.ImageContext;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.util.JsonFormat;
@@ -76,9 +77,12 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
 
     protected float minConfidence;
 
+    protected GCPMetrics gcpMetrics;
+
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
+        gcpMetrics = Framework.getService(GCPMetrics.class);
         Map<String, String> options = descriptor.options;
         maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
         minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
@@ -102,19 +106,56 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
             Image img = Image.newBuilder().setContent(imgBytes).build();
             // TODO: Consider chaining via `setType` overload
             Feature feat = Feature.newBuilder().setType(getType()).setMaxResults(maxResults).build();
-            AnnotateImageRequest request = AnnotateImageRequest.newBuilder().addFeatures(feat).
-                    setImageContext(getImageContext()).setImage(img).build();
+            AnnotateImageRequest request = AnnotateImageRequest.newBuilder()
+                                                               .addFeatures(feat)
+                                                               .setImageContext(getImageContext())
+                                                               .setImage(img)
+                                                               .build();
             requests.add(request);
         }
 
         try (ImageAnnotatorClient vision = Framework.getService(AIGoogleService.class).getOrCreateClient()) {
             BatchAnnotateImagesResponse response = vision.batchAnnotateImages(requests);
             List<AnnotateImageResponse> responses = response.getResponsesList();
-
-            return processResult(doc, managedBlobs, responses);
+            Collection<EnrichmentMetadata> result = processResult(doc, managedBlobs, responses);
+            registerMetrics();
+            return result;
         } catch (IOException e) {
             throw new NuxeoException(e);
         }
+    }
+
+    protected void registerMetrics() {
+        switch (getType()) {
+        case FACE_DETECTION:
+            gcpMetrics.getFaceCalls().inc();
+            break;
+        case CROP_HINTS:
+            gcpMetrics.getCropHintsCalls().inc();
+            break;
+        case TEXT_DETECTION:
+            gcpMetrics.getTextCalls().inc();
+            break;
+        case OBJECT_LOCALIZATION:
+            gcpMetrics.getObjectLocalizationCalls().inc();
+            break;
+        case IMAGE_PROPERTIES:
+            gcpMetrics.getImagePropertiesCalls().inc();
+            break;
+        case LANDMARK_DETECTION:
+            gcpMetrics.getLandmarkCalls().inc();
+            break;
+        case LABEL_DETECTION:
+            gcpMetrics.getLabelsCalls().inc();
+            break;
+        case LOGO_DETECTION:
+            gcpMetrics.getLogoCalls().inc();
+            break;
+        default:
+            log.warn("This type " + getType() + " is not tracked as a metric");
+            break;
+        }
+        gcpMetrics.getVisionGlobalCalls().inc();
     }
 
     protected List<EnrichmentMetadata> processResult(BlobTextFromDocument doc, List<ManagedBlob> blobs,
@@ -151,7 +192,6 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
      * @return {@link com.google.cloud.vision.v1.Feature.Type} as the type of request
      */
     protected abstract Feature.Type getType();
-
 
     /**
      * @return {@link com.google.cloud.vision.v1.ImageContext} which contains parameters

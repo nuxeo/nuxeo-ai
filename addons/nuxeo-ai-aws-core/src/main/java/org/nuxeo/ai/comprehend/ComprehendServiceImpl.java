@@ -18,6 +18,14 @@
  */
 package org.nuxeo.ai.comprehend;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metrics.AWSMetrics;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.amazonaws.services.comprehend.AmazonComprehend;
 import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
 import com.amazonaws.services.comprehend.model.DetectEntitiesRequest;
@@ -26,11 +34,6 @@ import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
 import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
 import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.runtime.model.ComponentContext;
-import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
  * Calls AWS Comprehend apis
@@ -40,6 +43,14 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
     private static final Log log = LogFactory.getLog(ComprehendServiceImpl.class);
 
     protected volatile AmazonComprehend client;
+
+    protected AWSMetrics awsMetrics;
+
+    @Override
+    public void start(ComponentContext context) {
+        super.start(context);
+        awsMetrics = Framework.getService(AWSMetrics.class);
+    }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
@@ -54,11 +65,12 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
         }
 
         DetectSentimentRequest request = new DetectSentimentRequest().withText(text).withLanguageCode(languageCode);
-        DetectSentimentResult result = getClient().detectSentiment(request);
 
+        DetectSentimentResult result = getClient().detectSentiment(request);
         if (log.isDebugEnabled()) {
             log.debug("DetectSentimentResult is " + result);
         }
+        awsMetrics.updateComprehendSentimentUnits(text.length() / 100L);
         return result;
     }
 
@@ -69,11 +81,12 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
         }
 
         DetectKeyPhrasesRequest request = new DetectKeyPhrasesRequest().withText(text).withLanguageCode(languageCode);
-        DetectKeyPhrasesResult result = getClient().detectKeyPhrases(request);
 
+        DetectKeyPhrasesResult result = getClient().detectKeyPhrases(request);
         if (log.isDebugEnabled()) {
             log.debug("DetectKeyPhrasesResult is " + result);
         }
+        awsMetrics.updateComprehendKeyphraseUnits(text.length() / 100L);
         return result;
     }
 
@@ -85,10 +98,10 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
 
         DetectEntitiesRequest request = new DetectEntitiesRequest().withText(text).withLanguageCode(languageCode);
         DetectEntitiesResult result = getClient().detectEntities(request);
-
         if (log.isDebugEnabled()) {
             log.debug("DetectEntitiesResult is " + result);
         }
+        awsMetrics.updateComprehendEntitiesUnits(text.length() / 100L);
         return result;
     }
 
