@@ -18,10 +18,33 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
@@ -38,32 +61,11 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
  * A runtime model that calls TensorFlow Serving rest api
@@ -107,32 +109,38 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
      * For the supplied input values try to predict a result or return null
      */
     public EnrichmentMetadata predict(Map<String, Tensor> inputValues, String repositoryName, String documentRef) {
-        if (inputValues.size() != inputs.size()) {
-            log.debug(getName() + " did not call prediction.  Properties provided were " + inputValues.keySet());
-            return null;
-        }
-        CloudClient client = Framework.getService(CloudClient.class);
-        if (client.isAvailable()) {
-            TensorInstances tensorInstances = new TensorInstances(documentRef, inputValues);
-            String json = prepareRequest(tensorInstances);
-            if (isNotBlank(json)) {
-                String uri = buildUri(client);
-                return client.post(uri, json, response -> {
-                    if (response.isSuccessful() && response.body() != null) {
-                        EnrichmentMetadata meta = handlePredict(response.body().string(), repositoryName, documentRef);
-                        if (log.isDebugEnabled()) {
-                            log.debug(getName() + ": prediction metadata is: " + MAPPER.writeValueAsString(meta));
-                        }
-                        return meta;
-                    } else {
-                        log.warn(String.format("Unsuccessful call to (%s), status is %d", uri, response.code()));
-                        return null;
-                    }
-                });
+        Timer.Context responseTime = aiComponent.getMetrics().getInsightPredictionTime().time();
+        try {
+            if (inputValues.size() != inputs.size()) {
+                log.debug(getName() + " did not call prediction.  Properties provided were " + inputValues.keySet());
+                return null;
             }
-        }
+            CloudClient client = Framework.getService(CloudClient.class);
+            if (client.isAvailable()) {
+                TensorInstances tensorInstances = new TensorInstances(documentRef, inputValues);
+                String json = prepareRequest(tensorInstances);
+                if (isNotBlank(json)) {
+                    String uri = buildUri(client);
+                    return client.post(uri, json, response -> {
+                        if (response.isSuccessful() && response.body() != null) {
+                            EnrichmentMetadata meta = handlePredict(response.body().string(), repositoryName,
+                                    documentRef);
+                            if (log.isDebugEnabled()) {
+                                log.debug(getName() + ": prediction metadata is: " + MAPPER.writeValueAsString(meta));
+                            }
+                            return meta;
+                        } else {
+                            log.warn(String.format("Unsuccessful call to (%s), status is %d", uri, response.code()));
+                            return null;
+                        }
+                    });
+                }
+            }
 
-        return null;
+            return null;
+        } finally {
+            responseTime.stop();
+        }
     }
 
     /**
@@ -229,59 +237,64 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
 
     @Override
     public EnrichmentMetadata predict(DocumentModel doc) {
-        Map<String, Tensor> props = new HashMap<>(inputs.size());
-        for (ModelProperty input : inputs) {
-            String type = input.getType() == null ? "none" : input.getType();
-            switch (type) {
-            case IMAGE_TYPE:
-                Blob blob = getPropertyValue(doc, input.getName(), Blob.class);
-                if (blob == null) {
-                    return null;
-                }
-                // Get rendition if it exists
-                Blob rendition = getPictureConversion(doc, (ManagedBlob) blob);
-                // If Blob size is too big, just abort by returning null
-                if (rendition.getLength() < Long.parseLong(
-                        Framework.getProperty(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE))) {
-                    props.put(input.getName(), Tensor.image(convertImageBlob(rendition)));
-                } else {
-                    return null;
-                }
-                break;
-            case TEXT_TYPE:
-                Serializable propVal = getPropertyValue(doc, input.getName());
-                if (propVal instanceof Blob) {
-                    String text = convertTextBlob(getPropertyValue(doc, input.getName(), Blob.class));
-                    props.put(input.getName(), Tensor.text(text));
-                } else {
-                    String val = getPropertyValue(doc, input.getName(), String.class);
-                    props.put(input.getName(), Tensor.text(val));
-                }
-                break;
-            case CATEGORY_TYPE:
-                String categories = getPropertyValue(doc, input.getName(), String.class);
-                if (isNotEmpty(categories)) {
-                    props.put(input.getName(), Tensor.category(categories.split(LIST_DELIMITER_PATTERN)));
-                }
-                break;
-            default:
-                // default to text String
-                props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
-            }
-        }
-
-        String repoName;
-        String docId;
-
+        Timer.Context preConversionTime = aiComponent.getMetrics().getInsightPreConversionTime().time();
         try {
-            repoName = doc.getRepositoryName();
-            docId = doc.getId();
-        } catch (UnsupportedOperationException e) {
-            log.debug("Unable to get the document repositoryName and id.");
-            repoName = UNSET;
-            docId = UNSET;
+            Map<String, Tensor> props = new HashMap<>(inputs.size());
+            for (ModelProperty input : inputs) {
+                String type = input.getType() == null ? "none" : input.getType();
+                switch (type) {
+                case IMAGE_TYPE:
+                    Blob blob = getPropertyValue(doc, input.getName(), Blob.class);
+                    if (blob == null) {
+                        return null;
+                    }
+                    // Get rendition if it exists
+                    Blob rendition = getPictureConversion(doc, (ManagedBlob) blob);
+                    // If Blob size is too big, just abort by returning null
+                    if (rendition.getLength() < Long.parseLong(
+                            Framework.getProperty(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE))) {
+                        props.put(input.getName(), Tensor.image(convertImageBlob(rendition)));
+                    } else {
+                        return null;
+                    }
+                    break;
+                case TEXT_TYPE:
+                    Serializable propVal = getPropertyValue(doc, input.getName());
+                    if (propVal instanceof Blob) {
+                        String text = convertTextBlob(getPropertyValue(doc, input.getName(), Blob.class));
+                        props.put(input.getName(), Tensor.text(text));
+                    } else {
+                        String val = getPropertyValue(doc, input.getName(), String.class);
+                        props.put(input.getName(), Tensor.text(val));
+                    }
+                    break;
+                case CATEGORY_TYPE:
+                    String categories = getPropertyValue(doc, input.getName(), String.class);
+                    if (isNotEmpty(categories)) {
+                        props.put(input.getName(), Tensor.category(categories.split(LIST_DELIMITER_PATTERN)));
+                    }
+                    break;
+                default:
+                    // default to text String
+                    props.put(input.getName(), Tensor.text(getPropertyValue(doc, input.getName(), String.class)));
+                }
+            }
+
+            String repoName;
+            String docId;
+
+            try {
+                repoName = doc.getRepositoryName();
+                docId = doc.getId();
+            } catch (UnsupportedOperationException e) {
+                log.debug("Unable to get the document repositoryName and id.");
+                repoName = UNSET;
+                docId = UNSET;
+            }
+            return predict(props, repoName, docId);
+        } finally {
+            preConversionTime.stop();
         }
-        return predict(props, repoName, docId);
     }
 
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobtext) {

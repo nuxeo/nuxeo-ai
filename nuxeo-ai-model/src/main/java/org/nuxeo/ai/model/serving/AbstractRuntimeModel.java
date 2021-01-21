@@ -34,6 +34,7 @@ import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.rest.RestClient;
+import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
@@ -74,6 +75,8 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
 
     protected String imageFormat;
 
+    protected AIComponent aiComponent;
+
     @Override
     public void init(ModelDescriptor descriptor) {
         this.id = descriptor.id;
@@ -104,6 +107,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
             this.transientStore = transientStoreName;
         }
         isLive(config, LIVENESS);
+        aiComponent = Framework.getService(AIComponent.class);
     }
 
     @Override
