@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.metrics.SightEngine.service" version="1.0">
+  <implementation class="org.nuxeo.ai.imagequality.metrics.SightEngineMetrics"/>
+  <service>
+    <provide interface="org.nuxeo.ai.imagequality.metrics.SightEngineMetrics"/>
+  </service>
+</component>

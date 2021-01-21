@@ -21,8 +21,11 @@ package org.nuxeo.ai.translate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metrics.AWSMetrics;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.amazonaws.services.translate.AmazonTranslate;
 import com.amazonaws.services.translate.AmazonTranslateClientBuilder;
 import com.amazonaws.services.translate.model.TranslateTextRequest;
@@ -37,6 +40,14 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
 
     protected volatile AmazonTranslate client;
 
+    protected AWSMetrics awsMetrics;
+
+    @Override
+    public void start(ComponentContext context) {
+        super.start(context);
+        awsMetrics = Framework.getService(AWSMetrics.class);
+    }
+
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
         super.stop(context);
@@ -49,10 +60,13 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
             synchronized (this) {
                 localClient = client;
                 if (localClient == null) {
-                    AmazonTranslateClientBuilder builder =
-                            AmazonTranslateClientBuilder.standard()
-                                                        .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
-                                                        .withRegion(AWSHelper.getInstance().getRegion());
+                    AmazonTranslateClientBuilder builder = AmazonTranslateClientBuilder.standard()
+                                                                                       .withCredentials(
+                                                                                               AWSHelper.getInstance()
+                                                                                                        .getCredentialsProvider())
+                                                                                       .withRegion(
+                                                                                               AWSHelper.getInstance()
+                                                                                                        .getRegion());
                     client = localClient = builder.build();
                 }
             }
@@ -65,11 +79,10 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
         if (log.isDebugEnabled()) {
             log.debug("Calling Translate for " + text);
         }
-
-        TranslateTextRequest request = new TranslateTextRequest()
-                .withText(text)
-                .withSourceLanguageCode(sourceLanguageCode)
-                .withTargetLanguageCode(targetLanguageCode);
+        TranslateTextRequest request = new TranslateTextRequest().withText(text)
+                                                                 .withSourceLanguageCode(sourceLanguageCode)
+                                                                 .withTargetLanguageCode(targetLanguageCode);
+        awsMetrics.getTranslateTotalChars().update(text.length());
         return getClient().translateText(request);
     }
 }

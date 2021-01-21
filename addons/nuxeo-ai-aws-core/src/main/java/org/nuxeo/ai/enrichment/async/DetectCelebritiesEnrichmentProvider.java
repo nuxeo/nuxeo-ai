@@ -76,7 +76,6 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
             HashMap<String, Serializable> params = new HashMap<>();
             params.put("doc", doc);
             params.put("key", blob.getKey());
-
             storeCallback(store, jobId, params);
         }
 

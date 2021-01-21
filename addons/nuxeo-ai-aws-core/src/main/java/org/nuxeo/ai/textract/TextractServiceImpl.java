@@ -25,12 +25,16 @@ import static java.util.stream.Collectors.toList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.amazonaws.services.textract.AmazonTextract;
 import com.amazonaws.services.textract.AmazonTextractClientBuilder;
 import com.amazonaws.services.textract.model.AnalyzeDocumentRequest;
@@ -41,6 +45,7 @@ import com.amazonaws.services.textract.model.Document;
 
 /**
  * Implementation of TextractService
+ * 
  * @since 2.1.2
  */
 public class TextractServiceImpl extends DefaultComponent implements TextractService {
@@ -53,14 +58,17 @@ public class TextractServiceImpl extends DefaultComponent implements TextractSer
 
     protected Map<String, List<TextractProcessor>> processors;
 
+    protected AWSMetrics awsMetrics;
+
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        awsMetrics = Framework.getService(AWSMetrics.class);
         List<TextractProcessorDescriptor> configs = getDescriptors(XP_CONFIG);
         if (!configs.isEmpty()) {
             processors = configs.stream()
                                 .collect(groupingBy(TextractProcessorDescriptor::getServiceName,
-                                                    mapping(TextractProcessorDescriptor::getInstance, toList())));
+                                        mapping(TextractProcessorDescriptor::getInstance, toList())));
         } else {
             processors = Collections.emptyMap();
         }
@@ -81,11 +89,12 @@ public class TextractServiceImpl extends DefaultComponent implements TextractSer
             synchronized (this) {
                 localClient = client;
                 if (localClient == null) {
-                    AmazonTextractClientBuilder builder =
-                            AmazonTextractClientBuilder.standard()
-                                                       .withCredentials(AWSHelper.getInstance()
-                                                                                 .getCredentialsProvider())
-                                                       .withRegion(AWSHelper.getInstance().getRegion());
+                    AmazonTextractClientBuilder builder = AmazonTextractClientBuilder.standard()
+                                                                                     .withCredentials(
+                                                                                             AWSHelper.getInstance()
+                                                                                                      .getCredentialsProvider())
+                                                                                     .withRegion(AWSHelper.getInstance()
+                                                                                                          .getRegion());
                     client = localClient = builder.build();
                 }
             }
@@ -103,7 +112,7 @@ public class TextractServiceImpl extends DefaultComponent implements TextractSer
         if (document != null) {
             DetectDocumentTextRequest request = new DetectDocumentTextRequest().withDocument(document);
             DetectDocumentTextResult result = getClient().detectDocumentText(request);
-
+            awsMetrics.getTextractGlobalCalls().inc();
             if (log.isDebugEnabled()) {
                 log.debug("DetectDocumentTextResult is " + result);
             }
@@ -121,14 +130,13 @@ public class TextractServiceImpl extends DefaultComponent implements TextractSer
 
         Document document = AWSHelper.getInstance().getDocument(blob);
         if (document != null) {
-            AnalyzeDocumentRequest request = new AnalyzeDocumentRequest()
-                    .withFeatureTypes(features)
-                    .withDocument(document);
-
+            AnalyzeDocumentRequest request = new AnalyzeDocumentRequest().withFeatureTypes(features)
+                                                                         .withDocument(document);
             AnalyzeDocumentResult result = getClient().analyzeDocument(request);
             if (log.isDebugEnabled()) {
                 log.debug("AnalyzeDocumentResult is " + result);
             }
+            awsMetrics.getTextractGlobalCalls().inc();
             return result;
         }
         return null;
