@@ -7,3 +7,4 @@ Bundle-Name: nuxeo-ai-image-quality-core
 Bundle-ManifestVersion: 2
 Require-Bundle: org.nuxeo.ai.ai-core
 Bundle-SymbolicName: org.nuxeo.ai.nuxeo-ai-image-quality-core;singleton=true
+Nuxeo-Component: OSGI-INF/metric-service.xml

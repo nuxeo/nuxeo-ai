@@ -43,6 +43,7 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.ContentType;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.imagequality.metrics.SightEngineMetrics;
 import org.nuxeo.ai.imagequality.pojo.Box;
 import org.nuxeo.ai.imagequality.pojo.Celebrity;
 import org.nuxeo.ai.imagequality.pojo.Faces;
@@ -51,6 +52,7 @@ import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rest.RestEnrichmentProvider;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.runtime.api.Framework;
 
 /**
  * An implementation of an {@link org.nuxeo.ai.enrichment.EnrichmentProvider} with Sightengine.
@@ -115,9 +117,12 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
 
     protected float minConfidence;
 
+    protected SightEngineMetrics sightEngineMetrics;
+
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
+        sightEngineMetrics = Framework.getService(SightEngineMetrics.class);
         this.apiKey = descriptor.options.get(API_KEY_CONF);
         this.apiSecret = descriptor.options.get(API_SECRET_CONF);
         if (StringUtils.isBlank(apiKey) || StringUtils.isBlank(apiSecret)) {
@@ -162,7 +167,9 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
             }
             String rawKey = saveJsonAsRawBlob(json);
             ImageProperties imgProperties = MAPPER.readValue(json, ImageProperties.class);
-            return processResponseProperties(imgProperties, rawKey, blobTextFromDoc);
+            Collection<EnrichmentMetadata> result = processResponseProperties(imgProperties, rawKey, blobTextFromDoc);
+            sightEngineMetrics.getSightEngineCalls().inc();
+            return result;
         } catch (IOException e) {
             log.warn("Failed to process json return from siteengine.", e);
         }

@@ -35,6 +35,7 @@ import org.nuxeo.ai.bulk.RecordWriterDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentSupport;
+import org.nuxeo.ai.metrics.AIMetrics;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
@@ -54,6 +55,8 @@ public class AIComponent extends DefaultComponent {
     public static final String ENRICHMENT_XP = "enrichment";
 
     public static final String RECORDWRITER_XP = "recordWriter";
+
+    protected final AIMetrics metrics = new AIMetrics();
 
     private static final Log log = LogFactory.getLog(AIComponent.class);
 
@@ -81,6 +84,7 @@ public class AIComponent extends DefaultComponent {
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        metrics.register();
         getKindResolver();
         enrichmentConfigs.values().forEach(descriptor -> {
             if (!enrichmentProviders.containsKey(descriptor.name)) {
@@ -93,7 +97,19 @@ public class AIComponent extends DefaultComponent {
             writers.entrySet().forEach(e -> log.debug("Adding a record writer: " + e.toString()));
             log.debug("AIComponent has started.");
         }
+    }
 
+    @Override
+    public void stop(ComponentContext context) throws InterruptedException {
+        super.stop(context);
+        metrics.unregister();
+    }
+
+    /**
+     * @return the AI metrics monitoring
+     */
+    public AIMetrics getMetrics() {
+        return metrics;
     }
 
     /**
