@@ -195,10 +195,10 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                 container('platform11') {
                     sh "cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/"
                     withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
-                        withCredentials([usernameColonPassword(credentialsId: 'connect-preprod', variable: 'CONNECT_CREDS_PREPROD')]) {
+                        withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS_PROD')]) {
                             sh '''
-curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-web-ui/download" -o docker/nuxeo-web-ui.zip
-curl -fsSL -u "$CONNECT_CREDS_PREPROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip
+curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=3.1.0-SNAPSHOT" -o docker/nuxeo-web-ui.zip
+curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip
 '''
                         }
                         dir('docker') {
