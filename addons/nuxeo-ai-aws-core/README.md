@@ -77,7 +77,7 @@ nuxeo.enrichment.aws.video.transcribe=true
 For AWS Rekognition video analysis:
 Video analysis relies on AWS SNS. Make sure the used role has permissions to create SNS topics.
 SNS will send a notification upon completion to the defined endpoint at
- `https://your_host/nuxeo/site/ai/rekognition/callback/labels`
+ `https://your_host/nuxeo/site/aiaddons/rekognition/callback/labels`
 
 To be able resolving HOST `nuxeo.url` must be provided in `nuxeo.conf` with pattern matches `http[s]://host:[port]`
 

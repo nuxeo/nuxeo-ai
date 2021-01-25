@@ -22,7 +22,7 @@
   <extension target="org.nuxeo.ecm.platform.ui.web.auth.service.PluggableAuthenticationService" point="openUrl">
     <openUrl name="OpenSNSEndpoint">
       <method>POST</method>
-      <grantPattern>/nuxeo/site/ai/rekognition/callback/.*</grantPattern>
+      <grantPattern>/nuxeo/site/aiaddons/rekognition/callback/.*</grantPattern>
     </openUrl>
   </extension>
 
