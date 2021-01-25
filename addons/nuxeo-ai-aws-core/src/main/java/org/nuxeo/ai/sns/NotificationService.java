@@ -20,6 +20,7 @@
 package org.nuxeo.ai.sns;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import com.amazonaws.services.sns.AmazonSNS;
 
@@ -47,4 +48,12 @@ public interface NotificationService {
      * @return ARN as a {@link String}
      */
     String getTopicArnFor(String topicType);
+
+    /**
+     * Provide with URI of an endpoint
+     * @param path {@link String} given endpoint
+     * @return {@link URI} for the requested endpoint
+     * @throws URISyntaxException
+     */
+    URI getURI(String path) throws URISyntaxException;
 }

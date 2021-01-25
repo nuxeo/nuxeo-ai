@@ -19,31 +19,30 @@
  */
 package org.nuxeo.ai.sns;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import javax.inject.Inject;
-
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.GetTopicAttributesRequest;
+import com.amazonaws.services.sns.model.GetTopicAttributesResult;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
 
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.GetTopicAttributesRequest;
-import com.amazonaws.services.sns.model.GetTopicAttributesResult;
+import javax.inject.Inject;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
 
 @RunWith(FeaturesRunner.class)
-@Features({RuntimeFeature.class, PlatformFeature.class})
+@Features({ RuntimeFeature.class, PlatformFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 public class TestNotificationService {
@@ -71,5 +70,13 @@ public class TestNotificationService {
         GetTopicAttributesRequest topicRequest = new GetTopicAttributesRequest(arn);
         GetTopicAttributesResult result = client.getTopicAttributes(topicRequest);
         assertThat(result.getAttributes()).isNotEmpty();
+    }
+
+    @Test
+    public void shouldBuildURI() throws URISyntaxException {
+        Framework.getProperties().put("nuxeo.url", "https://nuxeo.io");
+        URI test = ns.getURI("test");
+        assertThat(test.getScheme()).isEqualTo("https");
+        assertThat(test.toString()).isEqualTo("https://nuxeo.io/test");
     }
 }

@@ -69,7 +69,7 @@ public class NotificationComponent extends DefaultComponent implements Notificat
         topics.forEach((name, topic) -> {
             log.debug("Subscribing to SNS topic {}", topic.getTopicArn());
             try {
-                subscribe(topic.getTopicArn(), getURL(topic.getPath()));
+                subscribe(topic.getTopicArn(), getURI(topic.getPath()));
             } catch (URISyntaxException e) {
                 log.error("Failed to subscribe to {} with path {}", topic.getTopicArn(), topic.getPath(), e);
             }
@@ -89,8 +89,8 @@ public class NotificationComponent extends DefaultComponent implements Notificat
 
     @Override
     public String subscribe(String arn, URI uri) {
-        SubscribeRequest https = new SubscribeRequest(arn, uri.getScheme(), uri.toString());
-        SubscribeResult result = client().subscribe(https);
+        SubscribeRequest request = new SubscribeRequest(arn, uri.getScheme(), uri.toString());
+        SubscribeResult result = client().subscribe(request);
         return result.getSubscriptionArn();
     }
 
@@ -122,7 +122,8 @@ public class NotificationComponent extends DefaultComponent implements Notificat
         }
     }
 
-    protected URI getURL(String path) throws URISyntaxException {
+    @Override
+    public URI getURI(String path) throws URISyntaxException {
         if (endpointURL == null) {
             String host = (String) Framework.getProperties().getOrDefault("nuxeo.url", "http://0.0.0.0:8080");
             endpointURL = new URIBuilder(host).setPath(path).build();

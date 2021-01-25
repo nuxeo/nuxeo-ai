@@ -171,7 +171,7 @@
   <extension target="org.nuxeo.ai.sns.NotificationService" point="topics">
       <topic topicArn="${nuxeo.enrichment.aws.sns.topic.arn}"
              type="detect"
-             path="/nuxeo/site/ai/rekognition/callback/labels"/>
+             path="/nuxeo/site/aiaddons/rekognition/callback/labels"/>
   </extension>
 </#if>
 
