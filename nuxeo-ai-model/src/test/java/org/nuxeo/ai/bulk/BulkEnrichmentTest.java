@@ -62,7 +62,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
+import static org.nuxeo.ai.AIConstants.AUTO.HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
@@ -257,7 +257,7 @@ public class BulkEnrichmentTest {
     }
 
     private List<AutoHistory> getAutoHistories(DocumentModel workingDoc) throws java.io.IOException {
-        Blob autoBlob = (Blob) workingDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY);
+        Blob autoBlob = (Blob) workingDoc.getProperty(ENRICHMENT_SCHEMA_NAME, HISTORY.lowerName());
         assertThat(autoBlob).isNotNull();
 
         TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
