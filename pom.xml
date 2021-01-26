@@ -21,8 +21,8 @@
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
-    <nuxeo-jira-ai.version>1.0.0</nuxeo-jira-ai.version>
-    <nuxeo.webui.version>3.0.2-rc.49</nuxeo.webui.version>
+    <nuxeo-jira-ai.version>1.1.0-2021</nuxeo-jira-ai.version>
+    <nuxeo.webui.version>3.1.0-SNAPSHOT</nuxeo.webui.version>
   </properties>
 
   <modules>
