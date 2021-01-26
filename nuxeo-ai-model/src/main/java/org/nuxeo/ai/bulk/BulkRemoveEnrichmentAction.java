@@ -20,6 +20,7 @@ package org.nuxeo.ai.bulk;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
@@ -41,8 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.nuxeo.ai.AIConstants.AUTO_CORRECTED;
-import static org.nuxeo.ai.AIConstants.AUTO_FILLED;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
@@ -113,8 +112,8 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
                     }
                     try {
                         for (String xPath : removalProperties) {
-                            metadataService.resetAuto(doc, AUTO_CORRECTED, xPath, true);
-                            metadataService.resetAuto(doc, AUTO_FILLED, xPath, true);
+                            metadataService.resetAuto(doc, AUTO.CORRECTED, xPath, true);
+                            metadataService.resetAuto(doc, AUTO.FILLED, xPath, true);
                             metadataService.removeSuggestionsForTargetProperty(doc, xPath);
                         }
                         session.saveDocument(doc);

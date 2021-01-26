@@ -1,6 +1,11 @@
 ARG PLATFORM_VERSION
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
+USER 0
+RUN yum -y localinstall --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm
+RUN yum -y install ffmpeg
+USER $NUXEO_USER
+
 ARG PLATFORM_VERSION
 ARG VERSION
 ARG SCM_REF
@@ -20,4 +25,5 @@ LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo
 
 COPY nuxeo-ai-core-*.zip /tmp/nuxeo-ai-core.zip
 COPY nuxeo-web-ui.zip /tmp/nuxeo-web-ui.zip
-RUN /install-packages.sh /tmp/nuxeo-ai-core.zip /tmp/nuxeo-web-ui.zip
+COPY nuxeo-csv.zip /tmp/nuxeo-csv.zip
+RUN /install-packages.sh /tmp/nuxeo-ai-core.zip /tmp/nuxeo-web-ui.zip /tmp/nuxeo-csv.zip

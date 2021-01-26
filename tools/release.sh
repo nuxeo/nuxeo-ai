@@ -28,7 +28,7 @@
 jx step git credentials
 git config credential.helper store
 
-RELEASE_VERSION=${VERSION:-$(jx-release-version)}
+RELEASE_VERSION=${VERSION:-$(jx-release-version -same-release)}
 INCREMENT=${INCREMENT:-patch}
 NEXT_VERSION=$(semver bump "$INCREMENT" "$RELEASE_VERSION")
 

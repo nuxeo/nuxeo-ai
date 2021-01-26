@@ -4,18 +4,19 @@
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>11.4-SNAPSHOT</version>
+    <version>11.4</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>3.0.1-SNAPSHOT</version>
+  <version>3.1.0-SNAPSHOT</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
   <properties>
-    <nuxeo.target.version>11.*</nuxeo.target.version>
+    <nuxeo.ai.version>3.1.0-SNAPSHOT</nuxeo.ai.version>
     <tensorflow.version>1.11.0</tensorflow.version>
+    <nuxeo.target.version>11.*</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
@@ -97,23 +98,23 @@
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-pipes</artifactId>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-core</artifactId>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-core</artifactId>
         <type>test-jar</type>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-model</artifactId>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
@@ -129,7 +130,7 @@
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-core-package</artifactId>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.tomakehurst</groupId>
