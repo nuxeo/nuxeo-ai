@@ -150,6 +150,7 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
         INSIGHT_DEMOS_VERSION = readMavenPom().getProperties().getProperty('nuxeo.insight-demos.version')
+        WEBUI_VERSION = readMavenPom().getProperties().getProperty('nuxeo.webui.version')
         PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%H%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
