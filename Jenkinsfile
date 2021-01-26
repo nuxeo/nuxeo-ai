@@ -33,6 +33,7 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
         INSIGHT_DEMOS_VERSION = readMavenPom().getProperties().getProperty('nuxeo.insight-demos.version')
+        WEBUI_VERSION = readMavenPom().getProperties().getProperty('nuxeo.webui.version')
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%H%d\'', returnStdout: true).trim()}"
         PREVIEW_NAMESPACE = jx.normalizeNS("$APP_NAME-$BRANCH_NAME")
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
@@ -108,7 +109,7 @@ done
                     withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS_PROD'),
                                      string(credentialsId: 'instance-clid', variable: 'CLID')]) {
                         sh '''
-curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=3.1.0-SNAPSHOT" -o docker/nuxeo-web-ui.zip --retry 10 --retry-max-time 600
+curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=$WEBUI_VERSION" -o docker/nuxeo-web-ui.zip --retry 10 --retry-max-time 600
 curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip --retry 10 --retry-max-time 600
 '''
                     }
