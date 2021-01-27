@@ -19,26 +19,7 @@
  */
 package org.nuxeo.ai.listeners;
 
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
-import static org.nuxeo.ai.metadata.Caption.CAPTIONS_PROP;
-import static org.nuxeo.ai.metadata.Caption.VTT_KEY_PROP;
-import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
-import static org.nuxeo.ai.transcribe.TranscribeWork.LANGUAGE_KEY;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.Caption;
@@ -53,16 +34,34 @@ import org.nuxeo.ecm.core.event.PostCommitEventListener;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.runtime.api.Framework;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
+import static org.nuxeo.ai.metadata.Caption.CAPTIONS_PROP;
+import static org.nuxeo.ai.metadata.Caption.VTT_KEY_PROP;
+import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
 
 /**
  * Asynchronous listener for adding captions to a transcribed video
  */
 public class DocumentTranscribed implements PostCommitEventListener {
 
-    private static final Logger log = LogManager.getLogger(DocumentTranscribed.class);
+    public static final String LANGUAGE_KEY = "lang";
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final Logger log = LogManager.getLogger(DocumentTranscribed.class);
 
     @Override
     public void handleEvent(EventBundle eventBundle) {
@@ -80,21 +79,20 @@ public class DocumentTranscribed implements PostCommitEventListener {
             return;
         }
 
-        String lang = (String) docCtx.getProperty(LANGUAGE_KEY);
-
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> enrichments = (List<Map<String, Object>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
+        List<Map<String, Object>> enrichments = (List<Map<String, Object>>) doc.getProperty(ENRICHMENT_SCHEMA_NAME,
+                ENRICHMENT_ITEMS);
         List<Blob> raws = enrichments.stream()
-                .filter(en -> "aws.transcribe".equals(en.getOrDefault("model", "none")))
-                .map(en -> (Blob) en.get("raw"))
-                .collect(Collectors.toList());
+                                     .filter(en -> "aws.transcribe".equals(en.getOrDefault("model", "none")))
+                                     .map(en -> (Blob) en.get("raw"))
+                                     .collect(Collectors.toList());
 
         if (raws.isEmpty()) {
             log.debug("Could not find RAW transcription for document id = " + doc.getId());
             return;
         }
         Blob json = raws.get(0);
-        if (json == null || StringUtils.isEmpty(lang)) {
+        if (json == null) {
             return;
         }
 
@@ -106,20 +104,20 @@ public class DocumentTranscribed implements PostCommitEventListener {
             return;
         }
 
-        List<Element> elements = at.getResults().getItems().stream()
-                .map(item -> {
-                    float st = 0L;
-                    float et = 0L;
-                    AudioTranscription.Type type = item.getType();
-                    if (PRONUNCIATION.equals(type)) {
-                        st = Float.parseFloat(item.getStartTime());
-                        et = Float.parseFloat(item.getEndTime());
-                    }
+        String lang = at.getResults().getLanguageCode();
 
-                    String content = item.getContent();
-                    return new Element((long) (st * 1000), (long) (et * 1000), type, content);
-                })
-                .collect(Collectors.toList());
+        List<Element> elements = at.getResults().getItems().stream().map(item -> {
+            float st = 0L;
+            float et = 0L;
+            AudioTranscription.Type type = item.getType();
+            if (PRONUNCIATION.equals(type)) {
+                st = Float.parseFloat(item.getStartTime());
+                et = Float.parseFloat(item.getEndTime());
+            }
+
+            String content = item.getContent();
+            return new Element((long) (st * 1000), (long) (et * 1000), type, content);
+        }).collect(Collectors.toList());
 
         List<Caption> captions = buildCaptions(elements);
 
@@ -128,8 +126,8 @@ public class DocumentTranscribed implements PostCommitEventListener {
         @SuppressWarnings("unchecked")
         List<Map<String, Serializable>> caps = (List<Map<String, Serializable>>) doc.getPropertyValue(CAPTIONS_PROP);
         Optional<Map<String, Serializable>> res = caps.stream()
-                .filter(cap -> lang.equals(cap.get(LANGUAGE_KEY)))
-                .findFirst();
+                                                      .filter(cap -> lang.equals(cap.get(LANGUAGE_KEY)))
+                                                      .findFirst();
 
         if (res.isPresent()) {
             Map<String, Serializable> map = res.get();
@@ -142,6 +140,7 @@ public class DocumentTranscribed implements PostCommitEventListener {
             map.put(VTT_KEY_PROP, (Serializable) blob);
             caps.add(map);
         }
+
         doc.setPropertyValue(CAPTIONS_PROP, (Serializable) caps);
         doc.getCoreSession().saveDocument(doc);
     }
