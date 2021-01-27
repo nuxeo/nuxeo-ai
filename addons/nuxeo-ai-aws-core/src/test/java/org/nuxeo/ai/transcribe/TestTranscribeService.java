@@ -19,21 +19,7 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
-import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_KIND;
-import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_NAME;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -59,51 +45,66 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
+import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_KIND;
+import static org.nuxeo.ai.enrichment.async.TranscribeEnrichmentProvider.PROVIDER_NAME;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class, EnrichmentTestFeature.class})
+@Features({ PlatformFeature.class, EnrichmentTestFeature.class })
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.runtime.aws")
 public class TestTranscribeService {
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    protected static final String json = "{\n" +
-            "    \"jobName\": \"EnUS_033178297efa75a1b0add2acaea8639e\",\n" +
-            "    \"accountId\": \"783725821734\",\n" +
-            "    \"results\": {\n" +
-            "        \"transcripts\": [\n" +
-            "            {\n" +
-            "                \"transcript\": \"this guy. I really familiar. He was a long time.\"\n" +
-            "            }\n" +
-            "        ],\n" +
-            "        \"items\": [\n" +
-            "            {\n" +
-            "                \"start_time\": \"0.62\",\n" +
-            "                \"end_time\": \"0.88\",\n" +
-            "                \"alternatives\": [\n" +
-            "                    {\n" +
-            "                        \"confidence\": \"0.9542\",\n" +
-            "                        \"content\": \"this\"\n" +
-            "                    }\n" +
-            "                ],\n" +
-            "                \"type\": \"pronunciation\"\n" +
-            "            },\n" +
-            "            {\n" +
-            "                \"start_time\": \"0.88\",\n" +
-            "                \"end_time\": \"1.32\",\n" +
-            "                \"alternatives\": [\n" +
-            "                    {\n" +
-            "                        \"confidence\": \"0.956\",\n" +
-            "                        \"content\": \"guy\"\n" +
-            "                    }\n" +
-            "                ],\n" +
-            "                \"type\": \"pronunciation\"\n" +
-            "            }\n" +
-            "        ]\n" +
-            "    },\n" +
-            "    \"status\": \"COMPLETED\"\n" +
+    protected static final String json = "{\n" +//
+            "    \"jobName\": \"EnUS_033178297efa75a1b0add2acaea8639e\",\n" +//
+            "    \"accountId\": \"783725821734\",\n" + //
+            "    \"results\": {\n" +//
+            "        \"language_code\": \"en-US\",\n" + //
+            "        \"transcripts\": [\n" +//
+            "            {\n" +//
+            "                \"transcript\": \"this guy. I really familiar. He was a long time.\",\n" +//
+            "                \"language_identification\": [{\"score\":\"0.829\", \"ode\":\"es-ES\"},{\"score\":\"0.0729\",\"code\":\"it-IT\"}]\n" +//
+            "            }\n" +//
+            "        ],\n" +//
+            "        \"items\": [\n" +//
+            "            {\n" +//
+            "                \"start_time\": \"0.62\",\n" +//
+            "                \"end_time\": \"0.88\",\n" +//
+            "                \"alternatives\": [\n" +//
+            "                    {\n" +//
+            "                        \"confidence\": \"0.9542\",\n" +//
+            "                        \"content\": \"this\"\n" +//
+            "                    }\n" +//
+            "                ],\n" +//
+            "                \"type\": \"pronunciation\"\n" +//
+            "            },\n" +//
+            "            {\n" +//
+            "                \"start_time\": \"0.88\",\n" +//
+            "                \"end_time\": \"1.32\",\n" +//
+            "                \"alternatives\": [\n" +//
+            "                    {\n" +//
+            "                        \"confidence\": \"0.956\",\n" +//
+            "                        \"content\": \"guy\"\n" +//
+            "                    }\n" +//
+            "                ],\n" +//
+            "                \"type\": \"pronunciation\"\n" +//
+            "            }\n" +//
+            "        ]\n" +//
+            "    },\n" +//
+            "    \"status\": \"COMPLETED\"\n" +//
             "}";
 
     @Inject
@@ -152,14 +153,14 @@ public class TestTranscribeService {
         BlobProvider blobProvider = blobManager.getBlobProvider("test");
         Blob blob = Blobs.createBlob("A string blob here");
         String blobKey = blobProvider.writeBlob(blob);
-        ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobKey,
-                blobKey, blob.getEncoding(), blob.getLength()
-        );
+        ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobKey, blobKey, blob.getEncoding(),
+                blob.getLength());
         btfd.addBlob("file:content", "img", managedBlob);
-        AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME, new BlobTextFromDocument(doc))
-                .withLabels(Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
-                .withRawKey(rawKey)
-                .build();
+        AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME,
+                new BlobTextFromDocument(doc)).withLabels(
+                Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
+                                              .withRawKey(rawKey)
+                                              .build();
 
         doc = dms.saveEnrichment(session, (EnrichmentMetadata) metadata);
         doc = session.saveDocument(doc);
@@ -175,7 +176,8 @@ public class TestTranscribeService {
         Map<String, Serializable> map = (Map<String, Serializable>) items.get(0);
         List<Serializable> suggestions = (List<Serializable>) map.get("suggestions");
         assertThat(suggestions).isNotEmpty().hasSize(1);
-        List<Serializable> sLabels = (List<Serializable>) ((Map<String, Serializable>) suggestions.get(0)).get("labels");
+        List<Serializable> sLabels = (List<Serializable>) ((Map<String, Serializable>) suggestions.get(0)).get(
+                "labels");
         assertThat(sLabels).hasSize(2);
     }
 }

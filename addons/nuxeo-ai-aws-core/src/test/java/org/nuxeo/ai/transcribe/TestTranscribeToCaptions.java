@@ -19,23 +19,6 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
-import static org.nuxeo.ai.transcribe.TranscribeWork.LANGUAGE_KEY;
-import static org.nuxeo.ai.transcribe.TranscribeWork.TRANSCRIBE_DONE_EVENT;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Files;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.common.utils.FileUtils;
@@ -50,8 +33,24 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
+import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
+import static org.nuxeo.ai.services.DocMetadataService.ENRICHMENT_MODIFIED;
+
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 public class TestTranscribeToCaptions {
@@ -86,8 +85,7 @@ public class TestTranscribeToCaptions {
         session.save();
 
         DocumentEventContext ctx = new DocumentEventContext(session, session.getPrincipal(), fileDoc);
-        ctx.setProperty(LANGUAGE_KEY, "en_US");
-        es.fireEvent(ctx.newEvent(TRANSCRIBE_DONE_EVENT));
+        es.fireEvent(ctx.newEvent(ENRICHMENT_MODIFIED));
 
         es.waitForAsyncCompletion();
 

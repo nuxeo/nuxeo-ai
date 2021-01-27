@@ -39,10 +39,6 @@ public class Caption implements Serializable {
 
     public Caption(long start, long end, List<String> lines) {
         Objects.requireNonNull(lines);
-//        if (end >= start) {
-//            System.out.println("End = " + end + " Start = " + start);
-//            throw new IllegalArgumentException("End time must be equal or greater than Start time");
-//        }
         this.start = start;
         this.end = end;
         this.lines = lines;

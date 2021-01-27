@@ -19,15 +19,13 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import java.util.List;
-
+import com.amazonaws.services.transcribe.AmazonTranscribe;
+import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
+import com.amazonaws.services.transcribe.model.TranscriptionJob;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
 
-import com.amazonaws.services.transcribe.AmazonTranscribe;
-import com.amazonaws.services.transcribe.model.LanguageCode;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.TranscriptionJob;
+import java.util.List;
 
 /**
  * Service interface intended for Video/Audio transcription
@@ -37,11 +35,11 @@ public interface TranscribeService {
     /**
      * Start transcription job for
      *
-     * @param blob     that contains Video/Audio
-     * @param language code from {@link LanguageCode}
+     * @param blob that contains Video/Audio
+     * @param languages an array of languages
      * @return {@link TranscriptionJob} of created request
      */
-    StartTranscriptionJobResult transcribe(Blob blob, LanguageCode language);
+    StartTranscriptionJobResult requestTranscription(Blob blob, String ...languages);
 
     /**
      * @param transcription to convert to lables
@@ -49,7 +47,18 @@ public interface TranscribeService {
      */
     List<AIMetadata.Label> asLabels(AudioTranscription transcription);
 
-    String getJobName(Blob blob, LanguageCode code);
+    /**
+     * Unique Job Name
+     *
+     * @param blob for digest
+     * @param code language code
+     * @return a UUID
+     */
+    String getJobName(Blob blob, String code);
 
+    /**
+     * Get AWS Transcribe Client
+     * @return {@link AmazonTranscribe}
+     */
     AmazonTranscribe getClient();
 }
