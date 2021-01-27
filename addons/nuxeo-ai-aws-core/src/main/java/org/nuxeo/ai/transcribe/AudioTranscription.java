@@ -19,19 +19,44 @@
  */
 package org.nuxeo.ai.transcribe;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * A POJO for marshaling response from Amazon Transcribe
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AudioTranscription {
 
+    protected String jobName;
+
+    protected String accountId;
+
+    protected Result results;
+
+    protected String status;
+
+    public AudioTranscription(@JsonProperty("jobName") String jobName, @JsonProperty("accountId") String accountId,
+            @JsonProperty("results") Result results, @JsonProperty("status") String status) {
+        this.jobName = jobName;
+        this.accountId = accountId;
+        this.results = results;
+        this.status = status;
+    }
+
+    public List<String> getTranscripts() {
+        return results.transcripts.stream().map(t -> t.transcript).collect(Collectors.toList());
+    }
+
+    public Result getResults() {
+        return results;
+    }
+
     public enum Type {
-        PRONUNCIATION,
-        PUNCTUATION;
+        PRONUNCIATION, PUNCTUATION;
 
         public static Type of(String name) {
             return Type.valueOf(name.toUpperCase());
@@ -41,43 +66,26 @@ public class AudioTranscription {
             return super.name().toLowerCase();
         }
 
-
     }
 
-    protected String jobName;
-    protected String accountId;
-    protected Result results;
-    protected String status;
-
-    public List<String> getTranscripts() {
-        return results.transcripts.stream()
-                .map(t -> t.transcript)
-                .collect(Collectors.toList());
-    }
-
-    public AudioTranscription(@JsonProperty("jobName") String jobName,
-                              @JsonProperty("accountId") String accountId,
-                              @JsonProperty("results") Result results,
-                              @JsonProperty("status") String status) {
-        this.jobName = jobName;
-        this.accountId = accountId;
-        this.results = results;
-        this.status = status;
-    }
-
-    public Result getResults() {
-        return results;
-    }
-
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Result {
 
+        protected String languageCode;
+
         protected List<Transcript> transcripts;
+
         protected List<Item> items;
 
-        public Result(@JsonProperty("transcripts") List<Transcript> transcripts,
-                      @JsonProperty("items") List<Item> items) {
+        public Result(@JsonProperty("language_code") String languageCode,
+                @JsonProperty("transcripts") List<Transcript> transcripts, @JsonProperty("items") List<Item> items) {
+            this.languageCode = languageCode;
             this.transcripts = transcripts;
             this.items = items;
+        }
+
+        public String getLanguageCode() {
+            return languageCode;
         }
 
         public List<Transcript> getTranscripts() {
@@ -89,29 +97,32 @@ public class AudioTranscription {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Alternative {
 
         protected double confidence;
+
         protected String content;
 
-        public Alternative(@JsonProperty("confidence") double confidence,
-                           @JsonProperty("content") String content) {
+        public Alternative(@JsonProperty("confidence") double confidence, @JsonProperty("content") String content) {
             this.confidence = confidence;
             this.content = content;
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Item {
 
         protected String startTime;
+
         protected String endTime;
+
         protected List<Alternative> alternatives;
+
         protected String type;
 
-        public Item(@JsonProperty("start_time") String startTime,
-                    @JsonProperty("end_time") String endTime,
-                    @JsonProperty("alternatives") List<Alternative> alternatives,
-                    @JsonProperty("type") String type) {
+        public Item(@JsonProperty("start_time") String startTime, @JsonProperty("end_time") String endTime,
+                @JsonProperty("alternatives") List<Alternative> alternatives, @JsonProperty("type") String type) {
             this.startTime = startTime;
             this.endTime = endTime;
             this.alternatives = alternatives;
@@ -142,7 +153,9 @@ public class AudioTranscription {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Transcript {
+
         protected String transcript;
 
         public Transcript(@JsonProperty("transcript") String transcript) {
