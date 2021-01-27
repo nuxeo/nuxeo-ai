@@ -38,20 +38,12 @@
       <event>asyncRekognitionCelebritiesFailure</event>
     </listener>
 
-    <listener name="audioConversionReadyForTranscribe"
-              async="true"
-              postCommit="true"
-              priority="999"
-              class="org.nuxeo.ai.transcribe.AudioConversionReady">
-      <event>videoConversionsDone</event>
-    </listener>
-
     <listener name="documentTranscribeDone"
               async="true"
               postCommit="true"
               priority="999"
               class="org.nuxeo.ai.listeners.DocumentTranscribed">
-      <event>transcribeDone</event>
+      <event>ENRICHMENT_MODIFIED</event>
     </listener>
   </extension>
 </component>

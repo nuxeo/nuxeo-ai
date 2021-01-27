@@ -175,10 +175,20 @@
   </extension>
 </#if>
 
-<#if "${nuxeo.enrichment.aws.video.transcribe}" == "true">
+<#if "${nuxeo.enrichment.aws.transcribe.enabled}" == "true">
   <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
              point="automaticVideoConversions">
     <automaticVideoConversion name="WAV 16K" order="999"/>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="videoTranscribeProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <option name="source">ai/videos</option>
+      <option name="sink">ai/enrichment-in</option>
+      <option name="enrichmentProviderName">aws.transcribe</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
   </extension>
 </#if>
 
