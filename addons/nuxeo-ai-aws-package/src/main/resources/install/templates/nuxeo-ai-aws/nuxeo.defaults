@@ -18,5 +18,6 @@ nuxeo.enrichment.aws.document.analyze=false
 
 nuxeo.enrichment.aws.transcribe.enabled=false
 
+nuxeo.enrichment.aws.enrichment.retry=2
 # By default AWS calls tracing in logs is disabled
 nuxeo.enrichment.aws.calls.tracing=false
