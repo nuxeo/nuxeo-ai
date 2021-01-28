@@ -18,17 +18,16 @@
  */
 package org.nuxeo.ecm.core.storage.sql;
 
-import java.util.function.BiFunction;
-
+import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.Video;
+import com.amazonaws.services.textract.model.Document;
 import org.nuxeo.ecm.blob.s3.S3BlobProvider;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 
-import com.amazonaws.services.rekognition.model.Image;
-import com.amazonaws.services.rekognition.model.Video;
-import com.amazonaws.services.textract.model.Document;
+import java.util.function.BiFunction;
 
 /**
  * A Helper which takes advantage of the S3BinaryManager

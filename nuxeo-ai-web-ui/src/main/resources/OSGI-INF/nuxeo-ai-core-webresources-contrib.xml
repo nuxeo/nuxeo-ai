@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <component name="org.nuxeo.ai.webui.resources.contrib">
-  <require>org.nuxeo.web.ui.resources</require>
+  <!-- <require>org.nuxeo.web.ui.resources</require> -->
 
   <extension target="org.nuxeo.ecm.platform.WebResources" point="resources">
     <resource name="nuxeo-ai.html" type="import">
