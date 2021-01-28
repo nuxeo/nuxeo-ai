@@ -7,6 +7,7 @@
     <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">gcp.imageLabels</option>
@@ -18,6 +19,7 @@
     <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">gcp.textDetection</option>
@@ -29,6 +31,7 @@
     <streamProcessor name="faceProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">gcp.faceDetection</option>
@@ -40,6 +43,7 @@
     <streamProcessor name="logoProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">gcp.logoDetection</option>
@@ -51,6 +55,7 @@
     <streamProcessor name="landmarkProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">gcp.landmarkDetection</option>
@@ -62,6 +67,7 @@
       <streamProcessor name="objectLocalizerProcessor" defaultConcurrency="1" defaultPartitions="4"
                        logConfig="${nuxeo.ai.stream.config.name}"
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+        <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
         <option name="source">images</option>
         <option name="sink">enrichment.in</option>
         <option name="enrichmentProviderName">gcp.objectLocalizer</option>

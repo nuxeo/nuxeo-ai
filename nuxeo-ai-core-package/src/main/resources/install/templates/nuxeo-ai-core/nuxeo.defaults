@@ -16,6 +16,9 @@ nuxeo.enrichment.raiseEvent=true
 # Enable Nuxeo Insight Enrichment providers
 nuxeo.ai.insight.enrichment.enabled=true
 
+# Insight Enrichment retry attempts
+nuxeo.enrichment.insight.enrichment.retry=2
+
 nuxeo.ai.export.tensorflow=true
 
 # Max size of blobs for conversion during predictions/exports (500MB by default)

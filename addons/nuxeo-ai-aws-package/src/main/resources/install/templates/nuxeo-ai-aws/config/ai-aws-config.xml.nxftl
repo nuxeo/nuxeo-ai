@@ -16,6 +16,7 @@
     <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.imageLabels</option>
@@ -27,6 +28,7 @@
     <streamProcessor name="textProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.textDetection</option>
@@ -38,6 +40,7 @@
     <streamProcessor name="faceProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.faceDetection</option>
@@ -49,6 +52,7 @@
     <streamProcessor name="celebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.celebrityDetection</option>
@@ -60,6 +64,7 @@
     <streamProcessor name="unsafeImagesProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.unsafeImages</option>
@@ -73,6 +78,7 @@
     <streamProcessor name="textSentimentProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">text</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.textSentiment</option>
@@ -84,6 +90,7 @@
     <streamProcessor name="textKeyphraseProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/text</option>
       <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.textKeyphrase</option>
@@ -95,6 +102,7 @@
     <streamProcessor name="textEntitiesProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/text</option>
       <option name="sink">ai/enrichment-in</option>
       <option name="enrichmentProviderName">aws.textEntities</option>
@@ -119,6 +127,7 @@
     <streamProcessor name="textractTextProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.documentText</option>
@@ -131,6 +140,7 @@
     <streamProcessor name="textractDocProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">images</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.documentAnalyze</option>
@@ -143,6 +153,7 @@
         <streamProcessor name="raiseEventProcessor" defaultConcurrency="1" defaultPartitions="1"
                          logConfig="${nuxeo.ai.stream.config.name}"
                          class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
+          <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
           <option name="source">enrichment.in</option>
           <option name="eventName">textractMetadataCreated</option>
         </streamProcessor>
@@ -154,6 +165,7 @@
     <streamProcessor name="videoLabelsProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">videos</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.videoLabels</option>
@@ -165,6 +177,7 @@
     <streamProcessor name="videoUnsafeProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">videos</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.unsafeVideo</option>
@@ -176,6 +189,7 @@
     <streamProcessor name="videoFaceProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">videos</option>
       <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.videoFaceDetection</option>
@@ -187,6 +201,7 @@
       <streamProcessor name="videoCelebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
                        logConfig="${nuxeo.ai.stream.config.name}"
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+        <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
         <option name="source">videos</option>
         <option name="sink">enrichment.in</option>
         <option name="enrichmentProviderName">aws.videoCelebrityDetection</option>
