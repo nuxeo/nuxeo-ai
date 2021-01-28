@@ -3,3 +3,5 @@
 nuxeo.enrichment.gcp.images=false
 nuxeo.enrichment.gcp.cache=true
 
+nuxeo.enrichment.gcp.enrichment.retry=2
+
