@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.services;
 
+import org.nuxeo.ai.AIConstants;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -31,9 +32,6 @@ import java.util.List;
  */
 public interface DocMetadataService {
 
-
-    String AUTO_ADDED = "AUTO_";
-
     String ENRICHMENT_MODIFIED = "ENRICHMENT_MODIFIED";
 
     String PATHS = "xPaths";
@@ -46,12 +44,13 @@ public interface DocMetadataService {
     /**
      * Sets the document properties for autofill/auto correct and history information.
      */
-    DocumentModel updateAuto(DocumentModel doc, String autoType, String xPath, Serializable oldValue, String comment);
+    DocumentModel updateAuto(DocumentModel doc, AIConstants.AUTO autoType, String xPath, String model, Serializable oldValue,
+            String comment);
 
     /**
      * Reset an auto field to its previous value.
      */
-    DocumentModel resetAuto(DocumentModel doc, String autoType, String xPath, boolean resetValue);
+    DocumentModel resetAuto(DocumentModel doc, AIConstants.AUTO autoType, String xPath, boolean resetValue);
 
     /**
      * Removes any suggestions for the specified output property.

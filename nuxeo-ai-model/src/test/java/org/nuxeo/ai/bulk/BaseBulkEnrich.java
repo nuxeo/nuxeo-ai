@@ -3,6 +3,7 @@ package org.nuxeo.ai.bulk;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.After;
 import org.junit.Before;
+import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -22,7 +23,6 @@ import java.util.List;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.AUTO_HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
@@ -94,7 +94,7 @@ public class BaseBulkEnrich {
     }
 
     protected List<AutoHistory> getAutoHistories(DocumentModel workingDoc) throws java.io.IOException {
-        Blob autoBlob = (Blob) workingDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO_HISTORY);
+        Blob autoBlob = (Blob) workingDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO.HISTORY.lowerName());
         assertThat(autoBlob).isNotNull();
 
         TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {

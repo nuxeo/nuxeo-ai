@@ -182,6 +182,7 @@ public class TestDocMetadataService {
 
         Property classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
         assertNotNull(classProp);
+
         List<Map<String, Object>> suggested = classProp.getValue(List.class);
         assertEquals("There must be 1 suggestion", 1, suggested.size());
         Map<String, Object> suggest = suggested.get(0);
@@ -189,23 +190,48 @@ public class TestDocMetadataService {
 
         SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
         assertTrue(wrapper.getModels().contains("stest"));
-        assertEquals(2, wrapper.getSuggestionsByProperty("dc:title").size());
-        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format").size());
+
+        assertEquals(2, wrapper.getSuggestionsByProperty("dc:title")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
+        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
         assertEquals(7, wrapper.getSuggestionsByModel("stest").stream().mapToInt(l -> l.getValues().size()).sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:title");
         wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertTrue(wrapper.getSuggestionsByProperty("dc:title").isEmpty());
-        assertFalse(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertEquals(0, wrapper.getSuggestionsByProperty("dc:title")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
+        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:format");
         wrapper = new SuggestionMetadataWrapper(testDoc);
         classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
-        assertTrue(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertEquals(0, wrapper.getSuggestionsByProperty("dc:format")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "complexTest:testList");
         wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertTrue(wrapper.getSuggestionsByProperty("complexTest:testList").isEmpty());
+        assertEquals(0, wrapper.getSuggestionsByProperty("complexTest:testList")
+                               .stream()
+                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                               .mapToLong(Collection::size)
+                               .sum());
 
         suggested = classProp.getValue(List.class);
         assertTrue("No longer any suggestions.", suggested.isEmpty());
