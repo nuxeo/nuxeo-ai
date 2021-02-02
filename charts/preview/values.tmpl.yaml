@@ -44,7 +44,7 @@ nuxeo:
       pullPolicy: Always
     packages: "nuxeo-jira-ai-${JIRA_AI_VERSION}"
     custom_params: |-
-      nuxeo.templates=default,nuxeo-ai-core
+      nuxeo.templates=default,mongodb,nuxeo-ai-core
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira
       nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
@@ -68,7 +68,7 @@ nuxeo:
   postgresql:
     deploy: false
   mongodb:
-    deploy: ${PERSISTENCE}
+    deploy: true
     useStatefulSet: ${PERSISTENCE}
     persistence:
       enabled: ${PERSISTENCE}
@@ -83,7 +83,7 @@ nuxeo:
       team: ai
       usage: preview
   elasticsearch:
-    deploy: ${PERSISTENCE}
+    deploy: true
     master:
       persistence:
         enabled: ${PERSISTENCE}
