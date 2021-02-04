@@ -69,7 +69,7 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
         stage('Update downstream repos') {
             steps {
                 setGitHubBuildStatus('post-release')
-                container('platform1010') {
+                container('platform11') {
                     withEnv(["DRY_RUN=${params.DRY_RUN}"]) {
                         script {
                             def nextVersion = readProperties(file: 'release.properties')['NEXT_VERSION'].trim()
