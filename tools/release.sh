@@ -37,7 +37,7 @@ echo "RELEASE_VERSION=$RELEASE_VERSION" > release.properties
 echo "INCREMENT=$INCREMENT" >> release.properties
 echo "NEXT_VERSION=$NEXT_VERSION" >> release.properties
 
-mvn -V -B versions:set -DnewVersion="$RELEASE_VERSION" -DgenerateBackupPoms=false
+mvn -V -B versions:set versions:set-property -DnewVersion="$RELEASE_VERSION" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
 git add -u
 if [ "$DRY_RUN" = 'true' ]; then
     echo "Dry run: skip 'jx step next-version' and 'jx step changelog'"
@@ -50,7 +50,7 @@ fi
 # Not including the release tag in master history
 git reset --hard "origin/$BRANCH"
 
-mvn -B versions:set -DnewVersion="${NEXT_VERSION}-SNAPSHOT" -DgenerateBackupPoms=false
+mvn -B versions:set versions:set-property -DnewVersion="${NEXT_VERSION}-SNAPSHOT" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
 jx step next-version --version="$NEXT_VERSION"
 git commit -a -m"Post release ${RELEASE_VERSION}. Set version ${NEXT_VERSION}."
 if [ "$DRY_RUN" = 'true' ]; then
