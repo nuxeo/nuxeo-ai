@@ -172,10 +172,8 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
 //                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
-                        withMaven() {
-                            sh 'mvn ${MAVEN_ARGS}'
-                            sh "find . -name '*-reports' -type d"
-                        }
+                        sh 'mvn ${MAVEN_ARGS}'
+                        sh "find . -name '*-reports' -type d"
                     }
                 }
             }
@@ -197,8 +195,8 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                     withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
                         withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS_PROD')]) {
                             sh '''
-curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=3.1.0-SNAPSHOT" -o docker/nuxeo-web-ui.zip
-curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip
+curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=3.1.0-SNAPSHOT" -o docker/nuxeo-web-ui.zip --retry 10 --retry-max-time 600
+curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip --retry 10 --retry-max-time 600
 '''
                         }
                         dir('docker') {
