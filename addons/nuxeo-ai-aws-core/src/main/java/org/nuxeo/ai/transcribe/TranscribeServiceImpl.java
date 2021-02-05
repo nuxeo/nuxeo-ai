@@ -59,12 +59,6 @@ public class TranscribeServiceImpl implements TranscribeService {
 
     protected AmazonTranscribe client;
 
-    protected AWSMetrics awsMetrics;
-
-    public TranscribeServiceImpl() {
-        awsMetrics = Framework.getService(AWSMetrics.class);
-    }
-
     public static URI getBlobURI(Blob blob, boolean signed) throws NuxeoException {
         BlobManager bm = Framework.getService(BlobManager.class);
         BlobProvider provider = bm.getBlobProvider(blob);
@@ -138,7 +132,7 @@ public class TranscribeServiceImpl implements TranscribeService {
         StartTranscriptionJobResult result;
         try {
             result = getClient().startTranscriptionJob(request);
-            awsMetrics.getTranscribeGlobalCalls().inc();
+            Framework.getService(AWSMetrics.class).getTranscribeGlobalCalls().inc();
         } catch (ConflictException e) {
             String jobName = getJobName(blob, AUTOMATIC_LANG);
             log.error("Job already exist {}; Deleting it", jobName);

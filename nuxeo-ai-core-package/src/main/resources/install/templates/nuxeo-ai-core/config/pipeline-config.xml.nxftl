@@ -34,7 +34,7 @@
       </event>
     </supplier>
     <consumer>
-      <stream name="images"/>
+      <stream name="ai/images"/>
     </consumer>
     <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
       <option name="blobProperties">file:content</option>
@@ -58,7 +58,7 @@
       </event>
     </supplier>
     <consumer>
-      <stream name="videos"/>
+      <stream name="ai/videos"/>
     </consumer>
     <transformer>
       <option name="blobProperties">file:content</option>
@@ -85,7 +85,7 @@
       </event>
     </supplier>
     <consumer>
-      <stream name="audio"/>
+      <stream name="ai/audio"/>
     </consumer>
     <transformer>
       <option name="blobProperties">file:content</option>
@@ -98,7 +98,7 @@
   <extension point="text" target="org.nuxeo.ai.Pipeline">
     <text windowSize="12">
       <consumer>
-        <stream name="text" />
+        <stream name="ai/text" />
       </consumer>
     </text>
   </extension>
