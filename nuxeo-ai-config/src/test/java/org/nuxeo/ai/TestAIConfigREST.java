@@ -20,6 +20,7 @@
 package org.nuxeo.ai;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.nuxeo.ecm.restapi.server.jaxrs.AIRoot.DATASOURCE_CONF_VAR;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -172,6 +173,17 @@ public class TestAIConfigREST extends BaseTest {
             assertThat(response.getStatus()).isEqualTo(Response.Status.NO_CONTENT.getStatusCode());
             model = modelService.getModel(id);
             assertThat(model).isNull();
+        }
+    }
+
+    @Test
+    public void iCanGetDatasource() {
+        String pfiou = "pfiou";
+        Framework.getProperties().setProperty(DATASOURCE_CONF_VAR, pfiou);
+        try (CloseableClientResponse response = getResponse(BaseTest.RequestType.GET, "aicore/datasource")) {
+            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+            String datasource = response.getEntity(String.class);
+            assertThat(datasource).isEqualTo(pfiou);
         }
     }
 }

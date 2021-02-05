@@ -63,6 +63,8 @@ public class AIRoot extends DefaultObject {
     protected static final TypeReference<Map<String, String>> NUXEO_CONF_REF = new TypeReference<Map<String, String>>() {
     };
 
+    public static final String DATASOURCE_CONF_VAR = "nuxeo.ai.insight.datasource.label";
+
     @POST
     @Path("config")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -82,6 +84,12 @@ public class AIRoot extends DefaultObject {
             log.error("Cannot set Nuxeo conf variables", e);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+    }
+
+    @GET
+    @Path("datasource")
+    public String getDatasource() {
+        return Framework.getProperty(DATASOURCE_CONF_VAR);
     }
 
     @GET
