@@ -22,6 +22,7 @@
       <filterset>
         <filter token="VERSION" value="${maven.project.version}"/>
         <filter token="DISTRIB_VERSION" value="${nuxeo.target.version}"/>
+        <filter token="HF_VERSION" value="${nuxeo.distribution.version}"/>
       </filterset>
     </copy>
     <copy file="${outdir}/nuxeo-ai-core-artifacts.properties" todir="${outdir}/marketplace/install"/>

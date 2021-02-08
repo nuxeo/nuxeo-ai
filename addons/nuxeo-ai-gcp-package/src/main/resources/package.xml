@@ -16,9 +16,9 @@
     <platform>server-@DISTRIB_VERSION@</platform>
     <platform>server-@DISTRIB_VERSION@-HF*</platform>
   </platforms>
-  <!-- Dependencies on other packages -->
   <dependencies>
-    <package>nuxeo-ai-core:@VERSION@</package>
+    <package>nuxeo-ai-core:@VERSION@:@VERSION@</package>
+    <package>nuxeo-@HF_VERSION@</package>
   </dependencies>
   <license>Apache License, Version 2.0</license>
   <license-url>http://www.apache.org/licenses/LICENSE-2.0</license-url>
