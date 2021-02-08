@@ -1,0 +1,15 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: nuxeo
+          ports:
+            - containerPort: 8080
+            - containerPort: 8787
+      nodeSelector:
+        team: ai
+      tolerations:
+        - effect: NoSchedule
+          key: team
+          operator: Equal
+          value: ai
