@@ -100,6 +100,32 @@ curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/
     }
 }
 
+/**
+ * Wait for Nuxeo Kubernetes application's deployment, then wait for the pod being effectively ready
+ * and finally check the running status.
+ * In case of error, debug information is logged.
+ * @param name Nuxeo app name
+ * @param url Nuxeo URL
+ */
+def void waitForNuxeo(String name, String url, Closure body = null) {
+    script {
+        try {
+            body?.call()
+            echo "Check deployment and running status for $name at $url ..."
+            sh "kubectl -n ${PREVIEW_NAMESPACE} rollout status deployment $name"
+            sh "kubectl -n ${PREVIEW_NAMESPACE} wait --for=condition=ready pod -l app=$name --timeout=-0"
+            sh "curl --retry 10 -fsSL $url/nuxeo/runningstatus"
+        } catch (e) {
+            sh "jx get preview  -o json |jq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))' 2>&1 |tee debug-${name}.log"
+            sh "kubectl -n ${PREVIEW_NAMESPACE} get all,configmaps,endpoints,ingresses 2>&1 |tee -a debug-${name}.log"
+            sh "kubectl -n ${PREVIEW_NAMESPACE} describe pod --selector=app=$name 2>&1 |tee -a debug-${name}.log"
+            sh "kubectl -n ${PREVIEW_NAMESPACE} logs --selector=app=$name --all-containers --tail=-1 2>&1 |tee -a debug-${name}.log"
+            echo "See debug info in debug-${name}.log"
+            throw e
+        }
+    }
+}
+
 pipeline {
     agent {
         label "jenkins-ai-nuxeo1010"
@@ -118,8 +144,8 @@ pipeline {
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%h%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
-        VERSION = "${getVersion()}"
-        PERSISTENCE = "${BRANCH_NAME == 'master-10.10'}"
+        VERSION = getVersion()
+        PERSISTENCE = "${BRANCH_NAME ==~ 'master.*'}"
         MARKETPLACE_URL = 'https://connect.nuxeo.com/nuxeo/site/marketplace'
         MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
     }
@@ -152,6 +178,10 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
 """
                         }
                     }
+                    echo "AI_CORE_VERSION: $AI_CORE_VERSION"
+                    echo "JIRA_AI_VERSION: $JIRA_AI_VERSION"
+                    echo "PLATFORM_VERSION: $PLATFORM_VERSION"
+                    echo "VERSION: $VERSION"
                 }
             }
             post {
@@ -173,12 +203,12 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
                         sh 'mvn ${MAVEN_ARGS}'
-                        sh "find . -name '*-reports' -type d"
                     }
                 }
             }
             post {
                 always {
+                    junit allowEmptyResults: true, testResults: '**/target/*-reports/*.xml'
                     archiveArtifacts artifacts: '**/log/*.log, **/nxserver/config/distribution.properties, ' +
                             '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
                             allowEmptyArchive: true
@@ -225,22 +255,32 @@ skaffold build -f skaffold.yaml~gen
                     }
                 }
             }
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            environment {
+                JX_NO_COMMENT = "${env.CHANGE_TARGET ? 'false' : 'true'}"
+            }
             steps {
                 setGitHubBuildStatus('charts/preview')
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform1010') {
-                        echo "Deploying AI Core as ${PREVIEW_URL}/nuxeo"
-                        withCredentials([string(credentialsId: 'ai-insight-client-token', variable: 'AI_INSIGHT_CLIENT_TOKEN')]) {
-                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${normalizeLabel(BRANCH_NAME)}"]) {
+                        withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${normalizeLabel(BRANCH_NAME)}"]) {
+                            waitForNuxeo("preview", PREVIEW_URL) {
                                 dir('charts/preview') {
                                     sh """#!/bin/bash -xe
 kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
 kubectl create ns ${PREVIEW_NAMESPACE}
 make preview
-jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo
+
+# detach process that would never succeed to patch the deployment, then reattach
+jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo --no-comment=$JX_NO_COMMENT &
+until (kubectl -n ${PREVIEW_NAMESPACE} get deploy preview 2>/dev/null); do sleep 5; done
+kubectl -n ${PREVIEW_NAMESPACE} scale deployment --replicas=0 preview
+kubectl -n ${PREVIEW_NAMESPACE} patch deployments preview --patch "\$(cat patch-preview.yaml)"
+kubectl -n ${PREVIEW_NAMESPACE} scale deployment --replicas=1 preview
+wait
 """
-                                    sh "jx get preview  -o json |jq '.items|map(select(.spec.namespace==\"${PREVIEW_NAMESPACE}\"))'"
-                                    sh "cat .previewUrl"
                                 }
                             }
                         }
@@ -250,7 +290,7 @@ jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --pr
             post {
                 always {
                     archiveArtifacts artifacts: 'charts/preview/values.yaml, charts/preview/extraValues.yaml, ' +
-                            'charts/preview/requirements.lock'
+                            'charts/preview/requirements.lock, charts/preview/.previewUrl, debug-preview.log'
                     setGitHubBuildStatus('charts/preview')
                 }
             }
