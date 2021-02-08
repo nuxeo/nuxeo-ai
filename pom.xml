@@ -16,6 +16,7 @@
     <nuxeo.ai.version>2.5.1-SNAPSHOT</nuxeo.ai.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>10.10</nuxeo.target.version>
+    <nuxeo.latest.version>10.10-HF41</nuxeo.latest.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
     <nuxeo-jira-ai.version>0.1.0</nuxeo-jira-ai.version>
@@ -136,7 +137,7 @@
         <groupId>org.nuxeo.elasticsearch</groupId>
         <artifactId>nuxeo-elasticsearch-core</artifactId>
         <classifier>tests</classifier>
-        <version>${nuxeo.distribution.version}</version>
+        <version>${nuxeo.platform.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
