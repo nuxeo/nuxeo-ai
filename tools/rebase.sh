@@ -28,11 +28,12 @@ if [[ -z $(git rev-list ref-masterFor2021..master) ]]; then
 fi
 git checkout master-2021
 git rebase -Xours --onto master ref-masterFor2021 master-2021
-git update-ref refs/heads/ref-masterFor2021 master
-
 version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -N)
-version=${version/SNAPSHOT/2021-SNAPSHOT}
+echo $version
+if [[ ! $version =~ "2021-SNAPSHOT" ]]; then
+    version=${version/SNAPSHOT/2021-SNAPSHOT}
+fi
 mvn -Pinternal versions:set versions:update-child-modules versions:set-property -Dproperty=nuxeo.ai.version -DnewVersion="$version" -DprocessDependencies=false -DgenerateBackupPoms=false
 git commit -m"rebase: fix version $version" -a --no-edit ||true
-
+git update-ref refs/heads/ref-masterFor2021 master
 git push origin master-2021 ref-masterFor2021
