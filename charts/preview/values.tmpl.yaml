@@ -19,6 +19,13 @@ cleanup:
 
 nuxeo:
   fullnameOverride: preview
+  tolerations:
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
+  nodeSelector:
+    team: ai
   nuxeo:
     podAnnotations:
       preview/scm.ref: ${SCM_REF}
@@ -85,7 +92,7 @@ nuxeo:
         cpu: 4
         memory: 4Gi
   mongodb:
-    deploy: ${PERSISTENCE}
+    deploy: true
     useStatefulSet: ${PERSISTENCE}
     persistence:
       enabled: ${PERSISTENCE}
@@ -107,25 +114,45 @@ nuxeo:
     nodeSelector:
       team: ai
   elasticsearch:
-    deploy: ${PERSISTENCE}
-    client:
-      tolerations:
-        - key: team
-          operator: Equal
-          value: ai
-          effect: NoSchedule
-      nodeSelector:
-        team: ai
-      resources:
-        limits:
-          cpu: "1"
-          memory: "1536Mi"
-        requests:
-          cpu: "25m"
-          memory: "1Gi"
-    master:
+    deploy: true
+    persistence:
+      enabled: ${PERSISTENCE}
+    podLabels:
+      branch: "$BRANCH_NAME"
+      resource: pod
+      team: ai
+      usage: preview
+    tolerations:
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
+    nodeSelector:
+      team: ai
+  kafka:
+    deploy: true
+    persistence:
+      enabled: ${PERSISTENCE}
+    podLabels:
+      branch: "$BRANCH_NAME"
+      resource: pod
+      team: ai
+      usage: preview
+    tolerations:
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
+    nodeSelector:
+      team: ai
+    zookeeper:
       persistence:
         enabled: ${PERSISTENCE}
+      podLabels:
+        branch: "$BRANCH_NAME"
+        resource: pod
+        team: ai
+        usage: preview
       tolerations:
         - key: team
           operator: Equal
@@ -133,42 +160,14 @@ nuxeo:
           effect: NoSchedule
       nodeSelector:
         team: ai
-      resources:
-        limits:
-          cpu: "1"
-          memory: "1536Mi"
-        requests:
-          cpu: "25m"
-          memory: "1Gi"
-    data:
-      persistence:
-        enabled: ${PERSISTENCE}
-      tolerations:
-        - key: team
-          operator: Equal
-          value: ai
-          effect: NoSchedule
-      nodeSelector:
-        team: ai
-      resources:
-        limits:
-          cpu: "1"
-          memory: "3Gi"
-        requests:
-          cpu: "25m"
-          memory: "2Gi"
-  tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
-  nodeSelector:
-    team: ai
 
 # workaround https://github.com/helm/helm/issues/4490: global activation by tag, then custom deactivation by value
 tags:
   mongodb: true
   elasticsearch: true
+  kafka: true
+  postgresql: false
+  redis: false
 
 local:
   instance_clid:
