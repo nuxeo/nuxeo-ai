@@ -18,29 +18,29 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.rest.RestClient;
-import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 
 /**
  * An abstract implementation of a Runtime Model
@@ -51,7 +51,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
 
     public static final String DEFAULT_CONFIDENCE = "0.7";
 
-    protected static final Log log = LogFactory.getLog(AbstractRuntimeModel.class);
+    private static final Logger log = LogManager.getLogger(AbstractRuntimeModel.class);
 
     protected String id;
 
@@ -74,8 +74,6 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
     protected int imageDepth;
 
     protected String imageFormat;
-
-    protected AIComponent aiComponent;
 
     @Override
     public void init(ModelDescriptor descriptor) {
@@ -107,7 +105,6 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
             this.transientStore = transientStoreName;
         }
         isLive(config, LIVENESS);
-        aiComponent = Framework.getService(AIComponent.class);
     }
 
     @Override
@@ -183,7 +180,7 @@ public abstract class AbstractRuntimeModel implements RuntimeModel {
         if (StringUtils.isNotBlank(uri)) {
             boolean live = RestClient.isLive(config, prefix);
             if (!live) {
-                log.warn(String.format("Live check failed for %s", uri));
+                log.warn("Live check failed for {}", uri);
             }
             return live;
         }

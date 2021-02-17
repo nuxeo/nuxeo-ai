@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -105,6 +105,23 @@ public class TestConfiguredStreamProcessors {
 
     @Inject
     protected BlobManager blobManager;
+
+    /**
+     * Wait until there is no lag or timesout. This is a temporary solution until this logic is available in the
+     * framework.
+     */
+    public static void waitForNoLag(LogManager manager, Name name, Name group, Duration timeout)
+            throws InterruptedException {
+
+        final long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            Thread.sleep(1000);
+            LogLag lag = manager.getLag(name, group);
+            if (lag.upper() == 1 && lag.lag() == 0) {
+                return;
+            }
+        }
+    }
 
     @Test
     public void testConfiguredStreamProcessor() throws Exception {
@@ -184,7 +201,7 @@ public class TestConfiguredStreamProcessors {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
         blobTextFromDoc.setId(docId);
         blobTextFromDoc.setRepositoryName(testDoc.getRepositoryName());
-        blobTextFromDoc.computePropertyBlobs().get(new PropertyType(FILE_CONTENT, "img")).setDigest("myUniqueDigest");
+        blobTextFromDoc.computePropertyBlobs().get(PropertyType.of(FILE_CONTENT, "img")).setDigest("myUniqueDigest");
         Record record = toRecord("c1", blobTextFromDoc);
 
         // Append the record and check the results
@@ -229,22 +246,5 @@ public class TestConfiguredStreamProcessors {
         appender.append("suggest2", toRecord("s2", EnrichmentMetadata));
         waitForNoLag(manager, SUGGESTION, SUGGESTION_GROUP, Duration.ofSeconds(5));
         assertEquals(2L, call.getValue());
-    }
-
-    /**
-     * Wait until there is no lag or timesout. This is a temporary solution until this logic is available in the
-     * framework.
-     */
-    public static void waitForNoLag(LogManager manager, Name name, Name group, Duration timeout)
-            throws InterruptedException {
-
-        final long deadline = System.currentTimeMillis() + timeout.toMillis();
-        while (System.currentTimeMillis() < deadline) {
-            Thread.sleep(1000);
-            LogLag lag = manager.getLag(name, group);
-            if (lag.upper() == 1 && lag.lag() == 0) {
-                return;
-            }
-        }
     }
 }

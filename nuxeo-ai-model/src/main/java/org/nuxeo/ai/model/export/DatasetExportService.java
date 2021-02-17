@@ -18,16 +18,16 @@
  */
 package org.nuxeo.ai.model.export;
 
-import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * For a given dataset provides exporting capabilities.
@@ -38,30 +38,30 @@ public interface DatasetExportService {
      * Export the dataset matched by the nxql query and property names. Splits the dataset into 2 random groups based on
      * the percentage split value.
      *
-     * @param session core session
-     * @param nxql a valid query to use as a filter
-     * @param inputProperties list of document property names
+     * @param session          core session
+     * @param nxql             a valid query to use as a filter
+     * @param inputProperties  list of document property names
      * @param outputProperties list of document property names
-     * @param split a number between 1 and 100.
+     * @param split            a number between 1 and 100.
      * @return a bulk command id reference
      */
     String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
-                  Set<PropertyType> outputProperties, int split);
+            Set<PropertyType> outputProperties, int split);
 
     /**
      * Export the dataset matched by the nxql query and property names. Splits the dataset into 2 random groups based on
      * the percentage split value.
      *
-     * @param session core session
-     * @param nxql a valid query to use as a filter
-     * @param inputProperties list of document property with name and type
+     * @param session          core session
+     * @param nxql             a valid query to use as a filter
+     * @param inputProperties  list of document property with name and type
      * @param outputProperties list of document property with name and type
-     * @param split a number between 1 and 100.
-     * @param modelParams Reference parameters of AI_Model
+     * @param split            a number between 1 and 100.
+     * @param modelParams      Reference parameters of AI_Model
      * @return a bulk command id reference
      */
     String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
-                  Set<PropertyType> outputProperties, int split, @Nullable Map<String, Serializable> modelParams);
+            Set<PropertyType> outputProperties, int split, @Nullable Map<String, Serializable> modelParams);
 
     /**
      * Get the Corpus document by id or return null
@@ -70,6 +70,7 @@ public interface DatasetExportService {
 
     /**
      * Retrieves a list of {@link org.nuxeo.ai.adapters.DatasetExport} related document with
+     *
      * @param session {@link CoreSession} based on
      * @param modelId not null {@link String} as uuid of pre-created model
      * @return list of {@link org.nuxeo.ai.adapters.DatasetExport}
@@ -78,17 +79,17 @@ public interface DatasetExportService {
 
     /**
      * Returns corpora id for given BAF export
-     * 
-     * @param session to use for query
+     *
+     * @param session     to use for query
      * @param exportJobId BAF command Id
      * @return DatasetExport {@link DocumentModel}
      */
     String getCorporaForAction(CoreSession session, String exportJobId);
 
     /**
-     * @param session to use for query
+     * @param session     to use for query
      * @param exportJobId BAF command Id
-     * @param batchId on which Dataset_Export was based on
+     * @param batchId     on which Dataset_Export was based on
      * @return DatasetExport {@link DocumentModel}
      */
     DocumentModel getCorpusOfBatch(CoreSession session, String exportJobId, String batchId);
