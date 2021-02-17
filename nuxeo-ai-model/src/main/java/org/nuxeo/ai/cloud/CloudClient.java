@@ -18,11 +18,16 @@
  */
 package org.nuxeo.ai.cloud;
 
+import java.io.IOException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.ResponseHandler;
 import org.nuxeo.ai.sdk.rest.client.InsightClient;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 
@@ -37,7 +42,7 @@ import java.util.concurrent.ExecutionException;
  */
 public interface CloudClient {
 
-    InsightClient getClient(CoreSession session);
+    InsightClient getClient();
 
     /**
      * Is the cloud available to call?
@@ -81,6 +86,8 @@ public interface CloudClient {
     String predict(CoreSession session, String modelName, TensorInstances instances)
             throws IOException;
 
+    String predict(String modelName, TensorInstances instances) throws IOException;
+
     /**
      * @return a list of AI Models retrieved from AI Cloud
      * @throws IOException
@@ -103,7 +110,7 @@ public interface CloudClient {
      * @param modelId of AI_Model
      * @return JSON representation of corpora delta
      */
-    JSONBlob getCorpusDelta(CoreSession session, String modelId) throws IOException;
+    JSONBlob getCorpusDelta(String modelId) throws IOException;
 
     /*
      * Make a http GET request to the cloud by project path.

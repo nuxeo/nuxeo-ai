@@ -34,7 +34,6 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.objects.TensorInstances.Tensor;
-import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
@@ -123,10 +122,10 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 return null;
             }
             CloudClient client = Framework.getService(CloudClient.class);
-            if (client.isAvailable(session)) {
+            if (client.isAvailable()) {
                 TensorInstances tensorInstances = new TensorInstances(documentRef,
                         Collections.singletonList(inputValues));
-                String result = client.predict(session, getName(), tensorInstances);
+                String result = client.predict(getName(), tensorInstances);
                 if (StringUtils.isNotEmpty(result)) {
                     EnrichmentMetadata meta = handlePredict(result, repositoryName, documentRef);
                     if (log.isDebugEnabled()) {
@@ -134,14 +133,14 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                     }
                     return meta;
                 } else {
-                    log.warn("Unsuccessful call to ({}), ", client.getClient(session).getProjectId());
+                    log.warn("Unsuccessful call to ({}), ", client.getClient().getProjectId());
                     return null;
                 }
             }
 
             return null;
         } catch (IOException e) {
-            log.error("User {} failed on prediction", session.getPrincipal().getActingUser(), e);
+            log.error(e);
             return null;
         } finally {
             responseTime.stop();

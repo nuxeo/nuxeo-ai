@@ -18,16 +18,10 @@
  */
 package org.nuxeo.ai.cloud;
 
-import com.auth0.jwt.impl.PublicClaims;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalNotification;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
-import org.nuxeo.ai.auth.NuxeoClaim;
-import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
@@ -64,7 +58,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
@@ -107,42 +100,18 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    protected Cache<String, InsightClient> cachedClients;
+    protected InsightClient client;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        CloudConfigDescriptor config = getCloudConfig();
-        CacheBuilder<String, InsightClient> builder = CacheBuilder.newBuilder()
-                                                                  .maximumSize(100)
-                                                                  .removalListener(this::onRemove);
-        if (config != null) {
-            // TODO: Create default template with timeout of token
-            String projectId = config.projectId;
-            JWTKeyService jwt = Framework.getService(JWTKeyService.class);
-            long expire = jwt.getExpireAt(projectId);
-            builder = builder.expireAfterWrite(Duration.ofMillis(expire));
-        } else {
-            builder = builder.expireAfterWrite(Duration.ofMinutes(60));
-        }
 
-        cachedClients = builder.build();
     }
 
     @Override
     public void activate(ComponentContext context) {
         super.activate(context);
-    }
-
-    @Override
-    public int getApplicationStartedOrder() {
-        Component component = (Component) Framework.getRuntime()
-                                                   .getComponent("org.nuxeo.ai.keystore.JWKLocalComponent");
-        if (component == null) {
-            // Starting very late in case Cache used default application order
-            return super.getApplicationStartedOrder() + 1000;
-        }
-        return component.getApplicationStartedOrder() + 5;
+        initClient();
     }
 
     protected void onRemove(RemovalNotification<String, InsightClient> notification) {
@@ -166,14 +135,17 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 datasource = descriptor.datasource;
             }
 
-            JWTKeyService jwt = Framework.getService(JWTKeyService.class);
-            Map<String, Serializable> claims = new HashMap<>();
-            claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
-            String[] groups = { descriptor.projectId + "-managers" };
-            claims.put(NuxeoClaim.GROUP, groups);
+            CloudConfigDescriptor.Authentication auth = descriptor.authentication;
+            Authentication authentication;
 
-            String token = jwt.generateJWT(descriptor.projectId, claims);
-            Authentication authentication = new Authentication(token);
+            if (auth != null && isNotEmpty(auth.token)) {
+                authentication = new Authentication(auth.token);
+            } else if (auth != null && isNotEmpty(auth.username) && isNotEmpty(auth.password)) {
+                authentication = new Authentication(auth.username, auth.password);
+            } else {
+                throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
+            }
+
             InsightConfiguration configuration = new InsightConfiguration.Builder().setAuthentication(authentication)
                                                                                    .setUrl(descriptor.url)
                                                                                    .setConnectionTimeout(
@@ -187,9 +159,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                                                    .build();
             InsightClient client = new InsightClient(configuration);
 
+            this.client = client;
             log.debug("Nuxeo Cloud Client {} is configured for {}.", client.getProjectId(), client.getUrl());
-            client.connect();
-            return client;
+            this.client.connect();
         } catch (NuxeoClientRemoteException e) {
             log.error("Authentication/Connection issue with Insight cloud", e);
             return null;
@@ -199,17 +171,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     /**
      * Get the configured client
      */
-    @Nullable
     @Override
-    public InsightClient getClient(CoreSession session) {
-        try {
-            CloudConfigDescriptor config = getCloudConfig();
-            return config != null ?
-                    cachedClients.get(session.getPrincipal().getActingUser(), () -> configureClient(session, config)) :
-                    null;
-        } catch (ExecutionException e) {
-            log.warn("User {} attempts to acquire nonexistent client", session.getPrincipal().getActingUser(), e);
-            return null;
+    public InsightClient getClient() {
+        if (client == null) {
+            initClient();
         }
     }
 
@@ -219,52 +184,38 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public String initExport(CoreSession session, @Nullable String corporaId, CorporaParameters parameters) {
+    public String initExport(@Nullable String corporaId, CorporaParameters parameters) {
         try {
-            InsightClient client = getClient(session);
-            return client == null ?
-                    null :
-                    client.api(API.Export.INIT).call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
+            return getClient().api(API.Export.INIT)
+                              .call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
         } catch (IOException e) {
-            log.error("User {} failed to initialize export", session.getPrincipal().getActingUser(), e);
+            log.error(e);
             return null;
         }
     }
 
     @Override
-    public boolean bind(CoreSession session, @Nonnull String modelId, @Nonnull String corporaId) {
+    public boolean bind(@Nonnull String modelId, @Nonnull String corporaId) {
         try {
             Map<String, Serializable> params = new HashMap<>();
             params.put(MODEL_ID_PARAM, modelId);
             params.put(CORPORA_ID_PARAM, corporaId);
-            InsightClient client = getClient(session);
-            if (client == null) {
-                return false;
-            }
-
             return Boolean.TRUE.equals(client.api(API.Export.BIND).call(params));
         } catch (IOException e) {
-            CloudConfigDescriptor config = getCloudConfig();
-            log.error("User {} failed to bind model {} with corpora {} for project {}, url {}",
-                    session.getPrincipal().getActingUser(), modelId, corporaId, config.projectId, config.url, e);
+            log.error("Failed to bind model {} with corpora {} for project {}, url {}", modelId, corporaId,
+                    client.getProjectId(), client.getUrl(), e);
             return false;
         }
     }
 
     @Override
-    public boolean notifyOnExportDone(CoreSession session, String exportId) {
+    public boolean notifyOnExportDone(String exportId) {
         try {
-            InsightClient client = getClient(session);
-            if (client == null) {
-                return false;
-            }
-
             return Boolean.TRUE.equals(
                     client.api(API.Export.DONE).call(Collections.singletonMap(EXPORT_ID_PARAM, exportId)));
         } catch (IOException e) {
-            CloudConfigDescriptor config = getCloudConfig();
-            log.error("User {} failed on Export DONE action: export ID {}; project {}; url {}",
-                    session.getPrincipal().getActingUser(), exportId, config.projectId, config.url, e);
+            log.error("Failed on Export DONE action: export ID {}; project {}; url {}", exportId, client.getProjectId(),
+                    client.getUrl(), e);
             return false;
         }
     }
@@ -291,7 +242,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             try {
                 DateTime start = DateTime.now();
-                BatchUpload batchUpload = client.getBatchUpload(1024 * 1024 * 100);
+
+                BatchUpload batchUpload = getClient().getBatchUpload(1024 * 1024 * 100);
 
                 String batch1 = batchUpload.getBatchId();
 
@@ -306,14 +258,14 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                         trainingDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("0", trainingDataBlob);
 
-                batchUpload = client.getBatchUpload(CHUNK_100_MB);
+                batchUpload = getClient().getBatchUpload(CHUNK_100_MB);
 
                 String batch2 = batchUpload.getBatchId();
 
                 log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("1", evalDataBlob);
 
-                batchUpload = client.getBatchUpload(CHUNK_100_MB);
+                batchUpload = getClient().getBatchUpload(CHUNK_100_MB);
 
                 String batch3 = batchUpload.getBatchId();
 
@@ -332,20 +284,14 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         return null;
     }
 
-    @Nullable
-    protected String uploadDataset(CoreSession session, AICorpus corpus, String corporaId) {
-        InsightClient client = getClient(session);
-        if (client == null) {
-            return null;
-        }
-
+    protected String uploadDataset(AICorpus corpus, String corporaId) {
         try {
             log.info("Creating dataset document");
             Map<String, Serializable> params = new HashMap<>();
             params.put(CORPORA_ID_PARAM, corporaId);
-            return client.api(API.Export.ATTACH).call(params, corpus);
+            return getClient().api(API.Export.ATTACH).call(params, corpus);
         } catch (IOException e) {
-            log.error("User {}, failed to process corpus dataset. ", session.getPrincipal().getActingUser(), e);
+            log.error("Failed to process corpus dataset. ", e);
             return null;
         }
     }
@@ -398,46 +344,35 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     @Nullable
     @Override
-    public String predict(CoreSession session, String modelName, TensorInstances instances) throws IOException {
-        InsightClient client = getClient(session);
-        if (client == null) {
-            return null;
-        }
-
+    public String predict(String modelName, TensorInstances instances) throws IOException {
         Map<String, Serializable> params = new HashMap<>();
         params.put(MODEL_NAME_PARAM, modelName);
         params.put(DATASOURCE_PARAM, client.getConfiguration().getDatasource());
-        return client.api(API.Model.PREDICT).call(params, instances);
+        return getClient().api(API.Model.PREDICT).call(params, instances);
     }
 
     @Override
-    public JSONBlob getAllModels(CoreSession session) throws IOException {
-        return getModels(session, API.Model.ALL, Collections.emptyMap());
+    public JSONBlob getAllModels() throws IOException {
+        return getModels(API.Model.ALL, Collections.emptyMap());
     }
 
     @Override
-    public JSONBlob getModelsByDatasource(CoreSession session) throws IOException {
-        return getModels(session, API.Model.BY_DATASOURCE, Collections.emptyMap());
+    public JSONBlob getModelsByDatasource() throws IOException {
+        return getModels(API.Model.BY_DATASOURCE, Collections.emptyMap());
     }
 
     @Override
-    public JSONBlob getPublishedModels(CoreSession session) throws IOException {
-        InsightClient client = getClient(session);
-        if (client == null) {
-            return EMPTY_JSON_BLOB;
-        }
-
+    public JSONBlob getPublishedModels() throws IOException {
         String datasource = null;
-        if (getClient(session) != null) {
+        if (getClient() != null) {
             datasource = client.getConfiguration().getDatasource();
         }
-        return getModels(session, API.Model.PUBLISHED, Collections.singletonMap(LABEL_PARAM, datasource));
+        return getModels(API.Model.PUBLISHED, Collections.singletonMap(LABEL_PARAM, datasource));
     }
 
-    protected JSONBlob getModels(CoreSession session, API.Model endpoint, Map<String, Serializable> params)
-            throws IOException {
-        InsightClient client = getClient(session);
-        if (client == null) {
+    protected JSONBlob getModels(API.Model endpoint, Map<String, Serializable> params) throws IOException {
+        if (getClient() == null) {
+            log.warn("Attempting to use Insight Client before initialization");
             return EMPTY_JSON_BLOB;
         }
 
@@ -456,12 +391,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             throw new NuxeoException("Model Id cannot be empty");
         }
 
-        InsightClient client = getClient(session);
-        if (client == null) {
-            return EMPTY_JSON_BLOB;
-        }
-
-        String response = client.api(API.Model.DELTA).call(Collections.singletonMap(MODEL_ID_PARAM, modelId));
+        String response = getClient().api(API.Model.DELTA).call(Collections.singletonMap(MODEL_ID_PARAM, modelId));
         if (StringUtils.isEmpty(response)) {
             log.warn("Corpus Delta is empty; Model Id {}", modelId);
             return null;
@@ -470,18 +400,13 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public <T> T getByProject(CoreSession session, String url, ResponseHandler<T> handler) {
-        InsightClient client = getClient(session);
-        if (client == null) {
-            return null;
-        }
-
-        return client.get(API_AI + byProjectId(url), handler);
+    public <T> T getByProject(String url, ResponseHandler<T> handler) {
+        return getClient().get(API_AI + byProjectId(url), handler);
     }
 
     @Override
     public String byProjectId(String url) {
-        return getCloudConfig().projectId + url;
+        return client.getProjectId() + url;
     }
 
     @Override

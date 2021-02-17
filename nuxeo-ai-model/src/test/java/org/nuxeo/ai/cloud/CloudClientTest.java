@@ -202,10 +202,9 @@ public class CloudClientTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void testGetPut() {
-        String result = client.getClient(session)
-                              .get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
-                                      response -> response.isSuccessful() ? response.body().string() : null);
+    public void testGetPut() throws IOException {
+        String result = client.getClient().get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
+                response -> response.isSuccessful() ? response.body().string() : null);
 
         String result2 = client.getByProject(session, "/dev/models?enrichers.document=children",
                 response -> response.isSuccessful() ? response.body().string() : null);
@@ -213,9 +212,8 @@ public class CloudClientTest {
         assertEquals(result, result2);
 
         String putBody = "could be anything";
-        String resBody = client.getClient(session)
-                               .put(client.byProjectId("/dev/models"), putBody,
-                                       response -> response.isSuccessful() ? response.body().string() : null);
+        String resBody = client.getClient().put(client.byProjectId("/dev/models"), putBody,
+                response -> response.isSuccessful() ? response.body().string() : null);
         assertTrue(resBody.contains(putBody));
     }
 
