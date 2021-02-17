@@ -1,14 +1,9 @@
 <?xml version="1.0"?>
-<component name="org.nuxeo.ai.web.ui.properties.contrib">
-
-  <require>org.nuxeo.web.ui.properties.contrib</require>
-
+<component name="org.nuxeo.web.ui.ai.properties.contrib">
   <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
-    <!-- enrichers -->
-    <property name="org.nuxeo.web.ui.enrichers.document" list="true">aiModels</property>
+      <!-- AI Specific vars -->
     <property name="org.nuxeo.web.ui.insight.client.enabled">
       ${nuxeo.ai.insight.client.enable:=false}
     </property>
   </extension>
-
 </component>
