@@ -19,39 +19,18 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestPdf;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.inject.Inject;
-
+import com.google.common.collect.Sets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.tensorflow.TFRecord;
 import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
+import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -65,7 +44,27 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.tensorflow.example.Feature;
 
-import com.google.common.collect.Sets;
+import javax.inject.Inject;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestPdf;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })
@@ -80,6 +79,28 @@ public class TensorTest {
 
     @Inject
     protected CoreSession session;
+
+    /**
+     * Count the number of tensorflow record example records.
+     */
+    public static int countNumberOfExamples(Blob blob, int numOfFeatures) throws IOException {
+        if (blob == null) {
+            return 0;
+        }
+        DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
+        TFRecordReader tfRecordReader = new TFRecordReader(input, true);
+        byte[] exampleData;
+        int countExamples = 0;
+        while ((exampleData = tfRecordReader.read()) != null) {
+            TFRecord tfRecord = TFRecord.from(exampleData);
+            if (numOfFeatures > 0) {
+                assertEquals(numOfFeatures, tfRecord.getFeatures().getFeatureCount());
+            }
+            assertThat(tfRecord.getDocId()).isNotBlank();
+            countExamples++;
+        }
+        return countExamples;
+    }
 
     @Test
     public void testWriter() throws IOException {
@@ -108,28 +129,6 @@ public class TensorTest {
         assertTrue(blob.get().getLength() > 0);
         // System.out.println("File: " + blob.getFile().getAbsolutePath());
         assertEquals(numberOfRecords, countNumberOfExamples(blob.get(), 2));
-    }
-
-    /**
-     * Count the number of tensorflow record example records.
-     */
-    public static int countNumberOfExamples(Blob blob, int numOfFeatures) throws IOException {
-        if (blob == null) {
-            return 0;
-        }
-        DataInput input = new DataInputStream(new FileInputStream(blob.getFile()));
-        TFRecordReader tfRecordReader = new TFRecordReader(input, true);
-        byte[] exampleData;
-        int countExamples = 0;
-        while ((exampleData = tfRecordReader.read()) != null) {
-            TFRecord tfRecord = TFRecord.from(exampleData);
-            if (numOfFeatures > 0) {
-                assertEquals(numOfFeatures, tfRecord.getFeatures().getFeatureCount());
-            }
-            assertThat(tfRecord.getDocId()).isNotBlank();
-            countExamples++;
-        }
-        return countExamples;
     }
 
     @Test
@@ -233,21 +232,11 @@ public class TensorTest {
 
     @Test
     public void shouldWriteHTMLAsSingleValueTensor() throws IOException {
-        String html = "<p>Step to reproduce:</p>\n" +
-                "<ul>\n\t<li>select a File document in a content view and push the Copy button</li>\n" +
-                "\t<li>push the Paste button</li>\n" +
-                "\t<li>a new document is created in the same folder:" +
-                " get its id (<tt>cd551cce-5322-4368-b045-e13086f250bb</tt> in my example)</li>\n" +
-                "\t<li>edit the new document and increment the minor version</li>\n" +
-                "\t<li>run the following SQL query against your database\n" +
-                "<div style=\"\\\"border-width:\" class=\"\\\"preformatted\"><div class=\"\\\"preformattedContent\">\n" +
-                "<pre>select * from versions where versionableid='cd551cce-5322-4368-b045-e13086f250bb';\n" +
-                " id | versionableid | created | label | description | islatest | islatestmajor \n" +
-                "--------------------------------------------------------------------------------------" +
-                "------------------------------------------------\\n" +
-                " ba10d4af-9045-48bc-be46-0c293b84b408 | cd551cce-5322-4368-b045-e13086f250bb | 2016-05-26 14:38:00.815 | | | t | f\n" +
-                "</pre>\n</div></div>\n<p>=> the label value is empty</p></li>\n</ul>\n" +
-                "\n\n<p>This value is returned when calling <tt>session.getLastVersion(docRef).getLabel()</tt>.</p>";
+        File htmlFile = FileUtils.getResourceFileFromContext("files/htmlTensor.html");
+        String html = org.apache.commons.io.FileUtils.readFileToString(htmlFile, "UTF-8");
+
+        File expectedFile = FileUtils.getResourceFileFromContext("files/htmlTensorExpected.html");
+        String expected = org.apache.commons.io.FileUtils.readFileToString(expectedFile, "UTF-8");
 
         DocumentModel doc = session.createDocumentModel("/", "TestDoc", "File");
         doc.setPropertyValue("dc:description", html);
@@ -260,7 +249,6 @@ public class TensorTest {
         BlobTextFromDocument blobTextFromDoc = PropertyUtils.docSerialize(doc, set);
 
         byte[] bytes = MAPPER.writeValueAsBytes(blobTextFromDoc);
-
 
         RecordWriter writer = aiComponent.getRecordWriter("ai/training");
         assertNotNull(writer);
@@ -286,22 +274,6 @@ public class TensorTest {
 
         Feature feature = tfRecord.getFeatures().getFeatureOrDefault("dc:description", null);
         assertNotNull(feature);
-
-        final String expected = "<p>Step to reproduce:</p>\n" +
-                "<ul>\n\t<li>select a File document in a content view and push the Copy button</li>\n" +
-                "\t<li>push the Paste button</li>\n" +
-                "\t<li>a new document is created in the same folder:" +
-                " get its id (<tt>cd551cce-5322-4368-b045-e13086f250bb</tt> in my example)</li>\n" +
-                "\t<li>edit the new document and increment the minor version</li>\n" +
-                "\t<li>run the following SQL query against your database\n" +
-                "<div style=\"\\\"border-width:\" class=\"\\\"preformatted\"><div class=\"\\\"preformattedContent\">\n" +
-                "<pre>select * from versions where versionableid='cd551cce-5322-4368-b045-e13086f250bb';\n" +
-                " id ; versionableid ; created ; label ; description ; islatest ; islatestmajor \n" +
-                "--------------------------------------------------------------------------------------" +
-                "------------------------------------------------\\n" +
-                " ba10d4af-9045-48bc-be46-0c293b84b408 ; cd551cce-5322-4368-b045-e13086f250bb ; 2016-05-26 14:38:00.815 ; ; ; t ; f\n" +
-                "</pre>\n</div></div>\n<p>=> the label value is empty</p></li>\n</ul>\n" +
-                "\n\n<p>This value is returned when calling <tt>session.getLastVersion(docRef).getLabel()</tt>.</p>";
 
         File txtFile = Framework.createTempFile("tf_HTML", "txt");
         try (FileOutputStream fos = new FileOutputStream(txtFile)) {

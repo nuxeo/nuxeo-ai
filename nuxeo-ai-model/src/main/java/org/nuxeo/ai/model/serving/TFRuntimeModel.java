@@ -18,21 +18,31 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import io.dropwizard.metrics5.Timer;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.enrichment.EnrichmentProvider;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.model.ModelProperty;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ai.sdk.objects.TensorInstances;
+import org.nuxeo.ai.sdk.objects.TensorInstances.Tensor;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.IdRef;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -45,34 +55,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.enrichment.EnrichmentProvider;
-import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.model.ModelProperty;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.CoreInstance;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.IdRef;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
-
-import io.dropwizard.metrics5.Timer;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureConversion;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * A runtime model that calls TensorFlow Serving rest api
  */
 public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentProvider {
-
-    public static final String VERB_PREDICT = "predict";
 
     public static final String PREDICTION_CUSTOM = "/prediction/custommodel";
 
@@ -85,6 +85,8 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     public static final String JSON_OUTPUTS = "output_names";
 
     public static final String JSON_LABELS = "_labels";
+
+    private static final Logger log = LogManager.getLogger(TFRuntimeModel.class);
 
     protected Set<String> inputNames;
 
@@ -109,7 +111,10 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
      * For the supplied input values try to predict a result or return null
      */
     public EnrichmentMetadata predict(Map<String, Tensor> inputValues, String repositoryName, String documentRef) {
-        Timer.Context responseTime = aiComponent.getMetrics().getInsightPredictionTime().time();
+        Timer.Context responseTime = Framework.getService(AIComponent.class)
+                                              .getMetrics()
+                                              .getInsightPredictionTime()
+                                              .time();
         try {
             if (inputValues.size() != inputs.size()) {
                 log.debug(getName() + " did not call prediction.  Properties provided were " + inputValues.keySet());
@@ -117,26 +122,24 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             }
             CloudClient client = Framework.getService(CloudClient.class);
             if (client.isAvailable()) {
-                TensorInstances tensorInstances = new TensorInstances(documentRef, inputValues);
-                String json = prepareRequest(tensorInstances);
-                if (isNotBlank(json)) {
-                    String uri = buildUri(client);
-                    return client.post(uri, json, response -> {
-                        if (response.isSuccessful() && response.body() != null) {
-                            EnrichmentMetadata meta = handlePredict(response.body().string(), repositoryName,
-                                    documentRef);
-                            if (log.isDebugEnabled()) {
-                                log.debug(getName() + ": prediction metadata is: " + MAPPER.writeValueAsString(meta));
-                            }
-                            return meta;
-                        } else {
-                            log.warn(String.format("Unsuccessful call to (%s), status is %d", uri, response.code()));
-                            return null;
-                        }
-                    });
+                TensorInstances tensorInstances = new TensorInstances(documentRef,
+                        Collections.singletonList(inputValues));
+                String result = client.predict(getName(), tensorInstances);
+                if (StringUtils.isNotEmpty(result)) {
+                    EnrichmentMetadata meta = handlePredict(result, repositoryName, documentRef);
+                    if (log.isDebugEnabled()) {
+                        log.debug(getName() + ": prediction metadata is: " + MAPPER.writeValueAsString(meta));
+                    }
+                    return meta;
+                } else {
+                    log.warn("Unsuccessful call to ({}), ", client.getClient().getProjectId());
+                    return null;
                 }
             }
 
+            return null;
+        } catch (IOException e) {
+            log.error(e);
             return null;
         } finally {
             responseTime.stop();
@@ -214,17 +217,6 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
         }
     }
 
-    /**
-     * Builds the uri.
-     *
-     * @param client
-     */
-    protected String buildUri(CloudClient client) {
-        String datasource = client.getCloudConfig().getDatasource();
-        return API_AI + client.byProjectId(
-                "/model/" + getName() + "/" + datasource + "/" + VERB_PREDICT + "?datasource=" + datasource);
-    }
-
     @Override
     public String getKind() {
         return kind;
@@ -237,7 +229,10 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
 
     @Override
     public EnrichmentMetadata predict(DocumentModel doc) {
-        Timer.Context preConversionTime = aiComponent.getMetrics().getInsightPreConversionTime().time();
+        Timer.Context preConversionTime = Framework.getService(AIComponent.class)
+                                                   .getMetrics()
+                                                   .getInsightPreConversionTime()
+                                                   .time();
         try {
             Map<String, Tensor> props = new HashMap<>(inputs.size());
             for (ModelProperty input : inputs) {
@@ -335,7 +330,6 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                     inputProperties.put(input.getName(), Tensor.text(text));
                 }
             }
-
         }
 
         if (inputProperties.isEmpty()) {
@@ -347,55 +341,5 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             }
         }
         return emptyList();
-    }
-
-    /**
-     * A JSON representation of Tensorflow instance parameters
-     */
-    protected static class TensorInstances {
-
-        public final String docId;
-
-        public final List<Map<String, Tensor>> instances;
-
-        public TensorInstances(@JsonProperty("docId") String docId,
-                @JsonProperty("instances") Map<String, Tensor> inputs) {
-            this.docId = docId;
-            this.instances = Collections.singletonList(inputs);
-        }
-    }
-
-    /**
-     * A JSON representation of Tensorflow instance parameter
-     */
-    protected static class Tensor implements Serializable {
-        private static final long serialVersionUID = 2603715122387085509L;
-
-        public final String type;
-
-        public final String b64;
-
-        public final String text;
-
-        public final String[] categories;
-
-        protected Tensor(String type, String b64, String text, String[] categories) {
-            this.type = type;
-            this.b64 = b64;
-            this.text = text;
-            this.categories = categories;
-        }
-
-        public static Tensor image(String b64) {
-            return new Tensor(IMAGE_TYPE, b64, null, null);
-        }
-
-        public static Tensor text(String text) {
-            return new Tensor(TEXT_TYPE, null, text, null);
-        }
-
-        public static Tensor category(String[] categories) {
-            return new Tensor(CATEGORY_TYPE, null, null, categories);
-        }
     }
 }

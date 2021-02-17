@@ -18,13 +18,10 @@
  */
 package org.nuxeo.ai.pipes.events;
 
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.*;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
@@ -37,6 +34,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
+
 /**
  * Take a document event and turn it into a stream BlobTextFromDocument.
  * <p>
@@ -45,14 +47,15 @@ import java.util.function.Function;
 public class DocEventToStream implements Function<Event, Collection<BlobTextFromDocument>> {
 
     public static final String BLOB_PROPERTIES = "blobProperties";
-    
+
     public static final String BLOB_PROPERTIES_TYPE = "blobPropertiesType";
 
     public static final String TEXT_PROPERTIES = "textProperties";
 
     public static final String CUSTOM_PROPERTIES = "customProperties";
 
-    protected static final List<PropertyType> DEFAULT_BLOB_PROPERTIES = Collections.singletonList(new PropertyType(FILE_CONTENT, IMAGE_TYPE));
+    protected static final List<PropertyType> DEFAULT_BLOB_PROPERTIES = Collections.singletonList(
+            new PropertyType(FILE_CONTENT, IMAGE_TYPE));
 
     private static final Log log = LogFactory.getLog(DocEventToStream.class);
 
@@ -72,9 +75,8 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextFrom
     /**
      * Creates an instance with the specified values
      */
-    public DocEventToStream(List<PropertyType> blobProperties,
-                            List<String> textProperties,
-                            List<String> customProperties) {
+    public DocEventToStream(List<PropertyType> blobProperties, List<String> textProperties,
+            List<String> customProperties) {
         this.blobProperties = blobProperties != null ? blobProperties : Collections.emptyList();
         this.textProperties = textProperties != null ? textProperties : Collections.emptyList();
         this.customProperties = customProperties != null ? customProperties : Collections.emptyList();
@@ -132,9 +134,8 @@ public class DocEventToStream implements Function<Event, Collection<BlobTextFrom
      * Create a BlobTextFromDocument based on the specified document
      */
     protected BlobTextFromDocument getBlobText(DocumentModel doc) {
-        BlobTextFromDocument blobTextFromDoc =
-                new BlobTextFromDocument(doc.getId(), doc.getRepositoryName(), doc.getParentRef().toString(), doc
-                        .getType(), doc.getFacets());
+        BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc.getId(), doc.getRepositoryName(),
+                doc.getParentRef().toString(), doc.getType(), doc.getFacets());
 
         customProperties.forEach(propName -> {
             String propVal = getPropertyValue(doc, propName, String.class);
