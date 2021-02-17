@@ -18,27 +18,13 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
-import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
-import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
-import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.model.serving.ModelServingService;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
@@ -48,6 +34,20 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
 
 /**
  * A BAF action to add enrichment or suggestions to a number of documents. It does this by sending a sub-set of the
@@ -86,7 +86,7 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
                 Set<ModelProperty> inputs = modelServingService.getInputs(doc);
                 if (!inputs.isEmpty()) {
                     Set<PropertyType> inputPairs = inputs.stream()
-                                                         .map(p -> new PropertyType(p.getName(), p.getType()))
+                                                         .map(p -> PropertyType.of(p.getName(), p.getType()))
                                                          .collect(Collectors.toSet());
                     BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs);
                     outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));

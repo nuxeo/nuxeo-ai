@@ -18,13 +18,14 @@
  */
 package org.nuxeo.ai.pipes.functions;
 
-import static java.util.stream.Collectors.toList;
-import static org.nuxeo.ai.pipes.events.DocEventToStream.BLOB_PROPERTIES;
-import static org.nuxeo.ai.pipes.events.DocEventToStream.BLOB_PROPERTIES_TYPE;
-import static org.nuxeo.ai.pipes.events.DocEventToStream.CUSTOM_PROPERTIES;
-import static org.nuxeo.ai.pipes.events.DocEventToStream.TEXT_PROPERTIES;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.pipes.events.DocEventToStream;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.lib.stream.computation.Record;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,14 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.pipes.events.DocEventToStream;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.lib.stream.computation.Record;
+import static java.util.stream.Collectors.toList;
+import static org.nuxeo.ai.pipes.events.DocEventToStream.BLOB_PROPERTIES;
+import static org.nuxeo.ai.pipes.events.DocEventToStream.BLOB_PROPERTIES_TYPE;
+import static org.nuxeo.ai.pipes.events.DocEventToStream.CUSTOM_PROPERTIES;
+import static org.nuxeo.ai.pipes.events.DocEventToStream.TEXT_PROPERTIES;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 /**
  * A function that takes document properties and sends them to a stream using {@link DocEventToStream}. The function

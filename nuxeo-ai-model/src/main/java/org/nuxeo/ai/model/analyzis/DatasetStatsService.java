@@ -18,7 +18,9 @@
  */
 package org.nuxeo.ai.model.analyzis;
 
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.FieldStatistics;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ai.sdk.objects.Statistic;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.core.schema.types.Field;
@@ -50,41 +52,9 @@ public interface DatasetStatsService {
 
     String AGG_TOTAL = "total";
 
-    Collection<Statistic> getStatistics(CoreSession session, String nxql,
-                                        Set<PropertyType> inputProperties, Set<PropertyType> outputProperties);
-
-    /**
-     * Transforms statistics between ES and UI needs
-     * @param statistics {@link Collection} of {@link Statistic} to transofrm
-     * @return {@link Set} of `unique` {@link FieldStatistics}
-     */
-    default Set<FieldStatistics> transform(Collection<Statistic> statistics) {
-        if (statistics.isEmpty()) {
-            return Collections.emptySet();
-        }
-
-        Map<String, List<Statistic>> collect = statistics.stream().collect(Collectors.groupingBy(Statistic::getField));
-        List<Statistic> totalStat = collect.remove(AGG_TOTAL);
-        collect.remove(AGG_COUNT);
-
-        Set<FieldStatistics> result = new HashSet<>(collect.size());
-        for (Statistic statistic : totalStat) {
-            Number total = statistic.getNumericValue();
-
-            Collection<FieldStatistics> values = collect.entrySet()
-                    .stream()
-                    .flatMap(entry -> entry.getValue().stream())
-                    .collect(Collectors.toMap(Statistic::getField, stat -> FieldStatistics.from(stat, total.longValue()),
-                            FieldStatistics::merge)) // merge all stats to include different aggregates terms|missing|cardinality
-                    .values();
-            result.addAll(values);
-        }
-
-        return result;
-    }
-
     /**
      * Checks if given type is a vocabulary.
+     *
      * @param type {@link Type} to retrieve information
      * @return {@link Boolean#TRUE} if type is a vocabulary
      */
@@ -102,6 +72,7 @@ public interface DatasetStatsService {
 
     /**
      * Resolve type of
+     *
      * @param field {@link Field}
      * @return {@link String} representing one of the field types img|txt|cat
      */
@@ -115,5 +86,40 @@ public interface DatasetStatsService {
             type = TEXT_TYPE;
         }
         return type;
+    }
+
+    Collection<Statistic> getStatistics(CoreSession session, String nxql, Set<PropertyType> inputProperties,
+            Set<PropertyType> outputProperties);
+
+    /**
+     * Transforms statistics between ES and UI needs
+     *
+     * @param statistics {@link Collection} of {@link Statistic} to transofrm
+     * @return {@link Set} of `unique` {@link FieldStatistics}
+     */
+    default Set<FieldStatistics> transform(Collection<Statistic> statistics) {
+        if (statistics.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Map<String, List<Statistic>> collect = statistics.stream().collect(Collectors.groupingBy(Statistic::getField));
+        List<Statistic> totalStat = collect.remove(AGG_TOTAL);
+        collect.remove(AGG_COUNT);
+
+        Set<FieldStatistics> result = new HashSet<>(collect.size());
+        for (Statistic statistic : totalStat) {
+            Number total = statistic.getNumericValue();
+
+            Collection<FieldStatistics> values = collect.entrySet()
+                                                        .stream()
+                                                        .flatMap(entry -> entry.getValue().stream())
+                                                        .collect(Collectors.toMap(Statistic::getField,
+                                                                stat -> FieldStatistics.from(stat, total.longValue()),
+                                                                FieldStatistics::merge)) // merge all stats to include different aggregates terms|missing|cardinality
+                                                        .values();
+            result.addAll(values);
+        }
+
+        return result;
     }
 }

@@ -18,26 +18,14 @@
  */
 package org.nuxeo.ai.pipes.events;
 
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import javax.inject.Inject;
-
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Metric;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.PipesTestConfigFeature;
 import org.nuxeo.ai.pipes.consumers.LogAppenderConsumer;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -55,13 +43,25 @@ import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Metric;
+
+import javax.inject.Inject;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 @RunWith(FeaturesRunner.class)
-@Features({PipesTestConfigFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml"})
+@Features({ PipesTestConfigFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
+        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml" })
 public class EventPipesTest {
 
     public static final String TEST_MIME_TYPE = "text/plain";
@@ -112,24 +112,24 @@ public class EventPipesTest {
     @Test
     public void testDocEventToStream() throws Exception {
         DocEventToStream doc2stream = new DocEventToStream();
-        Collection<BlobTextFromDocument> result =
-                doc2stream.apply(getTestEvent(session, DocumentModelFactory.createDocumentModel("File"),
-                                              "anyEvent"));
+        Collection<BlobTextFromDocument> result = doc2stream.apply(
+                getTestEvent(session, DocumentModelFactory.createDocumentModel("File"), "anyEvent"));
         assertNotNull(result);
         assertEquals("Nothing in the test event to serialize", 0, result.size());
 
         Event testEvent = getTestEvent(session);
         result = doc2stream.apply(testEvent);
         assertEquals("There is 1 blob", 1, result.size());
-        assertTrue(result.iterator().next().computePropertyBlobs().containsKey(new PropertyType("file:content", "img")));
+        assertTrue(
+                result.iterator().next().computePropertyBlobs().containsKey(new PropertyType("file:content", "img")));
 
         List<String> unknownProp = singletonList("dublinapple:core");
 
         result = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, unknownProp, null).apply(testEvent);
         assertEquals("2 properties were specified by only 1 is valid", 1, result.size());
-    
+
         List<PropertyType> unknownPropBlob = singletonList(new PropertyType("dublinapple:core", "txt"));
-        result = new DocEventToStream( unknownPropBlob, null, null).apply(testEvent);
+        result = new DocEventToStream(unknownPropBlob, null, null).apply(testEvent);
         assertEquals("No valid properties were specified so no results are returned", 0, result.size());
 
         List<String> creator = singletonList("dc:creator");
@@ -144,7 +144,7 @@ public class EventPipesTest {
         assertEquals("Administrator", validResult.get(0).getProperties().get("dc:creator"));
 
         doc2stream = new DocEventToStream(DocEventToStream.DEFAULT_BLOB_PROPERTIES, creator,
-                                          singletonList("dc:modified"));
+                singletonList("dc:modified"));
         validResult = (List<BlobTextFromDocument>) doc2stream.apply(testEvent);
         BlobTextFromDocument firstResult = validResult.get(0);
         assertNotNull(firstResult.getProperties().get("dc:modified"));
@@ -159,9 +159,11 @@ public class EventPipesTest {
     @Test
     public void testPostCommitEventRegistration() {
         EventServiceImpl eventS = (EventServiceImpl) eventService;
-        assertTrue("We must add a PostCommit listener via config.",
-                   eventS.getEventListenerList().getAsyncPostCommitListeners().stream()
-                         .anyMatch(l -> l instanceof PostCommitEventListenerWrapper));
+        assertTrue("We must add a PostCommit listener via config.", eventS.getEventListenerList()
+                                                                          .getAsyncPostCommitListeners()
+                                                                          .stream()
+                                                                          .anyMatch(
+                                                                                  l -> l instanceof PostCommitEventListenerWrapper));
     }
 
 }
