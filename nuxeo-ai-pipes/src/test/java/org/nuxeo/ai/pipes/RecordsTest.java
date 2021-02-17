@@ -42,7 +42,7 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
