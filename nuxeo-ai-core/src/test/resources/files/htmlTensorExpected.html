@@ -1,0 +1,22 @@
+<p>Step to reproduce:</p>
+<ul>
+    <li>select a File document in a content view and push the Copy button</li>
+    <li>push the Paste button</li>
+    <li>a new document is created in the same folder:
+        get its id (<tt>cd551cce-5322-4368-b045-e13086f250bb</tt> in my example)
+    </li>
+    <li>edit the new document and increment the minor version</li>
+    <li>run the following SQL query against your database
+        <div style="border-width: 20px" class="preformatted">
+            <div class="preformattedContent">
+            <pre>select * from versions where versionableid='cd551cce-5322-4368-b045-e13086f250bb';
+                id ; versionableid ; created ; label ; description ; islatest ; islatestmajor
+                --------------------------------------------------------------------------------------
+                ------------------------------------------------
+                ba10d4af-9045-48bc-be46-0c293b84b408 ; cd551cce-5322-4368-b045-e13086f250bb ; 2016-05-26 14:38:00.815 ; ; ; t ; f
+                </pre>
+            </div>
+        </div>
+        <p>=> the label value is empty</p></li>
+</ul>
+<p>This value is returned when calling <tt>session.getLastVersion(docRef).getLabel()</tt>.</p>

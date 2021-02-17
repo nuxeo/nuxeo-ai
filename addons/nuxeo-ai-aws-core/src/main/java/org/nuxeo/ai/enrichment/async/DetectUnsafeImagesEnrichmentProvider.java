@@ -18,9 +18,19 @@
  */
 package org.nuxeo.ai.enrichment.async;
 
-import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.GetContentModerationResult;
+import com.amazonaws.services.rekognition.model.ModerationLabel;
+import net.jodah.failsafe.RetryPolicy;
+import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
+import org.nuxeo.ai.enrichment.EnrichmentCachable;
+import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueStore;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -31,21 +41,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
-import org.nuxeo.ai.enrichment.EnrichmentCachable;
-import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.kv.KeyValueStore;
-
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.GetContentModerationResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
-import net.jodah.failsafe.RetryPolicy;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 /**
  * Detect unsafe content in images.
@@ -100,21 +98,21 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
     }
 
     public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                        GetContentModerationResult result) {
+            GetContentModerationResult result) {
         List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
-                .stream()
-                .map(l -> newLabel(l.getModerationLabel(), l.getTimestamp()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                                                      .stream()
+                                                      .map(l -> newLabel(l.getModerationLabel(), l.getTimestamp()))
+                                                      .filter(Objects::nonNull)
+                                                      .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                .withLabels(asLabels(labels))
-                .withRawKey(rawKey)
-                .withDocumentProperties(singleton(propName))
-                .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
     }
 
     @Override
