@@ -18,9 +18,69 @@
  */
 package org.nuxeo.ai.bulk;
 
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.Sets;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.model.export.DatasetExportService;
+import org.nuxeo.ai.model.export.DatasetStatsOperation;
+import org.nuxeo.ai.sdk.objects.FieldStatistics;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ai.sdk.objects.Statistic;
+import org.nuxeo.ecm.automation.AutomationService;
+import org.nuxeo.ecm.automation.OperationContext;
+import org.nuxeo.ecm.automation.test.AutomationFeature;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.PathRef;
+import org.nuxeo.ecm.core.bulk.BulkService;
+import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.work.api.WorkManager;
+import org.nuxeo.ecm.platform.audit.AuditFeature;
+import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
+import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.test.runner.Deploy;
+import org.nuxeo.runtime.test.runner.Features;
+import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.RandomBug;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
+import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.stream.Collectors.groupingBy;
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -49,66 +109,6 @@ import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.model.analyzis.DatasetStatsService;
-import org.nuxeo.ai.model.analyzis.FieldStatistics;
-import org.nuxeo.ai.model.analyzis.Statistic;
-import org.nuxeo.ai.model.export.DatasetExportService;
-import org.nuxeo.ai.model.export.DatasetStatsOperation;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.automation.AutomationService;
-import org.nuxeo.ecm.automation.OperationContext;
-import org.nuxeo.ecm.automation.test.AutomationFeature;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
-import org.nuxeo.ecm.core.api.PathRef;
-import org.nuxeo.ecm.core.bulk.BulkService;
-import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
-import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.query.sql.NXQL;
-import org.nuxeo.ecm.core.work.api.WorkManager;
-import org.nuxeo.ecm.platform.audit.AuditFeature;
-import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.test.runner.Deploy;
-import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RandomBug;
-import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
@@ -310,9 +310,9 @@ public class DatasetExportTest {
         List<Map<String, Serializable>> inputs = (List<Map<String, Serializable>>) doc.getPropertyValue(
                 DATASET_EXPORT_INPUTS);
         assertEquals(2, inputs.size());
-        assertTrue(
-                inputs.stream()
-                      .anyMatch(p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
+        assertTrue(inputs.stream()
+                         .anyMatch(
+                                 p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Serializable>> outputs = (List<Map<String, Serializable>>) doc.getPropertyValue(
@@ -489,8 +489,10 @@ public class DatasetExportTest {
         Set<FieldStatistics> fieldStatistics = dss.transform(statistics);
         assertThat(fieldStatistics).isNotEmpty();
 
-        Map<String, FieldStatistics> mapped = fieldStatistics.stream().collect(Collectors.toMap(FieldStatistics::getField, stat -> stat));
-        assertThat(mapped.get("dc:subjects").getTerms()).isNotBlank().isNotEqualTo("[]");
+        Map<String, FieldStatistics> mapped = fieldStatistics.stream()
+                                                             .collect(Collectors.toMap(FieldStatistics::getField,
+                                                                     stat -> stat));
+        assertThat(mapped.get("dc:subjects").getTerms()).isNotEmpty();
         assertThat(mapped.get("dc:subjects").getCardinality()).isEqualTo(2);
 
     }
@@ -520,6 +522,6 @@ public class DatasetExportTest {
         assertEquals("There should be 4 field statistics", 4, stats.size());
         Optional<FieldStatistics> any = stats.stream().filter(s -> s.getField().equals("dc:description")).findAny();
         assertTrue(any.isPresent());
-        assertThat(any.get().getTerms()).isNotBlank();
+        assertThat(any.get().getTerms()).isNotEmpty();
     }
 }

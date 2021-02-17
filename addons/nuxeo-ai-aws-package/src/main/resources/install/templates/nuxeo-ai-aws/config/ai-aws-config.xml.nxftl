@@ -91,8 +91,8 @@
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-      <option name="source">ai/text</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="source">text</option>
+      <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.textKeyphrase</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -103,8 +103,8 @@
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-      <option name="source">ai/text</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="source">text</option>
+      <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.textEntities</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -114,8 +114,8 @@
     <streamProcessor name="textKeyphraseProcessor" defaultConcurrency="1" defaultPartitions="4"
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-      <option name="source">ai/text</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="source">text</option>
+      <option name="sink">enrichment.in</option>
       <option name="enrichmentProviderName">aws.textKeyphrase</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>

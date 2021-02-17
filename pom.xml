@@ -21,6 +21,7 @@
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
     <nuxeo.insight-demos.version>0.2.0</nuxeo.insight-demos.version>
     <jackson.version>2.10.2</jackson.version>
+    <nuxeo.ai.client.version>1.0.0-SNAPSHOT</nuxeo.ai.client.version>
   </properties>
 
   <modules>
@@ -163,6 +164,16 @@
         <groupId>org.tensorflow</groupId>
         <artifactId>proto</artifactId>
         <version>${tensorflow.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>insight-rest-objects</artifactId>
+        <version>${nuxeo.ai.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>insight-rest-client</artifactId>
+        <version>${nuxeo.ai.client.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

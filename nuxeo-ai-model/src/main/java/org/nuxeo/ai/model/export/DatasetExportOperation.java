@@ -19,22 +19,9 @@
  */
 package org.nuxeo.ai.model.export;
 
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
-
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -46,16 +33,29 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.kv.KeyValueService;
 
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
+
 @Operation(id = DatasetExportOperation.ID, category = Constants.CAT_SERVICES, label = "Bulk export a dataset", description = "Run a bulk export on a set of documents expressed by a NXQL query.")
 public class DatasetExportOperation {
-
-    private static final Logger log = LogManager.getLogger(DatasetExportOperation.class);
 
     public static final String ID = "AI.DatasetExport";
 
     public static final String EXPORT_KVS_STORE = "aiExportNames";
 
     public static final long TTL_128H = 128 * 60 * 60 * 1000;
+
+    private static final Logger log = LogManager.getLogger(DatasetExportOperation.class);
 
     @Context
     protected DatasetExportService service;
@@ -123,9 +123,9 @@ public class DatasetExportOperation {
             exportInputs = list.stream().map(p -> new PropertyType(p, null)).collect(Collectors.toSet());
         } else if (properties != null) {
             exportInputs = properties.entrySet()
-                                          .stream()
-                                          .map(p -> new PropertyType(p.getKey(), p.getValue()))
-                                          .collect(Collectors.toSet());
+                                     .stream()
+                                     .map(p -> new PropertyType(p.getKey(), p.getValue()))
+                                     .collect(Collectors.toSet());
         } else {
             throw new NuxeoException(exceptionMessage);
         }
