@@ -25,15 +25,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.cloud.CorporaParameters;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
-import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.CorporaParameters;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ai.sdk.objects.Statistic;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreInstance;
@@ -90,8 +90,6 @@ import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
  */
 public class ExportInitComputation extends AbstractBulkComputation {
 
-    private static final Logger log = LogManager.getLogger(ExportInitComputation.class);
-
     public static final String UUID_QUERY_INIT = "SELECT * FROM Document WHERE ecm:uuid IN ";
 
     public static final long TIMEOUT_48_HOURS_IN_SEC = 48 * 60 * 60;
@@ -101,6 +99,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
     public static final PathRef PARENT_PATH = new PathRef("/" + DATASET_EXPORT_TYPE);
 
     public static final String NUXEO_FOLDER = "Folder";
+
+    private static final Logger log = LogManager.getLogger(ExportInitComputation.class);
 
     protected List<ExportRecord> training = new LinkedList<>();
 

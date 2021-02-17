@@ -17,9 +17,16 @@
       <artifactId>nuxeo-ai-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>insight-rest-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>insight-rest-objects</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.client</groupId>
       <artifactId>nuxeo-java-client</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.elasticsearch</groupId>

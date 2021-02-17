@@ -18,6 +18,55 @@
  */
 package org.nuxeo.ai.model.export;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.nuxeo.ai.bulk.ExportHelper;
+import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ai.sdk.objects.Statistic;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
+import org.nuxeo.ecm.core.bulk.BulkService;
+import org.nuxeo.ecm.core.bulk.message.BulkCommand;
+import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.TypeConstants;
+import org.nuxeo.ecm.core.schema.types.Field;
+import org.nuxeo.ecm.platform.query.api.Aggregate;
+import org.nuxeo.ecm.platform.query.api.Bucket;
+import org.nuxeo.ecm.platform.query.api.PageProvider;
+import org.nuxeo.ecm.platform.query.api.PageProviderService;
+import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
+import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
+import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
+import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
+import org.nuxeo.elasticsearch.aggregate.MultiBucketAggregate;
+import org.nuxeo.elasticsearch.aggregate.SingleBucketAggregate;
+import org.nuxeo.elasticsearch.aggregate.SingleValueMetricAggregate;
+import org.nuxeo.elasticsearch.api.ElasticSearchService;
+import org.nuxeo.elasticsearch.api.EsResult;
+import org.nuxeo.elasticsearch.query.NxQueryBuilder;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.DefaultComponent;
+
+import javax.annotation.Nonnull;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static java.util.Collections.emptyList;
 import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
@@ -33,71 +82,12 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.nuxeo.ai.bulk.ExportHelper;
-import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.model.analyzis.DatasetStatsService;
-import org.nuxeo.ai.model.analyzis.Statistic;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
-import org.nuxeo.ecm.core.bulk.BulkService;
-import org.nuxeo.ecm.core.bulk.message.BulkCommand;
-import org.nuxeo.ecm.core.query.sql.NXQL;
-import org.nuxeo.ecm.core.schema.SchemaManager;
-import org.nuxeo.ecm.core.schema.TypeConstants;
-import org.nuxeo.ecm.core.schema.types.Field;
-import org.nuxeo.ecm.platform.query.api.Bucket;
-import org.nuxeo.ecm.platform.query.api.PageProvider;
-import org.nuxeo.ecm.platform.query.api.PageProviderService;
-import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
-import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
-import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
-import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
-import org.nuxeo.elasticsearch.api.ElasticSearchService;
-import org.nuxeo.elasticsearch.api.EsResult;
-import org.nuxeo.elasticsearch.query.NxQueryBuilder;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.model.DefaultComponent;
-
 /**
  * Exports data
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
-    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
-
-    protected static final String BASE_QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
-            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
-
-    protected static final Properties TERM_PROPS;
-
     public static final String DEFAULT_NUM_TERMS = "200";
-
-    static {
-        TERM_PROPS = new Properties();
-        TERM_PROPS.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
-    }
-
-    protected static final Properties EMPTY_PROPS = new Properties();
 
     public static final String QUERY_PARAM = "query";
 
@@ -107,14 +97,48 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String MODEL_PARAMETERS = "modelParameters";
 
-    public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
-
-    public static final String QUERY_FOR_BATCH = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND "
-            + DATASET_EXPORT_BATCH_ID + " = %s";
-
     public static final String STATS_TOTAL = "total";
 
     public static final String STATS_COUNT = "count";
+
+    protected static final String BASE_QUERY =
+            "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
+                    + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
+
+    public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
+
+    public static final String QUERY_FOR_BATCH =
+            BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
+
+    protected static final Properties TERM_PROPS;
+
+    protected static final Properties EMPTY_PROPS = new Properties();
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
+
+    static {
+        TERM_PROPS = new Properties();
+        TERM_PROPS.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
+    }
+
+    /**
+     * Make an Aggregate using AggregateFactory.
+     */
+    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
+            Properties properties) {
+        AggregateDescriptor descriptor = new AggregateDescriptor();
+        descriptor.setId(aggKey(field, type));
+        descriptor.setDocumentField(field);
+        descriptor.setType(type);
+        properties.forEach((key, value) -> descriptor.setProperty((String) key, (String) value));
+        return AggregateFactory.create(descriptor, null);
+    }
+
+    protected static String aggKey(String propName, String s) {
+        return s + "_" + propName;
+    }
 
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
@@ -151,14 +175,19 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                 put("type", p.getType());
             }
         }).collect(Collectors.toList());
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL,
-                username).repository(session.getRepositoryName())
-                         .param(QUERY_PARAM, nxql)
-                         .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
-                         .param(OUTPUT_PARAMETERS, (Serializable) outputAsParameter)
-                         .param(MODEL_PARAMETERS, (Serializable) modelParams)
-                         .param(EXPORT_SPLIT_PARAM, split)
-                         .build();
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL, username).repository(
+                session.getRepositoryName())
+                                                                                                    .param(QUERY_PARAM,
+                                                                                                            nxql)
+                                                                                                    .param(INPUT_PARAMETERS,
+                                                                                                            (Serializable) inputAsParameter)
+                                                                                                    .param(OUTPUT_PARAMETERS,
+                                                                                                            (Serializable) outputAsParameter)
+                                                                                                    .param(MODEL_PARAMETERS,
+                                                                                                            (Serializable) modelParams)
+                                                                                                    .param(EXPORT_SPLIT_PARAM,
+                                                                                                            split)
+                                                                                                    .build();
 
         if (log.isDebugEnabled()) {
             log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());
@@ -245,23 +274,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     /**
-     * Make an Aggregate using AggregateFactory.
-     */
-    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
-            Properties properties) {
-        AggregateDescriptor descriptor = new AggregateDescriptor();
-        descriptor.setId(aggKey(field, type));
-        descriptor.setDocumentField(field);
-        descriptor.setType(type);
-        properties.forEach((key, value) -> descriptor.setProperty((String) key, (String) value));
-        return AggregateFactory.create(descriptor, null);
-    }
-
-    protected static String aggKey(String propName, String s) {
-        return s + "_" + propName;
-    }
-
-    /**
      * Validate if the specified params are correct.
      */
     protected void validateParams(String nxql, Collection<String> inputProperties,
@@ -280,7 +292,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      */
     protected void addCount(List<Statistic> stats, NxQueryBuilder qb) {
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, null,
+        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT,
                 esResult.getElasticsearchResponse().getHits().getTotalHits().value));
     }
 
@@ -311,11 +323,51 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             }
         }
         EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.addAll(esResult.getAggregates().stream().map(Statistic::from).collect(Collectors.toList()));
+        stats.addAll(esResult.getAggregates()
+                             .stream()
+                             .map(agg -> (Aggregate<?>) agg)
+                             .map(this::getStatistic)
+                             .collect(Collectors.toList()));
         long total = esResult.getElasticsearchResponse().getHits().getTotalHits().value;
-        stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, null, total));
+        stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, total));
 
         return total;
+    }
+
+    protected Statistic getStatistic(Aggregate<?> agg) {
+        return Statistic.from(() -> {
+            Number numericValue = null;
+            List<org.nuxeo.ai.sdk.objects.Bucket> value = null;
+            if (agg instanceof SingleValueMetricAggregate) {
+                Double val = ((SingleValueMetricAggregate) agg).getValue();
+                numericValue = Double.isFinite(val) ? val : -1;
+            } else if (agg instanceof SingleBucketAggregate) {
+                numericValue = ((SingleBucketAggregate) agg).getDocCount();
+            } else if (agg instanceof MultiBucketAggregate) {
+                List<? extends Bucket> buckets = agg.getBuckets();
+                value = buckets.stream()
+                               .map(bucket -> new org.nuxeo.ai.sdk.objects.Bucket(bucket.getKey(),
+                                       bucket.getDocCount()))
+                               .collect(Collectors.toList());
+            } else {
+                throw new UnsupportedOperationException("Unable to create a statistic for " + agg.getType());
+            }
+
+            String fieldName = agg.getField();
+            if (fieldName.endsWith("/length") || fieldName.endsWith(".length")) {
+                fieldName = fieldName.substring(0, fieldName.length() - "/length".length());
+            }
+
+            SchemaManager ts = Framework.getService(SchemaManager.class);
+            Field field = ts.getField(fieldName);
+
+            String type = DatasetStatsService.getInputType(field);
+
+            Statistic statistic = new Statistic(agg.getId(), fieldName, type, agg.getType(), numericValue);
+            statistic.setValue(value);
+
+            return statistic;
+        });
     }
 
     protected String contentProperty(String propName) {
