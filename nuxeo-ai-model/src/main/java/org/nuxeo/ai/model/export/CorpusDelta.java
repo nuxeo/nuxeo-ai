@@ -19,6 +19,12 @@
  */
 package org.nuxeo.ai.model.export;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.runtime.api.Framework;
+
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -27,24 +33,17 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.runtime.api.Framework;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * Corpus Delta POJO
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CorpusDelta {
 
-    private static final int MINIMUM_DOCS_DEFAULT = 10;
-
     public static final String MINIMUM_DOCS_PROP = "nuxeo.ai.export.min.docs";
 
     public static final String CORPORA_ID_PARAM = "corporaId";
+
+    private static final int MINIMUM_DOCS_DEFAULT = 10;
 
     protected String corporaId;
 
@@ -118,8 +117,8 @@ public class CorpusDelta {
             return false;
         CorpusDelta that = (CorpusDelta) o;
         return minSize == that.minSize && Objects.equals(corporaId, that.corporaId) && Objects.equals(query, that.query)
-                && Objects.equals(inputs, that.inputs) && Objects.equals(outputs, that.outputs)
-                && Objects.equals(end, that.end);
+                && Objects.equals(inputs, that.inputs) && Objects.equals(outputs, that.outputs) && Objects.equals(end,
+                that.end);
     }
 
     @Override
