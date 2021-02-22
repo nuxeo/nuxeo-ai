@@ -6,6 +6,9 @@
   <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
     <!-- enrichers -->
     <property name="org.nuxeo.web.ui.enrichers.document" list="true">aiModels</property>
+    <property name="org.nuxeo.web.ui.insight.client.enabled">
+      ${nuxeo.ai.insight.client.enable:=false}
+    </property>
   </extension>
 
 </component>
