@@ -115,13 +115,13 @@ public class PersistedConfigurationServiceImpl extends DefaultComponent implemen
         Set<String> keys = getAllKeys();
         List<Descriptor> descriptors = new ArrayList<>(keys.size());
         XMap xmap = reader.getXMap();
-
-        for (byte[] bytes : getStore().get(keys).values()) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
-                descriptors.add((Descriptor) xmap.load(bais));
+        if (!keys.isEmpty()) {
+            for (byte[] bytes : getStore().get(keys).values()) {
+                try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes)) {
+                    descriptors.add((Descriptor) xmap.load(bais));
+                }
             }
         }
-
         return descriptors;
     }
 
