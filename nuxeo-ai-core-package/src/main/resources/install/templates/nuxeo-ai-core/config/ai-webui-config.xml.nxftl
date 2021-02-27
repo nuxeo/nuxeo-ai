@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<component name="org.nuxeo.web.ui.ai.properties.contrib">
-  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
-      <!-- AI Specific vars -->
-    <property name="org.nuxeo.web.ui.insight.client.enabled">
-      ${nuxeo.ai.insight.client.enable:=false}
-    </property>
-  </extension>
-</component>
