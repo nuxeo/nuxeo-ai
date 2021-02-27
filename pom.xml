@@ -19,6 +19,7 @@
     <nuxeo.latest.version>10.10-HF41</nuxeo.latest.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
+    <nuxeo.jwt.version>1.0.0</nuxeo.jwt.version>
     <nuxeo-jira-ai.version>0.1.0</nuxeo-jira-ai.version>
     <jackson.version>2.10.2</jackson.version>
   </properties>
@@ -163,6 +164,16 @@
         <groupId>org.tensorflow</groupId>
         <artifactId>proto</artifactId>
         <version>${tensorflow.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-jwt-authenticator-core</artifactId>
+        <version>${nuxeo.jwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
+        <version>${nuxeo.jwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

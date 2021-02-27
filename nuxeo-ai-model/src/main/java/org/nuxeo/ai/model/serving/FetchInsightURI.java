@@ -43,6 +43,7 @@ public class FetchInsightURI {
     @OperationMethod
     public Blob run() throws IOException {
         CloudClient cloudClient = Framework.getService(CloudClient.class);
+        JWTLocalComponent jwtService = Framework.getService(JWTLocalComponent.class);
         CloudConfigDescriptor cloudConfig = cloudClient.getCloudConfig();
         if (cloudConfig == null) {
             // Trick to return a 404 http code response (RestOperationContext doesn't work anymore)
@@ -50,7 +51,7 @@ public class FetchInsightURI {
         }
         String projectId = cloudConfig.getProjectId();
         String url = cloudConfig.getUrl();
-        String token = cloudConfig.getAuthentication().getToken();
+        String token = jwtService.getOrCreateKey();
         String urlCore = Framework.getProperty("nuxeo.url");
         return buildResponse(url, token, projectId, urlCore);
     }

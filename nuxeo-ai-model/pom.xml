@@ -10,6 +10,14 @@
   <dependencies>
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-jwt-authenticator-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-pipes</artifactId>
     </dependency>
     <dependency>
