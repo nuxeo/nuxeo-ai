@@ -13,7 +13,7 @@
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
   <properties>
-    <nuxeo.ai.version>2.5.3-SNAPSHOT</nuxeo.ai.version>
+    <nuxeo.ai.version>2.5.3</nuxeo.ai.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>10.10</nuxeo.target.version>
     <nuxeo.latest.version>10.10-HF41</nuxeo.latest.version>
