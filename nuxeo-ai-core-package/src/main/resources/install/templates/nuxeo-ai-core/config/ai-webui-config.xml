@@ -1,4 +1,3 @@
-
 <?xml version="1.0"?>
 <component name="org.nuxeo.web.ui.ai.properties.contrib">
   <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
