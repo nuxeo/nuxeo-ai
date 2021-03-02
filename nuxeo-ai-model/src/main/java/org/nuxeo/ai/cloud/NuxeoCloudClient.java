@@ -172,7 +172,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             String[] groups = session.getPrincipal()
                                      .getAllGroups()
                                      .stream()
-                                     .filter(group -> group.startsWith("ai-"))
+                                     .filter(group -> group.startsWith(descriptor.projectId))
                                      .toArray(String[]::new);
             if (groups.length > 0) {
                 claims.put(NuxeoClaim.GROUP, groups);
@@ -180,17 +180,6 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             String token = jwt.generateJWT(descriptor.projectId, claims);
             Authentication authentication = new Authentication(token);
-            //            CloudConfigDescriptor.Authentication auth = descriptor.authentication;
-            //            Authentication authentication;
-            //
-            //            if (auth != null && isNotEmpty(auth.token)) {
-            //                authentication = new Authentication(auth.token);
-            //            } else if (auth != null && isNotEmpty(auth.username) && isNotEmpty(auth.password)) {
-            //                authentication = new Authentication(auth.username, auth.password);
-            //            } else {
-            //                throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
-            //            }
-
             InsightConfiguration configuration = new InsightConfiguration.Builder().setAuthentication(authentication)
                                                                                    .setUrl(descriptor.url)
                                                                                    .setConnectionTimeout(
