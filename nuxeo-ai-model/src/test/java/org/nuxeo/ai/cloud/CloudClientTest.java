@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.keystore.JWKService;
+import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.keystore.KeyPairContainer;
 import org.nuxeo.ai.model.export.CorpusDelta;
 import org.nuxeo.ai.model.serving.FetchInsightURI;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -202,9 +204,10 @@ public class CloudClientTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void testGetPut() throws IOException {
-        String result = client.getClient().get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
-                response -> response.isSuccessful() ? response.body().string() : null);
+    public void testGetPut() {
+        String result = client.getClient(session)
+                              .get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
+                                      response -> response.isSuccessful() ? response.body().string() : null);
 
         String result2 = client.getByProject(session, "/dev/models?enrichers.document=children",
                 response -> response.isSuccessful() ? response.body().string() : null);
@@ -212,8 +215,9 @@ public class CloudClientTest {
         assertEquals(result, result2);
 
         String putBody = "could be anything";
-        String resBody = client.getClient().put(client.byProjectId("/dev/models"), putBody,
-                response -> response.isSuccessful() ? response.body().string() : null);
+        String resBody = client.getClient(session)
+                               .put(client.byProjectId("/dev/models"), putBody,
+                                       response -> response.isSuccessful() ? response.body().string() : null);
         assertTrue(resBody.contains(putBody));
     }
 
