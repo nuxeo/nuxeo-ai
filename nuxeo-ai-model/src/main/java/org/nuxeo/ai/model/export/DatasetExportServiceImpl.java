@@ -194,7 +194,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
 
         CloudClient client = Framework.getService(CloudClient.class);
-        if (client == null || !client.isAvailable()) {
+        if (client == null || !client.isAvailable(session)) {
             throw new NuxeoException("AI Client is not available; interrupting export " + bulkCommand.getId());
         }
         return Framework.getService(BulkService.class).submit(bulkCommand);
