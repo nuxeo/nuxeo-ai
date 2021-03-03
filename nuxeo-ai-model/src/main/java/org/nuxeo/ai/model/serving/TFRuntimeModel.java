@@ -34,9 +34,11 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.objects.TensorInstances.Tensor;
+import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -109,18 +111,22 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     /**
      * For the supplied input values try to predict a result or return null
      */
-    public EnrichmentMetadata predict(Map<String, Tensor> inputValues, String repositoryName, String documentRef) {
-        Timer.Context responseTime = aiComponent.getMetrics().getInsightPredictionTime().time();
+    public EnrichmentMetadata predict(CoreSession session, Map<String, Tensor> inputValues, String repositoryName,
+            String documentRef) {
+        Timer.Context responseTime = Framework.getService(AIComponent.class)
+                                              .getMetrics()
+                                              .getInsightPredictionTime()
+                                              .time();
         try {
             if (inputValues.size() != inputs.size()) {
                 log.debug(getName() + " did not call prediction.  Properties provided were " + inputValues.keySet());
                 return null;
             }
             CloudClient client = Framework.getService(CloudClient.class);
-            if (client.isAvailable()) {
+            if (client.isAvailable(session)) {
                 TensorInstances tensorInstances = new TensorInstances(documentRef,
                         Collections.singletonList(inputValues));
-                String result = client.predict(getName(), tensorInstances);
+                String result = client.predict(session, getName(), tensorInstances);
                 if (StringUtils.isNotEmpty(result)) {
                     EnrichmentMetadata meta = handlePredict(result, repositoryName, documentRef);
                     if (log.isDebugEnabled()) {
@@ -128,14 +134,14 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                     }
                     return meta;
                 } else {
-                    log.warn("Unsuccessful call to ({}), ", client.getClient().getProjectId());
+                    log.warn("Unsuccessful call to ({}), ", client.getClient(session).getProjectId());
                     return null;
                 }
             }
 
             return null;
         } catch (IOException e) {
-            log.error(e);
+            log.error("User {} failed on prediction", session.getPrincipal().getActingUser(), e);
             return null;
         } finally {
             responseTime.stop();
@@ -279,7 +285,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 repoName = UNSET;
                 docId = UNSET;
             }
-            return predict(props, repoName, docId);
+            return predict(doc.getCoreSession(), props, repoName, docId);
         } finally {
             preConversionTime.stop();
         }
@@ -332,9 +338,12 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
         if (inputProperties.isEmpty()) {
             log.warn(String.format("(%s) unable to suggest doc properties for doc %s", getName(), blobtext.getId()));
         } else {
-            EnrichmentMetadata suggestion = predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId());
-            if (suggestion != null && !suggestion.getLabels().isEmpty()) {
-                return singletonList(suggestion);
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(blobtext.getRepositoryName())) {
+                EnrichmentMetadata suggestion = predict(session, inputProperties, blobtext.getRepositoryName(),
+                        blobtext.getId());
+                if (suggestion != null && !suggestion.getLabels().isEmpty()) {
+                    return singletonList(suggestion);
+                }
             }
         }
         return emptyList();
