@@ -22,6 +22,7 @@ package org.nuxeo.ai.model.export;
 import static org.nuxeo.ecm.automation.core.Constants.CAT_SERVICES;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ecm.automation.OperationException;
@@ -49,9 +50,9 @@ public class DatasetGetModelOperation {
     @OperationMethod
     public JSONBlob run() throws OperationException {
         try {
-            return client.getAllModels();
+            return client.getAllModels(session);
         } catch (IOException e) {
-            throw new OperationException("Could not retrieve AI Models");
+            throw new OperationException("Could not retrieve AI Models", e);
         }
     }
 }
