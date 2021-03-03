@@ -33,6 +33,10 @@
       <groupId>org.nuxeo.elasticsearch</groupId>
       <artifactId>nuxeo-elasticsearch-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
+    </dependency>
     <!-- TEST DEPS -->
     <dependency>
       <groupId>org.nuxeo.runtime</groupId>
