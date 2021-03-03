@@ -18,8 +18,6 @@
  */
 package org.nuxeo.ai.model.export;
 
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -32,8 +30,9 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
 
-@Operation(id = DatasetUploadOperation.ID, category = Constants.CAT_SERVICES, label = "Upload a dataset",
-        description = "Uploads the dataset specified in a dataset_export document.")
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+
+@Operation(id = DatasetUploadOperation.ID, category = Constants.CAT_SERVICES, label = "Upload a dataset", description = "Uploads the dataset specified in a dataset_export document.")
 public class DatasetUploadOperation {
 
     public static final String ID = "AI.DatasetUpload";
@@ -53,12 +52,12 @@ public class DatasetUploadOperation {
     public void run(DocumentModel document) {
         if (session.getPrincipal().isAdministrator()) {
             if (document != null && DATASET_EXPORT_TYPE.equals(document.getType())) {
-                if (client.isAvailable()) {
+                if (client.isAvailable(session)) {
                     log.info("Uploading dataset to cloud for dataset doc {}", document.getId());
                     client.uploadedDataset(document);
                 } else {
-                    log.warn("Upload to cloud not possible for dataset doc {}, type {} and client {}",
-                            document.getId(), document.getType(), client.isAvailable());
+                    log.warn("Upload to cloud not possible for dataset doc {}, type {} and client {}", document.getId(),
+                            document.getType(), client.isAvailable(session));
                 }
             }
         } else {
