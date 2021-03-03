@@ -23,6 +23,7 @@
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
     <nuxeo-jira-ai.version>1.0.0</nuxeo-jira-ai.version>
     <nuxeo.ai.client.version>1.0.0-SNAPSHOT</nuxeo.ai.client.version>
+    <nuxeo.ai.jwt.version>1.0.0-SNAPSHOT</nuxeo.ai.jwt.version>
   </properties>
 
   <modules>
@@ -168,6 +169,16 @@
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>insight-rest-client</artifactId>
         <version>${nuxeo.ai.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-jwt-authenticator-core</artifactId>
+        <version>${nuxeo.ai.jwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
+        <version>${nuxeo.ai.jwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

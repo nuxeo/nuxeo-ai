@@ -73,6 +73,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
  */
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class, MockitoFeature.class })
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml" })
 public class SuggestionOpTest {
 

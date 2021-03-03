@@ -19,17 +19,12 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Date;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.Message;
 import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
@@ -41,11 +36,18 @@ import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Date;
+
+import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
+
 public class ExportDoneComputation extends AbstractComputation {
 
-    private static final Logger log = LogManager.getLogger(ExportDoneComputation.class);
-
     protected static final String EXPORT_DONE_EVENT = "exportDone";
+
+    private static final Logger log = LogManager.getLogger(ExportDoneComputation.class);
 
     public ExportDoneComputation(String name) {
         super(name, 1, 0);
@@ -56,9 +58,10 @@ public class ExportDoneComputation extends AbstractComputation {
         BulkStatus status = BulkCodecs.getStatusCodec().decode(record.getData());
         if (EXPORT_ACTION_NAME.equals(status.getAction()) && COMPLETED.equals(status.getState())) {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
-            Message message = log.getMessageFactory().newMessage(EXPORT_ACTION_NAME
-                            + " for commandId {} has completed.\nProcessed {} records with {} errors",
-                    cmd.getId(), status.getProcessed(), status.getErrorCount());
+            Message message = log.getMessageFactory()
+                                 .newMessage(EXPORT_ACTION_NAME
+                                                 + " for commandId {} has completed.\nProcessed {} records with {} errors",
+                                         cmd.getId(), status.getProcessed(), status.getErrorCount());
             log.warn(message.getFormattedMessage());
 
             AuditLogger logger = Framework.getService(AuditLogger.class);
@@ -76,7 +79,8 @@ public class ExportDoneComputation extends AbstractComputation {
             logger.addLogEntries(Collections.singletonList(entry));
 
             CloudClient cc = Framework.getService(CloudClient.class);
-            if (!cc.notifyOnExportDone(cmd.getId())) {
+            CoreSession session = CoreInstance.getCoreSessionSystem(cmd.getRepository(), cmd.getUsername());
+            if (!cc.notifyOnExportDone(session, cmd.getId())) {
                 log.error("Could not notify Cloud on export done event; commandId " + cmd.getId());
             }
         }
