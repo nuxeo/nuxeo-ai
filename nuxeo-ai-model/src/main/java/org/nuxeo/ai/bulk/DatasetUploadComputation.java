@@ -18,9 +18,6 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
-import static org.nuxeo.ai.bulk.ExportHelper.runInTransaction;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -35,6 +32,9 @@ import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
+
+import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
+import static org.nuxeo.ai.bulk.ExportHelper.runInTransaction;
 
 /**
  * Listens for the end of the Dataset export and uploads to the cloud.
@@ -52,7 +52,6 @@ public class DatasetUploadComputation extends AbstractComputation {
         ExportStatus export = getAvroCodec(ExportStatus.class).decode(record.getData());
         String commandId = export.getCommandId();
         BulkCommand command = Framework.getService(BulkService.class).getCommand(commandId);
-
         if (command != null) {
             runInTransaction(() -> {
                 uploadDataset(export, commandId, command);
@@ -70,11 +69,12 @@ public class DatasetUploadComputation extends AbstractComputation {
         try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(command.getRepository(),
                 command.getUsername())) {
             DocumentModel document = Framework.getService(DatasetExportService.class)
-                    .getCorpusOfBatch(session, commandId, export.getId());
+                                              .getCorpusOfBatch(session, commandId, export.getId());
 
+            CloudClient client = Framework.getService(CloudClient.class);
             if (document != null) {
-                CloudClient client = Framework.getService(CloudClient.class);
-                if (client.isAvailable()) {
+
+                if (client.isAvailable(session)) {
                     log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId,
                             document.getId());
 
@@ -82,10 +82,11 @@ public class DatasetUploadComputation extends AbstractComputation {
                     client.uploadedDataset(document);
                 } else {
                     log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}",
-                            commandId, document.getId(), client.isAvailable());
+                            commandId, document.getId(), client.isAvailable(session));
                 }
             } else {
-                log.error("Unable to find DatasetExport with job id " + commandId);
+                log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}", commandId,
+                        document.getId(), client.isAvailable(session));
             }
         }
     }
