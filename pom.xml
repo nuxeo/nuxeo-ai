@@ -23,6 +23,7 @@
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
     <nuxeo.insight-demos.version>1.3.2-11</nuxeo.insight-demos.version>
     <nuxeo.ai.client.version>1.0.0-SNAPSHOT</nuxeo.ai.client.version>
+    <nuxeo.ai.jwt.version>1.0.0-SNAPSHOT</nuxeo.ai.jwt.version>
   </properties>
 
   <modules>
@@ -158,6 +159,26 @@
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-core</artifactId>
         <version>${dropwizard.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>insight-rest-objects</artifactId>
+        <version>${nuxeo.ai.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>insight-rest-client</artifactId>
+        <version>${nuxeo.ai.client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-jwt-authenticator-core</artifactId>
+        <version>${nuxeo.ai.jwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
+        <version>${nuxeo.ai.jwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

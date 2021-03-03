@@ -50,7 +50,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(FeaturesRunner.class)
 @Features({ PlatformFeature.class, AutomationFeature.class })
-@Deploy("org.nuxeo.ai.ai-core")
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
+@Deploy("org.nuxeo.ai.ai-core" )
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.core.cache")
 @Deploy("org.nuxeo.ecm.core.event")

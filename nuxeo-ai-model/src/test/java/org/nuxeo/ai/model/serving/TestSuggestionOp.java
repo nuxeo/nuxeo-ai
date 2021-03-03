@@ -65,6 +65,7 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
  */
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class})
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
 public class TestSuggestionOp {
 
