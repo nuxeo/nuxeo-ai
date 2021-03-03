@@ -19,8 +19,19 @@
  */
 package org.nuxeo.ai.listeners;
 
-import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.model.ModelProperty;
+import org.nuxeo.ai.model.serving.ModelDescriptor;
+import org.nuxeo.ai.model.serving.ModelServingService;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.event.EventBundle;
+import org.nuxeo.ecm.core.event.PostCommitEventListener;
+import org.nuxeo.runtime.api.Framework;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -30,24 +41,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.model.ModelProperty;
-import org.nuxeo.ai.model.serving.ModelDescriptor;
-import org.nuxeo.ai.model.serving.ModelServingService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
-import org.nuxeo.ecm.core.event.EventBundle;
-import org.nuxeo.ecm.core.event.PostCommitEventListener;
-import org.nuxeo.runtime.api.Framework;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.getRepositoryName;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * Invalidate and Update currently running models
  */
 public class InvalidateModelDefinitionsListener implements PostCommitEventListener {
+
+    public static final String EVENT_NAME = "invalidateModelDefinitions";
+
+    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
 
     private static final Logger log = LogManager.getLogger(InvalidateModelDefinitionsListener.class);
 
@@ -67,10 +75,6 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
 
     private static final String TYPE_KEY = "type";
 
-    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
-
-    public static final String EVENT_NAME = "invalidateModelDefinitions";
-
     @Override
     public void handleEvent(EventBundle bundle) {
         ModelServingService mss = Framework.getService(ModelServingService.class);
@@ -84,7 +88,9 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
         Map<String, ModelDescriptor> all;
         try {
             CloudClient cc = Framework.getService(CloudClient.class);
-            JSONBlob models = cc.getPublishedModels();
+            String repository = getRepositoryName(bundle);
+            CoreSession session = CoreInstance.getCoreSessionSystem(repository);
+            JSONBlob models = cc.getPublishedModels(session);
             @SuppressWarnings("unchecked")
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {
@@ -164,5 +170,4 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
                      .map(input -> new ModelProperty((String) input.get(NAME_KEY), (String) input.get(TYPE_KEY)))
                      .collect(Collectors.toSet());
     }
-
 }

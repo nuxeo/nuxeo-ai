@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -110,7 +111,8 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     /**
      * For the supplied input values try to predict a result or return null
      */
-    public EnrichmentMetadata predict(Map<String, Tensor> inputValues, String repositoryName, String documentRef) {
+    public EnrichmentMetadata predict(CoreSession session, Map<String, Tensor> inputValues, String repositoryName,
+            String documentRef) {
         Timer.Context responseTime = Framework.getService(AIComponent.class)
                                               .getMetrics()
                                               .getInsightPredictionTime()
@@ -121,10 +123,10 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 return null;
             }
             CloudClient client = Framework.getService(CloudClient.class);
-            if (client.isAvailable()) {
+            if (client.isAvailable(session)) {
                 TensorInstances tensorInstances = new TensorInstances(documentRef,
                         Collections.singletonList(inputValues));
-                String result = client.predict(getName(), tensorInstances);
+                String result = client.predict(session, getName(), tensorInstances);
                 if (StringUtils.isNotEmpty(result)) {
                     EnrichmentMetadata meta = handlePredict(result, repositoryName, documentRef);
                     if (log.isDebugEnabled()) {
@@ -132,14 +134,14 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                     }
                     return meta;
                 } else {
-                    log.warn("Unsuccessful call to ({}), ", client.getClient().getProjectId());
+                    log.warn("Unsuccessful call to ({}), ", client.getClient(session).getProjectId());
                     return null;
                 }
             }
 
             return null;
         } catch (IOException e) {
-            log.error(e);
+            log.error("User {} failed on prediction", session.getPrincipal().getActingUser(), e);
             return null;
         } finally {
             responseTime.stop();
@@ -286,7 +288,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                 repoName = UNSET;
                 docId = UNSET;
             }
-            return predict(props, repoName, docId);
+            return predict(doc.getCoreSession(), props, repoName, docId);
         } finally {
             preConversionTime.stop();
         }
@@ -335,7 +337,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
         if (inputProperties.isEmpty()) {
             log.warn(String.format("(%s) unable to suggest doc properties for doc %s", getName(), blobtext.getId()));
         } else {
-            EnrichmentMetadata suggestion = predict(inputProperties, blobtext.getRepositoryName(), blobtext.getId());
+            EnrichmentMetadata suggestion = predict(session, inputProperties, blobtext.getRepositoryName(), blobtext.getId());
             if (suggestion != null && !suggestion.getLabels().isEmpty()) {
                 return singletonList(suggestion);
             }

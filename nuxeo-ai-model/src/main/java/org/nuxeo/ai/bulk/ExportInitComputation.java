@@ -114,7 +114,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
     @Override
     protected void compute(CoreSession session, List<String> ids, Map<String, Serializable> properties) {
         CloudClient client = Framework.getService(CloudClient.class);
-        if (client == null || !client.isAvailable()) {
+        if (client == null || !client.isAvailable(session)) {
             log.error("AI Client is not available; interrupting export " + command.getId());
             return;
         }
@@ -162,7 +162,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
 
         createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
-        bindCorporaToModel(client, modelParams);
+        bindCorporaToModel(session, client, modelParams);
 
         // Split documents list into training and validation dataset
         int splitIndex = (int) Math.ceil((docs.size() - 1) * split / 100.f);
@@ -186,11 +186,11 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
     }
 
-    protected void bindCorporaToModel(CloudClient client, Map<String, Serializable> modelParams) {
+    protected void bindCorporaToModel(CoreSession session, CloudClient client, Map<String, Serializable> modelParams) {
         if (modelParams.containsKey(CORPORA_ID_PARAM) && modelParams.containsKey(DATASET_EXPORT_MODEL_ID)) {
             String modelId = (String) modelParams.get(DATASET_EXPORT_MODEL_ID);
             String corporaId = (String) modelParams.get(CORPORA_ID_PARAM);
-            boolean bound = client.bind(modelId, corporaId);
+            boolean bound = client.bind(session, modelId, corporaId);
             if (!bound) {
                 log.error("Could not bind AI Model {} and AI Corpora {}", modelId, corporaId);
             }
@@ -228,7 +228,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
                 Set<PropertyType> fields = new HashSet<>(inputs);
                 fields.addAll(outputs);
                 cp.setFields(fields);
-                corporaId = Framework.getService(CloudClient.class).initExport(null, cp);
+                corporaId = Framework.getService(CloudClient.class).initExport(session, null, cp);
             }
 
             modelParams.put(CORPORA_ID_PARAM, corporaId);

@@ -111,6 +111,7 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
         RepositoryElasticSearchFeature.class, AuditFeature.class })
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")

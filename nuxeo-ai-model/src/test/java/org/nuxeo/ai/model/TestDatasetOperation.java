@@ -63,6 +63,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
         RepositoryElasticSearchFeature.class })
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
