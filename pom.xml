@@ -21,10 +21,10 @@
     <!-- distribution server compliance: "target platform" -->
     <nuxeo.target.version>10.10</nuxeo.target.version>
     <!-- used for the base image, should be kept up to date -->
-    <nuxeo.latest.version>10.10-HF45</nuxeo.latest.version>
+    <nuxeo.latest.version>10.10-HF41</nuxeo.latest.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.java.client.version>3.5.0</nuxeo.java.client.version>
-    <nuxeo.insight-demos.version>0.2.0</nuxeo.insight-demos.version>
+    <nuxeo-jira-ai.version>0.1.0</nuxeo-jira-ai.version>
     <jackson.version>2.10.2</jackson.version>
     <nuxeo.ai.client.version>1.0.0-SNAPSHOT</nuxeo.ai.client.version>
   </properties>

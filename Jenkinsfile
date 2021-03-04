@@ -156,7 +156,7 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         VERSION = getVersion()
         AI_CORE_VERSION = readMavenPom().getVersion()
-        INSIGHT_DEMOS_VERSION = readMavenPom().getProperties().getProperty('nuxeo.insight-demos.version')
+        JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
         PLATFORM_VERSION = readMavenPom().getProperties().getProperty('nuxeo.latest.version')
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%H%d\'', returnStdout: true).trim()}"
         PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
@@ -292,7 +292,7 @@ helm repo add elastic https://helm.elastic.co/
 helm repo add platform https://chartmuseum.platform.dev.nuxeo.com
 helm repo add ai https://chartmuseum.ai.dev.nuxeo.com
 envsubst < helm/values.yaml > helm/values.yaml~gen
-jx step helm install platform/nuxeo -v 1.0.17 -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE} --set-file=helm/values.yaml~gen
+jx step helm install platform/nuxeo -v 1.0.14 -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE} --set-file=helm/values.yaml~gen
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${MONGODB_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${ELASTICSEARCH_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${KAFKA_WR} --timeout=5m
@@ -355,10 +355,12 @@ kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true
         stage('Deploy Preview') {
             when {
                 anyOf {
-                    branch 'master*'
+                    branch 'master-*'
                     branch 'sprint-*'
                     branch 'maintenance-*'
-                    changeRequest()
+                    allOf {
+                        changeRequest()
+                    }
                 }
             }
             options {
