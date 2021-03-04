@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.nuxeo</groupId>
@@ -13,13 +12,14 @@
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
+
   <properties>
     <nuxeo.ai.version>3.2.0-SNAPSHOT</nuxeo.ai.version>
     <dropwizard.version>4.1.17</dropwizard.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>11.*</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
-    <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
+    <nuxeo.java.client.version>3.5.0</nuxeo.java.client.version>
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
     <nuxeo-jira-ai.version>1.0.0</nuxeo-jira-ai.version>
     <nuxeo.ai.client.version>1.0.0-SNAPSHOT</nuxeo.ai.client.version>
@@ -126,9 +126,15 @@
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.nuxeo.elasticsearch</groupId>
+        <artifactId>nuxeo-elasticsearch-core</artifactId>
+        <classifier>tests</classifier>
+        <version>${nuxeo.platform.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-web-ui</artifactId>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
@@ -143,7 +149,7 @@
       <dependency>
         <groupId>org.nuxeo.client</groupId>
         <artifactId>nuxeo-java-client</artifactId>
-        <version>${nuxeo.cloud.client.version}</version>
+        <version>${nuxeo.java.client.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.log4j</groupId>
