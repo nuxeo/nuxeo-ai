@@ -18,11 +18,12 @@
  */
 package org.nuxeo.ai.model;
 
-import java.util.Objects;
-
 import org.nuxeo.ai.pipes.types.PropertyType;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
+
+import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * A property used by a model.
@@ -46,6 +47,17 @@ public class ModelProperty extends PropertyType {
         this.type = type;
     }
 
+    /**
+     * Factory constructor
+     *
+     * @param name of the property
+     * @param type of the property
+     * @return new instance of {@link ModelProperty}
+     */
+    public static ModelProperty of(@Nonnull String name, @Nonnull String type) {
+        return new ModelProperty(name, type);
+    }
+
     @Override
     public String getName() {
         return name;
@@ -65,8 +77,7 @@ public class ModelProperty extends PropertyType {
             return false;
         }
         ModelProperty that = (ModelProperty) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(type, that.type);
+        return Objects.equals(name, that.name) && Objects.equals(type, that.type);
     }
 
     @Override

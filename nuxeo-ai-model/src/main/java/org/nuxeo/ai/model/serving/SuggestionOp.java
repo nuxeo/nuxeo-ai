@@ -18,20 +18,14 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.annotation.JsonRawValue;
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -47,15 +41,26 @@ import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.impl.DocumentPartImpl;
 import org.nuxeo.ecm.core.api.model.impl.PropertyFactory;
+import org.nuxeo.ecm.core.io.avro.AvroConstants;
 import org.nuxeo.ecm.core.io.marshallers.json.document.DocumentPropertyJsonWriter;
 import org.nuxeo.ecm.core.io.registry.MarshallerRegistry;
 import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.TypeService;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.ListType;
 import org.nuxeo.ecm.core.schema.types.Schema;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.core.JsonGenerator;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * Suggests metadata for the specified document.
@@ -76,6 +81,9 @@ public class SuggestionOp {
     protected ModelServingService modelServingService;
 
     @Context
+    protected SchemaManager schemaManager;
+
+    @Context
     protected MarshallerRegistry registry;
 
     @Param(name = "updatedDocument", description = "Document with changes done on client side before saving", required = false)
@@ -93,11 +101,16 @@ public class SuggestionOp {
     @OperationMethod
     public Blob run(DocumentModel doc) {
         if (updatedDoc != null) {
-            for (String schema : doc.getSchemas()) {
-                for (Property prop : updatedDoc.getPropertyObjects(schema)) {
-                    if (prop.getValue() != null) {
-                        doc.setPropertyValue(prop.getName(), prop.getValue());
-                    }
+            Set<ModelProperty> inputs = modelServingService.getInputs(doc);
+            for (ModelProperty predicted : inputs) {
+                if (schemaManager.getField(predicted.getName()) == null) {
+                    log.debug("Cannot apply field " + predicted.getName());
+                    continue;
+                }
+
+                Serializable property = updatedDoc.getPropertyValue(predicted.getName());
+                if (property != null) {
+                    doc.setPropertyValue(predicted.getName(), property);
                 }
             }
         }
