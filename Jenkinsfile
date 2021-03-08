@@ -238,7 +238,8 @@ done
 '''
                     }
                     withCredentials([string(credentialsId: 'instance-clid', variable: 'CLID')]) {
-                        withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}"]) {
+                        withEnv(["PLATFORM_VERSION=${PLATFORM_VERSION}",
+                                 'NUXEO_PACKAGES=/tmp/nuxeo-ai-core.zip /tmp/nuxeo-ai-aws-package.zip /tmp/nuxeo-ai-image-quality-package.zip']) {
                             dir('docker') {
                                 sh 'printenv|sort|grep VERSION'
                                 sh '''#!/bin/bash -e
