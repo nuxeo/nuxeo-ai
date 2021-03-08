@@ -3,7 +3,9 @@ FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION} as builde
 
 USER $NUXEO_USER
 ARG CLID
-COPY *.zip /docker-entrypoint-initnuxeo.d/
+# workaround NXCT-548
+ARG NUXEO_PACKAGES
+COPY *.zip /tmp/
 RUN NUXEO_CLID="${CLID}" /docker-entrypoint.sh nuxeoctl mp-list && \
     rm -f $NUXEO_HOME/configured $NUXEO_HOME/configured-hf
 
