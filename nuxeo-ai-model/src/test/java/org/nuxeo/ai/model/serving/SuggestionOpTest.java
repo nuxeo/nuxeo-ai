@@ -18,25 +18,9 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +32,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
@@ -65,8 +50,24 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * Unit Tests the Suggestion Operation.
@@ -101,6 +102,8 @@ public class SuggestionOpTest {
         ctx = new OperationContext(session);
         ctx.setInput(documentModel);
 
+        Set<ModelProperty> props = Sets.newHashSet(ModelProperty.of("dc:description", "txt"));
+        when(modelServingService.getInputs(eq(documentModel))).thenReturn(props);
         when(modelServingService.predict(eq(documentModel))).thenReturn(getSamplePrediction());
     }
 
@@ -164,6 +167,10 @@ public class SuggestionOpTest {
         DocumentModel fileDoc = session.createDocumentModel("/", "Test File", "File");
         fileDoc.setPropertyValue("dc:title", "Test File");
         fileDoc = session.createDocument(fileDoc);
+
+        Set<ModelProperty> props = Sets.newHashSet(ModelProperty.of("dc:title", "txt"),
+                ModelProperty.of("dc:description", "txt"));
+        when(modelServingService.getInputs(fileDoc)).thenReturn(props);
 
         OperationContext opCtx = new OperationContext(session);
         opCtx.setInput(fileDoc);
