@@ -14,6 +14,7 @@ build:
           VERSION: "${VERSION}"
           PLATFORM_VERSION: "${PLATFORM_VERSION}"
           CLID: "${CLID}"
+          NUXEO_PACKAGES: "${NUXEO_PACKAGES}"
         cache:
           repo: ${DOCKER_REGISTRY}/${ORG}/cache
   cluster:
