@@ -133,7 +133,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         buildDiscarder(logRotator(daysToKeepStr: '60', numToKeepStr: '60', artifactNumToKeepStr: '5'))
-        timeout(time: 1, unit: 'HOURS')
+        timeout(time: 2, unit: 'HOURS')
     }
     environment {
         ORG = 'nuxeo'
