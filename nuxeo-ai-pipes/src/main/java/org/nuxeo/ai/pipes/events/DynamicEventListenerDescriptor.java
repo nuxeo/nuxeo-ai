@@ -42,9 +42,4 @@ public class DynamicEventListenerDescriptor extends EventListenerDescriptor {
         this.postCommitEventListener = isPostCommit ? new PostCommitEventListenerWrapper(eventListener) : null;
     }
 
-    @Override
-    public void initListener() {
-        //Nothing to do
-    }
-
 }
