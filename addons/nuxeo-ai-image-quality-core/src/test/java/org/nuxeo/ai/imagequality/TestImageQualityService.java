@@ -22,7 +22,12 @@ package org.nuxeo.ai.imagequality;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,15 +41,13 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
+
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.nuxeo-ai-image-quality-core",
-        "org.nuxeo.ai.nuxeo-ai-image-quality-core:OSGI-INF/test-image-quality.xml"})
+@Deploy({ "org.nuxeo.ai.nuxeo-ai-image-quality-core",
+        "org.nuxeo.ai.nuxeo-ai-image-quality-core:OSGI-INF/test-image-quality.xml", "org.nuxeo.ecm.platform.video" })
 public class TestImageQualityService {
 
     // This is used to mock the external service.  See mappings/check.json.
