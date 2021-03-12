@@ -48,7 +48,6 @@ nuxeo.ai.insight.datasource.label=dev
 # If client enabled: set project id, insight url and token access (see AI team for setup)
 # nuxeo.ai.insight.client.projectid=
 # nuxeo.ai.insight.client.target.url=
-# nuxeo.ai.insight.client.token=
 # All additional urls to disable cors on (separated with spaces)
 # nuxeo.cors.urls=
 
