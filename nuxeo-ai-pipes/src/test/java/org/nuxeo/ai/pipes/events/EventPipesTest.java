@@ -18,9 +18,21 @@
  */
 package org.nuxeo.ai.pipes.events;
 
-import io.dropwizard.metrics5.Gauge;
-import io.dropwizard.metrics5.Metric;
-import io.dropwizard.metrics5.MetricName;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.PipesTestConfigFeature;
@@ -45,19 +57,9 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
-import javax.inject.Inject;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import io.dropwizard.metrics5.Gauge;
+import io.dropwizard.metrics5.Metric;
+import io.dropwizard.metrics5.MetricName;
 
 @RunWith(FeaturesRunner.class)
 @Features({ PipesTestConfigFeature.class, PlatformFeature.class })
@@ -160,11 +162,11 @@ public class EventPipesTest {
     @Test
     public void testPostCommitEventRegistration() {
         EventServiceImpl eventS = (EventServiceImpl) eventService;
-        assertTrue("We must add a PostCommit listener via config.", eventS.getEventListenerList()
-                                                                          .getAsyncPostCommitListeners()
-                                                                          .stream()
-                                                                          .anyMatch(
-                                                                                  l -> l instanceof PostCommitEventListenerWrapper));
+        assertTrue("We must add a PostCommit listener via config.",
+                eventS.getListenerList()
+                      .getAsyncPostCommitListeners()
+                      .stream()
+                      .anyMatch(l -> l instanceof PostCommitEventListenerWrapper));
     }
 
 }
