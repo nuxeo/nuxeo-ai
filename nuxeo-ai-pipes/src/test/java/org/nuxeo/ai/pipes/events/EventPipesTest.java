@@ -164,11 +164,11 @@ public class EventPipesTest {
     @Test
     public void testPostCommitEventRegistration() {
         EventServiceImpl eventS = (EventServiceImpl) eventService;
-        assertTrue("We must add a PostCommit listener via config.", eventS.getEventListenerList()
-                                                                          .getAsyncPostCommitListeners()
-                                                                          .stream()
-                                                                          .anyMatch(
-                                                                                  l -> l instanceof PostCommitEventListenerWrapper));
+        assertTrue("We must add a PostCommit listener via config.",
+                eventS.getListenerList()
+                      .getAsyncPostCommitListeners()
+                      .stream()
+                      .anyMatch(l -> l instanceof PostCommitEventListenerWrapper));
     }
 
 }
