@@ -58,11 +58,13 @@ import org.nuxeo.ecm.core.event.impl.EventImpl;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
+
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -145,6 +147,22 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
         pcs.register(ModelDescriptor.class);
 
         fireInvalidationEvent();
+    }
+
+    @Override
+    public int getApplicationStartedOrder() {
+        Component component = (Component) Framework.getRuntime().getComponent("org.nuxeo.ai.cloud.NuxeoCloudClient");
+        if (component == null) {
+            // We make sure this component is loaded after the Nuxeo Cloud Client is being configured.
+            return super.getApplicationStartedOrder() + 1;
+        }
+        return component.getApplicationStartedOrder() + 1;
+    }
+
+    protected void fireInvalidationEvent() {
+        EventContextImpl ctx = new EventContextImpl();
+        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
+        Framework.getService(EventService.class).fireEvent(event);
     }
 
     @Override
@@ -234,6 +252,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
             throw new NuxeoException(e);
         }
     }
+
 
     protected void modelInvalidator(String topic, byte[] message) {
         log.info("Model Invalidation received");
