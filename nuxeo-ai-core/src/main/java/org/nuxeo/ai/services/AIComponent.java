@@ -43,6 +43,7 @@ import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeEntry;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeRegistry;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
@@ -79,6 +80,17 @@ public class AIComponent extends DefaultComponent {
             RecordWriterDescriptor descriptor = (RecordWriterDescriptor) contribution;
             recordWriterDescriptors.add(descriptor);
         }
+    }
+
+    @Override
+    public int getApplicationStartedOrder() {
+        Component component = (Component) Framework.getRuntime()
+                .getComponent("org.nuxeo.ecm.core.convert.service.ConversionServiceImpl");
+        if (component == null) {
+            // TF Writers are using the conversion service when starting up
+            return super.getApplicationStartedOrder() + 1;
+        }
+        return component.getApplicationStartedOrder() + 1;
     }
 
     @Override
