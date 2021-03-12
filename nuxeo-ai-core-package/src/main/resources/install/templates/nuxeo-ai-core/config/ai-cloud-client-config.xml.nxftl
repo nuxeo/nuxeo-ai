@@ -3,12 +3,18 @@
   <require>org.nuxeo.ai.services.AIComponent</require>
   <#if "${nuxeo.ai.insight.client.enable}" == "true">
 
+  <extension target="org.nuxeo.ai.keystore.JWTKeyService" point="keys">
+    <key id="${nuxeo.ai.insight.client.projectid}"
+           audience="${nuxeo.ai.insight.client.audience}"
+           expiresAt="${nuxeo.ai.insight.jwt.expiration}">
+    </key>
+  </extension>
+
   <extension target="org.nuxeo.ai.cloud.NuxeoClient" point="config">
     <config id="njConfig"
         projectId="${nuxeo.ai.insight.client.projectid}"
         url="${nuxeo.ai.insight.client.target.url}"
         datasource="${nuxeo.ai.insight.datasource.label}">
-      <authentication token="${nuxeo.ai.insight.client.token}" />
     </config>
   </extension>
 

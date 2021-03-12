@@ -39,12 +39,12 @@ import org.nuxeo.ecm.core.event.impl.EventImpl;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolverService;
 import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
@@ -146,6 +146,40 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
+    public int getApplicationStartedOrder() {
+        Component component = (Component) Framework.getRuntime().getComponent("org.nuxeo.ai.cloud.NuxeoCloudClient");
+        if (component == null) {
+            // We make sure this component is loaded after the Nuxeo Cloud Client is being configured.
+            return super.getApplicationStartedOrder() + 1;
+        }
+        return component.getApplicationStartedOrder() + 1;
+    }
+
+    protected void fireInvalidationEvent() {
+        EventContextImpl ctx = new EventContextImpl();
+        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
+        Framework.getService(EventService.class).fireEvent(event);
+    }
+
+    protected void modelSubscriber(String topic, byte[] message) {
+        String contribKey = new String(message);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        try {
+            Descriptor desc = pcs.retrieve(contribKey);
+            if (desc == null) {
+                this.models.remove(contribKey);
+                this.predicates.remove(contribKey);
+                this.filterPredicates.remove(contribKey);
+            }
+            if (desc instanceof ModelDescriptor) {
+                this.reload(desc);
+            }
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
+    }
+
+    @Override
     public void addModel(ModelDescriptor descriptor) {
         if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
             throw new IllegalArgumentException(
@@ -213,30 +247,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                          .map(e -> models.get(e.getKey()).predict(document))
                          .filter(Objects::nonNull)
                          .collect(Collectors.toList());
-    }
-
-    protected void fireInvalidationEvent() {
-        EventContextImpl ctx = new EventContextImpl();
-        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
-        Framework.getService(EventService.class).fireEvent(event);
-    }
-
-    protected void modelSubscriber(String topic, byte[] message) {
-        String contribKey = new String(message);
-        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        try {
-            Descriptor desc = pcs.retrieve(contribKey);
-            if (desc == null) {
-                this.models.remove(contribKey);
-                this.predicates.remove(contribKey);
-                this.filterPredicates.remove(contribKey);
-            }
-            if (desc instanceof ModelDescriptor) {
-                this.reload(desc);
-            }
-        } catch (IOException e) {
-            throw new NuxeoException(e);
-        }
     }
 
     protected void modelInvalidator(String topic, byte[] message) {
