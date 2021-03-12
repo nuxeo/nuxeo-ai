@@ -18,10 +18,43 @@
  */
 package org.nuxeo.ai.cloud;
 
-import com.auth0.jwt.impl.PublicClaims;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalNotification;
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
+import static org.nuxeo.ai.sdk.rest.Common.CORPORA_ID_PARAM;
+import static org.nuxeo.ai.sdk.rest.Common.EXPORT_ID_PARAM;
+import static org.nuxeo.ai.sdk.rest.Common.MODEL_ID_PARAM;
+import static org.nuxeo.ai.sdk.rest.Common.MODEL_NAME_PARAM;
+import static org.nuxeo.ai.sdk.rest.api.ModelCaller.DATASOURCE_PARAM;
+import static org.nuxeo.ai.sdk.rest.api.ModelCaller.LABEL_PARAM;
+import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,41 +83,10 @@ import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
-
-import static org.apache.commons.lang3.StringUtils.isAnyBlank;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.sdk.rest.Common.CORPORA_ID_PARAM;
-import static org.nuxeo.ai.sdk.rest.Common.EXPORT_ID_PARAM;
-import static org.nuxeo.ai.sdk.rest.Common.MODEL_ID_PARAM;
-import static org.nuxeo.ai.sdk.rest.Common.MODEL_NAME_PARAM;
-import static org.nuxeo.ai.sdk.rest.api.ModelCaller.DATASOURCE_PARAM;
-import static org.nuxeo.ai.sdk.rest.api.ModelCaller.LABEL_PARAM;
-import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
+import com.auth0.jwt.impl.PublicClaims;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalNotification;
 
 /**
  * A client that connects to Nuxeo Cloud AI
@@ -169,14 +171,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             JWTKeyService jwt = Framework.getService(JWTKeyService.class);
             Map<String, Serializable> claims = new HashMap<>();
             claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
-            String[] groups = session.getPrincipal()
-                                     .getAllGroups()
-                                     .stream()
-                                     .filter(group -> group.startsWith(descriptor.projectId))
-                                     .toArray(String[]::new);
-            if (groups.length > 0) {
-                claims.put(NuxeoClaim.GROUP, groups);
-            }
+            String[] groups = { descriptor.projectId + "-managers" };
+            claims.put(NuxeoClaim.GROUP, groups);
 
             String token = jwt.generateJWT(descriptor.projectId, claims);
             Authentication authentication = new Authentication(token);
