@@ -34,9 +34,6 @@ limitations under the License.
       }
       .button-link {
         background: blue;
-      }
-      a {
-        text-decoration: none;
         color: white;
       }
     </style>
@@ -48,8 +45,8 @@ limitations under the License.
       <div class="content-insight">
         <img src="images/nuxeo_insight.png"/>
         <p>[[i18n('app.title.admin.aicloud.message')]]</p>
-        <paper-button noink class="primary button-link" animated>
-          <a href$="{{link}}" target="_blank">[[i18n('app.title.admin.aicloud.link')]]</a>
+        <paper-button on-tap="_getInsightURL" noink class="primary button-link" animated>
+          [[i18n('app.title.admin.aicloud.link')]]
         </paper-button>
       </div>
     </nuxeo-page>
@@ -71,8 +68,13 @@ limitations under the License.
 
       ready() {
         super.ready();
-        this.$.aiInsight.execute().then(({url, aitoken, projectId, urlCore}) =>
-                this.link = `${url}?aitoken=${aitoken}&projectid=${projectId}&urlCore=${urlCore}`
+      }
+
+      _getInsightURL() {
+        this.$.aiInsight.execute().then(({url, aitoken, projectId, urlCore}) => {
+              const insightUrl = `${url}?aitoken=${aitoken}&projectid=${projectId}&urlCore=${urlCore}`;
+              window.open(insightUrl, '_blank');
+            }
         ).catch(() => this.fire('notify', {message: this.i18n('ai.insight.url.error')}));
       }
     }
