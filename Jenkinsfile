@@ -170,7 +170,7 @@ curl --retry 5 -fsSL "https://github.com/genuinetools/reg/releases/download/v0.1
 echo "\${REG_SHA256} /usr/bin/reg" | sha256sum -c - && chmod +x /usr/bin/reg
 """
                     script {
-                        PLATFORM_VERSION = sh(script: 'mvn help:evaluate -Dexpression=nuxeo.platform.version -q -DforceStdout', returnStdout: true).trim()
+                        PLATFORM_VERSION = sh(script: 'mvn help:evaluate -Dexpression=project.parent.version -q -DforceStdout', returnStdout: true).trim()
                         if (env.CHANGE_TARGET) {
                             echo "PR build: cleaning up the branch artifacts..."
                             sh """

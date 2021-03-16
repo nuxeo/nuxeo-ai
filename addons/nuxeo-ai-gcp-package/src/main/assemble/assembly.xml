@@ -74,7 +74,7 @@
     <!-- Your MP only needs to include files not already provided by the base distribution -->
     <nx:zipdiff
       file1="${outdir}/nxr-${maven.project.version}.zip"
-      file2="${outdir}/nuxeo-nxr-server-${nuxeo.platform.version}.zip"
+      file2="${outdir}/nuxeo-nxr-server-${project.parent.version}.zip"
       includesfile="${outdir}/includes"
       excludesfile="${outdir}/excludesfile"
       patternsetid="nxr.versus.distribution"
