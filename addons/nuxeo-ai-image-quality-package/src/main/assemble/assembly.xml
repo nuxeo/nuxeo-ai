@@ -21,7 +21,7 @@
       <fileset dir="src/main/resources"/>
       <filterset>
         <filter token="VERSION" value="${maven.project.version}"/>
-        <filter token="NUXEO_PLATFORM_VERSION" value="${project.parent.version}" />
+        <filter token="NUXEO_PLATFORM_VERSION" value="${nuxeo.platform.version}" />
         <filter token="NUXEO_TARGET_VERSION" value="${nuxeo.target.version}" />
       </filterset>
     </copy>
@@ -77,7 +77,7 @@
     <!-- Your MP only needs to include files not already provided by the base distribution -->
     <nx:zipdiff
       file1="${outdir}/nxr-${maven.project.version}.zip"
-      file2="${outdir}/nuxeo-nxr-server-${project.parent.version}.zip"
+      file2="${outdir}/nuxeo-nxr-server-${nuxeo.platform.version}.zip"
       includesfile="${outdir}/includes"
       excludesfile="${outdir}/excludesfile"
       patternsetid="nxr.versus.distribution"
