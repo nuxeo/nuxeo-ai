@@ -140,7 +140,7 @@ pipeline {
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
         JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
-        PLATFORM_VERSION = ''
+        PLATFORM_VERSION = '' // resolved version (ie: 11.5.88)
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%H%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
@@ -225,7 +225,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                         withCredentials([usernameColonPassword(credentialsId: 'connect-nuxeo-ai-jx-bot', variable: 'CONNECT_CREDS_PROD')]) {
                             sh '''
 curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/download?version=3.1.0-SNAPSHOT" -o docker/nuxeo-web-ui.zip --retry 10 --retry-max-time 600
-curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip --retry 10 --retry-max-time 600
+curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL_PREPROD/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip --retry 10 --retry-max-time 600
 '''
                         }
                         dir('docker') {
