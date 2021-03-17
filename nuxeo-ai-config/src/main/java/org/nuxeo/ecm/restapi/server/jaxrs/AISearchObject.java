@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ecm.restapi.server.jaxrs;
 
+import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
 import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
 
 import java.io.IOException;
@@ -70,8 +71,6 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
     protected static final String TYPE = "ai.search";
 
     protected static final String DEFAULT_ES_BASE_URL = "http://localhost:9200/";
-
-    protected static final java.lang.String ES_BASE_URL_PROPERTY = "elasticsearch.httpReadOnly.baseUrl";
 
     protected static final String AUDIT = "audit";
 
