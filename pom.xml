@@ -194,6 +194,16 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <systemPropertyVariables combine.children="append">
+              <!--suppress UnresolvedMavenProperty -->
+              <elasticsearch.httpReadOnly.baseUrl>${nuxeo.test.elasticsearch.addressList}</elasticsearch.httpReadOnly.baseUrl>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
           <version>3.2.0</version>
         </plugin>
