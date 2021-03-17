@@ -51,7 +51,7 @@ public class ModelUsageServiceImpl implements ModelUsageService {
             + "    }\n" //
             + "}";//
 
-    protected static final String ES_BASE_URL_PROPERTY = "elasticsearch.httpReadOnly.baseUrl";
+    public static final String ES_BASE_URL_PROPERTY = "elasticsearch.httpReadOnly.baseUrl";
 
     protected String esBaseUrl;
 
