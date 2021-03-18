@@ -133,7 +133,7 @@ public class DocumentTranscribed implements PostCommitEventListener {
             Map<String, Serializable> map = res.get();
             int idx = caps.indexOf(map);
             map.put(VTT_KEY_PROP, (Serializable) blob);
-            caps.add(idx, map);
+            caps.set(idx, map);
         } else {
             Map<String, Serializable> map = new HashMap<>();
             map.put(LANGUAGE_KEY, lang);
