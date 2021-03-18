@@ -16,9 +16,11 @@
  *
  * Contributors:
  *     anechaev
+ *     mvachette
  */
 package org.nuxeo.ai.transcribe;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.common.utils.FileUtils;
@@ -50,7 +52,7 @@ import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
 import static org.nuxeo.ai.services.DocMetadataService.ENRICHMENT_MODIFIED;
 
 @RunWith(FeaturesRunner.class)
-@Features({ PlatformFeature.class })
+@Features({PlatformFeature.class})
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 public class TestTranscribeToCaptions {
@@ -64,9 +66,12 @@ public class TestTranscribeToCaptions {
     @Inject
     protected TransactionalFeature tf;
 
-    @Test
-    public void shouldConvertToCaptions() throws IOException {
-        DocumentModel fileDoc = session.createDocumentModel("/", "MyDoc", "File");
+    DocumentModel fileDoc;
+
+
+    @Before
+    public void setup() throws IOException {
+        fileDoc = session.createDocumentModel("/", "MyDoc", "File");
         fileDoc.addFacet(CAPTIONABLE_FACET);
         fileDoc.addFacet(ENRICHMENT_FACET);
 
@@ -83,17 +88,36 @@ public class TestTranscribeToCaptions {
 
         assertNotNull(fileDoc);
         session.save();
+    }
 
+    @Test
+    public void shouldConvertToCaptions() {
         DocumentEventContext ctx = new DocumentEventContext(session, session.getPrincipal(), fileDoc);
         es.fireEvent(ctx.newEvent(ENRICHMENT_MODIFIED));
-
         es.waitForAsyncCompletion();
-
         tf.nextTransaction();
 
         DocumentModel doc = session.getDocument(fileDoc.getRef());
+
         @SuppressWarnings("unchecked")
         List<Map<String, Serializable>> prop = (List<Map<String, Serializable>>) doc.getPropertyValue("cap:captions");
         assertThat(prop).isNotNull().hasSize(1);
     }
+
+    @Test
+    public void shouldUpdateCaptions() {
+        for (int i = 0; i < 2; i++) {
+            DocumentEventContext ctx = new DocumentEventContext(session, session.getPrincipal(), fileDoc);
+            es.fireEvent(ctx.newEvent(ENRICHMENT_MODIFIED));
+            es.waitForAsyncCompletion();
+            tf.nextTransaction();
+        }
+
+        DocumentModel doc = session.getDocument(fileDoc.getRef());
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Serializable>> prop = (List<Map<String, Serializable>>) doc.getPropertyValue("cap:captions");
+        assertThat(prop).isNotNull().hasSize(1);
+    }
+
 }
