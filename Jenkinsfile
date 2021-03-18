@@ -28,7 +28,6 @@ pipeline {
         PREVIEW_URL = "https://preview-${PREVIEW_NAMESPACE}.ai.dev.nuxeo.com"
         PERSISTENCE = "${BRANCH_NAME ==~ 'master.*'}"
         PACKAGE_PATTERN = 'addons/*-package/target/nuxeo*package*.zip *-package/target/nuxeo-ai-core-*.zip'
-        BRANCH_NAME_LABEL = jx.normalizeLabel(BRANCH_NAME)
         MARKETPLACE_URL = 'https://connect.nuxeo.com/nuxeo/site/marketplace'
         MARKETPLACE_URL_PREPROD = 'https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace'
     }
@@ -140,6 +139,7 @@ skaffold build -f skaffold.yaml~gen
                 KAFKA_WR = "${TEST_CHART_NAME}-kafka"
                 KAFKA_POD_NAME = "${TEST_CHART_NAME}-kafka-0"
                 KAFKA_MAVEN_ARGS = "-Pkafka -Dkafka.bootstrap.servers=${KAFKA_WR}.${DOMAIN_SUFFIX}:9092"
+                BRANCH_NAME_LABEL = jx.normalizeLabel(BRANCH_NAME)
             }
             steps {
                 container('platform11') {
@@ -230,12 +230,13 @@ kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true
             }
             environment {
                 JX_NO_COMMENT = "${env.CHANGE_TARGET ? 'false' : 'true'}"
+                PREFIX = "nuxeo/$APP_NAME PR-"
             }
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform11') {
                         script {
-                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${BRANCH_NAME_LABEL}"]) {
+                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${jx.normalizeLabel(BRANCH_NAME, PREFIX)}"]) {
                                 jx.waitForNuxeo("preview", PREVIEW_URL) {
                                     dir('charts/preview') {
                                         sh """#!/bin/bash -xe
