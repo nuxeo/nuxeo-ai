@@ -131,7 +131,7 @@
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-config</artifactId>
-        <version>${project.version}</version>
+        <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.elasticsearch</groupId>
