@@ -22,7 +22,6 @@
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-gcp-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
   </dependencies>
 

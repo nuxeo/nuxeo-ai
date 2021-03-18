@@ -140,7 +140,9 @@
     </nx:studioExtraction>
 
     <zip destfile="${outdir}/${maven.project.artifactId}-${maven.project.version}.zip" basedir="${outdir}/marketplace"/>
-    <!--<artifact:attach file="${outdir}/${maven.project.artifactId}-${maven.project.version}.zip" type="zip"/>-->
+    <zip destfile="${outdir}/dummy-package.zip" whenempty="create" includes="" excludes="**" basedir="${outdir}"
+         comment="This package is only available in the Marketplace" />
+    <artifact:attach file="${outdir}/dummy-package.zip" type="zip"/>
   </target>
 
 </project>

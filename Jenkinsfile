@@ -17,15 +17,15 @@ void setGitHubBuildStatus(String context) {
 }
 
 String getMavenArgs() {
-    def args = '-V -B -Pmarketplace,ftest,aws clean install'
+    def args = '-V -B clean'
     if (env.TAG_NAME) {
         args += ' deploy -P-nexus,release -DskipTests'
     } else if (env.BRANCH_NAME ==~ 'master.*') {
         args += ' deploy -P-nexus'
     } else if (env.BRANCH_NAME ==~ 'sprint.*') {
-        args += ' deploy -Pnexus'
+        args += ' deploy -fae -Pnexus'
     } else {
-        args += ' package'
+        args += ' install --fail-never'
     }
     return args
 }
@@ -133,7 +133,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         buildDiscarder(logRotator(daysToKeepStr: '60', numToKeepStr: '60', artifactNumToKeepStr: '5'))
-        timeout(time: 1, unit: 'HOURS')
+        timeout(time: 2, unit: 'HOURS')
     }
     environment {
         ORG = 'nuxeo'
@@ -192,7 +192,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
         }
         stage('Maven Build') {
             environment {
-                MAVEN_OPTS = "-Xms1g -Xmx2g"
+                MAVEN_OPTS = "-Xms1g -Xmx1536m"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
@@ -202,7 +202,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
 //                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
-                        sh 'mvn ${MAVEN_ARGS}'
+                        sh "mvn ${MAVEN_ARGS}"
                     }
                 }
             }
