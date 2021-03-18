@@ -23,7 +23,6 @@
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-image-quality-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
   </dependencies>
 

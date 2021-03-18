@@ -22,7 +22,6 @@
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-aws-core</artifactId>
-      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
