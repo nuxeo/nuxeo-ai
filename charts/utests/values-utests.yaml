@@ -1,0 +1,123 @@
+expose:
+  Annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+  config:
+    exposer: Ingress
+    domain: ai.dev.nuxeo.com
+    http: true
+    tlsacme: true
+    tlsSecretName: ai-tls
+    urltemplate: '{{.Service}}-{{.Namespace}}.{{.Domain}}'
+
+cleanup:
+  Args:
+    - --cleanup
+  Annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-delete-policy: hook-succeeded
+
+nuxeo:
+  fullnameOverride: utests
+  tolerations:
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
+  nodeSelector:
+    team: ai
+  nuxeo:
+    enable: false
+  mongodb:
+    deploy: true
+    useStatefulSet: false
+    persistence:
+      enabled: false
+    labels:
+      branch: "$BRANCH_NAME_LABEL"
+      resource: deployment
+      team: ai
+      usage: test
+    podLabels:
+      branch: "$BRANCH_NAME_LABEL"
+      resource: pod
+      team: ai
+      usage: test
+    tolerations:
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
+    nodeSelector:
+      team: ai
+  elasticsearch:
+    deploy: true
+    persistence:
+      enabled: false
+    labels:
+      branch: "$BRANCH_NAME_LABEL"
+      resource: pod
+      team: ai
+      usage: test
+    service:
+      labels:
+        branch: "$BRANCH_NAME_LABEL"
+        resource: service
+        team: ai
+        usage: test
+    tolerations:
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
+    nodeSelector:
+      team: ai
+  kafka:
+    deploy: true
+    persistence:
+      enabled: false
+    podLabels:
+      branch: "$BRANCH_NAME_LABEL"
+      resource: pod
+      team: ai
+      usage: test
+    tolerations:
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
+    nodeSelector:
+      team: ai
+    autoCreateTopicsEnable: false
+    deleteTopicEnable: true
+    transactionStateLogMinIsr: 1
+    extraEnvVars:
+      - name: KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS
+        value: "100"
+      - name: KAFKA_CFG_LOG_RETENTION_MINUTES
+        value: "20"
+      - name: KAFKA_CFG_OFFSETS_RETENTION_MINUTES
+        value: "20"
+      - name: KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS
+        value: "5"
+      - name: KAFKA_CFG_STATE_LOG_REPLICATION_FACTOR
+        value: "1"
+    zookeeper:
+      podLabels:
+        branch: "$BRANCH_NAME_LABEL"
+        resource: pod
+        team: ai
+        usage: test
+      tolerations:
+        - key: team
+          operator: Equal
+          value: ai
+          effect: NoSchedule
+      nodeSelector:
+        team: ai
+
+tags:
+  mongodb: true
+  elasticsearch: true
+  kafka: true
+  redis: false
