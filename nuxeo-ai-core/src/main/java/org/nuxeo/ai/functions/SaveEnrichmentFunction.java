@@ -42,7 +42,12 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
             DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
             if (doc != null) {
                 try {
-                    session.saveDocument(doc);
+                    if (!doc.isImmutable()) {
+                        session.saveDocument(doc);
+                    } else {
+                        log.error("Attempt to write into an Immutable Document Model id: {}, AI Model name {}",
+                                doc.getId(), metadata.getModelName());
+                    }
                 } catch (DocumentValidationException e) {
                     log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
                 }

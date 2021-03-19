@@ -10,6 +10,7 @@
       <supplier>
         <event name="pictureViewsGenerationDone">
           <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
           <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
             <option name="includedFacets">Picture</option>
           </filter>
@@ -74,6 +75,7 @@
       <supplier>
         <event name="documentModified">
           <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
           <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
             <option name="includedFacets">HasStoryboard</option>
           </filter>

@@ -7,12 +7,14 @@
     <supplier>
       <event name="pictureViewsGenerationDone">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
           <option name="includedFacets">Picture</option>
         </filter>
       </event>
       <event name="documentCreated">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
           <option name="excludedFacets">Picture,Folderish</option>
         </filter>
@@ -23,6 +25,7 @@
       </event>
       <event name="documentModified">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
           <option name="excludedFacets">Picture,Folderish</option>
@@ -47,6 +50,7 @@
     <supplier>
       <event name="videoConversionsDone">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
           <option name="includedFacets">Video</option>
         </filter>
@@ -70,6 +74,7 @@
     <supplier>
       <event name="documentCreated">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
           <option name="mimePattern">audio.*</option>
           <option name="properties">file:content</option>
@@ -77,6 +82,7 @@
       </event>
       <event name="documentModified">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
           <option name="mimePattern">audio.*</option>

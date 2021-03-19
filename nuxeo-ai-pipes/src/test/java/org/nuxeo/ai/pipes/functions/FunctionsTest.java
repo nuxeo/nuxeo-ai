@@ -19,9 +19,11 @@
 package org.nuxeo.ai.pipes.functions;
 
 import static junit.framework.TestCase.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.nuxeo.ai.pipes.events.EventPipesTest.TEST_MIME_TYPE;
 import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
 import static org.nuxeo.ai.pipes.functions.Predicates.doc;
 import static org.nuxeo.ai.pipes.functions.Predicates.docEvent;
@@ -30,6 +32,7 @@ import static org.nuxeo.ai.pipes.functions.Predicates.hasFacets;
 import static org.nuxeo.ai.pipes.functions.Predicates.isNotProxy;
 import static org.nuxeo.ai.pipes.functions.Predicates.isPicture;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,10 +45,19 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.filters.DocumentPathFilter;
+import org.nuxeo.ai.pipes.filters.NoVersionFilter;
 import org.nuxeo.ai.pipes.filters.PrimaryTypeFilter;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelFactory;
+import org.nuxeo.ecm.core.api.DocumentRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.VersioningOption;
 import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
+import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.filters.DocumentEventFilter;
@@ -180,7 +192,43 @@ public class FunctionsTest {
         func.filter = docEvent(typeFilter);
         applied = func.apply(event);
         assertEquals("It is a file", 1, applied.size());
+    }
 
+    @Test
+    public void shouldApplyNoVersionFilter() {
+        PreFilterFunction<Event, Collection<Record>> func = new PropertiesToStream();
+        func.init(Collections.singletonMap("textProperties", "dc:creator"));
+
+        NoVersionFilter noVersionFilter = new NoVersionFilter();
+        func.filter = docEvent(noVersionFilter);
+
+        DocumentModel doc = session.createDocumentModel("/", "MyDoc", "File");
+        assertNotNull(doc);
+
+        doc.addFacet("Publishable");
+        doc.addFacet("Versionable");
+        Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
+        doc.setPropertyValue("file:content", (Serializable) blob);
+        doc = session.createDocument(doc);
+
+        EventContextImpl evctx = new DocumentEventContext(session, session.getPrincipal(), doc);
+        Event event = evctx.newEvent("myDocEvent");
+        event.setInline(true);
+
+        Collection<Record> result = func.apply(event);
+        assertThat(result).hasSize(1);
+
+        DocumentRef verRef = session.checkIn(doc.getRef(), VersioningOption.MAJOR, "bump");
+        DocumentModel versionDoc = session.getDocument(verRef);
+
+        assertThat(versionDoc.isVersion()).isTrue();
+
+        evctx = new DocumentEventContext(session, session.getPrincipal(), versionDoc);
+        event = evctx.newEvent("myDocEvent");
+        event.setInline(true);
+
+        result = func.apply(event);
+        assertThat(result).isNullOrEmpty();
     }
 
     @Test
