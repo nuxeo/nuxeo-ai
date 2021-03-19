@@ -30,7 +30,7 @@ nuxeo:
     podAnnotations:
       preview/scm.ref: ${SCM_REF}
     podLabels:
-      branch: "$BRANCH_NAME"
+      branch: "$BRANCH_NAME_LABEL"
       team: ai
       resource: pod
       usage: preview
@@ -97,12 +97,12 @@ nuxeo:
     persistence:
       enabled: ${PERSISTENCE}
     labels:
-      branch: "$BRANCH_NAME"
+      branch: "$BRANCH_NAME_LABEL"
       resource: deployment
       team: ai
       usage: preview
     podLabels:
-      branch: "$BRANCH_NAME"
+      branch: "$BRANCH_NAME_LABEL"
       resource: pod
       team: ai
       usage: preview
@@ -117,8 +117,12 @@ nuxeo:
     deploy: true
     persistence:
       enabled: ${PERSISTENCE}
+      labels:
+        branch: "$BRANCH_NAME_LABEL"
+        team: ai
+        usage: preview
     podLabels:
-      branch: "$BRANCH_NAME"
+      branch: "$BRANCH_NAME_LABEL"
       resource: pod
       team: ai
       usage: preview
@@ -134,7 +138,7 @@ nuxeo:
     persistence:
       enabled: ${PERSISTENCE}
     podLabels:
-      branch: "$BRANCH_NAME"
+      branch: "$BRANCH_NAME_LABEL"
       resource: pod
       team: ai
       usage: preview
@@ -145,11 +149,25 @@ nuxeo:
         effect: NoSchedule
     nodeSelector:
       team: ai
+    autoCreateTopicsEnable: false
+    deleteTopicEnable: true
+    transactionStateLogMinIsr: 1
+    extraEnvVars:
+      - name: KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS
+        value: "100"
+      - name: KAFKA_CFG_LOG_RETENTION_MINUTES
+        value: "20"
+      - name: KAFKA_CFG_OFFSETS_RETENTION_MINUTES
+        value: "20"
+      - name: KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS
+        value: "5"
+      - name: KAFKA_CFG_STATE_LOG_REPLICATION_FACTOR
+        value: "1"
     zookeeper:
       persistence:
         enabled: ${PERSISTENCE}
       podLabels:
-        branch: "$BRANCH_NAME"
+        branch: "$BRANCH_NAME_LABEL"
         resource: pod
         team: ai
         usage: preview
