@@ -21,6 +21,8 @@ package org.nuxeo.ai.bulk;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +35,7 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
@@ -88,6 +91,8 @@ public class BulkEnrichmentTest {
 
     public static final int NUM_OF_DOCS = 100;
 
+    public static final String TEST_ROOT = "/bulkenrichtest";
+
     protected static final Name ENRICHMENT_IN = Name.ofUrn("test/enrichment-in");
 
     protected static final Name SAVE_ENRICHMENT_GROUP = Name.ofUrn("test/SaveEnrichmentFunction_test-enrichment-in");
@@ -104,7 +109,8 @@ public class BulkEnrichmentTest {
     @Inject
     protected TransactionalFeature txFeature;
 
-    public DocumentModel setupTestData() {
+    @Before
+    public void setup() {
         DocumentModel testRoot = session.createDocumentModel("/", "bulkenrichtest", "Folder");
         testRoot = session.createDocument(testRoot);
         session.saveDocument(testRoot);
@@ -116,19 +122,23 @@ public class BulkEnrichmentTest {
             if (i % 5 == 0) {
                 doc.setPropertyValue("dc:language", "en" + i);
             }
-            session.createDocument(doc);
+            doc = session.createDocument(doc);
         }
 
         txFeature.nextTransaction();
-        return testRoot;
+    }
+
+    @After
+    public void destroy() {
+        session.removeChildren(session.getRootDocument().getRef());
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkEnrich() throws Exception {
-        DocumentModel testRoot = setupTestData();
+        String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
-                testRoot.getId());
+                testRoot);
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
@@ -209,9 +219,9 @@ public class BulkEnrichmentTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldNotBacktrackConfirmedValue() throws Exception {
-        DocumentModel testRoot = setupTestData();
+        String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
-                testRoot.getId());
+                testRoot);
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
@@ -270,9 +280,9 @@ public class BulkEnrichmentTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkExportNoAutoFields() throws Exception {
-        DocumentModel testRoot = setupTestData();
+        String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
-                testRoot.getId());
+                testRoot);
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
 

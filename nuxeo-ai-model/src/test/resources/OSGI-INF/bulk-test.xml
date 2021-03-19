@@ -43,7 +43,7 @@
     <streamProcessor name="saveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <option name="source">test/enrichment-in</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s"  continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 </component>
