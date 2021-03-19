@@ -86,6 +86,7 @@ public class PipeDescriptor {
             errors.append("Invalid consumer configuration, you must specify at least consumer\n");
         }
         if (errors.length() > 0) {
+            errors.append("Pipe validation failed for ").append(this.id);
             throw new NuxeoException(errors.toString());
         }
 

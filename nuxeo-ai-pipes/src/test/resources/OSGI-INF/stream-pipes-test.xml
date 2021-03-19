@@ -19,6 +19,7 @@
       <supplier>
         <event name="pictureViewsGenerationDone">
           <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
           <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
             <option name="includedFacets">Picture</option>
           </filter>
@@ -50,7 +51,9 @@
   <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.doc" enabled="true">
       <supplier>
-        <event name="myDocEvent"/>
+        <event name="myDocEvent">
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
+        </event>
         <event name="anotherEvent"/>
       </supplier>
       <consumer>
@@ -67,6 +70,7 @@
     <pipe id="pipe.text" enabled="true">
       <supplier>
         <event name="myDocEvent">
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
           <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
             <option name="mimePattern">text.*</option>
             <option name="properties">file:content</option>
@@ -95,6 +99,7 @@
       <supplier>
         <event name="documentModified">
           <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
           <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
           <option name="properties">dc:title</option>
         </event>

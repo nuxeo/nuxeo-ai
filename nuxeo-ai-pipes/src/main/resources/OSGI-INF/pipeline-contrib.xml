@@ -15,7 +15,9 @@
       <code>
         <pipe id="pipe.doc" enabled="true">
           <supplier>
-            <event name="myDocEvent"/>
+            <event name="myDocEvent">
+              <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
+            </event>
           </supplier>
           <consumer>
             <stream name="special.stream"/>

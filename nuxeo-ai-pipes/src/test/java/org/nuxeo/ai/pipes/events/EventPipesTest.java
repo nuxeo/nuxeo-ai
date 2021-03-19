@@ -19,6 +19,7 @@
 package org.nuxeo.ai.pipes.events;
 
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +44,8 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelFactory;
+import org.nuxeo.ecm.core.api.DocumentRef;
+import org.nuxeo.ecm.core.api.VersioningOption;
 import org.nuxeo.ecm.core.api.impl.DocumentModelImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
@@ -75,6 +78,10 @@ public class EventPipesTest {
     public static Event getTestEvent(CoreSession session) throws Exception {
         DocumentModel doc = session.createDocumentModel("/", "My Doc", "File");
         ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
+        return getTestEvent(session, doc);
+    }
+
+    public static Event getTestEvent(CoreSession session, DocumentModel doc) throws Exception {
         doc.addFacet("Publishable");
         doc.addFacet("Versionable");
         Blob blob = Blobs.createBlob("My text", TEST_MIME_TYPE);
