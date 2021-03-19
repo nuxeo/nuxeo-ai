@@ -129,7 +129,7 @@ skaffold build -f skaffold.yaml~gen
                 }
             }
             environment {
-                MAVEN_OPTS = "-Xms1g -Xmx2g"
+                MAVEN_OPTS = "-Xms2g -Xmx2g"
                 AWS_REGION = "eu-west-1"
                 TEST_NAMESPACE = jx.normalizeNS("$APP_NAME-$BRANCH_NAME")
                 DOMAIN_SUFFIX = "${TEST_NAMESPACE}.svc.cluster.local"
@@ -138,7 +138,7 @@ skaffold build -f skaffold.yaml~gen
                 MONGODB_MAVEN_ARGS = "-Pmongodb" +
                         " -Dnuxeo.test.mongodb.dbname=nuxeo" +
                         " -Dnuxeo.test.mongodb.server=mongodb://${MONGODB_WR}.${DOMAIN_SUFFIX}"
-                ELASTICSEARCH_WR = "${TEST_CHART_NAME}-elasticsearch-client"
+                ELASTICSEARCH_WR = "elasticsearch-master"
                 ELASTICSEARCH_MAVEN_ARGS = "-Dnuxeo.test.elasticsearch.addressList=http://${ELASTICSEARCH_WR}.${DOMAIN_SUFFIX}:9200"
                 KAFKA_WR = "${TEST_CHART_NAME}-kafka"
                 KAFKA_POD_NAME = "${TEST_CHART_NAME}-kafka-0"
@@ -149,19 +149,18 @@ skaffold build -f skaffold.yaml~gen
                 container('platform11') {
                     script {
                         try {
-                            echo 'Install external services from Nuxeo Helm chart'
-                            sh """#!/bin/bash -xe
+                            dir('charts/utests') {
+                                echo 'Install external services from Nuxeo Helm chart'
+                                sh """#!/bin/bash -xe
 kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true --now
-helm init --client-only --stable-repo-url=https://charts.helm.sh/stable
-helm repo add elastic https://helm.elastic.co/
-helm repo add platform https://chartmuseum.platform.dev.nuxeo.com
-helm repo add ai https://chartmuseum.ai.dev.nuxeo.com
-envsubst < helm/values.yaml > helm/values.yaml~gen
-jx step helm install platform/nuxeo -v 1.0.14 -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE} --set-file=helm/values.yaml~gen
+kubectl create ns ${TEST_NAMESPACE}
+make build
+jx step helm install ./ -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE}
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${MONGODB_WR} --timeout=5m
-kubectl -n ${TEST_NAMESPACE} rollout status deployment ${ELASTICSEARCH_WR} --timeout=5m
+kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${ELASTICSEARCH_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${KAFKA_WR} --timeout=5m
 """
+                            }
                             withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                               credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
                                 stepsMaven.test(MONGODB_MAVEN_ARGS, ELASTICSEARCH_MAVEN_ARGS, KAFKA_MAVEN_ARGS)
@@ -187,9 +186,11 @@ kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: '**/target/*-reports/*.xml'
-                    archiveArtifacts artifacts: '**/target/*.log, **/log/*.log, *.log' +
-                            ', **/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html',
+                    junit allowEmptyResults: true, testResults: '**/target/*-reports/*.xml, '
+                    archiveArtifacts artifacts: '**/target/*.log, **/log/*.log, *.log, ' +
+                            '**/target/*-reports/*, **/target/results/*.html, **/target/*.png, **/target/*.html, ' +
+                            'charts/preview/values.yaml, charts/preview/extraValues.yaml, ' +
+                            'charts/preview/requirements.lock',
                             allowEmptyArchive: true
                     setGitHubBuildStatus('maven/test')
                 }
@@ -238,15 +239,14 @@ kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     container('platform11') {
                         script {
-                            withEnv(["PREVIEW_VERSION=$AI_CORE_VERSION", "BRANCH_NAME=${jx.normalizeLabel(BRANCH_NAME, PREFIX)}"]) {
+                            withEnv(["BRANCH_NAME=${jx.normalizeLabel(BRANCH_NAME, PREFIX)}"]) {
                                 jx.waitForNuxeo("preview", PREVIEW_URL) {
                                     dir('charts/preview') {
                                         sh """#!/bin/bash -xe
-kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true
+kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true --now
 kubectl create ns ${PREVIEW_NAMESPACE}
-make preview
-
-# detach process that would never succeed to patch the deployment, then reattach
+make build
+# detach process that would never succeed, patch the deployment, then reattach and wait
 jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo --no-comment=$JX_NO_COMMENT &
 until (kubectl -n ${PREVIEW_NAMESPACE} get deploy preview 2>/dev/null); do sleep 5; done
 kubectl -n ${PREVIEW_NAMESPACE} scale deployment --replicas=0 preview

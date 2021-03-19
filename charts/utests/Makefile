@@ -16,6 +16,6 @@ init:
 	helm repo add chartmuseum.ai.dev.nuxeo.com https://chartmuseum.ai.dev.nuxeo.com
 
 build: init
-	envsubst < values.tmpl.yaml > values.yaml
+	envsubst < values-utests.yaml > values.yaml
 	$(SED) -e "s/version:.*/version: $(VERSION)/" Chart.yaml
 	jx step helm build --verbose
