@@ -33,12 +33,15 @@ INCREMENT=${INCREMENT:-patch}
 NEXT_VERSION=$(semver bump "$INCREMENT" "$RELEASE_VERSION")
 
 printf "Releasing %s\n\tVersion:\t%s\n\tNext version:\t%s\n" "$(git remote get-url origin)" "$RELEASE_VERSION" "$NEXT_VERSION"
-echo "RELEASE_VERSION=$RELEASE_VERSION" > release.properties
-echo "INCREMENT=$INCREMENT" >> release.properties
-echo "NEXT_VERSION=$NEXT_VERSION" >> release.properties
-
+rm -f release.properties
+{
+    echo "RELEASE_VERSION=$RELEASE_VERSION"
+    echo "INCREMENT=$INCREMENT"
+    echo "NEXT_VERSION=$NEXT_VERSION"
+} >> release.properties
 mvn -V -B versions:set versions:set-property -DnewVersion="$RELEASE_VERSION" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
-sed "s,\(<version>\)\(.*\)\(<\/version>\),\1$RELEASE_VERSION\3," nuxeo-ai-internal/pom.xml
+sed -i "s,\(<version>\)\(.*\)\(<\/version>\),\1$RELEASE_VERSION\3," nuxeo-ai-internal/pom.xml
+sed -i "s,version: .*,version: $RELEASE_VERSION," charts/*/Chart.yaml
 git add -u
 if [ "$DRY_RUN" = 'true' ]; then
     echo "Dry run: skip 'jx step next-version' and 'jx step changelog'"
@@ -52,7 +55,8 @@ fi
 git reset --hard "origin/$BRANCH"
 
 mvn -B versions:set versions:set-property -DnewVersion="${NEXT_VERSION}-SNAPSHOT" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
-sed "s,\(<version>\)\(.*\)\(<\/version>\),\1$NEXT_VERSION\3," nuxeo-ai-internal/pom.xml
+sed -i "s,\(<version>\)\(.*\)\(<\/version>\),\1$NEXT_VERSION\3," nuxeo-ai-internal/pom.xml
+sed -i "s,version: .*,version: ${NEXT_VERSION}-SNAPSHOT," charts/*/Chart.yaml
 git add -u
 jx step next-version --version="$NEXT_VERSION"
 git commit -a -m"Post release ${RELEASE_VERSION}. Set version ${NEXT_VERSION}."
