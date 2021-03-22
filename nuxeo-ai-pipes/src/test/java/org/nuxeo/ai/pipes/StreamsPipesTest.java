@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.pipes;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -35,7 +36,9 @@ import org.nuxeo.lib.stream.log.LogRecord;
 import org.nuxeo.lib.stream.log.LogTailer;
 import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.stream.IgnoreKafka;
 import org.nuxeo.runtime.stream.StreamService;
+import org.nuxeo.runtime.test.runner.ConditionalIgnoreRule;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -124,8 +127,8 @@ public class StreamsPipesTest {
     }
 
     @Test
+    @ConditionalIgnoreRule.Ignore(condition = IgnoreKafka.class, cause = "AICORE-476")
     public void testBinaryText() throws Exception {
-
         DocumentModel doc = session.createDocumentModel("/", "My binary Doc", "File");
         ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
@@ -138,6 +141,7 @@ public class StreamsPipesTest {
             session.save();
             txFeature.nextTransaction();
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(5));
+            assertNotNull(record);
             assertNotNull(record.message());
             BlobTextFromDocument andBack = fromRecord(record.message(), BlobTextFromDocument.class);
             assertEquals("My text", andBack.getProperties().get(NXQL.ECM_FULLTEXT));
