@@ -21,6 +21,8 @@
 #
 
 hub sync || echo "WARN: 'hub' command failed but master ref-masterFor2021 master-2021 branches must be up to date with origin."
+# checkout local branches for convenience
+git checkout master ; git checkout ref-masterFor2021 ; git checkout master-2021
 git show -s --pretty=format:'%C(auto)%h%d' master ref-masterFor2021 master-2021
 if [[ -z $(git rev-list ref-masterFor2021..master) ]]; then
     echo "No changes to backport from master to master-2021"
