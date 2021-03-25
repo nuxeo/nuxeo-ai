@@ -45,25 +45,27 @@ nuxeo:
     packages: "nuxeo-jira-ai-${JIRA_AI_VERSION}"
     customParams: |-
       JAVA_OPTS=$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n
-      nuxeo.templates=default,mongodb,nuxeo-ai-core
+      nuxeo.templates=default,mongodb,mongodb-audit,nuxeo-ai-core
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira
       nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
-      nuxeo.ai.insight.client.token=${env:AI_INSIGHT_CLIENT_TOKEN}
       nuxeo.ai.insight.datasource.label=dev
       nuxeo.url=${PREVIEW_URL}/nuxeo
-      nuxeo.cors.urls=${PREVIEW_URL} https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io *
+      nuxeo.cors.urls=${PREVIEW_URL} https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io
+      nuxeo.server.cookies.sameSite=none
+      nuxeo.ai.insight.client.audience=insight
+      nuxeo.ai.insight.jwt.expiration=1000
+      nuxeo.ai.insight.enrichment.enabled=true
+      nuxeo.ai.conversion.maxSize=500000000
+      nuxeo.ai.conversion.rendition=Small
+      nuxeo.jwt.asym.ttl=4320
+      insight.active.learning.mongo.enabled=true
     customEnvs:
       - name: NUXEO_CLID
         valueFrom:
           secretKeyRef:
             name: instance-clid
             key: instance.clid
-      - name: AI_INSIGHT_CLIENT_TOKEN
-        valueFrom:
-          secretKeyRef:
-            name: ai-insight-client-token
-            key: text
     persistence:
       enabled: ${PERSISTENCE}
     livenessProbe:
