@@ -38,9 +38,14 @@
 jx step git credentials
 git config credential.helper store
 
-RELEASE_VERSION=${VERSION:-$(jx-release-version -same-release)}
-INCREMENT=${INCREMENT:-patch}
+RELEASE_VERSION=${VERSION:-$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's,-SNAPSHOT,,')}
+: "${INCREMENT:=patch}"
 NEXT_VERSION=$(semver bump "$INCREMENT" "$RELEASE_VERSION")
+qualifier=$(semver get prerel "$RELEASE_VERSION")
+if [ -n "$qualifier" ]; then
+    NEXT_VERSION=$NEXT_VERSION-$qualifier
+fi
+: "${BRANCH:=$(git rev-parse --abbrev-ref HEAD)}"
 
 printf "Releasing %s\n\tVersion:\t%s\n\tNext version:\t%s\n" "$(git remote get-url origin)" "$RELEASE_VERSION" "$NEXT_VERSION"
 rm -f release.properties
