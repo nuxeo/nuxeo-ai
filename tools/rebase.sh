@@ -23,7 +23,8 @@
 hub sync || echo "WARN: 'hub' command failed but master ref-masterFor2021 master-2021 branches must be up to date with origin."
 # checkout local branches for convenience
 git checkout master ; git checkout ref-masterFor2021 ; git checkout master-2021
-git show -s --pretty=format:'%C(auto)%h%d' master ref-masterFor2021 master-2021
+rm -f .git/AI_REBASE
+git show -s --pretty=format:'%C(auto)%h%d' master ref-masterFor2021 master-2021 | tee .git/AI_REBASE
 if [[ -z $(git rev-list ref-masterFor2021..master) ]]; then
     echo "No changes to backport from master to master-2021"
     exit 0
@@ -38,4 +39,9 @@ fi
 mvn -Pinternal versions:set versions:update-child-modules versions:set-property -Dproperty=nuxeo.ai.version -DnewVersion="$version" -DprocessDependencies=false -DgenerateBackupPoms=false
 git commit -m"rebase: fix version $version" -a --no-edit ||true
 git update-ref refs/heads/ref-masterFor2021 master
-git push origin master-2021 ref-masterFor2021
+if [ -z "$(git log master-2021..master)" ] ; then
+    git push -f origin master-2021 ref-masterFor2021
+else
+    echo "Please review master-2021: there should be no commit in the range master-2021..master (backup info in .git/AI_REBASE)"
+    echo "Then issue: git push -f origin master-2021 ref-masterFor2021"
+fi
