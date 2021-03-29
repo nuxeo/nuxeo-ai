@@ -41,7 +41,7 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
         stage('Release') {
             steps {
                 setGitHubBuildStatus('release')
-                container('platform1010') {
+                container('nuxeo1010') {
                     withEnv(["BRANCH=${params.BRANCH}", "VERSION=${params.VERSION}", "INCREMENT=${params.INCREMENT}",
                              "DRY_RUN=${params.DRY_RUN}"]) {
                         script {
@@ -63,26 +63,6 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
                 always {
                     setGitHubBuildStatus('release')
                     archiveArtifacts artifacts: 'release.properties, charts/*/templates/release.yaml', allowEmptyArchive: true
-                }
-            }
-        }
-        stage('Update downstream repos') {
-            steps {
-                setGitHubBuildStatus('post-release')
-                container('platform1010') {
-                    withEnv(["DRY_RUN=${params.DRY_RUN}"]) {
-                        script {
-                            def nextVersion = readProperties(file: 'release.properties')['NEXT_VERSION'].trim()
-                            sh """#!/bin/bash -xe
-./tools/updatebot.sh ${nextVersion}
-"""
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    setGitHubBuildStatus('post-release')
                 }
             }
         }

@@ -31,3 +31,5 @@ bin/
 .factorypath
 .vscode
 .java-version
+# downloaded Helm charts
+charts/preview/charts/*.tgz
