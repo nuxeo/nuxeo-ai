@@ -221,9 +221,7 @@ kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true
                     branch 'master-*'
                     branch 'sprint-*'
                     branch 'maintenance-*'
-                    allOf {
-                        changeRequest()
-                    }
+                    changeRequest()
                 }
             }
             options {
