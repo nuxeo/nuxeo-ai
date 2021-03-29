@@ -67,17 +67,28 @@ String getVersion() {
  * Build repo job better corresponding to the current job, if exists.
  * If we're in a PR, then find the corresponding PR (if exists), else use the same working branch.
  * @param repo
+ * @param maintenance ie: "10.10". If set, a prefix is added to the working branch: "10.10/<branch>". Except if the
+ * current is a maintenance branch (master, sprint-*...), then a suffix is used instead of a prefix: "<branch>-10.10".
  */
-void buildJob(String repo) {
+void buildJob(String repo, String maintenance = null) {
+    String prefix = ""
+    String suffix = ""
+    if (maintenance) {
+        if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME ==~ 'sprint-.*') {
+            suffix = "-$maintenance"
+        } else {
+            prefix = "$maintenance/"
+        }
+    }
     String targetBranch
     if (env.CHANGE_TARGET) { // Current is a PR
-        targetBranch = env.CHANGE_BRANCH
+        targetBranch = prefix + env.CHANGE_BRANCH + suffix
         def prNumber = getPR(repo, "nuxeo:${targetBranch}")
         if (prNumber) {
             targetBranch = "PR-$prNumber"
         }
     } else {
-        targetBranch = env.BRANCH_NAME
+        targetBranch = prefix + env.BRANCH_NAME + suffix
     }
     jobName = "/$repo/" + targetBranch.replace("/", "%2F")
     if (Jenkins.instance.getItemByFullName(jobName)) {
@@ -247,12 +258,8 @@ skaffold build -f skaffold.yaml~gen
                 anyOf {
                     branch 'master-10.10'
                     branch 'sprint-*'
-                    allOf {
-                        changeRequest()
-//                        expression {
-//                            return pullRequest.labels.contains('preview')
-//                        }
-                    }
+                    branch 'maintenance-*'
+                    changeRequest()
                 }
             }
             options {
@@ -337,7 +344,7 @@ done
             steps {
                 container('platform1010') {
                     script {
-                        buildJob("nuxeo/nuxeo-ai-integration")
+                        buildJob("nuxeo/nuxeo-ai-integration", "10.10")
                     }
                 }
             }
