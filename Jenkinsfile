@@ -249,14 +249,10 @@ skaffold build -f skaffold.yaml~gen
         stage('Deploy Preview') {
             when {
                 anyOf {
-                    branch 'master'
+                    branch 'master*'
                     branch 'sprint-*'
-                    allOf {
-                        changeRequest()
-//                        expression {
-//                            return pullRequest.labels.contains('preview')
-//                        }
-                    }
+                    branch 'maintenance-*'
+                    changeRequest()
                 }
             }
             options {
