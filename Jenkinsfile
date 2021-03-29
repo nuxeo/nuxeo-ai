@@ -365,7 +365,8 @@ done
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                     container('platform11') {
                         sh """#!/bin/bash -xe
-jx step create pr regex --regex 'version: (.*)' --version $VERSION --files packages/nuxeo-ai.yml -r https://github.com/nuxeo/jx-ai-versions
+jx step create pr regex --regex 'version: (.*)' --version $VERSION --files packages/nuxeo-ai.yml \
+    -r https://github.com/nuxeo/jx-ai-versions --base master-2021 --branch master-2021
 """
                     }
                 }
