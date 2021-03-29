@@ -63,42 +63,6 @@ String getVersion() {
     return version
 }
 
-/**
- * Build repo job better corresponding to the current job, if exists.
- * If we're in a PR, then find the corresponding PR (if exists), else use the same working branch.
- * @param repo
- */
-void buildJob(String repo) {
-    String targetBranch
-    if (env.CHANGE_TARGET) { // Current is a PR
-        targetBranch = env.CHANGE_BRANCH
-        def prNumber = getPR(repo, "nuxeo:${targetBranch}")
-        if (prNumber) {
-            targetBranch = "PR-$prNumber"
-        }
-    } else {
-        targetBranch = env.BRANCH_NAME
-    }
-    jobName = "/$repo/" + targetBranch.replace("/", "%2F")
-    if (Jenkins.instance.getItemByFullName(jobName)) {
-        echo "Triggering job /$repo build on branch $targetBranch"
-        build job: jobName, propagate: false, wait: false
-    } else {
-        println("No job ${jobName} to trigger")
-    }
-}
-
-String getPR(String repo, String branch) {
-    escapedBranch = branch.replace("/", "%2F")
-    withEnv(["REPO=${repo}", "BRANCH=${escapedBranch}"]) {
-        withCredentials([string(credentialsId: 'github_token', variable: 'GITHUB_TOKEN')]) {
-            String prNumber = sh(script: '''
-curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/$REPO/pulls?head=$BRANCH|jq ".[].number"|head -n1
-''', returnStdout: true).trim()
-            return prNumber
-        }
-    }
-}
 
 /**
  * Wait for Nuxeo Kubernetes application's deployment, then wait for the pod being effectively ready
@@ -170,7 +134,7 @@ curl --retry 5 -fsSL "https://github.com/genuinetools/reg/releases/download/v0.1
 echo "\${REG_SHA256} /usr/bin/reg" | sha256sum -c - && chmod +x /usr/bin/reg
 """
                     script {
-                        PLATFORM_VERSION = sh(script: 'mvn help:evaluate -Dexpression=nuxeo.platform.version -q -DforceStdout', returnStdout: true).trim()
+                        PLATFORM_VERSION = sh(script: 'mvn help:evaluate -Dexpression=nuxeo.latest.version -q -DforceStdout', returnStdout: true).trim()
                         if (env.CHANGE_TARGET) {
                             echo "PR build: cleaning up the branch artifacts..."
                             sh """
@@ -192,17 +156,16 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
         }
         stage('Maven Build') {
             environment {
-                MAVEN_OPTS = "-Xms1g -Xmx1536m"
+                MAVEN_OPTS = "-Xms1g -Xmx2g"
                 MAVEN_ARGS = getMavenArgs()
                 AWS_REGION = "us-east-1"
             }
             steps {
                 setGitHubBuildStatus('build/maven')
                 container('platform1010') {
-//                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                     withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                       credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
-                        sh "mvn ${MAVEN_ARGS}"
+                        sh 'mvn ${MAVEN_ARGS}'
                     }
                 }
             }
@@ -245,14 +208,10 @@ skaffold build -f skaffold.yaml~gen
         stage('Deploy Preview') {
             when {
                 anyOf {
-                    branch 'master-10.10'
-                    branch 'Sprint-*'
-                    allOf {
-                        changeRequest()
-//                        expression {
-//                            return pullRequest.labels.contains('preview')
-//                        }
-                    }
+                    branch 'master-*'
+                    branch 'sprint-*'
+                    branch 'maintenance-*'
+                    changeRequest()
                 }
             }
             options {
@@ -299,8 +258,9 @@ wait
             when {
                 anyOf {
                     tag '*'
-                    branch 'master-10.10'
-                    branch 'Sprint-*'
+                    branch 'master-*'
+                    branch 'sprint-*'
+                    branch 'maintenance-*'
                 }
             }
             environment {
@@ -328,20 +288,6 @@ done
                 }
             }
         }
-        stage('Trigger Downstream Jobs') {
-            when {
-                not {
-                    tag '*'
-                }
-            }
-            steps {
-                container('platform1010') {
-                    script {
-                        buildJob("nuxeo/nuxeo-ai-integration")
-                    }
-                }
-            }
-        }
         stage('Upgrade version stream') {
             when {
                 tag '*'
@@ -361,7 +307,7 @@ jx step create pr regex --regex 'version: (.*)' --version $VERSION --files packa
     post {
         always {
             script {
-                if (env.TAG_NAME || env.BRANCH_NAME == 'master-10.10' || env.BRANCH_NAME ==~ 'sprint-.*') {
+                if (env.TAG_NAME || env.BRANCH_NAME == 'master-*' || env.BRANCH_NAME ==~ 'sprint-.*' || env.BRANCH_NAME == 'maintenance-*') {
                     step([$class: 'JiraIssueUpdater', issueSelector: [$class: 'DefaultIssueSelector'], scm: scm])
                 }
             }
