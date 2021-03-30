@@ -45,7 +45,7 @@ nuxeo:
     packages: "nuxeo-insight-demos-${INSIGHT_DEMOS_VERSION}"
     customParams: |-
       JAVA_OPTS=$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n
-      nuxeo.templates=default,mongodb,mongodb-audit,nuxeo-ai-core
+      nuxeo.append.templates.ai-core=nuxeo-ai-core
       nuxeo.ai.insight.client.enable=true
       nuxeo.ai.insight.client.projectid=jira
       nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
