@@ -7,7 +7,7 @@ ARG CLID
 ARG NUXEO_PACKAGES
 COPY *.zip /tmp/
 RUN NUXEO_CLID="${CLID}" /docker-entrypoint.sh nuxeoctl mp-list && \
-    rm $NUXEO_HOME/configured
+    rm -f $NUXEO_HOME/configured $NUXEO_HOME/configured-hf
 
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
