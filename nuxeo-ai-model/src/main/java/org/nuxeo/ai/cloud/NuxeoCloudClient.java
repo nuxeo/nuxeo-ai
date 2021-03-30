@@ -169,14 +169,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             JWTKeyService jwt = Framework.getService(JWTKeyService.class);
             Map<String, Serializable> claims = new HashMap<>();
             claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
-            String[] groups = session.getPrincipal()
-                                     .getAllGroups()
-                                     .stream()
-                                     .filter(group -> group.startsWith(descriptor.projectId))
-                                     .toArray(String[]::new);
-            if (groups.length > 0) {
-                claims.put(NuxeoClaim.GROUP, groups);
-            }
+            String[] groups = { descriptor.projectId + "-managers" };
+            claims.put(NuxeoClaim.GROUP, groups);
 
             String token = jwt.generateJWT(descriptor.projectId, claims);
             Authentication authentication = new Authentication(token);
