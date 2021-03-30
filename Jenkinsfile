@@ -292,7 +292,7 @@ helm repo add elastic https://helm.elastic.co/
 helm repo add platform https://chartmuseum.platform.dev.nuxeo.com
 helm repo add ai https://chartmuseum.ai.dev.nuxeo.com
 envsubst < helm/values.yaml > helm/values.yaml~gen
-jx step helm install platform/nuxeo -v 1.0.14 -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE} --set-file=helm/values.yaml~gen
+jx step helm install platform/nuxeo -v 1.0.17 -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE} --set-file=helm/values.yaml~gen
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${MONGODB_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${ELASTICSEARCH_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${KAFKA_WR} --timeout=5m
