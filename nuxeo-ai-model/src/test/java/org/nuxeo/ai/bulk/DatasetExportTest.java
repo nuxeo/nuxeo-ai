@@ -117,7 +117,6 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
-@Ignore(value = "AICORE-412")
 public class DatasetExportTest {
 
     public static final String TEST_MIME_TYPE = "image/png";
@@ -216,6 +215,7 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     @SuppressWarnings("unchecked")
     public void testBulkExport() throws Exception {
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
@@ -272,6 +272,7 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     public void shouldCallWithParameters() throws InterruptedException {
         Map<String, Serializable> params = new HashMap<>();
 
