@@ -52,7 +52,7 @@ nuxeo:
       nuxeo.ai.insight.client.token=${env:AI_INSIGHT_CLIENT_TOKEN}
       nuxeo.ai.insight.datasource.label=dev
       nuxeo.url=${PREVIEW_URL}/nuxeo
-      nuxeo.cors.urls=${PREVIEW_URL} https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io *
+      nuxeo.cors.urls=${PREVIEW_URL} https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io
     customEnvs:
       - name: NUXEO_CLID
         valueFrom:
