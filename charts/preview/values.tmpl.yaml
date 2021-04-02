@@ -42,7 +42,7 @@ nuxeo:
       repository: ${DOCKER_REGISTRY}/${ORG}/${APP_NAME}
       tag: ${VERSION}
       pullPolicy: Always
-    packages: "nuxeo-jira-ai-${JIRA_AI_VERSION}"
+    packages: "nuxeo-insight-demos-${INSIGHT_DEMOS_VERSION}"
     customParams: |-
       JAVA_OPTS=$JAVA_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n
       nuxeo.append.templates.ai-core=nuxeo-ai-core
