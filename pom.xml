@@ -19,7 +19,7 @@
     <nuxeo.latest.version>10.10-HF43</nuxeo.latest.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.cloud.client.version>3.5.0</nuxeo.cloud.client.version>
-    <nuxeo-jira-ai.version>0.1.0</nuxeo-jira-ai.version>
+    <nuxeo.insight-demos.version>0.2.0</nuxeo.insight-demos.version>
     <jackson.version>2.10.2</jackson.version>
   </properties>
 
