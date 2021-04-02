@@ -118,7 +118,7 @@ skaffold build -f skaffold.yaml~gen
             post {
                 always {
                     archiveArtifacts artifacts: 'docker/skaffold.yaml~gen'
-                    setGitHubBuildStatus('build/docker')
+                    setGitHubBuildStatus('docker/build')
                 }
             }
         }
