@@ -139,7 +139,7 @@ pipeline {
         ORG = 'nuxeo'
         APP_NAME = 'nuxeo-ai'
         AI_CORE_VERSION = readMavenPom().getVersion()
-        JIRA_AI_VERSION = readMavenPom().getProperties().getProperty('nuxeo-jira-ai.version')
+        INSIGHT_DEMOS_VERSION = readMavenPom().getProperties().getProperty('nuxeo.insight-demos.version')
         PLATFORM_VERSION = ''
         SCM_REF = "${sh(script: 'git show -s --pretty=format:\'%H%d\'', returnStdout: true).trim();}"
         PREVIEW_NAMESPACE = normalizeNS("$APP_NAME-$BRANCH_NAME")
@@ -179,7 +179,7 @@ reg rm "${DOCKER_REGISTRY}/${ORG}/${APP_NAME}:${VERSION}" || true
                         }
                     }
                     echo "AI_CORE_VERSION: $AI_CORE_VERSION"
-                    echo "JIRA_AI_VERSION: $JIRA_AI_VERSION"
+                    echo "INSIGHT_DEMOS_VERSION: $INSIGHT_DEMOS_VERSION"
                     echo "PLATFORM_VERSION: $PLATFORM_VERSION"
                     echo "VERSION: $VERSION"
                 }
