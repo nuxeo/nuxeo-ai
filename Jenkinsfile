@@ -228,6 +228,10 @@ curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-web-ui/downl
 curl -fsSL -u "$CONNECT_CREDS_PROD" "$MARKETPLACE_URL/package/nuxeo-csv/download?version=$PLATFORM_VERSION" -o docker/nuxeo-csv.zip --retry 10 --retry-max-time 600
 '''
                         }
+                        withCredentials([usernamePassword(credentialsId: 'packages-deployment-jx',
+                                usernameVariable: 'PACKAGES_USER', passwordVariable: 'PACKAGES_PASSWORD')]) {
+                            sh 'envsubst < docker/nuxeo-private.repo > docker/nuxeo-private.repo~gen'
+                        }
                         dir('docker') {
                             echo "Build preview image"
                             sh 'printenv|sort|grep VERSION'

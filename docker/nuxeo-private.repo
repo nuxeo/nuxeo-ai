@@ -1,0 +1,9 @@
+[nuxeo-private]
+name=Nexus Private Yum Release Repository
+baseurl=https://packages.nuxeo.com/repository/yum-registry/
+username=$PACKAGES_USER
+password=$PACKAGES_PASSWORD
+enabled=1
+protect=0
+gpgcheck=0
+metadata_expire=30s
