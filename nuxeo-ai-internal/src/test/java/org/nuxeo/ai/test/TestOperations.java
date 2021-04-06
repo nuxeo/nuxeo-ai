@@ -8,18 +8,11 @@
  */
 package org.nuxeo.ai.test;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
-
-import java.util.List;
-
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
-
+import com.sun.jersey.core.spi.factory.ResponseImpl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.internal.InitAudit;
+import org.nuxeo.ai.internal.InitDatasetDocuments;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
@@ -38,9 +31,13 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
-import org.nuxeo.runtime.test.runner.TransactionalFeature;
+import javax.inject.Inject;
+import javax.ws.rs.core.Response;
+import java.util.List;
 
-import com.sun.jersey.core.spi.factory.ResponseImpl;
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
+import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, RuntimeFeature.class, AuditFeature.class })
@@ -57,9 +54,6 @@ public class TestOperations {
     @Inject
     protected AuditReader auditReader;
 
-    @Inject
-    protected TransactionalFeature txf;
-
     @Test
     public void iCanInitAudit() throws OperationException {
         AuditQueryBuilder qb = new AuditQueryBuilder();
@@ -73,5 +67,12 @@ public class TestOperations {
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         logEntries = auditReader.queryLogs(qb);
         assertThat(logEntries.size()).isNotZero();
+    }
+
+    @Test
+    public void iCanInitDocumentsForDatalake() throws OperationException {
+        OperationContext ctx = new OperationContext(session);
+        String[] uids = (String[]) automationService.run(ctx, InitDatasetDocuments.ID);
+        assertThat(uids).hasSize(20);
     }
 }
