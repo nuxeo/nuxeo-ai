@@ -5,7 +5,7 @@
     <groupId>org.nuxeo.ecm.distribution</groupId>
     <artifactId>nuxeo-distribution</artifactId>
     <!-- greater or equal to runtime HF required version -->
-    <version>10.10-HF39</version>
+    <version>10.10-HF44</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
@@ -36,6 +36,7 @@
     <module>nuxeo-ai-model</module>
     <module>nuxeo-ai-config</module>
     <module>nuxeo-ai-web-ui</module>
+    <module>nuxeo-ai-internal</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
   </modules>
