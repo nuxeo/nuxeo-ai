@@ -40,7 +40,6 @@ rm -f release.properties
     echo "NEXT_VERSION=$NEXT_VERSION"
 } >> release.properties
 mvn -V -B versions:set versions:set-property -DnewVersion="$RELEASE_VERSION" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
-sed -i "s,\(<version>\)\(.*\)\(<\/version>\),\1$RELEASE_VERSION\3," nuxeo-ai-internal/pom.xml
 sed -i "s,version: .*,version: $RELEASE_VERSION," charts/*/Chart.yaml
 git add -u
 if [ "$DRY_RUN" = 'true' ]; then
@@ -55,7 +54,6 @@ fi
 git reset --hard "origin/$BRANCH"
 
 mvn -B versions:set versions:set-property -DnewVersion="${NEXT_VERSION}-SNAPSHOT" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
-sed -i "s,\(<version>\)\(.*\)\(<\/version>\),\1$NEXT_VERSION-SNAPSHOT\3," nuxeo-ai-internal/pom.xml
 sed -i "s,version: .*,version: ${NEXT_VERSION}-SNAPSHOT," charts/*/Chart.yaml
 git add -u
 jx step next-version --version="$NEXT_VERSION"
