@@ -125,7 +125,6 @@ function createNewSprint() {
     currentVersion="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
     nextVersion="$(semver bump minor "$currentVersion")-SNAPSHOT"
     mvn -V -B versions:set versions:set-property -DnewVersion="${nextVersion}" -Dproperty=nuxeo.ai.version -DgenerateBackupPoms=false
-    sed -i "s,\(<version>\)\(.*\)\(<\/version>\),\1${nextVersion}\3," nuxeo-ai-internal/pom.xml
     sed -i "s,version: .*,version: ${nextVersion}," charts/*/Chart.yaml
     git commit -m"set version ${nextVersion}" -a
     git log --oneline "$base"..

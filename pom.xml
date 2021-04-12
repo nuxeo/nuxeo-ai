@@ -32,6 +32,7 @@
     <module>nuxeo-ai-model</module>
     <module>nuxeo-ai-config</module>
     <module>nuxeo-ai-web-ui</module>
+    <module>nuxeo-ai-internal</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
   </modules>
