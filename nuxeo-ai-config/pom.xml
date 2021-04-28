@@ -34,9 +34,18 @@
       <artifactId>nuxeo-elasticsearch-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.elasticsearch</groupId>
+      <artifactId>nuxeo-elasticsearch-http-read-only</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-jwt-authenticator-core</artifactId>
+    </dependency>
+
     <!-- TEST DEPS -->
     <dependency>
       <groupId>org.nuxeo.runtime</groupId>
