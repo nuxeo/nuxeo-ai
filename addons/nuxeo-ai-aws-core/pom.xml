@@ -38,6 +38,10 @@
       <artifactId>nuxeo-platform-video-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.ecm.webengine</groupId>
+      <artifactId>nuxeo-webengine-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-rekognition</artifactId>
     </dependency>
