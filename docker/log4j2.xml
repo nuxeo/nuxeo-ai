@@ -36,7 +36,7 @@
     <!-- Append messages to the console -->
     <!-- ============================== -->
     <Console name="CONSOLE" target="SYSTEM_OUT">
-      <ThresholdFilter level="DEBUG" onMatch="ACCEPT" />
+      <ThresholdFilter level="TRACE" onMatch="ACCEPT" />
       <PatternLayout pattern="%d{ISO8601} %-5p [%c{1}] %m%n" />
     </Console>
 
