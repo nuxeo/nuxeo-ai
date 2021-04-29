@@ -112,7 +112,7 @@ public class TestEnrichmentMetaData {
         assertEquals(metadataBackAgain.getLabels(), metadata.getLabels());
         assertEquals(metadataBackAgain.getTags(), metadata.getTags());
     }
-    
+
     @Test
     public void testRawJson() throws IOException {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
@@ -125,7 +125,6 @@ public class TestEnrichmentMetaData {
     @Test
     public void testCacheKeys() throws IOException {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
-        assertNull(EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
         PropertyType fileContentProp = PropertyType.of(FILE_CONTENT, "img");
         blobTextFromDoc.computePropertyBlobs().get(fileContentProp).setDigest("47XX");
         assertEquals("testin47XX", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
