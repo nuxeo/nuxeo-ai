@@ -36,7 +36,7 @@
     <!-- Append messages to the console -->
     <!-- ============================== -->
     <Console name="CONSOLE" target="SYSTEM_OUT">
-      <ThresholdFilter level="DEBUG" onMatch="ACCEPT" />
+      <ThresholdFilter level="TRACE" onMatch="ACCEPT" />
       <PatternLayout pattern="%d{ISO8601} %-5p [%c{1}] %m%n" />
     </Console>
 
@@ -115,6 +115,7 @@
 
     <Logger name="org.nuxeo" level="warn" />
     <Logger name="org.nuxeo.ai" level="debug" />
+    <Logger name="org.nuxeo.ai.sdk.rest.LogInterceptor" level="debug" />
     <Logger name="org.nuxeo.ecm.core.storage.dbs.DBSCachingRepository" level="warn" />
     <Logger name="org.nuxeo.elasticsearch.ElasticSearchComponent" level="warn" />
     <Logger name="org.nuxeo.elasticsearch.audit.ESAuditBackend" level="warn" />
