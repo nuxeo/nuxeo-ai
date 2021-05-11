@@ -81,7 +81,6 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
                                                                     desc -> desc.info.get(MODEL_NAME_KEY), desc -> desc,
                                                                     (o, o2) -> o2));
 
-        Map<String, ModelDescriptor> all;
         try {
             CloudClient cc = Framework.getService(CloudClient.class);
             JSONBlob models = cc.getPublishedModels();
@@ -96,24 +95,21 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
                                                            .collect(Collectors.toMap(
                                                                    desc -> desc.info.get(MODEL_NAME_KEY),
                                                                    desc -> desc));
-                all = news.values()
+                Map<String, ModelDescriptor> all = news.values()
                           .stream()
                           .collect(Collectors.toMap(desc -> desc.info.get(MODEL_NAME_KEY), desc -> desc,
                                   (o1, o2) -> merge(oldModels, news, o1.info.get(MODEL_NAME_KEY))));
 
                 log.info("Insight cloud has {} model definitions; Model registry size after update {}", news.size(),
                         all.size());
+                all.values().forEach(mss::addModel);
             } else {
-                all = Collections.emptyMap();
                 log.warn("No active models were found");
             }
         } catch (IOException e) {
             log.error(e);
             throw new NuxeoException(e);
         }
-
-        all.values().forEach(mss::addModel);
-
     }
 
     protected ModelDescriptor merge(Map<String, ModelDescriptor> oldModels, Map<String, ModelDescriptor> news,
