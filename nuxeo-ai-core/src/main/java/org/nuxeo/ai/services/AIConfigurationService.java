@@ -49,6 +49,14 @@ public interface AIConfigurationService {
     String setConfVar(String key, String value);
 
     /**
+     * @param key id of {@link Descriptor} to retrieve
+     * @param clazz that conforms to {@link Descriptor}
+     * @return requested {@link Descriptor} or null if none found
+     * @throws IOException in case
+     */
+    <T extends Descriptor> T get(String key, Class<T> clazz) throws IOException;
+
+    /**
      * @return all a pair of all persisted thresholds in xml and as objects
      */
     <T extends Descriptor> List<T> getAll(Class<T> clazz) throws IOException;

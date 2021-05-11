@@ -149,7 +149,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                             descriptor.getInputs(), descriptor.id, AI_DATATYPES));
         }
 
-        configs.putIfAbsent(descriptor.id, descriptor);
+        configs.put(descriptor.id, descriptor);
 
         log.debug("Registering a custom model as {}, info is {}.", descriptor.id, descriptor.info);
         RuntimeModel model = descriptor.getModel();
@@ -178,6 +178,11 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     @Override
     public RuntimeModel getModel(String modelId) {
         return models.get(modelId);
+    }
+
+    @Override
+    public RuntimeModel deleteModel(String modelId) {
+        return models.remove(modelId);
     }
 
     @Override
