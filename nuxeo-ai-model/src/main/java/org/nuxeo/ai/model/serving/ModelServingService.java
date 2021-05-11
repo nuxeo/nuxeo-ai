@@ -49,6 +49,12 @@ public interface ModelServingService extends Reloadable {
     RuntimeModel getModel(String modelId);
 
     /**
+     * @param modelId AI Model ID
+     * @return removed
+     */
+    RuntimeModel deleteModel(String modelId);
+
+    /**
      * Gets the document predicate for a Runtime Model by Id
      */
     Predicate<DocumentModel> getPredicate(String modelId);

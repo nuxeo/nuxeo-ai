@@ -106,6 +106,18 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
 
     @Override
     @SuppressWarnings("unchecked")
+    public <T extends Descriptor> T get(String key, Class<T> clazz) throws IOException {
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        Descriptor desc = pcs.retrieve(key);
+        if (desc != null && desc.getClass().isAssignableFrom(clazz)) {
+            return (T) desc;
+        }
+
+        return null;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public <T extends Descriptor> List<T> getAll(Class<T> clazz) throws IOException {
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
         List<Descriptor> allDescriptors = pcs.retrieveAllDescriptors();
