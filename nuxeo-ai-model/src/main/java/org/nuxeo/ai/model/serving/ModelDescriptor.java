@@ -75,6 +75,7 @@ public class ModelDescriptor implements Descriptor {
     @JsonIgnore
     protected Class<? extends RuntimeModel> clazz;
 
+
     public Set<ModelProperty> getInputs() {
         return inputProperties.properties;
     }

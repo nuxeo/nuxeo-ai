@@ -78,6 +78,7 @@ import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml"})
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class BulkEnrichmentTest extends BaseBulkEnrich {
 

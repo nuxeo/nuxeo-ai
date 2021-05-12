@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.disable.invalidation.listener">
+
+  <require>org.nuxeo.ecm.ai.listeners</require>
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <listener name="invalidateModelDefinitionsListener" enabled="false">
+      <event>invalidateModelDefinitions</event>
+    </listener>
+  </extension>
+
+</component>
