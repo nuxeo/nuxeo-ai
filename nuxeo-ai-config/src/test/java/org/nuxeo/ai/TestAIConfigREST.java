@@ -186,31 +186,6 @@ public class TestAIConfigREST extends BaseTest {
     }
 
     @Test
-    public void iCanRetrieveModel() {
-        String id = "test";
-        RuntimeModel model = modelService.getModel(id);
-        assertThat(model).isNull();
-        try (CloseableClientResponse response = getResponse(RequestType.POST, "aicore/extension/model/" + id,
-                modelDefinition, Collections.singletonMap("Content-Type", "application/xml"))) {
-            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-            model = modelService.getModel(id);
-            assertThat(model).isNotNull();
-        }
-
-        try (CloseableClientResponse response = getResponse(RequestType.GET, "aicore/extension/model/" + id)) {
-            assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-            try (InputStream is = response.getEntityInputStream()) {
-                ModelDescriptor md = MAPPER.readValue(is, ModelDescriptor.class);
-                assertThat(md).isNotNull();
-            } catch (IOException e) {
-                fail(e.getMessage());
-            }
-        } finally {
-            modelService.deleteModel(id);
-        }
-    }
-
-    @Test
     public void iCanRetrieveModels() {
         RuntimeModel model = modelService.getModel("test");
         assertThat(model).isNull();

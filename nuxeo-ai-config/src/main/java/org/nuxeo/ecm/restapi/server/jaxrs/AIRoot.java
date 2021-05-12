@@ -21,10 +21,11 @@ package org.nuxeo.ecm.restapi.server.jaxrs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
-import org.nuxeo.ai.model.serving.ModelDescriptor;
+import org.nuxeo.ai.model.serving.ModelServingService;
 import org.nuxeo.ai.services.AIConfigurationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.Resource;
@@ -43,7 +44,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOUS_EXPORT_ENABLE;
@@ -58,7 +58,12 @@ public class AIRoot extends DefaultObject {
 
     public static final String DATASOURCE_CONF_VAR = "nuxeo.ai.insight.datasource.label";
 
-    protected static final ObjectMapper MAPPER = new ObjectMapper();
+    protected static final ObjectMapper MAPPER;
+
+    static {
+        MAPPER = new ObjectMapper();
+        MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    }
 
     protected static final TypeReference<Map<String, String>> NUXEO_CONF_REF = new TypeReference<Map<String, String>>() {
     };
@@ -196,24 +201,6 @@ public class AIRoot extends DefaultObject {
     }
 
     @GET
-    @Path("extension/model/{modelId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getModel(@PathParam("modelId") String modelId) {
-        if (!ctx.getPrincipal().isAdministrator()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-
-        try {
-            ModelDescriptor desc = Framework.getService(AIConfigurationService.class)
-                                            .get(modelId, ModelDescriptor.class);
-            return Response.ok(MAPPER.writeValueAsString(desc)).build();
-        } catch (NuxeoException | IOException e) {
-            log.error("Cannot get model {}", modelId, e);
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-    }
-
-    @GET
     @Path("extension/models")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllModels() {
@@ -222,9 +209,8 @@ public class AIRoot extends DefaultObject {
         }
 
         try {
-            List<ModelDescriptor> descs = Framework.getService(AIConfigurationService.class)
-                                                   .getAll(ModelDescriptor.class);
-            return Response.ok(MAPPER.writeValueAsString(descs)).build();
+            ModelServingService mss = Framework.getService(ModelServingService.class);
+            return Response.ok(MAPPER.writeValueAsString(mss.listModels())).build();
         } catch (NuxeoException | IOException e) {
             log.error("Cannot get models", e);
             return Response.status(Response.Status.NOT_FOUND).build();

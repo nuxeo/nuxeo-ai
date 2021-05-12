@@ -33,6 +33,8 @@ import org.nuxeo.ecm.core.api.DocumentModel;
  */
 public interface ModelServingService extends Reloadable {
 
+    String INVALIDATOR_TOPIC = "ai-model-invalidation";
+
     /**
      * Add a AI Model at runtime, making it available for serving.
      */

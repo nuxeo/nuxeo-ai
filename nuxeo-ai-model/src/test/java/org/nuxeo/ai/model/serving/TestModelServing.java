@@ -18,31 +18,8 @@
  */
 package org.nuxeo.ai.model.serving;
 
-
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
-import static junit.framework.TestCase.assertNotNull;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
-import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-import static org.nuxeo.ecm.core.io.registry.context.RenderingContext.CtxBuilder.enrichDoc;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
-import javax.inject.Inject;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,14 +50,34 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import javax.inject.Inject;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import static junit.framework.TestCase.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
+import static org.nuxeo.ai.model.AIModel.MODEL_NAME;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ecm.core.io.registry.context.RenderingContext.CtxBuilder.enrichDoc;
 
 /**
  * Tests the overall Model Serving
  */
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class, CoreIOFeature.class})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreIOFeature.class })
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml")
@@ -107,6 +104,21 @@ public class TestModelServing {
     @Inject
     protected MarshallerRegistry registry;
 
+    protected static ManagedBlob blob(Blob blob, String key) {
+        return new BlobMetaImpl("test", blob.getMimeType(), key, blob.getDigest(), blob.getEncoding(),
+                blob.getLength());
+    }
+
+    /**
+     * Create an image blob for testing
+     */
+    public static ManagedBlob createTestBlob(BlobManager manager) throws IOException {
+        BlobProvider blobProvider = manager.getBlobProvider("test");
+        Blob blob = Blobs.createBlob(new File(manager.getClass().getResource("/files/plane.jpg").getPath()),
+                "image/jpeg");
+        return blob(blob, blobProvider.writeBlob(blob));
+    }
+
     @Test
     public void testServiceConfig() {
         assertNotNull(modelServingService);
@@ -114,14 +126,15 @@ public class TestModelServing {
         assertEquals("mockTestModel", model.getInfo().get(MODEL_NAME));
         assertEquals("1", model.getVersion());
         assertTrue("Model inputs must be set correctly",
-                   model.inputNames.containsAll(Arrays.asList("dc:title", "file:content")));
+                model.inputNames.containsAll(Arrays.asList("dc:title", "file:content")));
         assertEquals(1, model.getOutputs().size());
-        assertEquals("Model outputs must be set correctly",
-                     "dc:description", model.getOutputs().iterator().next().getName());
+        assertEquals("Model outputs must be set correctly", "dc:description",
+                model.getOutputs().iterator().next().getName());
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml" })
     public void testPredict() throws IOException {
         //Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Special Doc", "FileRefDoc");
@@ -211,12 +224,6 @@ public class TestModelServing {
         assertEquals("The custom model should return results", 1, jsonTree.get("results").size());
     }
 
-    protected static ManagedBlob blob(Blob blob, String key) {
-        return new BlobMetaImpl("test", blob.getMimeType(), key,
-                                blob.getDigest(), blob.getEncoding(), blob.getLength()
-        );
-    }
-
     @Test
     public void testModelListing() {
         Collection<ModelDescriptor> models = modelServingService.listModels();
@@ -232,19 +239,10 @@ public class TestModelServing {
 
     }
 
-    /**
-     * Create an image blob for testing
-     */
-    public static ManagedBlob createTestBlob(BlobManager manager) throws IOException {
-        BlobProvider blobProvider = manager.getBlobProvider("test");
-        Blob blob = Blobs.createBlob(new File(manager.getClass().getResource("/files/plane.jpg").getPath()), "image/jpeg");
-        return blob(blob, blobProvider.writeBlob(blob));
-    }
-
     @Test
     public void testDocumentEnricher() throws IOException {
-        DocumentModelJsonWriter writer = registry
-                .getInstance(enrichDoc(ModelJsonEnricher.NAME).get(), DocumentModelJsonWriter.class);
+        DocumentModelJsonWriter writer = registry.getInstance(enrichDoc(ModelJsonEnricher.NAME).get(),
+                DocumentModelJsonWriter.class);
         DocumentModel testDoc = session.createDocumentModel("/", "My Test Doc", "FileRefDoc");
         testDoc = session.createDocument(testDoc);
         session.saveDocument(testDoc);
