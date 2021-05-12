@@ -120,6 +120,7 @@ public class TestSuggestionOp {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
     public void shouldCall() throws OperationException, IOException {
 
         DocumentModel referencedDoc = new DocumentModelImpl("File", "123456", new Path("referenced doc"), null,

@@ -18,8 +18,10 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.listeners.InvalidateModelDefinitionsListener;
@@ -29,6 +31,7 @@ import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
@@ -43,7 +46,9 @@ import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +58,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -62,7 +69,28 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     public static final String AI_DATATYPES = "aidatatypes";
 
+    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
+
+    private static final TypeReference<Map<String, Serializable>> RESPONSE_TYPE_REFERENCE = new TypeReference<Map<String, Serializable>>() {
+    };
+
     private static final String MODELS_AP = "models";
+
+    private static final String MODEL_NAME_PROP = "ai_model:name";
+
+    private static final String MODEL_DOC_TYPE_PROP = "ai_model:doc_type";
+
+    private static final String MODEL_INPUTS_PROP = "ai_model:inputs";
+
+    private static final String MODEL_OUTPUTS_PROP = "ai_model:outputs";
+
+    private static final String MODEL_NAME_KEY = "modelName";
+
+    private static final String PROPERTIES_KEY = "properties";
+
+    private static final String NAME_KEY = "name";
+
+    private static final String TYPE_KEY = "type";
 
     private static final Logger log = LogManager.getLogger(ModelServingServiceImpl.class);
 
@@ -87,7 +115,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     @Override
     public void reload(Descriptor desc) {
         String labels = ((ModelDescriptor) desc).getInfo().get("modelLabel");
-        // TODO
         this.registerContribution(desc, MODELS_AP, null);
         this.addModel((ModelDescriptor) desc);
     }
@@ -104,9 +131,10 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     public void start(ComponentContext context) {
         super.start(context);
         configs.forEach((key, value) -> addModel(value));
-        PubSubService pubSubService = Framework.getService(PubSubService.class);
-        if (pubSubService != null) {
-            pubSubService.registerSubscriber(AIConfigurationServiceImpl.TOPIC, this::modelSubscriber);
+        PubSubService pss = Framework.getService(PubSubService.class);
+        if (pss != null) {
+            pss.registerSubscriber(AIConfigurationServiceImpl.TOPIC, this::modelSubscriber);
+            pss.registerSubscriber(INVALIDATOR_TOPIC, this::modelInvalidator);
         } else {
             log.warn("No Pub/Sub service available");
         }
@@ -115,30 +143,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
         pcs.register(ModelDescriptor.class);
 
         fireInvalidationEvent();
-    }
-
-    protected void fireInvalidationEvent() {
-        EventContextImpl ctx = new EventContextImpl();
-        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
-        Framework.getService(EventService.class).fireEvent(event);
-    }
-
-    protected void modelSubscriber(String topic, byte[] message) {
-        String contribKey = new String(message);
-        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        try {
-            Descriptor desc = pcs.retrieve(contribKey);
-            if (desc == null) {
-                this.models.remove(contribKey);
-                this.predicates.remove(contribKey);
-                this.filterPredicates.remove(contribKey);
-            }
-            if (desc instanceof ModelDescriptor) {
-                this.reload(desc);
-            }
-        } catch (IOException e) {
-            throw new NuxeoException(e);
-        }
     }
 
     @Override
@@ -209,6 +213,108 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                          .map(e -> models.get(e.getKey()).predict(document))
                          .filter(Objects::nonNull)
                          .collect(Collectors.toList());
+    }
+
+    protected void fireInvalidationEvent() {
+        EventContextImpl ctx = new EventContextImpl();
+        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
+        Framework.getService(EventService.class).fireEvent(event);
+    }
+
+    protected void modelSubscriber(String topic, byte[] message) {
+        String contribKey = new String(message);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        try {
+            Descriptor desc = pcs.retrieve(contribKey);
+            if (desc == null) {
+                this.models.remove(contribKey);
+                this.predicates.remove(contribKey);
+                this.filterPredicates.remove(contribKey);
+            }
+            if (desc instanceof ModelDescriptor) {
+                this.reload(desc);
+            }
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
+    }
+
+    protected void modelInvalidator(String topic, byte[] message) {
+        log.info("Model Invalidation received");
+        try {
+            CloudClient cc = Framework.getService(CloudClient.class);
+            JSONBlob published = cc.getPublishedModels();
+
+            Map<String, Serializable> resp = MAPPER.readValue(published.getStream(), RESPONSE_TYPE_REFERENCE);
+            if (resp.containsKey(ENTRIES_KEY)) {
+                clearAll();
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Serializable>> entries = (List<Map<String, Serializable>>) resp.get(ENTRIES_KEY);
+
+                Map<String, ModelDescriptor> newModels = entries.stream()
+                                                                .map(this::construct)
+                                                                .collect(Collectors.toMap(
+                                                                        desc -> desc.info.get(MODEL_NAME_KEY),
+                                                                        desc -> desc));
+                newModels.values().forEach(this::addModel);
+                log.info("Insight cloud has {} published model definitions; Model registry size after update {}",
+                        newModels.size(), models.size());
+            } else {
+                log.warn("No active models were found");
+            }
+        } catch (IOException e) {
+            log.error(e);
+            throw new NuxeoException(e);
+        }
+    }
+
+    protected void clearAll() {
+        configs.clear();
+        models.clear();
+        predicates.clear();
+        filterPredicates.clear();
+    }
+
+    protected ModelDescriptor construct(Map<String, Serializable> entry) {
+        @SuppressWarnings("unchecked")
+        Map<String, Serializable> properties = (Map<String, Serializable>) entry.get(PROPERTIES_KEY);
+        String name = (String) properties.get(MODEL_NAME_PROP);
+        String type = (String) properties.get(MODEL_DOC_TYPE_PROP);
+
+        ModelDescriptor.InputProperties inputProperties = new ModelDescriptor.InputProperties();
+        inputProperties.setProperties(toSet(properties, MODEL_INPUTS_PROP));
+
+        ModelDescriptor.OutputProperties outputProperties = new ModelDescriptor.OutputProperties();
+        outputProperties.setProperties(toSet(properties, MODEL_OUTPUTS_PROP));
+
+        ModelDescriptor des = new ModelDescriptor();
+        des.id = name;
+        des.inputProperties = inputProperties;
+        des.outputProperties = outputProperties;
+
+        HashMap<String, String> info = new HashMap<>();
+        info.put(MODEL_NAME_KEY, name);
+
+        ModelDescriptor.DocumentPredicate predicate = new ModelDescriptor.DocumentPredicate();
+        predicate.primaryType = type;
+
+        des.info = info;
+        des.filter = predicate;
+
+        return des;
+    }
+
+    private Set<ModelProperty> toSet(Map<String, Serializable> entry, String name) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Serializable>> outputs = (List<Map<String, Serializable>>) entry.getOrDefault(name, EMPTY_SET);
+        return getModelProperties(outputs);
+    }
+
+    private Set<ModelProperty> getModelProperties(List<Map<String, Serializable>> inputs) {
+        return inputs.stream()
+                     .map(input -> new ModelProperty((String) input.get(NAME_KEY), (String) input.get(TYPE_KEY)))
+                     .collect(Collectors.toSet());
     }
 
     /**

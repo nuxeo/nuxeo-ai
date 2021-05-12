@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.model.serving.ModelDescriptor;
 import org.nuxeo.ai.model.serving.ModelServingService;
+import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.event.EventBundle;
 import org.nuxeo.ecm.core.event.EventService;
@@ -40,6 +41,7 @@ import org.nuxeo.runtime.test.runner.HotDeployer;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,9 +49,12 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(FeaturesRunner.class)
-@Features({ PlatformFeature.class })
-@Deploy("org.nuxeo.ai.ai-core" )
+@Features({ PlatformFeature.class, AutomationFeature.class })
+@Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-model")
+@Deploy("org.nuxeo.ecm.core.cache")
+@Deploy("org.nuxeo.ecm.core.event")
+@Deploy("org.nuxeo.runtime.pubsub")
 @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/model-serving-update-test.xml")
 public class InvalidateModelDefinitionsListenerTest {
 
@@ -74,7 +79,11 @@ public class InvalidateModelDefinitionsListenerTest {
 
     @Test
     public void shouldLunchExportWithNoExceptions() throws Exception {
+        Collection<ModelDescriptor> models = mss.listModels();
+        List<String> ids = models.stream().map(ModelDescriptor::getId).collect(Collectors.toList());
         assertThat(mss.listModels()).hasSize(2);
+        assertThat(ids).doesNotContain("Components", "tags");
+
         hotDeployer.deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml");
         EventBundle bundle = new EventBundleImpl();
         EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
@@ -85,8 +94,9 @@ public class InvalidateModelDefinitionsListenerTest {
         txf.nextTransaction();
         es.waitForAsyncCompletion();
 
-        assertThat(mss.listModels()).hasSize(4);
-        List<String> ids = mss.listModels().stream().map(ModelDescriptor::getId).collect(Collectors.toList());
+        models = mss.listModels();
+        assertThat(models).hasSize(2);
+        ids = models.stream().map(ModelDescriptor::getId).collect(Collectors.toList());
         assertThat(ids).contains("Components", "tags");
     }
 }
