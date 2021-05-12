@@ -18,6 +18,23 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static java.util.Collections.singletonMap;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +46,8 @@ import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
+import org.nuxeo.ecm.core.api.CloseableCoreSession;
+import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
@@ -44,23 +63,6 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.singletonMap;
-import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -215,12 +217,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                          .collect(Collectors.toList());
     }
 
-    protected void fireInvalidationEvent() {
-        EventContextImpl ctx = new EventContextImpl();
-        Event event = new EventImpl(InvalidateModelDefinitionsListener.EVENT_NAME, ctx);
-        Framework.getService(EventService.class).fireEvent(event);
-    }
-
     protected void modelSubscriber(String topic, byte[] message) {
         String contribKey = new String(message);
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
@@ -241,9 +237,9 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     protected void modelInvalidator(String topic, byte[] message) {
         log.info("Model Invalidation received");
-        try {
+        try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem("default")) {
             CloudClient cc = Framework.getService(CloudClient.class);
-            JSONBlob published = cc.getPublishedModels();
+            JSONBlob published = cc.getPublishedModels(session);
 
             Map<String, Serializable> resp = MAPPER.readValue(published.getStream(), RESPONSE_TYPE_REFERENCE);
             if (resp.containsKey(ENTRIES_KEY)) {
