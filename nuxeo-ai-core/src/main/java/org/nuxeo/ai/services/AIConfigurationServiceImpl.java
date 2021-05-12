@@ -63,11 +63,10 @@ public class AIConfigurationServiceImpl extends DefaultComponent implements AICo
 
     @Override
     public String set(Descriptor desc) throws IOException {
-        String key = UUID.randomUUID().toString();
         PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        pcs.persist(key, desc);
-        publish(key.getBytes());
-        return key;
+        pcs.persist(desc.getId(), desc);
+        publish(desc.getId().getBytes());
+        return desc.getId();
     }
 
     @Override
