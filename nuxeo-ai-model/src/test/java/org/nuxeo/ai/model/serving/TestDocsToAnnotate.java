@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,7 @@ public class TestDocsToAnnotate extends BaseTest {
         Blob file = new FileBlob(this.getClass().getResourceAsStream("/files/pink.jpg"));
         DocumentModel reference = session.createDocumentModel("/", "Reference", "File");
         reference = session.createDocument(reference);
+        List<String> referenceIds = Arrays.asList(reference.getId(), session.getRootDocument().getId());
         session.save();
         uids = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
@@ -85,6 +87,7 @@ public class TestDocsToAnnotate extends BaseTest {
             document.setPropertyValue("dc:subjects", new String[] { "art/architecture", "art/danse" });
             document.setPropertyValue("file:content", (Serializable) file);
             document.setPropertyValue("extrafile:docprop", reference.getId());
+            document.setPropertyValue("extrafile:doclistprop", (Serializable) referenceIds);
             uids.add(session.createDocument(document).getId());
         }
         session.save();
@@ -102,6 +105,7 @@ public class TestDocsToAnnotate extends BaseTest {
                 add("dc:subjects");
                 add("file:content");
                 add("extrafile:docprop");
+                add("extrafile:doclistprop");
             }
         };
         params.put("inputs", inputs);

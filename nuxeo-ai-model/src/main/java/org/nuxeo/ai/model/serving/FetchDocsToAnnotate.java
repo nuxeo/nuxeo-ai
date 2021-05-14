@@ -49,12 +49,12 @@ import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
 import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
-
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,8 +172,13 @@ public class FetchDocsToAnnotate {
             if (uids.isEmpty()) {
                 throw new NuxeoException("Please refer uids");
             }
-            DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('"
-                    + uids.stream().map(String::valueOf).collect(Collectors.joining("','")) + "')");
+            DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('" + uids.stream()
+                                                                                                           .map(String::valueOf)
+                                                                                                           .collect(
+                                                                                                                   Collectors
+                                                                                                                           .joining(
+                                                                                                                                   "','"))
+                    + "')");
             if (docs.isEmpty()) {
                 return Blobs.createJSONBlob(MAPPER.writeValueAsString(EMPTY_JSON_LIST));
             }
@@ -188,15 +193,13 @@ public class FetchDocsToAnnotate {
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .fetchInDoc("properties")
                                                            .base(VirtualHostHelper.getBaseURL(request))
-                                                           .get(),
-                                DocumentPropertyJsonWriter.class);
+                                                           .get(), DocumentPropertyJsonWriter.class);
                         DocumentUrlJsonEnricher enricher = registry.getInstance(
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .session(coreSession)
                                                            .fetchInDoc("properties")
                                                            .base(VirtualHostHelper.getBaseURL(request))
-                                                           .get(),
-                                DocumentUrlJsonEnricher.class);
+                                                           .get(), DocumentUrlJsonEnricher.class);
                         // workaround to be able to have the data url for a given blob
                         List<Map<String, Object>> inputs = new ArrayList<>();
                         List<Map<String, Object>> outputs = new ArrayList<>();
@@ -234,16 +237,25 @@ public class FetchDocsToAnnotate {
         if (propertyValue != null) {
             try {
                 if (objectResolver instanceof DocumentModelResolver) {
-                    if (!coreSession.exists(new IdRef((String) propertyValue))) {
-                        return;
-                    }
-                    DocumentModel doc = coreSession.getDocument(new IdRef((String) propertyValue));
-
                     outWriter.reset();
-                    jg.writeStartObject();
-                    enricher.write(jg, doc);
-                    jg.writeStringField("title", documentModel.getName());
-                    jg.writeEndObject();
+                    if (type.isListType()) {
+                        StringBuilder uuids = new StringBuilder();
+                        String[] propertyValues = (String[]) propertyValue;
+                        if (propertyValues.length == 0) {
+                            return;
+                        }
+                        Arrays.asList(propertyValues).forEach((value) -> uuids.append(value).append("','"));
+                        uuids.delete(uuids.length() - 2, uuids.length());
+                        DocumentModelList docs = coreSession.query(
+                                "SELECT * FROM Document WHERE ecm:uuid IN ('" + uuids.toString() + ")");
+                        jg.writeStartArray();
+                        for (DocumentModel doc : docs) {
+                            writeDocument(jg, doc, enricher, doc.getId());
+                        }
+                        jg.writeEndArray();
+                    } else {
+                        writeDocument(jg, documentModel, enricher, (String) propertyValue);
+                    }
                     jg.flush();
                 } else {
                     outWriter.reset();
@@ -271,6 +283,15 @@ public class FetchDocsToAnnotate {
         input.put("type", typeName);
         input.put("isArray", type instanceof ListTypeImpl);
         inputs.add(input);
+    }
+
+    private void writeDocument(JsonGenerator jg, DocumentModel documentModel, DocumentUrlJsonEnricher enricher,
+            String propertyValue) throws IOException {
+        DocumentModel doc = coreSession.getDocument(new IdRef(propertyValue));
+        jg.writeStartObject();
+        enricher.write(jg, doc);
+        jg.writeStringField("title", documentModel.getName());
+        jg.writeEndObject();
     }
 
     protected ObjectResolver getObjectResolver(Type type) {

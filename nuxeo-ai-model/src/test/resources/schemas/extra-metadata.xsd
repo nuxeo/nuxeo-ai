@@ -8,5 +8,14 @@
       <xs:restriction base="xs:string" ref:resolver="documentResolver" ref:store="id"/>
     </xs:simpleType>
   </xs:element>
+  <xs:element name="doclistprop">
+    <xs:simpleType>
+      <xs:list>
+        <xs:simpleType>
+          <xs:restriction base="xs:string" ref:resolver="documentResolver" ref:store="id"/>
+        </xs:simpleType>
+      </xs:list>
+    </xs:simpleType>
+  </xs:element>
 
 </xs:schema>
