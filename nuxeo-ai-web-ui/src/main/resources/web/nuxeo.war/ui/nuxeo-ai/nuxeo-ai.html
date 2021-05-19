@@ -108,11 +108,17 @@ limitations under the License.
             console.dirxml(node);
             break;
           }
+
+          if (!nodeInfo.bindings) {
+            continue;
+          }
+
           const field = node.hasAttribute('field') && node.getAttribute('field');
           if (field && field.startsWith(property)) {
             model[field] = model[part.source] || [];
             model[field] = node;
           }
+
           nodeInfo.bindings.forEach((binding) => {
             if (binding.kind === 'property') {
               binding.parts.forEach((part) => {
