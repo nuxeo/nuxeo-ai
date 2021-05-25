@@ -35,6 +35,7 @@ import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -79,12 +80,15 @@ public class ExportDoneComputation extends AbstractComputation {
             logger.addLogEntries(Collections.singletonList(entry));
 
             CloudClient cc = Framework.getService(CloudClient.class);
-            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
-                    cmd.getUsername())) {
-                if (!cc.notifyOnExportDone(session, cmd.getId())) {
-                    log.error("Could not notify Cloud on export done event; commandId " + cmd.getId());
+
+            TransactionHelper.runInTransaction(() -> {
+                try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(cmd.getRepository(),
+                        cmd.getUsername())) {
+                    if (!cc.notifyOnExportDone(session, cmd.getId())) {
+                        log.error("Could not notify Cloud on export done event; commandId " + cmd.getId());
+                    }
                 }
-            }
+            });
         }
 
         ctx.askForCheckpoint();
