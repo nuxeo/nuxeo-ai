@@ -8,12 +8,12 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>2.5.9-SNAPSHOT</version>
+  <version>2.5.10-SNAPSHOT</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
   <properties>
-    <nuxeo.ai.version>2.5.9-SNAPSHOT</nuxeo.ai.version>
+    <nuxeo.ai.version>2.5.10-SNAPSHOT</nuxeo.ai.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>10.10</nuxeo.target.version>
     <nuxeo.latest.version>10.10-HF43</nuxeo.latest.version>
