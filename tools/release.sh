@@ -66,3 +66,4 @@ if [ "$DRY_RUN" = 'true' ]; then
 else
     git push origin "$BRANCH"
 fi
+chmod +r VERSION charts/*/templates/release.yaml || true
