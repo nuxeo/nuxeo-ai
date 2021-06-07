@@ -162,7 +162,7 @@ kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${KAFKA_WR} --timeout=5m
 """
                             }
                             withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
-                                              credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
+                                              credentialsId: 'aws-762822024843-ai-ci-role']]) {
                                 stepsMaven.test(MONGODB_MAVEN_ARGS, ELASTICSEARCH_MAVEN_ARGS, KAFKA_MAVEN_ARGS)
                             }
                         } finally {
