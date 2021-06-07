@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<component name="org.nuxeo.ai.download.url.redirect">
-  <#if "${nuxeo.ai.insight.client.enable}" == "true">
-      <require>org.nuxeo.ecm.core.io.download.DownloadService</require>
-      <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
-        <property name="org.nuxeo.download.url.follow.redirect">true</property>
-      </extension>
-  </#if>
-</component>
