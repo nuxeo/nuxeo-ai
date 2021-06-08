@@ -23,7 +23,9 @@ import org.nuxeo.runtime.api.Framework;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.nuxeo.ai.internal.InitDatasetDocuments.ID;
 import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
@@ -70,7 +72,9 @@ public class InitDatasetDocuments {
                     "Folder");
             userSession.createDocument(folder);
             // Creating dataset document samples
-            Blob file = new FileBlob(this.getClass().getResourceAsStream("/pink.jpg"), "image/jpeg");
+            Blob image = new FileBlob(this.getClass().getResourceAsStream("/pink.jpg"), "image/jpeg");
+            Blob pdf = new FileBlob(this.getClass().getResourceAsStream("/nxp.pdf"), "application/pdf");
+            List<Blob> blobs = Arrays.asList(pdf, image);
             // Filling metadata here according to the outputs we will get for missions
             String[] uids = new String[20];
             for (int i = 0; i < 20; i++) {
@@ -80,7 +84,7 @@ public class InitDatasetDocuments {
                 document.setPropertyValue("dc:description", "Description " + i);
                 document.setPropertyValue("dc:contributors", new String[] { "system", "Administrator" });
                 document.setPropertyValue("dc:subjects", new String[] { "art/architecture", "art/danse" });
-                document.setPropertyValue("file:content", (Serializable) file);
+                document.setPropertyValue("file:content", (Serializable) blobs.get(i & 1));
                 document.setPropertyValue("extrafile:docprop", folder.getId());
                 uids[i] = userSession.createDocument(document).getId();
             }
