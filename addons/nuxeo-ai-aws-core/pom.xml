@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>nuxeo-ai-addons</artifactId>
-    <version>2.5.10-SNAPSHOT</version>
+    <version>2.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-aws-core</artifactId>
   <name>Nuxeo AI AWS Core</name>
@@ -36,6 +36,10 @@
     <dependency>
       <groupId>org.nuxeo.ecm.platform</groupId>
       <artifactId>nuxeo-platform-video-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ecm.webengine</groupId>
+      <artifactId>nuxeo-webengine-core</artifactId>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>

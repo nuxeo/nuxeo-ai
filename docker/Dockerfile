@@ -3,11 +3,18 @@ FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION} as builde
 
 USER $NUXEO_USER
 ARG CLID
-COPY *.zip /docker-entrypoint-initnuxeo.d/
+# workaround NXCT-548
+ARG NUXEO_PACKAGES
+COPY *.zip /tmp/
 RUN NUXEO_CLID="${CLID}" /docker-entrypoint.sh nuxeoctl mp-list && \
     rm -f $NUXEO_HOME/configured $NUXEO_HOME/configured-hf
 
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
+
+USER 0
+RUN yum -y localinstall --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm
+RUN yum -y install ffmpeg
+USER $NUXEO_USER
 
 ARG PLATFORM_VERSION
 ARG VERSION

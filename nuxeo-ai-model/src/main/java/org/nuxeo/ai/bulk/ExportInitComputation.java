@@ -25,15 +25,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.cloud.CorporaParameters;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
-import org.nuxeo.ai.model.analyzis.Statistic;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.pipes.functions.PropertyUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.CorporaParameters;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ai.sdk.objects.Statistic;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
@@ -91,8 +91,6 @@ import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
  */
 public class ExportInitComputation extends AbstractBulkComputation {
 
-    private static final Logger log = LogManager.getLogger(ExportInitComputation.class);
-
     public static final String UUID_QUERY_INIT = "SELECT * FROM Document WHERE ecm:uuid IN ";
 
     public static final long TIMEOUT_48_HOURS_IN_SEC = 48 * 60 * 60;
@@ -102,6 +100,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
     public static final PathRef PARENT_PATH = new PathRef("/" + DATASET_EXPORT_TYPE);
 
     public static final String NUXEO_FOLDER = "Folder";
+
+    private static final Logger log = LogManager.getLogger(ExportInitComputation.class);
 
     protected List<ExportRecord> training = new LinkedList<>();
 
@@ -115,7 +115,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
     @Override
     protected void compute(CoreSession session, List<String> ids, Map<String, Serializable> properties) {
         CloudClient client = Framework.getService(CloudClient.class);
-        if (client == null || !client.isAvailable()) {
+        if (client == null || !client.isAvailable(session)) {
             log.error("AI Client is not available; interrupting export " + command.getId());
             return;
         }
@@ -153,7 +153,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
 
         createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
-        bindCorporaToModel(client, modelParams);
+        bindCorporaToModel(session, client, modelParams);
 
         // Split documents list into training and validation dataset
         int splitIndex = (int) Math.ceil((docs.size() - 1) * split / 100.f);
@@ -177,11 +177,11 @@ public class ExportInitComputation extends AbstractBulkComputation {
         }
     }
 
-    protected void bindCorporaToModel(CloudClient client, Map<String, Serializable> modelParams) {
+    protected void bindCorporaToModel(CoreSession session, CloudClient client, Map<String, Serializable> modelParams) {
         if (modelParams.containsKey(CORPORA_ID_PARAM) && modelParams.containsKey(DATASET_EXPORT_MODEL_ID)) {
             String modelId = (String) modelParams.get(DATASET_EXPORT_MODEL_ID);
             String corporaId = (String) modelParams.get(CORPORA_ID_PARAM);
-            boolean bound = client.bind(modelId, corporaId);
+            boolean bound = client.bind(session, modelId, corporaId);
             if (!bound) {
                 log.error("Could not bind AI Model {} and AI Corpora {}", modelId, corporaId);
             }
@@ -221,7 +221,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
                 Set<PropertyType> fields = new HashSet<>(inputs);
                 fields.addAll(outputs);
                 cp.setFields(fields);
-                corporaId = Framework.getService(CloudClient.class).initExport(null, cp);
+                corporaId = Framework.getService(CloudClient.class).initExport(session, null, cp);
             }
 
             modelParams.put(CORPORA_ID_PARAM, corporaId);

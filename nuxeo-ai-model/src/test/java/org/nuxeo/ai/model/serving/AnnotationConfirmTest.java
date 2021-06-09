@@ -42,6 +42,7 @@ import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLa
         RepositoryElasticSearchFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.ai-core")
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml"})

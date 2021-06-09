@@ -18,24 +18,35 @@
  */
 package org.nuxeo.ai.cloud;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import okhttp3.Response;
+import com.auth0.jwt.impl.PublicClaims;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalNotification;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
-import org.nuxeo.ai.cloud.AICorpus.Properties;
-import org.nuxeo.client.NuxeoClient;
+import org.nuxeo.ai.auth.NuxeoClaim;
+import org.nuxeo.ai.keystore.JWTKeyService;
+import org.nuxeo.ai.sdk.objects.AICorpus;
+import org.nuxeo.ai.sdk.objects.CorporaParameters;
+import org.nuxeo.ai.sdk.objects.TensorInstances;
+import org.nuxeo.ai.sdk.rest.ResponseHandler;
+import org.nuxeo.ai.sdk.rest.client.API;
+import org.nuxeo.ai.sdk.rest.client.Authentication;
+import org.nuxeo.ai.sdk.rest.client.InsightClient;
+import org.nuxeo.ai.sdk.rest.client.InsightConfiguration;
 import org.nuxeo.client.objects.blob.FileBlob;
 import org.nuxeo.client.objects.upload.BatchUpload;
 import org.nuxeo.client.spi.NuxeoClientException;
 import org.nuxeo.client.spi.NuxeoClientRemoteException;
-import org.nuxeo.client.spi.auth.TokenAuthInterceptor;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -43,20 +54,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.function.Supplier;
+import java.util.concurrent.ExecutionException;
 
-import static javax.ws.rs.core.Response.Status.OK;
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
@@ -68,9 +78,13 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ai.sdk.rest.Common.CORPORA_ID_PARAM;
+import static org.nuxeo.ai.sdk.rest.Common.EXPORT_ID_PARAM;
+import static org.nuxeo.ai.sdk.rest.Common.MODEL_ID_PARAM;
+import static org.nuxeo.ai.sdk.rest.Common.MODEL_NAME_PARAM;
+import static org.nuxeo.ai.sdk.rest.api.ModelCaller.DATASOURCE_PARAM;
+import static org.nuxeo.ai.sdk.rest.api.ModelCaller.LABEL_PARAM;
 import static org.nuxeo.ai.tensorflow.TFRecordWriter.TFRECORD_MIME_TYPE;
-import static org.nuxeo.client.ConstantsV1.API_PATH;
 
 /**
  * A client that connects to Nuxeo Cloud AI
@@ -81,7 +95,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     public static final String API_AI = "ai/";
 
-    public static final String API_EXPORT_AI = "ai_export/";
+    private static final JSONBlob EMPTY_JSON_BLOB = new JSONBlob("{}");
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
 
@@ -93,127 +107,166 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    protected String projectId;
-
-    protected String url;
-
-    protected NuxeoClient client;
-
-    protected String datasource;
+    protected Cache<String, InsightClient> cachedClients;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        initClient();
+        CloudConfigDescriptor config = getCloudConfig();
+        CacheBuilder<String, InsightClient> builder = CacheBuilder.newBuilder()
+                                                                  .maximumSize(100)
+                                                                  .removalListener(this::onRemove);
+        if (config != null) {
+            // TODO: Create default template with timeout of token
+            String projectId = config.projectId;
+            JWTKeyService jwt = Framework.getService(JWTKeyService.class);
+            long expire = jwt.getExpireAt(projectId);
+            builder = builder.expireAfterWrite(Duration.ofMillis(expire));
+        } else {
+            builder = builder.expireAfterWrite(Duration.ofMinutes(60));
+        }
+
+        cachedClients = builder.build();
     }
 
-    protected void initClient() {
-        CloudConfigDescriptor config = getCloudConfig();
-        if (config != null) {
-            configureClient(config);
+    @Override
+    public void activate(ComponentContext context) {
+        super.activate(context);
+    }
+
+    @Override
+    public int getApplicationStartedOrder() {
+        Component component = (Component) Framework.getRuntime()
+                                                   .getComponent("org.nuxeo.ai.keystore.JWKLocalComponent");
+        if (component == null) {
+            // Starting very late in case Cache used default application order
+            return super.getApplicationStartedOrder() + 1000;
+        }
+        return component.getApplicationStartedOrder() + 5;
+    }
+
+    protected void onRemove(RemovalNotification<String, InsightClient> notification) {
+        if (log.isDebugEnabled()) {
+            log.debug("Removing Public Key {} from cache; Cause {}", notification.getKey(), notification.getCause());
         }
     }
 
-    protected void configureClient(CloudConfigDescriptor descriptor) {
+    @Nullable
+    protected InsightClient configureClient(CoreSession session, @Nonnull CloudConfigDescriptor descriptor) {
         try {
-            NuxeoClient.Builder builder = new NuxeoClient.Builder().url(descriptor.url)
-                                                                   .readTimeout(descriptor.readTimeout.getSeconds())
-                                                                   .writeTimeout(descriptor.writeTimeout.getSeconds())
-                                                                   .schemas("dublincore", "common")
-                                                                   .header("Accept-Encoding", "identity")
-                                                                   .connectTimeout(
-                                                                           descriptor.connectTimeout.getSeconds());
-            if (log.isDebugEnabled()) {
-                LogInterceptor logInterceptor = new LogInterceptor();
-                builder.interceptor(logInterceptor);
-            }
-            CloudConfigDescriptor.Authentication auth = descriptor.authentication;
-            if (auth != null && isNotEmpty(auth.token)) {
-                builder.authentication(new TokenAuthInterceptor(auth.token));
-            } else if (auth != null && isNotEmpty(auth.username) && isNotEmpty(auth.password)) {
-                builder.authentication(auth.username, auth.password);
-            } else {
-                throw new IllegalArgumentException("Nuxeo cloud client has incorrect authentication configuration.");
-            }
-            projectId = descriptor.projectId;
-            url = descriptor.url; // The client doesn't seem to export the URL to use
-            if (isAnyBlank(url, projectId)) {
+            if (isAnyBlank(descriptor.url, descriptor.projectId)) {
                 throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
             }
 
-            datasource = descriptor.datasource;
-            if (StringUtils.isBlank(datasource)) {
+            String datasource;
+            if (StringUtils.isBlank(descriptor.datasource)) {
                 datasource = "dev";
                 log.warn("Datasource wasn't set; using `{}` as the default", datasource);
+            } else {
+                datasource = descriptor.datasource;
             }
 
-            client = builder.connect();
-            log.debug("Nuxeo Cloud Client {} is configured for {}.", projectId, url);
+            JWTKeyService jwt = Framework.getService(JWTKeyService.class);
+            Map<String, Serializable> claims = new HashMap<>();
+            claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
+            String[] groups = { descriptor.projectId + "-managers" };
+            claims.put(NuxeoClaim.GROUP, groups);
+
+            String token = jwt.generateJWT(descriptor.projectId, claims);
+            Authentication authentication = new Authentication(token);
+            InsightConfiguration configuration = new InsightConfiguration.Builder().setAuthentication(authentication)
+                                                                                   .setUrl(descriptor.url)
+                                                                                   .setConnectionTimeout(
+                                                                                           descriptor.connectTimeout)
+                                                                                   .setDatasource(datasource)
+                                                                                   .setProjectId(descriptor.projectId)
+                                                                                   .setReadTimeout(
+                                                                                           descriptor.readTimeout)
+                                                                                   .setWriteTimeout(
+                                                                                           descriptor.writeTimeout)
+                                                                                   .build();
+            InsightClient client = new InsightClient(configuration);
+
+            log.debug("Nuxeo Cloud Client {} is configured for {}.", client.getProjectId(), client.getUrl());
+            client.connect();
+            return client;
         } catch (NuxeoClientRemoteException e) {
             log.error("Authentication/Connection issue with Insight cloud", e);
+            return null;
         }
     }
 
     /**
      * Get the configured client
      */
-    protected NuxeoClient getClient() {
-        if (client == null) {
-            initClient();
-        }
-        return client;
-    }
-
+    @Nullable
     @Override
-    public boolean isAvailable() {
-        return getClient() != null;
-    }
-
-    @Override
-    public String initExport(@Nullable String corporaId, CorporaParameters parameters) {
-        JsonNode json;
-        String payload;
+    public InsightClient getClient(CoreSession session) {
         try {
-            payload = MAPPER.writeValueAsString(parameters);
-            json = post(AIExportEndpoint.INIT.toPath(projectId, corporaId), payload, (resp) -> {
-                if (!resp.isSuccessful()) {
-                    log.error("Failed to initialize Export for project {}, payload {}, url {}, code {} and reason {}",
-                            projectId, payload, url, resp.code(), resp.message());
-                    return null;
-                }
-                return resp.body() != null ? MAPPER.readTree(resp.body().byteStream()) : null;
-            });
-        } catch (JsonProcessingException e) {
-            log.error(e);
+            CloudConfigDescriptor config = getCloudConfig();
+            return config != null ?
+                    cachedClients.get(session.getPrincipal().getActingUser(), () -> configureClient(session, config)) :
+                    null;
+        } catch (ExecutionException e) {
+            log.warn("User {} attempts to acquire nonexistent client", session.getPrincipal().getActingUser(), e);
             return null;
-        }
-
-        if (json == null || !json.has("uid")) {
-            log.error("Corpora for project {} and id {} wasn't created; payload {}", projectId, corporaId, payload);
-            return null;
-        } else {
-            String corpusId = json.get("uid").asText();
-            log.info("Corpora {} created for project {}, payload {}", corpusId, projectId, payload);
-            return corpusId;
         }
     }
 
     @Override
-    public boolean bind(@Nonnull String modelId, @Nonnull String corporaId) {
-        return post(AIExportEndpoint.BIND.toPath(projectId, modelId, corporaId), "{}", (resp) -> {
-            if (!resp.isSuccessful()) {
-                log.error("Failed to bind model {} with corpora {} for project {}, url {}, code {} and reason {}",
-                        modelId, corporaId, projectId, url, resp.code(), resp.message());
+    public boolean isAvailable(CoreSession session) {
+        return getClient(session) != null;
+    }
+
+    @Override
+    public String initExport(CoreSession session, @Nullable String corporaId, CorporaParameters parameters) {
+        try {
+            InsightClient client = getClient(session);
+            return client == null ?
+                    null :
+                    client.api(API.Export.INIT).call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
+        } catch (IOException e) {
+            log.error("User {} failed to initialize export", session.getPrincipal().getActingUser(), e);
+            return null;
+        }
+    }
+
+    @Override
+    public boolean bind(CoreSession session, @Nonnull String modelId, @Nonnull String corporaId) {
+        try {
+            Map<String, Serializable> params = new HashMap<>();
+            params.put(MODEL_ID_PARAM, modelId);
+            params.put(CORPORA_ID_PARAM, corporaId);
+            InsightClient client = getClient(session);
+            if (client == null) {
                 return false;
             }
 
-            return true;
-        });
+            return Boolean.TRUE.equals(client.api(API.Export.BIND).call(params));
+        } catch (IOException e) {
+            CloudConfigDescriptor config = getCloudConfig();
+            log.error("User {} failed to bind model {} with corpora {} for project {}, url {}",
+                    session.getPrincipal().getActingUser(), modelId, corporaId, config.projectId, config.url, e);
+            return false;
+        }
     }
 
     @Override
-    public boolean notifyOnExportDone(String exportId) {
-        return post(AIExportEndpoint.DONE.toPath(projectId, exportId), "{}", Response::code) == OK.getStatusCode();
+    public boolean notifyOnExportDone(CoreSession session, String exportId) {
+        try {
+            InsightClient client = getClient(session);
+            if (client == null) {
+                return false;
+            }
+
+            return Boolean.TRUE.equals(
+                    client.api(API.Export.DONE).call(Collections.singletonMap(EXPORT_ID_PARAM, exportId)));
+        } catch (IOException e) {
+            CloudConfigDescriptor config = getCloudConfig();
+            log.error("User {} failed on Export DONE action: export ID {}; project {}; url {}",
+                    session.getPrincipal().getActingUser(), exportId, config.projectId, config.url, e);
+            return false;
+        }
     }
 
     @Override
@@ -230,13 +283,15 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         } else if (statsData == null || statsData.getLength() == 0) {
             log.error("Job/Command: {} has no statistics data.", jobId);
         } else {
+            CoreSession session = dataset.getCoreSession();
+            InsightClient client = getClient(session);
+            if (client == null) {
+                return null;
+            }
+
             try {
                 DateTime start = DateTime.now();
-
-                BatchUpload batchUpload = getClient().batchUploadManager()
-                                                     .createBatch()
-                                                     .enableChunk()
-                                                     .chunkSize(1024 * 1024 * 100);
+                BatchUpload batchUpload = client.getBatchUpload(1024 * 1024 * 100);
 
                 String batch1 = batchUpload.getBatchId();
 
@@ -251,14 +306,14 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                         trainingDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("0", trainingDataBlob);
 
-                batchUpload = getClient().batchUploadManager().createBatch().enableChunk().chunkSize(CHUNK_100_MB);
+                batchUpload = client.getBatchUpload(CHUNK_100_MB);
 
                 String batch2 = batchUpload.getBatchId();
 
                 log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / (1024 * 1024));
                 batchUpload.upload("1", evalDataBlob);
 
-                batchUpload = getClient().batchUploadManager().createBatch().enableChunk().chunkSize(CHUNK_100_MB);
+                batchUpload = client.getBatchUpload(CHUNK_100_MB);
 
                 String batch3 = batchUpload.getBatchId();
 
@@ -269,50 +324,30 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
                 AICorpus corpus = createCorpus(dataset, batch1, batch2, batch3, start, end);
                 String corporaId = (String) dataset.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
-                return uploadDataset(corpus, corporaId);
+                return uploadDataset(session, corpus, corporaId);
             } catch (NuxeoClientException e) {
-                log.error("Failed to upload dataset. ", e);
+                log.error("User {} failed to upload dataset. ", session.getPrincipal().getActingUser(), e);
             }
         }
         return null;
     }
 
-    protected String uploadDataset(AICorpus corpus, String corporaId) {
-        try {
-            String payload;
-            try (StringWriter writer = new StringWriter()) {
-                MAPPER.writeValue(writer, corpus);
-                payload = writer.toString();
-            }
-
-            log.info("Creating dataset document");
-
-            String url = AIExportEndpoint.ATTACH.toPath(projectId, corporaId);
-            JsonNode node = post(url, payload, (resp) -> {
-                if (!resp.isSuccessful()) {
-                    log.error(
-                            "Failed to create/upload the corpus dataset to project {}, payload {}, url {}, code {} and reason {}",
-                            projectId, payload, url, resp.code(), resp.message());
-                    return null;
-                }
-                return resp.body() != null ? MAPPER.readTree(resp.body().byteStream()) : null;
-            });
-
-            if (node == null || !node.has("uid")) {
-                log.error("Failed to create/upload the corpus dataset to project {}, payload {} and response {}",
-                        projectId, payload, node);
-                return null;
-            } else {
-                String corpusId = node.get("uid").toString();
-                log.info("Corpus {} added to project {}, payload {}", corpusId, projectId, payload);
-                return corpusId;
-            }
-
-        } catch (IOException e) {
-            log.error("Failed to process corpus dataset. ", e);
+    @Nullable
+    protected String uploadDataset(CoreSession session, AICorpus corpus, String corporaId) {
+        InsightClient client = getClient(session);
+        if (client == null) {
+            return null;
         }
 
-        return null;
+        try {
+            log.info("Creating dataset document");
+            Map<String, Serializable> params = new HashMap<>();
+            params.put(CORPORA_ID_PARAM, corporaId);
+            return client.api(API.Export.ATTACH).call(params, corpus);
+        } catch (IOException e) {
+            log.error("User {}, failed to process corpus dataset. ", session.getPrincipal().getActingUser(), e);
+            return null;
+        }
     }
 
     @Nonnull
@@ -342,129 +377,111 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         fields.addAll(outputs);
 
         String title = makeTitle(trainingCount, evalCount, jobId, fields.size());
-        Properties props = new Properties.Builder().setTitle(title)
-                                                   .setDocCount(trainingCount)
-                                                   .setEvaluationDocCount(evalCount)
-                                                   .setQuery(query)
-                                                   .setSplit(split)
-                                                   .setFields(fields)
-                                                   .setTrainData(new AICorpus.Batch("0", batch1))
-                                                   .setEvalData(new AICorpus.Batch("1", batch2))
-                                                   .setStats(new AICorpus.Batch("2", batch3))
-                                                   .setInfo(new AICorpus.Info(dateFormat.format(start.toDate()),
-                                                           dateFormat.format(end.toDate())))
-                                                   .setJobId(jobId)
-                                                   .setBatchId(batchId)
-                                                   .build();
+        AICorpus.Properties props = new AICorpus.Properties.Builder().setTitle(title)
+                                                                     .setDocCount(trainingCount)
+                                                                     .setEvaluationDocCount(evalCount)
+                                                                     .setQuery(query)
+                                                                     .setSplit(split)
+                                                                     .setFields(fields)
+                                                                     .setTrainData(new AICorpus.Batch("0", batch1))
+                                                                     .setEvalData(new AICorpus.Batch("1", batch2))
+                                                                     .setStats(new AICorpus.Batch("2", batch3))
+                                                                     .setInfo(new AICorpus.Info(
+                                                                             dateFormat.format(start.toDate()),
+                                                                             dateFormat.format(end.toDate())))
+                                                                     .setJobId(jobId)
+                                                                     .setBatchId(batchId)
+                                                                     .build();
 
         return new AICorpus(jobId, props);
     }
 
+    @Nullable
     @Override
-    public JSONBlob getAllModels() throws IOException {
-        return getModels("models?properties=ai_model");
-    }
-
-    @Override
-    public JSONBlob getModelsByDatasource() throws IOException {
-        return getModels("models?properties=ai_model&datasource=" + datasource);
-    }
-
-    @Override
-    public JSONBlob getPublishedModels() throws IOException {
-        return getModels("models?properties=ai_model&publishState=published&label=" + datasource);
-    }
-
-    protected JSONBlob getModels(String parameters) throws IOException {
-        if (!isReady()) {
-            log.warn("Attempting to use Insight Client before initialization");
-            return new JSONBlob("{}");
+    public String predict(CoreSession session, String modelName, TensorInstances instances) throws IOException {
+        InsightClient client = getClient(session);
+        if (client == null) {
+            return null;
         }
 
-        Path modelsPath = Paths.get(getApiUrl(), API_AI, projectId, parameters);
-        Response response = getClient().get(modelsPath.toString());
-        if (response.body() == null) {
-            log.warn("Could not resolve any AI Models");
-            return new JSONBlob("{}");
-        }
-
-        String body = response.body().string();
-        return new JSONBlob(body);
+        Map<String, Serializable> params = new HashMap<>();
+        params.put(MODEL_NAME_PARAM, modelName);
+        params.put(DATASOURCE_PARAM, client.getConfiguration().getDatasource());
+        return client.api(API.Model.PREDICT).call(params, instances);
     }
 
-    protected boolean isReady() {
-        return StringUtils.isNoneEmpty(projectId, datasource, url);
+    @Override
+    public JSONBlob getAllModels(CoreSession session) throws IOException {
+        return getModels(session, API.Model.ALL, Collections.emptyMap());
+    }
+
+    @Override
+    public JSONBlob getModelsByDatasource(CoreSession session) throws IOException {
+        return getModels(session, API.Model.BY_DATASOURCE, Collections.emptyMap());
+    }
+
+    @Override
+    public JSONBlob getPublishedModels(CoreSession session) throws IOException {
+        InsightClient client = getClient(session);
+        if (client == null) {
+            return EMPTY_JSON_BLOB;
+        }
+
+        String datasource = null;
+        if (getClient(session) != null) {
+            datasource = client.getConfiguration().getDatasource();
+        }
+        return getModels(session, API.Model.PUBLISHED, Collections.singletonMap(LABEL_PARAM, datasource));
+    }
+
+    protected JSONBlob getModels(CoreSession session, API.Model endpoint, Map<String, Serializable> params)
+            throws IOException {
+        InsightClient client = getClient(session);
+        if (client == null) {
+            return EMPTY_JSON_BLOB;
+        }
+
+        String response = client.api(endpoint).call(params);
+        if (response != null) {
+            return new JSONBlob(response);
+        } else {
+            return EMPTY_JSON_BLOB;
+        }
     }
 
     @Nullable
     @Override
-    public JSONBlob getCorpusDelta(String modelId) throws IOException {
+    public JSONBlob getCorpusDelta(CoreSession session, String modelId) throws IOException {
         if (StringUtils.isEmpty(modelId)) {
             throw new NuxeoException("Model Id cannot be empty");
         }
 
-        Path path = Paths.get(getApiUrl(), API_AI, projectId, "model", modelId, "corpusdelta");
-        Response response = getClient().get(path.toString());
-        if (!response.isSuccessful()) {
-            log.error("Failed to obtain Corpus delta of {}. Status code {}", modelId, response.code());
-            return null;
+        InsightClient client = getClient(session);
+        if (client == null) {
+            return EMPTY_JSON_BLOB;
         }
 
-        if (response.body() == null) {
+        String response = client.api(API.Model.DELTA).call(Collections.singletonMap(MODEL_ID_PARAM, modelId));
+        if (StringUtils.isEmpty(response)) {
             log.warn("Corpus Delta is empty; Model Id {}", modelId);
             return null;
         }
-
-        String body = response.body().string();
-        return new JSONBlob(body);
+        return new JSONBlob(response);
     }
 
     @Override
-    public <T> T post(String postUrl, String jsonBody, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().post(getApiUrl() + postUrl, jsonBody), handler);
-    }
-
-    @Override
-    public <T> T put(String putUrl, String jsonBody, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().put(getApiUrl() + putUrl, jsonBody), handler);
-    }
-
-    @Override
-    public <T> T get(String url, ResponseHandler<T> handler) {
-        return callCloud(() -> getClient().get(getApiUrl() + url), handler);
-    }
-
-    @Override
-    public <T> T getByProject(String url, ResponseHandler<T> handler) {
-        return get(API_AI + byProjectId(url), handler);
-    }
-
-    public <T> T callCloud(Supplier<Response> caller, ResponseHandler<T> handler) {
-        Response response = null;
-        try {
-            if (isAvailable()) {
-                response = caller.get();
-                if (response != null && handler != null) {
-                    return handler.handleResponse(response);
-                }
-            } else {
-                log.warn("Nuxeo cloud client is not configured or unavailable.");
-            }
-        } catch (IllegalArgumentException iae) {
-            log.warn("IllegalArgumentException exception: ", iae);
-        } catch (IOException e) {
-            log.warn("IOException exception: ", e);
-        } finally {
-            if (response != null && response.body() != null) {
-                response.body().close();
-            }
+    public <T> T getByProject(CoreSession session, String url, ResponseHandler<T> handler) {
+        InsightClient client = getClient(session);
+        if (client == null) {
+            return null;
         }
-        return null;
+
+        return client.get(API_AI + byProjectId(url), handler);
     }
 
     @Override
     public String byProjectId(String url) {
-        return projectId + url;
+        return getCloudConfig().projectId + url;
     }
 
     @Override
@@ -480,51 +497,11 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         return null;
     }
 
-    protected String getApiUrl() {
-        return url + API_PATH;
-    }
-
     /**
      * Generate a title for the dataset.
      */
     protected String makeTitle(long trainingCount, long evalCount, String suffix, int numberOfFields) {
         return String.format("%s features, %s Training, %s Evaluation, Export id %s", numberOfFields, trainingCount,
                 evalCount, suffix);
-    }
-
-    enum AIExportEndpoint {
-        INIT, BIND, ATTACH, DONE;
-
-        /**
-         * Resolve path based on
-         *
-         * @param project Id of a client
-         * @param id      of a document
-         * @return {@link String} as uri
-         */
-        public String toPath(@Nonnull String project, String id) {
-            switch (this) {
-            case INIT:
-                return API_EXPORT_AI + "init/" + project + "?corpora=" + id;
-            case ATTACH:
-                return API_EXPORT_AI + "attach/" + project + "/" + id;
-            case DONE:
-                return API_EXPORT_AI + "done/" + project + "/" + id;
-            default:
-                return null;
-            }
-        }
-
-        /**
-         * Resolve path between
-         *
-         * @param project   Id of a client
-         * @param modelId   of AI_Model
-         * @param corporaId of AI_Corpora
-         * @return {@link String} as uri
-         */
-        public String toPath(@Nonnull String project, @Nonnull String modelId, @Nonnull String corporaId) {
-            return API_EXPORT_AI + "bind/" + project + "?modelId=" + modelId + "&corporaId=" + corporaId;
-        }
     }
 }

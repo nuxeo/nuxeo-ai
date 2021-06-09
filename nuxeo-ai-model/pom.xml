@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>2.5.10-SNAPSHOT</version>
+    <version>2.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-model</artifactId>
   <name>Ai custom models</name>
@@ -17,9 +17,16 @@
       <artifactId>nuxeo-ai-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>insight-rest-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>insight-rest-objects</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.client</groupId>
       <artifactId>nuxeo-java-client</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.elasticsearch</groupId>
@@ -76,8 +83,24 @@
       <artifactId>nuxeo-platform-types-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.ecm.platform</groupId>
+      <artifactId>nuxeo-platform-web-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ecm.platform</groupId>
+      <artifactId>nuxeo-platform-query-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ecm.platform</groupId>
+      <artifactId>nuxeo-platform-directory-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.runtime</groupId>
       <artifactId>nuxeo-runtime</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-jwt-authenticator-core</artifactId>
     </dependency>
 
     <!-- test scope -->
@@ -85,6 +108,11 @@
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-core</artifactId>
       <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ecm.platform</groupId>
+      <artifactId>nuxeo-platform-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

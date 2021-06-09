@@ -77,7 +77,8 @@ import static org.nuxeo.ecm.core.io.registry.context.RenderingContext.CtxBuilder
  * Tests the overall Model Serving
  */
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreIOFeature.class })
+@Features({EnrichmentTestFeature.class, PlatformFeature.class, CoreIOFeature.class})
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml")
