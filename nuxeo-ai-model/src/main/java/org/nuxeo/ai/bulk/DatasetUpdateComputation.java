@@ -19,26 +19,11 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.bulk.BulkDatasetExportAction.TRAINING_COMPUTATION;
-import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
-import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.export.DatasetExportService;
-import org.nuxeo.ai.pipes.types.ExportStatus;
 import org.nuxeo.ai.pipes.types.ExportRecord;
+import org.nuxeo.ai.pipes.types.ExportStatus;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -51,6 +36,21 @@ import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
+import static org.nuxeo.ai.bulk.BulkDatasetExportAction.TRAINING_COMPUTATION;
+import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
+import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
+import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
 
 /**
  * Fetches and Updates a Dataset related to received batch
@@ -109,12 +109,10 @@ public class DatasetUpdateComputation extends AbstractComputation {
                 }
             }
 
-            ExportStatus eb = new ExportStatus();
-            eb.setId(export.getId());
-            eb.setCommandId(commandId);
+            long processed = counters.get(export.getId());
+            long errored = errors.computeIfAbsent(export.getId(), (key) -> 0L);
+            ExportStatus eb = ExportStatus.of(commandId, export.getId(), processed, errored);
             eb.setTraining(export.isTraining());
-            eb.setProcessed(counters.get(export.getId()));
-            eb.setErrored(errors.computeIfAbsent(export.getId(), (key) -> 0L));
 
             ctx.produceRecord(OUTPUT_1, commandId, getAvroCodec(ExportStatus.class).encode(eb));
 

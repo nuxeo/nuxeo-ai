@@ -7,3 +7,4 @@ Bundle-Name: ai-core-internal
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.nuxeo.ai.ai-internal;singleton=true
 Nuxeo-Component: OSGI-INF/operations-contrib.xml,
+ OSGI-INF/override-file-doctype.xml

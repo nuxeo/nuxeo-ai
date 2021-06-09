@@ -19,32 +19,12 @@
  */
 package org.nuxeo.ai.listeners;
 
-import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
-import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
-import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
-import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
-import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.export.CorpusDelta;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.utils.DateUtils;
-import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModelList;
@@ -62,18 +42,31 @@ import org.nuxeo.ecm.core.query.sql.model.SQLQuery;
 import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.runtime.api.Framework;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
+import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
+
 /**
  * Asynchronous listener acting upon `startContinuousExport` event Performs REST Calls via {@link CloudClient} to obtain
  * all AI models and their corpora. The processing includes NXQL query modification for excluding previously exported
  * documents {@link DatasetExportService} will be called if and only if minimum documents were found in the repository
  */
 public class ContinuousExportListener implements PostCommitEventListener {
-
-    private static final Logger log = LogManager.getLogger(ContinuousExportListener.class);
-
-    private static final String IS_VERSION_PROP = "ecm:isVersion";
-
-    protected static final String DEFAULT_REPO = "default";
 
     public static final String ENTRIES_KEY = "entries";
 
@@ -83,8 +76,26 @@ public class ContinuousExportListener implements PostCommitEventListener {
 
     public static final String NUXEO_AI_CONTINUOUS_EXPORT_ENABLE = "nuxeo.ai.continuous.export.enable";
 
+    protected static final String DEFAULT_REPO = "default";
+
+    private static final Logger log = LogManager.getLogger(ContinuousExportListener.class);
+
+    private static final String IS_VERSION_PROP = "ecm:isVersion";
+
     private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ,
             new IntegerLiteral(0));
+
+    public static String getRepositoryName(EventBundle eb) {
+        Optional<Event> event = StreamSupport.stream(eb.spliterator(), false)
+                                             .filter(e -> Objects.nonNull(e.getContext()))
+                                             .findFirst();
+
+        String repository = DEFAULT_REPO;
+        if (event.isPresent()) {
+            repository = event.get().getContext().getRepositoryName();
+        }
+        return repository;
+    }
 
     @Override
     public void handleEvent(EventBundle eb) {
@@ -100,14 +111,12 @@ public class ContinuousExportListener implements PostCommitEventListener {
         }
 
         CloudClient client = Framework.getService(CloudClient.class);
-
-        List<String> uids = getModelIds(client);
+        String repository = getRepositoryName(eb);
+        List<String> uids = getModelIds(client, repository);
         if (uids.isEmpty()) {
             log.info("Models listing for export is empty");
             return;
         }
-
-        String repository = getRepositoryName(eb);
         initiateExport(client, uids, repository);
     }
 
@@ -115,9 +124,10 @@ public class ContinuousExportListener implements PostCommitEventListener {
      * @param client {@link CloudClient} Nuxeo Insight Cloud Client for REST communication
      * @return A {@link List} of AI_Model ids
      */
-    protected List<String> getModelIds(CloudClient client) {
+    protected List<String> getModelIds(CloudClient client, String repository) {
         try {
-            JSONBlob models = client.getModelsByDatasource();
+            CoreSession session = CoreInstance.getCoreSessionSystem(repository);
+            JSONBlob models = client.getModelsByDatasource(session);
             @SuppressWarnings("unchecked")
             Map<String, Serializable> resp = MAPPER.readValue(models.getStream(), Map.class);
             if (resp.containsKey(ENTRIES_KEY)) {
@@ -147,7 +157,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
         for (String uid : uids) {
             log.info("Preparing export for model " + uid);
             try {
-                JSONBlob json = client.getCorpusDelta(uid);
+                JSONBlob json = client.getCorpusDelta(session, uid);
                 if (json == null) {
                     continue;
                 }
@@ -200,17 +210,5 @@ public class ContinuousExportListener implements PostCommitEventListener {
     protected boolean checkMinimum(CoreSession session, String query, int min) {
         DocumentModelList list = session.query(query, min);
         return list.size() == min;
-    }
-
-    protected String getRepositoryName(EventBundle eb) {
-        Optional<Event> event = StreamSupport.stream(eb.spliterator(), false)
-                                             .filter(e -> Objects.nonNull(e.getContext()))
-                                             .findFirst();
-
-        String repository = DEFAULT_REPO;
-        if (event.isPresent()) {
-            repository = event.get().getContext().getRepositoryName();
-        }
-        return repository;
     }
 }

@@ -18,19 +18,24 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.auth0.jwt.impl.PublicClaims;
+import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.cloud.CloudConfigDescriptor;
+import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ecm.automation.core.Constants;
+import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.runtime.api.Framework;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Fetching Insight URI for the current Nuxeo instance
@@ -39,6 +44,11 @@ import org.nuxeo.runtime.api.Framework;
 public class FetchInsightURI {
 
     public static final String ID = "AI.FetchInsightURI";
+
+    public static final String PREFIX = "insight";
+
+    @Context
+    protected CoreSession session;
 
     @OperationMethod
     public Blob run() throws IOException {
@@ -50,7 +60,18 @@ public class FetchInsightURI {
         }
         String projectId = cloudConfig.getProjectId();
         String url = cloudConfig.getUrl();
-        String token = cloudConfig.getAuthentication().getToken();
+        JWTKeyService jwt = Framework.getService(JWTKeyService.class);
+        Map<String, Serializable> claims = new HashMap<>();
+        claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
+        String[] groups = session.getPrincipal()
+                                 .getAllGroups()
+                                 .stream()
+                                 .filter(group -> group.startsWith(PREFIX))
+                                 .toArray(String[]::new);
+        if (groups.length > 0) {
+            claims.put(NuxeoClaim.GROUP, groups);
+        }
+        String token = jwt.generateJWT(projectId, claims);
         String urlCore = Framework.getProperty("nuxeo.url");
         return buildResponse(url, token, projectId, urlCore);
     }

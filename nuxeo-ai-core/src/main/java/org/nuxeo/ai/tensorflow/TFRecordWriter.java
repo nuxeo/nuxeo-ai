@@ -19,25 +19,7 @@
  */
 package org.nuxeo.ai.tensorflow;
 
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +27,7 @@ import org.nuxeo.ai.bulk.AbstractRecordWriter;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.pipes.types.ExportRecord;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.tensorflow.ext.TensorflowWriter;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -60,16 +42,33 @@ import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
 
-import com.google.protobuf.ByteString;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 /**
  * Write TFRecords
  */
 public class TFRecordWriter extends AbstractRecordWriter {
 
-    private static final Logger log = LogManager.getLogger(TFRecordWriter.class);
-
     public static final String TFRECORD_MIME_TYPE = "application/x-tensorflow-record";
+
+    private static final Logger log = LogManager.getLogger(TFRecordWriter.class);
 
     protected String imageConversionService;
 

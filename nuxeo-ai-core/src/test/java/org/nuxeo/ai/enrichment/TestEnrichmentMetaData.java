@@ -18,6 +18,30 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.metadata.TagSuggestion;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.runtime.test.runner.Features;
+import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -27,30 +51,6 @@ import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.inject.Inject;
-
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.metadata.TagSuggestion;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.pipes.types.PropertyType;
-import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobMetaImpl;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })
@@ -88,14 +88,19 @@ public class TestEnrichmentMetaData {
                                                   .collect(Collectors.toList());
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
         blobTextFromDoc.addProperty("dc:title", "tbloby");
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test",
-                blobTextFromDoc).withLabels(Collections.singletonList(new LabelSuggestion("my:property", labels)))
-                                .withTags(Collections.singletonList(new TagSuggestion("my:property2", tags)))
-                                .withDigest("blobxx")
-                                .withDigest("freblogs")
-                                .withCreator("bob")
-                                .withRawKey("xyz")
-                                .build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc).withLabels(
+                Collections.singletonList(new LabelSuggestion("my:property", labels)))
+                                                                                                   .withTags(
+                                                                                                           Collections.singletonList(
+                                                                                                                   new TagSuggestion(
+                                                                                                                           "my:property2",
+                                                                                                                           tags)))
+                                                                                                   .withDigest("blobxx")
+                                                                                                   .withDigest(
+                                                                                                           "freblogs")
+                                                                                                   .withCreator("bob")
+                                                                                                   .withRawKey("xyz")
+                                                                                                   .build();
         assertNotNull(metadata);
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);
@@ -120,13 +125,13 @@ public class TestEnrichmentMetaData {
     @Test
     public void testCacheKeys() throws IOException {
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
-        assertNull(EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
-        PropertyType fileContentProp = new PropertyType(FILE_CONTENT, "img");
+        PropertyType fileContentProp = PropertyType.of(FILE_CONTENT, "img");
         blobTextFromDoc.computePropertyBlobs().get(fileContentProp).setDigest("47XX");
         assertEquals("testin47XX", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
         ManagedBlob blob = blobTextFromDoc.computePropertyBlobs().get(fileContentProp);
-        blobTextFromDoc.addBlob("TEST_AGAIN", "img", new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(),
-                blob.getKey(), "58YY", blob.getEncoding(), blob.getLength()));
+        blobTextFromDoc.addBlob("TEST_AGAIN", "img",
+                new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(), blob.getKey(), "58YY", blob.getEncoding(),
+                        blob.getLength()));
         assertEquals("testin47XX_58YY", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
     }
 }

@@ -30,7 +30,7 @@ import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.export.DatasetExportService;
-import org.nuxeo.ai.pipes.types.PropertyType;
+import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -84,9 +84,11 @@ import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
+@Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
+@Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
 public class BulkEnrichmentTest {
 
     public static final int NUM_OF_DOCS = 100;
@@ -303,8 +305,8 @@ public class BulkEnrichmentTest {
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);
 
-        Set<PropertyType> input = Sets.newHashSet(new PropertyType("dc:title", CATEGORY_TYPE));
-        Set<PropertyType> output = Sets.newHashSet(new PropertyType("dc:creator", TEXT_TYPE));
+        Set<PropertyType> input = Sets.newHashSet(PropertyType.of("dc:title", CATEGORY_TYPE));
+        Set<PropertyType> output = Sets.newHashSet(PropertyType.of("dc:creator", TEXT_TYPE));
 
         DatasetExportService exportService = Framework.getService(DatasetExportService.class);
         String commandId = exportService.export(session, nxql, input, output, 60, null);

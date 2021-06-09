@@ -70,13 +70,22 @@ public class AIRoot extends DefaultObject {
 
     private static final Logger log = LogManager.getLogger(AIRoot.class);
 
+    public static final String PROJECT_ID_VAR = "nuxeo.ai.insight.client.projectid";
+
+    public static final String MANAGERS_GROUP_SUFFIX = "-managers";
+
+    public static final String LIBRARIANS_GROUP_SUFFIX = "-librarians";
+
+    public static final String INSIGHT_PREFIX = "insight";
+
     @POST
     @Path("config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setNuxeoConfVars(String conf) throws JsonProcessingException {
         Map<String, String> confMap = MAPPER.readValue(conf, NUXEO_CONF_REF);
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
@@ -113,7 +122,8 @@ public class AIRoot extends DefaultObject {
     public Response setThresholdsFromJSON(String thresholdsJSON) throws JsonProcessingException {
         ThresholdConfiguratorDescriptor thresholds = MAPPER.readValue(thresholdsJSON,
                 ThresholdConfiguratorDescriptor.class);
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
@@ -135,7 +145,8 @@ public class AIRoot extends DefaultObject {
             throw new WebApplicationException(
                     Response.status(Response.Status.BAD_REQUEST).entity("docType parameter is mandatory").build());
         }
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
@@ -154,7 +165,8 @@ public class AIRoot extends DefaultObject {
             throw new WebApplicationException(
                     Response.status(Response.Status.BAD_REQUEST).entity("docType parameter is mandatory").build());
         }
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
@@ -170,7 +182,8 @@ public class AIRoot extends DefaultObject {
     @Path("extension/thresholds")
     @Produces(MediaType.APPLICATION_XML)
     public Response getAllThresholds() {
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
@@ -188,7 +201,8 @@ public class AIRoot extends DefaultObject {
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setModelFromXML(@PathParam("modelId") String modelId, String modelXML) {
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
@@ -224,7 +238,8 @@ public class AIRoot extends DefaultObject {
             throw new WebApplicationException(
                     Response.status(Response.Status.BAD_REQUEST).entity("modelId parameter is mandatory").build());
         }
-        if (!ctx.getPrincipal().isAdministrator()) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {
@@ -243,6 +258,12 @@ public class AIRoot extends DefaultObject {
      */
     @Path("search")
     public Resource getDocumentsToAnnotate() {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
+                                                                                          .isMemberOf(INSIGHT_PREFIX
+                                                                                                  + LIBRARIANS_GROUP_SUFFIX)
+                || ctx.getPrincipal().isAdministrator())) {
+            return null;
+        }
         return ctx.newObject(AISearchObject.TYPE);
     }
 }

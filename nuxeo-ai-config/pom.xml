@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>3.1.4-SNAPSHOT</version>
+    <version>3.2.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-config</artifactId>
   <name>Nuxeo AI Config Module</name>
@@ -32,6 +32,10 @@
     <dependency>
       <groupId>org.nuxeo.elasticsearch</groupId>
       <artifactId>nuxeo-elasticsearch-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
     </dependency>
     <!-- TEST DEPS -->
     <dependency>

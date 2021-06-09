@@ -33,10 +33,14 @@ limitations under the License.
       <template>
         <nuxeo-menu-item name="aicore" label="app.title.admin.aicore" route="administration:aicore">
         </nuxeo-menu-item>
-        <nuxeo-menu-item name="aicloud" label="app.title.admin.aicloud" route="administration:aicloud">
-        </nuxeo-menu-item>
       </template>
     </nuxeo-filter>
+  </template>
+</nuxeo-slot-content>
+<nuxeo-slot-content name="userAIMenuItem" slot="USER_MENU" order="100">
+  <template>
+    <nuxeo-menu-item name="aicloud" label="app.title.admin.aicloud" route="page:aicloud">
+    </nuxeo-menu-item>
   </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="aiadminslot" slot="ADMINISTRATION_PAGES">
@@ -44,9 +48,13 @@ limitations under the License.
     <nuxeo-filter user="[[user]]" expression="user.isAdministrator">
       <template>
         <nuxeo-admin-ai name="aicore"></nuxeo-admin-ai>
-        <nuxeo-admin-insight name="aicloud"></nuxeo-admin-insight>
       </template>
     </nuxeo-filter>
+  </template>
+</nuxeo-slot-content>
+<nuxeo-slot-content name="aiuserlot" slot="PAGES">
+  <template>
+    <nuxeo-admin-insight class="flex" name="aicloud"></nuxeo-admin-insight>
   </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="adminAiExport" slot="AI_ITEMS" order="20">
@@ -178,8 +186,8 @@ limitations under the License.
         const inputs = aiModels.inputs.map(item => item.name);
         const allPresent = inputs.map(item => layout.document.properties[item]).filter(item => item).length === inputs.length;
         if (!allPresent) {
-            // not all inputs required for the AI_Model present in the given Document
-            return;
+          // not all inputs required for the AI_Model present in the given Document
+          return;
         }
         const isModelInput = path && aiModels && inputs.includes(path.replace('document.properties.', ''));
         const noPropertyChanged = !path || 'document.properties'.startsWith(path);
@@ -191,35 +199,35 @@ limitations under the License.
         }
         if (noPropertyChanged || isModelInput) {
           _updateDebouncer = Polymer.Debouncer.debounce(
-            _updateDebouncer, Polymer.Async.timeOut.after(500),
-            () => {
-              _getSuggestions(layout.document).then((response) => {
-                _clearSuggestions(model);
-                response.forEach((service) => {
-                  service.suggestions.forEach((suggestion) => {
-                    const element = model[`document.properties.${suggestion.property}`];
-                    if (element) {
-                      const suggestionWidget = _getSuggestionWidget(element);
-                      if (!suggestionWidget.property) {
-                        // convert path to xpath
-                        suggestionWidget.property = suggestion.property;
+              _updateDebouncer, Polymer.Async.timeOut.after(500),
+              () => {
+                _getSuggestions(layout.document).then((response) => {
+                  _clearSuggestions(model);
+                  response.forEach((service) => {
+                    service.suggestions.forEach((suggestion) => {
+                      const element = model[`document.properties.${suggestion.property}`];
+                      if (element) {
+                        const suggestionWidget = _getSuggestionWidget(element);
+                        if (!suggestionWidget.property) {
+                          // convert path to xpath
+                          suggestionWidget.property = suggestion.property;
+                        }
+                        suggestionWidget.suggestions = suggestion.values;
+                        suggestionWidget.document = layout.document;
+                        // set up binding
+                        if (!suggestionWidget._notifyDocumentChanges) {
+                          suggestionWidget._notifyDocumentChanges = (evt) => {
+                            if ('path' in evt.detail && 'value' in evt.detail) {
+                              layout.notifyPath(evt.detail.path);
+                            }
+                          };
+                          suggestionWidget.addEventListener('document-changed', suggestionWidget._notifyDocumentChanges);
+                        }
                       }
-                      suggestionWidget.suggestions = suggestion.values;
-                      suggestionWidget.document = layout.document;
-                      // set up binding
-                      if (!suggestionWidget._notifyDocumentChanges) {
-                        suggestionWidget._notifyDocumentChanges = (evt) => {
-                          if ('path' in evt.detail && 'value' in evt.detail) {
-                            layout.notifyPath(evt.detail.path);
-                          }
-                        };
-                        suggestionWidget.addEventListener('document-changed', suggestionWidget._notifyDocumentChanges);
-                      }
-                    }
+                    });
                   });
                 });
-              });
-            },
+              },
           );
         }
       },
