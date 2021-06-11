@@ -2,21 +2,21 @@
 
 Currently, provides the following enrichment services:
 
-* aws.imageLabels - Calls AWS Rekognition for object detection in images
-* aws.textSentiment - Call AWS Comprehend for sentiment analysis
-* aws.textKeyphrase - Call AWS Comprehend for keyphrase extraction
-* aws.textEntities - Call AWS Comprehend for entities analysis
-* aws.unsafeImages - Calls AWS Rekognition to detect unsafe images
-* aws.textDetection - Calls AWS Rekognition to detect text in images
-* aws.faceDetection - Calls AWS Rekognition to detect faces in images
-* aws.celebrityDetection - Calls AWS Rekognition to detect celebrity faces in images
-* aws.translate.* - Calls AWS Translate to translate text
-* aws.documentText - Calls AWS Textract to detect text in a document image
-* aws.documentAnalyze - Calls AWS Textract to analyze text that's detected in a document image
-* aws.videoLabels - Calls AWS Rekognition for object detection in videos
-* aws.unsafeVideo - Calls AWS Rekognition to detect unsafe videos
-* aws.videoFaceDetection - Calls AWS Rekognition to detect faces in videos
-* aws.videoCelebrityDetection - Calls AWS Rekognition to detect celebrity faces in videos
+* `aws.imageLabels` - Calls AWS Rekognition for object detection in images
+* `aws.textSentiment` - Call AWS Comprehend for sentiment analysis
+* `aws.textKeyphrase` - Call AWS Comprehend for keyphrase extraction
+* `aws.textEntities` - Call AWS Comprehend for entities analysis
+* `aws.unsafeImages` - Calls AWS Rekognition to detect unsafe images
+* `aws.textDetection` - Calls AWS Rekognition to detect text in images
+* `aws.faceDetection` - Calls AWS Rekognition to detect faces in images
+* `aws.celebrityDetection` - Calls AWS Rekognition to detect celebrity faces in images
+* `aws.translate.*` - Calls AWS Translate to translate text
+* `aws.documentText` - Calls AWS Textract to detect text in a document image
+* `aws.documentAnalyze` - Calls AWS Textract to analyze text that's detected in a document image
+* `aws.videoLabels` - Calls AWS Rekognition for object detection in videos
+* `aws.unsafeVideo` - Calls AWS Rekognition to detect unsafe videos
+* `aws.videoFaceDetection` - Calls AWS Rekognition to detect faces in videos
+* `aws.videoCelebrityDetection` - Calls AWS Rekognition to detect celebrity faces in videos
 
 #### Credentials
 
@@ -178,33 +178,33 @@ You can set these in your `nuxeo.conf`.
 </tr>
 <tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.aws.images`</td>
+<td colspan="1"><code>nuxeo.enrichment.aws.images</code></td>
 <td colspan="1">Run AWS enrichment services on images.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.aws.text`</td>
+<td colspan="1"><code>nuxeo.enrichment.aws.text</code></td>
 <td colspan="1">Run AWS enrichment services on text.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.aws.document.text`</td>
+<td colspan="1"><code>nuxeo.enrichment.aws.document.text</code></td>
 <td colspan="1">Run AWS Textract Detect Document Text API on document images.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 2.1.2</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.aws.document.analyze`</td>
+<td colspan="1"><code>nuxeo.enrichment.aws.document.analyze</code></td>
 <td colspan="1">Run AWS Textract Analyze Document API on document images.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 2.1.2</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.aws.video`</td>
+<td colspan="1"><code>nuxeo.enrichment.aws.video</code></td>
 <td colspan="1">Run AWS enrichment service on video.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 2.2.0</td>
 </tr>
 </tbody>

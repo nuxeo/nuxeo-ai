@@ -4,9 +4,9 @@ Core functionality for using AI with the Nuxeo Platform.
 
 This repository provides 3 packages:
 
-* nuxeo-ai-core - Contains the core interfaces and AI component
-* nuxeo-ai-image-quality - Enrichment services that uses [Sightengine](https://sightengine.com/).
-* nuxeo-ai-aws - Enrichment services that use Amazon Web Services.
+* `nuxeo-ai-core`: Contains the core interfaces and AI component
+* `nuxeo-ai-image-quality`: Enrichment services that uses [Sightengine](https://sightengine.com/).
+* `nuxeo-ai-aws`: Enrichment services that use Amazon Web Services.
 
 ## Installation
 
@@ -37,27 +37,27 @@ You can set these in your `nuxeo.conf`.
 <th width="150" colspan="1">Since</th>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.export.batch.size`</td>
+<td colspan="1"><code>nuxeo.ai.export.batch.size</code></td>
 <td colspan="1">Sets batch size for the TF Record export</td>
-<td colspan="1">`20`</td>
+<td colspan="1"><code>20</code></td>
 <td colspan="1">Since 2.1</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.export.bucket.size`</td>
+<td colspan="1"><code>nuxeo.ai.export.bucket.size</code></td>
 <td colspan="1">Sets bucket size for the TF Record export</td>
-<td colspan="1">`100`</td>
+<td colspan="1"><code>100</code></td>
 <td colspan="1">Since 2.1</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.export.training.batch.size`</td>
+<td colspan="1"><code>nuxeo.ai.export.training.batch.size</code></td>
 <td colspan="1">Sets how many records are getting into the training writer</td>
-<td colspan="1">`200`</td>
+<td colspan="1"><code>200</code></td>
 <td colspan="1">Since 2.1</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.export.validation.batch.size`</td>
+<td colspan="1"><code>nuxeo.ai.export.validation.batch.size</code></td>
 <td colspan="1">Sets how many records are getting into the validation writer</td>
-<td colspan="1">`100`</td>
+<td colspan="1"><code>100</code></td>
 <td colspan="1">Since 2.1</td>
 </tr>
 </tbody>
@@ -167,81 +167,81 @@ You can set these in your `nuxeo.conf`.
 <th width="150" colspan="1">Since</th>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.export.min.docs`</td>
+<td colspan="1"><code>nuxeo.ai.export.min.docs</code></td>
 <td colspan="1">Set minimum amount of documents required for continues expoort</td>
-<td colspan="1">`10`</td>
+<td colspan="1"><code>10</code></td>
 <td colspan="1">Since 2.1</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.images.enabled`</td>
+<td colspan="1"><code>nuxeo.ai.images.enabled</code></td>
 <td colspan="1">Create a stream for creation/modification of images.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.video.enabled`</td>
+<td colspan="1"><code>nuxeo.ai.video.enabled</code></td>
 <td colspan="1">Create a stream for creation/modification of video files.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.audio.enabled`</td>
+<td colspan="1"><code>nuxeo.ai.audio.enabled</code></td>
 <td colspan="1">Create a stream for creation/modification of audio files.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.text.enabled`</td>
+<td colspan="1"><code>nuxeo.ai.text.enabled</code></td>
 <td colspan="1">Create a stream for text extracted from blobs.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.stream.config.name`</td>
+<td colspan="1"><code>nuxeo.ai.stream.config.name</code></td>
 <td colspan="1">The name of the stream log config</td>
-<td colspan="1">`pipes`</td>
+<td colspan="1"><code>pipes</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.source.stream`</td>
+<td colspan="1"><code>nuxeo.enrichment.source.stream</code></td>
 <td colspan="1">The name of the stream that receives Enrichment data</td>
-<td colspan="1">`ai/enrichment-in`</td>
+<td colspan="1"><code>ai/enrichment-in</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.save.tags`</td>
+<td colspan="1"><code>nuxeo.enrichment.save.tags</code></td>
 <td colspan="1">Should enrichment labels be saved as a standard Nuxeo tags?</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.save.facets`</td>
+<td colspan="1"><code>nuxeo.enrichment.save.facets</code></td>
 <td colspan="1">Should enrichment data be saved as a document facet?</td>
-<td colspan="1">`true`</td>
+<td colspan="1"><code>true</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.raiseEvent`</td>
+<td colspan="1"><code>nuxeo.enrichment.raiseEvent</code></td>
 <td colspan="1">Should an `enrichmentMetadataCreated` event be raised when new enrichment data is added to the stream?</td>
-<td colspan="1">`true`</td>
+<td colspan="1"><code>true</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.default.threshold`</td>
+<td colspan="1"><code>nuxeo.ai.default.threshold</code></td>
 <td colspan="1">Default Threshold value. Should be a float type between 0.0 and 1.0</td>
-<td colspan="1">`0.75`</td>
+<td colspan="1"><code>0.75</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.autofill.default.threshold`</td>
+<td colspan="1"><code>nuxeo.ai.autofill.default.threshold</code></td>
 <td colspan="1">Default Threshold value for autofill. Should be a float type between 0.0 and 1.0</td>
-<td colspan="1">`0.75`</td>
+<td colspan="1"><code>0.75</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.autocorrect.default.threshold`</td>
+<td colspan="1"><code>nuxeo.ai.autocorrect.default.threshold</code></td>
 <td colspan="1">Default Threshold value for autocorrect. Should be a float type between 0.0 and 1.0</td>
-<td colspan="1">`0.75`</td>
+<td colspan="1"><code>0.75</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 </tbody>
@@ -269,17 +269,18 @@ Nuxeo AI Core provides 3 Java modules:
 * Provides a `ThresholdComponents` to register type/facet based thresholds.
 
  ```xml
+
 <extension target="org.nuxeo.ai.configuration.ThresholdComponent"
-             point="thresholdConfiguration">
-    <thresholdConfiguration type="Document"
-                            global="0.8">
-      <thresholds>
-        <threshold xpath="dc:title"
-                   value="0.6"
-                   autofill="0.65"
-                   autocorrect="0.70"/>
-      </thresholds>
-    </thresholdConfiguration>
+           point="thresholdConfiguration">
+  <thresholdConfiguration type="Document"
+                          global="0.8">
+    <thresholds>
+      <threshold xpath="dc:title"
+                 value="0.6"
+                 autofill="0.65"
+                 autocorrect="0.70"/>
+    </thresholds>
+  </thresholdConfiguration>
 </extension>
 ```
 
@@ -351,18 +352,19 @@ Using an Nuxeo extension you can dynamically register a pipeline for any custom 
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
 
 ```xml
-  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
-    <pipe id="pipe.mypipe" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
-      <supplier>
-        <event name="MY_EVENT">
-          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
-        </event>
-      </supplier>
-      <consumer>
-        <stream name="mystream" />
-      </consumer>
-    </pipe>
-  </extension>
+
+<extension point="pipes" target="org.nuxeo.ai.Pipeline">
+  <pipe id="pipe.mypipe" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
+    <supplier>
+      <event name="MY_EVENT">
+        <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+      </event>
+    </supplier>
+    <consumer>
+      <stream name="mystream"/>
+    </consumer>
+  </pipe>
+</extension>
 ```
 
 Transforming an input Event into an output stream is done using a function specified by the `function` parameter.
@@ -381,12 +383,13 @@ various `RestClient`
 helper methods. To register your extension you would use configuration similar to this.
 
  ```xml
-  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="custom1" kind="/classification/custom"
-                class="org.nuxeo.ai.custom.CustomModelEnrichmentProvider" maxSize="10000000">
-      <option name="minConfidence">0.75</option>
-    </enrichment>
-  </extension>
+
+<extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+  <enrichment name="custom1" kind="/classification/custom"
+              class="org.nuxeo.ai.custom.CustomModelEnrichmentProvider" maxSize="10000000">
+    <option name="minConfidence">0.75</option>
+  </enrichment>
+</extension>
 ```
 
 ##### Functions
@@ -409,12 +412,13 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 the `class` parameter as shown below.
 
 ```xml
+
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-<streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="4"
-               class="org.nuxeo.my.custom.StreamProcessor">
- <option name="source">ai/mystream</option>
- <option name="sink">ai/mystream-out</option>
-</streamProcessor>
+  <streamProcessor name="basicProcessor" defaultConcurrency="1" defaultPartitions="4"
+                   class="org.nuxeo.my.custom.StreamProcessor">
+    <option name="source">ai/mystream</option>
+    <option name="sink">ai/mystream-out</option>
+  </streamProcessor>
 </extension>
 ```
 
@@ -425,13 +429,14 @@ example, the following configuration would register a stream processor that acts
 runs the `custom1` enrichment service on each record and sends the result to the `ai/enrichment-in` stream.
 
 ```xml
+
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-<streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"
-                 class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-  <option name="source">ai/images</option>
-  <option name="sink">ai/enrichment-in</option>
-  <option name="enrichmentProviderName">custom1</option>
-</streamProcessor>
+  <streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"
+                   class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+    <option name="source">ai/images</option>
+    <option name="sink">ai/enrichment-in</option>
+    <option name="enrichmentProviderName">custom1</option>
+  </streamProcessor>
 </extension>
 ```
 
@@ -442,20 +447,20 @@ standard [Nuxeo Metrics reporting](https://doc.nuxeo.com/nxdoc/metrics-and-monit
 
 | Metric name | Metric
 | --- | --- |
-|nuxeo.ai.streams.[eventListener].events| Count of events received.|
-|nuxeo.ai.streams.[eventListener].consumed| Count of events that matched the filter condition and were processed.|
-| nuxeo.ai.enrichment.[enrichmentProvider].called| Count of stream records received. |
-| nuxeo.ai.enrichment.[enrichmentProvider].errors| Count of errors.|
-| nuxeo.ai.enrichment.[enrichmentProvider].produced| How many records were produced after calling the service.|
-| nuxeo.ai.enrichment.[enrichmentProvider].retries| Count of retries.|
-| nuxeo.ai.enrichment.[enrichmentProvider].cacheHit| Count of times the result was returned from the cache rather than calling the enrichment service.|
-| nuxeo.ai.enrichment.[enrichmentProvider].unsupported| Count of unprocessable records, perhaps due to mime-type or size.|
-| nuxeo.ai.enrichment.[enrichmentProvider].success| Count of successful calls.|
-| nuxeo.ai.enrichment.[enrichmentProvider].circuitbreaker| Incremented when the circuilt breaker is open, stopping the stream from any more processing.|
-| nuxeo.ai.enrichment.[enrichmentProvider].fatal| Incremented when a fatal error occurs stopping the stream from any more processing.|
-| nuxeo.ai.streams.func.[functionName].called| Count of stream records received.|
-| nuxeo.ai.streams.func.[functionName].errors| Count of errors.|
-| nuxeo.ai.streams.func.[functionName].produced| How many records were produced by the function.|
+|`nuxeo.ai.streams.[eventListener].events`| Count of events received.|
+|`nuxeo.ai.streams.[eventListener].consumed`| Count of events that matched the filter condition and were processed.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].called`| Count of stream records received. |
+| `nuxeo.ai.enrichment.[enrichmentProvider].errors`| Count of errors.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].produced`| How many records were produced after calling the service.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].retries`| Count of retries.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].cacheHit`| Count of times the result was returned from the cache rather than calling the enrichment service.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].unsupported`| Count of unprocessable records, perhaps due to mime-type or size.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].success`| Count of successful calls.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].circuitbreaker`| Incremented when the circuilt breaker is open, stopping the stream from any more processing.|
+| `nuxeo.ai.enrichment.[enrichmentProvider].fatal`| Incremented when a fatal error occurs stopping the stream from any more processing.|
+| `nuxeo.ai.streams.func.[functionName].called`| Count of stream records received.|
+| `nuxeo.ai.streams.func.[functionName].errors`| Count of errors.|
+| `nuxeo.ai.streams.func.[functionName].produced`| How many records were produced by the function.|
 
 ### Notes
 
@@ -467,19 +472,21 @@ standard [Nuxeo Metrics reporting](https://doc.nuxeo.com/nxdoc/metrics-and-monit
 Edit `$NUXEO_HOME/lib/log4j2.xml`, in the `<Appenders>` section, add a `AI-FILE` appender:
 
 ```xml
+
 <RollingFile name="AI-FILE" fileName="${sys:nuxeo.log.dir}/nuxeo-ai.log"
              filePattern="${sys:nuxeo.log.dir}/nuxeo-ai-%d{yyyy-MM-dd}.log.gz" append="true">
-  <PatternLayout pattern="%d{ISO8601} %-5p [%t] [%c] %m%n" />
-  <CronTriggeringPolicy schedule="0 0 0 * * ?" evaluateOnStartup="true" /> <!-- Rollover at midnight every day -->
-  <DefaultRolloverStrategy />
+  <PatternLayout pattern="%d{ISO8601} %-5p [%t] [%c] %m%n"/>
+  <CronTriggeringPolicy schedule="0 0 0 * * ?" evaluateOnStartup="true"/> <!-- Rollover at midnight every day -->
+  <DefaultRolloverStrategy/>
 </RollingFile>
 ```
 
 Then in the `<Loggers>` section, add a logger pointing to the `AI-FILE` appender:
 
 ```xml
+
 <Logger name="org.nuxeo.ai" level="debug">
-  <AppenderRef ref="AI-FILE" />
+  <AppenderRef ref="AI-FILE"/>
 </Logger>
 ```
 
