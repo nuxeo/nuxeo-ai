@@ -28,18 +28,18 @@ limitations under the License.
   </template>
 
   <script>
-    {
-      class DirectoryAISuggestionFormatter extends Polymer.mixinBehaviors(
-        [Nuxeo.FormatBehavior],
-        Nuxeo.AISuggestionMixin(Nuxeo.Element),
-      ) {
-        static get is() {
-          return 'nuxeo-directory-ai-suggestion-formatter';
-        }
-      }
+      {
+          class DirectoryAISuggestionFormatter extends Polymer.mixinBehaviors(
+              [Nuxeo.FormatBehavior],
+              Nuxeo.AISuggestionMixin(Nuxeo.Element),
+          ) {
+              static get is() {
+                  return 'nuxeo-directory-ai-suggestion-formatter';
+              }
+          }
 
-      customElements.define(DirectoryAISuggestionFormatter.is, DirectoryAISuggestionFormatter);
-      Nuxeo.DirectoryAISuggestionFormatter = DirectoryAISuggestionFormatter;
-    }
+          customElements.define(DirectoryAISuggestionFormatter.is, DirectoryAISuggestionFormatter);
+          Nuxeo.DirectoryAISuggestionFormatter = DirectoryAISuggestionFormatter;
+      }
   </script>
 </dom-module>

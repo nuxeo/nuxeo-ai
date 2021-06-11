@@ -22,26 +22,28 @@ limitations under the License.
   <template>
 
     <style>
-      :host {
-        @apply --shadow-elevation-2dp;
-        @apply --layout-vertical;
-        background: var(--nuxeo-box);
-        overflow: hidden;
-        user-select: text;
-      }
-      #close {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        padding: 10px;
-        width: 32px;
-        height: 32px;
-      }
-      #container {
-        padding: 12px;
-        overflow: auto;
-        cursor: auto;
-      }
+        :host {
+            @apply --shadow-elevation-2dp;
+            @apply --layout-vertical;
+            background: var(--nuxeo-box);
+            overflow: hidden;
+            user-select: text;
+        }
+
+        #close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 10px;
+            width: 32px;
+            height: 32px;
+        }
+
+        #container {
+            padding: 12px;
+            overflow: auto;
+            cursor: auto;
+        }
     </style>
     <div id="container">
       <slot></slot>
@@ -51,61 +53,61 @@ limitations under the License.
   </template>
 
   <script>
-    {
-      class DocumentAISuggestionDetails extends Polymer.mixinBehaviors(
-        [Polymer.IronOverlayBehavior, Polymer.NeonAnimationRunnerBehavior],
-        Nuxeo.AISuggestionMixin(Nuxeo.Element),
-      ) {
-        static get is() {
-          return 'nuxeo-document-ai-suggestion-details';
-        }
+      {
+          class DocumentAISuggestionDetails extends Polymer.mixinBehaviors(
+              [Polymer.IronOverlayBehavior, Polymer.NeonAnimationRunnerBehavior],
+              Nuxeo.AISuggestionMixin(Nuxeo.Element),
+          ) {
+              static get is() {
+                  return 'nuxeo-document-ai-suggestion-details';
+              }
 
-        ready() {
-          super.ready();
-          this.addEventListener('click', (e) => e.stopPropagation());
-        }
+              ready() {
+                  super.ready();
+                  this.addEventListener('click', (e) => e.stopPropagation());
+              }
 
-        connectedCallback() {
-          super.connectedCallback();
-          this.addEventListener('neon-animation-finish', this._onNeonAnimationFinish);
-        }
+              connectedCallback() {
+                  super.connectedCallback();
+                  this.addEventListener('neon-animation-finish', this._onNeonAnimationFinish);
+              }
 
-        disconnectedCallback() {
-          super.disconnectedCallback();
-          this.removeEventListener('neon-animation-finish', this._onNeonAnimationFinish);
-        }
+              disconnectedCallback() {
+                  super.disconnectedCallback();
+                  this.removeEventListener('neon-animation-finish', this._onNeonAnimationFinish);
+              }
 
-        _renderOpened() {
-          this.cancelAnimation();
-          this.playAnimation('entry');
-        }
+              _renderOpened() {
+                  this.cancelAnimation();
+                  this.playAnimation('entry');
+              }
 
-        _renderClosed() {
-          this.cancelAnimation();
-          this.playAnimation('exit');
-        }
+              _renderClosed() {
+                  this.cancelAnimation();
+                  this.playAnimation('exit');
+              }
 
-        _onNeonAnimationFinish() {
-          if (this.opened) {
-            this._finishRenderOpened();
-          } else {
-            this._finishRenderClosed();
+              _onNeonAnimationFinish() {
+                  if (this.opened) {
+                      this._finishRenderOpened();
+                  } else {
+                      this._finishRenderClosed();
+                  }
+              }
           }
-        }
-      }
 
-      customElements.define(DocumentAISuggestionDetails.is, DocumentAISuggestionDetails);
-      Nuxeo.DocumentAISuggestionDetails = DocumentAISuggestionDetails;
-    }
+          customElements.define(DocumentAISuggestionDetails.is, DocumentAISuggestionDetails);
+          Nuxeo.DocumentAISuggestionDetails = DocumentAISuggestionDetails;
+      }
   </script>
 </dom-module>
 
 <dom-module id="nuxeo-document-ai-suggestion-formatter">
   <script>
-    {
-      class DocumentAISuggestionFormatter extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
-        static get template() {
-          return Polymer.html`
+      {
+          class DocumentAISuggestionFormatter extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
+              static get template() {
+                  return Polymer.html`
             <style include="nuxeo-ai-suggestion-formatter-styles">
               :host {
                 padding: 0 0 0 5px;
@@ -183,19 +185,19 @@ limitations under the License.
             </nuxeo-document-ai-suggestion-details>
             <div id="anchor"></div>
           `;
-        }
+              }
 
-        static get buttonTemplate() {
-          return Polymer.html`
+              static get buttonTemplate() {
+                  return Polymer.html`
             <div id="main">
               <span>[[suggestion.value.title]]</span>
               <iron-icon icon="[[_getConfidenceIcon(suggestion.confidence)]]"></iron-icon>
             </div>
           `;
-        }
+              }
 
-        static get detailsTemplate() {
-          return Polymer.html`
+              static get detailsTemplate() {
+                  return Polymer.html`
             <div id="content">
               <dom-if if="[[suggestion.value.properties.file:content.data]]">
                 <template>
@@ -216,57 +218,57 @@ limitations under the License.
               <p class="path">[[suggestion.value.path]]</p>
             </div>
           `;
-        }
+              }
 
-        static get is() {
-          return 'nuxeo-document-ai-suggestion-formatter';
-        }
+              static get is() {
+                  return 'nuxeo-document-ai-suggestion-formatter';
+              }
 
-        ready() {
-          super.ready();
-          this.$.details.positionTarget = this.$.anchor;
-          this._handleResize = () => {
-            if (window.matchMedia('only screen and (orientation: portrait) and (max-width: 480px)').matches) {
-              this.$.details.entryAnimation = 'slide-from-bottom-animation';
-              this.$.details.exitAnimation = 'slide-down-animation';
-            } else {
-              this.$.details.entryAnimation = 'fade-in-animation';
-              this.$.details.exitAnimation = 'fade-out-animation';
-            }
-          };
-          this._handleResize();
-        }
+              ready() {
+                  super.ready();
+                  this.$.details.positionTarget = this.$.anchor;
+                  this._handleResize = () => {
+                      if (window.matchMedia('only screen and (orientation: portrait) and (max-width: 480px)').matches) {
+                          this.$.details.entryAnimation = 'slide-from-bottom-animation';
+                          this.$.details.exitAnimation = 'slide-down-animation';
+                      } else {
+                          this.$.details.entryAnimation = 'fade-in-animation';
+                          this.$.details.exitAnimation = 'fade-out-animation';
+                      }
+                  };
+                  this._handleResize();
+              }
 
-        connectedCallback() {
-          super.connectedCallback();
-          window.addEventListener('resize', this._handleResize);
-        }
+              connectedCallback() {
+                  super.connectedCallback();
+                  window.addEventListener('resize', this._handleResize);
+              }
 
-        disconnectedCallback() {
-          super.disconnectedCallback();
-          window.removeEventListener('resize', this._handleResize);
-        }
+              disconnectedCallback() {
+                  super.disconnectedCallback();
+                  window.removeEventListener('resize', this._handleResize);
+              }
 
-        _open(e) {
-          e.stopPropagation();
-          if (!this.$.details.opened && !this.$.details.__isAnimating) {
-            this.$.details.open();
+              _open(e) {
+                  e.stopPropagation();
+                  if (!this.$.details.opened && !this.$.details.__isAnimating) {
+                      this.$.details.open();
+                  }
+              }
+
+              _thumbnail(doc) {
+                  return doc &&
+                  doc.uid &&
+                  doc.contextParameters &&
+                  doc.contextParameters.thumbnail &&
+                  doc.contextParameters.thumbnail.url
+                      ? doc.contextParameters.thumbnail.url
+                      : '';
+              }
           }
-        }
 
-        _thumbnail(doc) {
-          return doc &&
-            doc.uid &&
-            doc.contextParameters &&
-            doc.contextParameters.thumbnail &&
-            doc.contextParameters.thumbnail.url
-            ? doc.contextParameters.thumbnail.url
-            : '';
-        }
+          customElements.define(DocumentAISuggestionFormatter.is, DocumentAISuggestionFormatter);
+          Nuxeo.DocumentAISuggestionFormatter = DocumentAISuggestionFormatter;
       }
-
-      customElements.define(DocumentAISuggestionFormatter.is, DocumentAISuggestionFormatter);
-      Nuxeo.DocumentAISuggestionFormatter = DocumentAISuggestionFormatter;
-    }
   </script>
 </dom-module>

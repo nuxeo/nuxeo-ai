@@ -22,20 +22,23 @@ limitations under the License.
 <dom-module id="nuxeo-admin-insight">
   <template>
     <style>
-      .flex {
-        @apply --layout-flex;
-      }
-      .page-insight {
-        background: white;
-      }
-      .content-insight {
-        margin: 0 auto;
-        text-align: center;
-      }
-      .button-link {
-        background: blue;
-        color: white;
-      }
+        .flex {
+            @apply --layout-flex;
+        }
+
+        .page-insight {
+            background: white;
+        }
+
+        .content-insight {
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .button-link {
+            background: blue;
+            color: white;
+        }
     </style>
     <nuxeo-operation id="aiInsight" op="AI.FetchInsightURI"></nuxeo-operation>
     <nuxeo-page class="page-insight">
@@ -53,33 +56,33 @@ limitations under the License.
 
   </template>
   <script>
-    class NuxeoAdminInsight extends Polymer.mixinBehaviors([Nuxeo.I18nBehavior], Nuxeo.Element) {
-      static get is() {
-        return 'nuxeo-admin-insight';
+      class NuxeoAdminInsight extends Polymer.mixinBehaviors([Nuxeo.I18nBehavior], Nuxeo.Element) {
+          static get is() {
+              return 'nuxeo-admin-insight';
+          }
+
+          static get properties() {
+              return {
+                  link: {
+                      type: String,
+                  },
+              }
+          }
+
+          ready() {
+              super.ready();
+          }
+
+          _getInsightURL() {
+              this.$.aiInsight.execute().then(({url, aitoken, projectId, urlCore}) => {
+                      const insightUrl = `${url}?aitoken=${aitoken}&projectid=${projectId}&urlCore=${urlCore}`;
+                      window.open(insightUrl, '_blank');
+                  }
+              ).catch(() => this.fire('notify', {message: this.i18n('ai.insight.url.error')}));
+          }
       }
 
-      static get properties() {
-        return {
-          link: {
-            type: String,
-          },
-        }
-      }
-
-      ready() {
-        super.ready();
-      }
-
-      _getInsightURL() {
-        this.$.aiInsight.execute().then(({url, aitoken, projectId, urlCore}) => {
-              const insightUrl = `${url}?aitoken=${aitoken}&projectid=${projectId}&urlCore=${urlCore}`;
-              window.open(insightUrl, '_blank');
-            }
-        ).catch(() => this.fire('notify', {message: this.i18n('ai.insight.url.error')}));
-      }
-    }
-
-    customElements.define(NuxeoAdminInsight.is, NuxeoAdminInsight);
-    Nuxeo.NuxeoAdminInsight = NuxeoAdminInsight;
+      customElements.define(NuxeoAdminInsight.is, NuxeoAdminInsight);
+      Nuxeo.NuxeoAdminInsight = NuxeoAdminInsight;
   </script>
 </dom-module>

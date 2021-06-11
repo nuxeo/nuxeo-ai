@@ -6,17 +6,25 @@
   "response": {
     "status": 200,
     "jsonBody": {
-      "results": [{
-        "output_names": ["dc:nature", "dc:subjects", "dc:creator", "dr:docIdOnlyRef"],
-        "dc:nature": [2.545878714954597e-06, 3.418835206048243e-07, 0.1650407910346985, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
-        "dc:nature_labels": ["LOC", "HUM", "worksheet", "ABBR", "ENTY", "report"],
-        "dc:subjects": [2.545878714954597e-06, 0.8650407910346985, 3.418835206048243e-07, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
-        "dc:subjects_labels": ["LOG", "NO_MATCH", "NUM", "ABBR", "BOX", "music"],
-        "dc:creator": [0.952817481607199, 0.8343720436096191],
-        "dc:creator_labels": ["me", "Administrator"],
-        "dr:docIdOnlyRef": [0.852817481607199, 0.8643720436096191],
-        "dr:docIdOnlyRef_labels": ["123456", "not_finding_this_one"]
-      }]
+      "results": [
+        {
+          "output_names": ["dc:nature", "dc:subjects", "dc:creator", "dr:docIdOnlyRef"],
+          "dc:nature": [
+            2.545878714954597e-06, 3.418835206048243e-07, 0.1650407910346985, 2.9189225259074192e-08,
+            0.0005842817481607199, 0.8343720436096191
+          ],
+          "dc:nature_labels": ["LOC", "HUM", "worksheet", "ABBR", "ENTY", "report"],
+          "dc:subjects": [
+            2.545878714954597e-06, 0.8650407910346985, 3.418835206048243e-07, 2.9189225259074192e-08,
+            0.0005842817481607199, 0.8343720436096191
+          ],
+          "dc:subjects_labels": ["LOG", "NO_MATCH", "NUM", "ABBR", "BOX", "music"],
+          "dc:creator": [0.952817481607199, 0.8343720436096191],
+          "dc:creator_labels": ["me", "Administrator"],
+          "dr:docIdOnlyRef": [0.852817481607199, 0.8643720436096191],
+          "dr:docIdOnlyRef_labels": ["123456", "not_finding_this_one"]
+        }
+      ]
     },
     "headers": {
       "Content-Type": "application/json"

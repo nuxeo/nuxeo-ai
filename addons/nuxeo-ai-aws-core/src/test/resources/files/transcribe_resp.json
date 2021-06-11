@@ -19,8 +19,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "0.88",
         "end_time": "1.32",
         "alternatives": [
@@ -30,8 +29,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",
@@ -39,8 +37,7 @@
           }
         ],
         "type": "punctuation"
-      },
-      {
+      }, {
         "start_time": "1.32",
         "end_time": "1.49",
         "alternatives": [
@@ -50,8 +47,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "1.5",
         "end_time": "1.87",
         "alternatives": [
@@ -61,8 +57,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "1.88",
         "end_time": "2.66",
         "alternatives": [
@@ -72,8 +67,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",
@@ -81,8 +75,7 @@
           }
         ],
         "type": "punctuation"
-      },
-      {
+      }, {
         "start_time": "4.24",
         "end_time": "4.46",
         "alternatives": [
@@ -92,8 +85,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "4.46",
         "end_time": "4.59",
         "alternatives": [
@@ -103,8 +95,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "4.59",
         "end_time": "4.87",
         "alternatives": [
@@ -114,8 +105,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "4.87",
         "end_time": "5.0",
         "alternatives": [
@@ -125,8 +115,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "5.0",
         "end_time": "5.14",
         "alternatives": [
@@ -136,8 +125,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",
@@ -145,8 +133,7 @@
           }
         ],
         "type": "punctuation"
-      },
-      {
+      }, {
         "start_time": "5.14",
         "end_time": "5.199999999999999",
         "alternatives": [
@@ -156,8 +143,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "5.2",
         "end_time": "5.3500000000000005",
         "alternatives": [
@@ -167,8 +153,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "5.47",
         "end_time": "5.75",
         "alternatives": [
@@ -178,8 +163,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "5.75",
         "end_time": "5.95",
         "alternatives": [
@@ -189,8 +173,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",
@@ -198,8 +181,7 @@
           }
         ],
         "type": "punctuation"
-      },
-      {
+      }, {
         "start_time": "7.8",
         "end_time": "7.93",
         "alternatives": [
@@ -209,8 +191,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "7.93",
         "end_time": "8.129999999999999",
         "alternatives": [
@@ -220,8 +201,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "8.13",
         "end_time": "8.65",
         "alternatives": [
@@ -231,8 +211,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "8.66",
         "end_time": "9.4",
         "alternatives": [
@@ -242,8 +221,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "17.01",
         "end_time": "17.270000000000003",
         "alternatives": [
@@ -253,8 +231,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "17.27",
         "end_time": "17.73",
         "alternatives": [
@@ -264,8 +241,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "17.75",
         "end_time": "18.41",
         "alternatives": [
@@ -275,8 +251,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "18.41",
         "end_time": "18.830000000000002",
         "alternatives": [
@@ -286,8 +261,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "18.83",
         "end_time": "19.13",
         "alternatives": [
@@ -297,8 +271,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "20.7",
         "end_time": "22.369999999999997",
         "alternatives": [
@@ -308,8 +281,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "23.67",
         "end_time": "23.830000000000002",
         "alternatives": [
@@ -319,8 +291,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "23.83",
         "end_time": "23.919999999999998",
         "alternatives": [
@@ -330,8 +301,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "23.92",
         "end_time": "24.0",
         "alternatives": [
@@ -341,8 +311,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "24.0",
         "end_time": "24.13",
         "alternatives": [
@@ -352,8 +321,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "24.13",
         "end_time": "24.22",
         "alternatives": [
@@ -363,8 +331,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "24.22",
         "end_time": "24.299999999999997",
         "alternatives": [
@@ -374,8 +341,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "24.3",
         "end_time": "24.45",
         "alternatives": [
@@ -385,8 +351,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "24.52",
         "end_time": "25.02",
         "alternatives": [
@@ -396,8 +361,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "25.03",
         "end_time": "25.41",
         "alternatives": [
@@ -407,8 +371,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",
@@ -416,8 +379,7 @@
           }
         ],
         "type": "punctuation"
-      },
-      {
+      }, {
         "start_time": "30.09",
         "end_time": "30.27",
         "alternatives": [
@@ -427,8 +389,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "30.27",
         "end_time": "30.48",
         "alternatives": [
@@ -438,8 +399,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "30.62",
         "end_time": "30.67",
         "alternatives": [
@@ -449,8 +409,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "30.92",
         "end_time": "31.41",
         "alternatives": [
@@ -460,8 +419,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "start_time": "31.41",
         "end_time": "31.78",
         "alternatives": [
@@ -471,8 +429,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",
@@ -480,8 +437,7 @@
           }
         ],
         "type": "punctuation"
-      },
-      {
+      }, {
         "start_time": "34.84",
         "end_time": "36.14",
         "alternatives": [
@@ -491,8 +447,7 @@
           }
         ],
         "type": "pronunciation"
-      },
-      {
+      }, {
         "alternatives": [
           {
             "confidence": "0.0",

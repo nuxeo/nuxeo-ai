@@ -5,7 +5,9 @@
   },
   "response": {
     "status": 200,
-    "jsonBody": {"body":"{{request.body}}"},
+    "jsonBody": {
+      "body": "{{request.body}}"
+    },
     "headers": {
       "Content-Type": "application/json"
     }

@@ -20,48 +20,49 @@ limitations under the License.
 @element nuxeo-admin-ai
 -->
 <dom-module id="nuxeo-admin-ai">
-    <template>
-        <style>
-            .flex {
-                @apply --layout-flex;
-            }
-            paper-listbox {
-                @apply --layout-horizontal;
-                --paper-listbox-background-color: transparent;
-                padding: 0;
-            }
-        </style>
+  <template>
+    <style>
+        .flex {
+            @apply --layout-flex;
+        }
 
-        <nuxeo-page>
-            <div slot="header">
-                <span class="flex">[[i18n('admin.ai.heading')]]</span>
-            </div>
-            <div slot="tabs">
-                <paper-listbox selected="{{selected}}" attr-for-selected="name">
-                    <nuxeo-slot slot="AI_ITEMS"></nuxeo-slot>
-                </paper-listbox>
-            </div>
-            <div>
-                <template is="dom-if" if="[[visible]]">
-                    <iron-pages selected="[[selected]]" attr-for-selected="name" selected-attribute="visible">
-                        <nuxeo-slot slot="AI_PAGES"></nuxeo-slot>
-                    </iron-pages>
-                </template>
-            </div>
-        </nuxeo-page>
+        paper-listbox {
+            @apply --layout-horizontal;
+            --paper-listbox-background-color: transparent;
+            padding: 0;
+        }
+    </style>
 
-    </template>
-    <script>
-        Polymer({
-            is: 'nuxeo-admin-ai',
-            behaviors: [Nuxeo.I18nBehavior],
-            properties: {
-                visible: Boolean,
-                selected: {
-                    type: String,
-                    value: 'export'
-                }
-            }
-        });
-    </script>
+    <nuxeo-page>
+      <div slot="header">
+        <span class="flex">[[i18n('admin.ai.heading')]]</span>
+      </div>
+      <div slot="tabs">
+        <paper-listbox selected="{{selected}}" attr-for-selected="name">
+          <nuxeo-slot slot="AI_ITEMS"></nuxeo-slot>
+        </paper-listbox>
+      </div>
+      <div>
+        <template is="dom-if" if="[[visible]]">
+          <iron-pages selected="[[selected]]" attr-for-selected="name" selected-attribute="visible">
+            <nuxeo-slot slot="AI_PAGES"></nuxeo-slot>
+          </iron-pages>
+        </template>
+      </div>
+    </nuxeo-page>
+
+  </template>
+  <script>
+      Polymer({
+          is: 'nuxeo-admin-ai',
+          behaviors: [Nuxeo.I18nBehavior],
+          properties: {
+              visible: Boolean,
+              selected: {
+                  type: String,
+                  value: 'export'
+              }
+          }
+      });
+  </script>
 </dom-module>

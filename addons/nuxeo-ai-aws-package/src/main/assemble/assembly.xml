@@ -21,8 +21,8 @@
       <fileset dir="src/main/resources"/>
       <filterset>
         <filter token="VERSION" value="${maven.project.version}"/>
-        <filter token="NUXEO_PLATFORM_VERSION" value="${nuxeo.platform.version}" />
-        <filter token="NUXEO_TARGET_VERSION" value="${nuxeo.target.version}" />
+        <filter token="NUXEO_PLATFORM_VERSION" value="${nuxeo.platform.version}"/>
+        <filter token="NUXEO_TARGET_VERSION" value="${nuxeo.target.version}"/>
       </filterset>
     </copy>
     <copy file="${outdir}/nuxeo-ai-aws-artifacts.properties" todir="${outdir}/marketplace/install"/>
@@ -30,20 +30,21 @@
 
     <!-- Base distribution NXR -->
     <copy todir="${outdir}">
-      <artifact:file key="org.nuxeo.ecm.distribution:nuxeo-nxr-server::zip" />
+      <artifact:file key="org.nuxeo.ecm.distribution:nuxeo-nxr-server::zip"/>
     </copy>
 
     <!-- Nuxeo bundles -->
     <copy todir="${outdir}/nxr/bundles" overwrite="true">
       <artifact:set>
         <includes>
-          <artifact groupId="org.nuxeo*" />
-          <artifact groupId="nuxeo-studio" />
+          <artifact groupId="org.nuxeo*"/>
+          <artifact groupId="nuxeo-studio"/>
           <!-- Include your artifacts using their groupId for instance -->
-          <artifact groupId="org.nuxeo.ai.*" />
+          <artifact groupId="org.nuxeo.ai.*"/>
         </includes>
         <excludes>
-          <artifact groupId="${maven.project.groupId}" artifactId="${maven.project.artifactId}" version="${maven.project.version}" type="${maven.project.packaging}"/>
+          <artifact groupId="${maven.project.groupId}" artifactId="${maven.project.artifactId}"
+                    version="${maven.project.version}" type="${maven.project.packaging}"/>
           <artifact scope="test"/>
           <artifact scope="provided"/>
           <artifact type="pom"/>
@@ -55,14 +56,14 @@
     <copy todir="${outdir}/nxr/lib" overwrite="true">
       <artifact:set>
         <includes>
-          <artifact groupId="!org.nuxeo*" />
-          <artifact groupId="org.nuxeo.lib*" />
+          <artifact groupId="!org.nuxeo*"/>
+          <artifact groupId="org.nuxeo.lib*"/>
         </includes>
         <excludes>
-          <artifact scope="test" />
-          <artifact scope="provided" />
-          <artifact type="pom" />
-          <artifact groupId="nuxeo-studio" />
+          <artifact scope="test"/>
+          <artifact scope="provided"/>
+          <artifact type="pom"/>
+          <artifact groupId="nuxeo-studio"/>
           <!-- Filter out your artifacts using their groupId for instance -->
           <artifact groupId="org.nuxeo.ai.*"/>
         </excludes>
@@ -74,13 +75,13 @@
 
     <!-- Your MP only needs to include files not already provided by the base distribution -->
     <nx:zipdiff
-      file1="${outdir}/nxr-${maven.project.version}.zip"
-      file2="${outdir}/nuxeo-nxr-server-${nuxeo.platform.version}.zip"
-      includesfile="${outdir}/includes"
-      excludesfile="${outdir}/excludesfile"
-      patternsetid="nxr.versus.distribution"
-      ignoreContent="false"
-      ignoreContentPattern=".*\.jar$"></nx:zipdiff>
+        file1="${outdir}/nxr-${maven.project.version}.zip"
+        file2="${outdir}/nuxeo-nxr-server-${nuxeo.platform.version}.zip"
+        includesfile="${outdir}/includes"
+        excludesfile="${outdir}/excludesfile"
+        patternsetid="nxr.versus.distribution"
+        ignoreContent="false"
+        ignoreContentPattern=".*\.jar$"></nx:zipdiff>
     <unzip src="${outdir}/nxr-${maven.project.version}.zip" dest="${outdir}/marketplace/install">
       <patternset refid="nxr.versus.distribution"/>
     </unzip>
@@ -107,8 +108,8 @@
     </if>
 
     <var
-      name="install.properties"
-      value="${line.separator}
+        name="install.properties"
+        value="${line.separator}
   &lt;copy file=&quot;${package.root}/install/nuxeo-ai-aws-artifacts.properties&quot;${line.separator}
     todir=&quot;${env.server.home}/sdk&quot; overwrite=&quot;true&quot; /&gt;${line.separator}
   &lt;copy file=&quot;${package.root}/install/nuxeo-ai-aws-test-artifacts.properties&quot;${line.separator}
@@ -119,8 +120,8 @@
       <available file="${outdir}/marketplace/install/templates"/>
       <then>
         <var
-          name="install.templates"
-          value="${line.separator}
+            name="install.templates"
+            value="${line.separator}
   &lt;copy dir=&quot;${package.root}/install/templates&quot; todir=&quot;${env.templates}&quot; overwrite=&quot;true&quot; /&gt;${line.separator}
   &lt;config addtemplate=&quot;nuxeo-ai-aws&quot; /&gt;${line.separator}"/>
       </then>
@@ -142,7 +143,7 @@
 
     <zip destfile="${outdir}/${maven.project.artifactId}-${maven.project.version}.zip" basedir="${outdir}/marketplace"/>
     <zip destfile="${outdir}/dummy-package.zip" whenempty="create" includes="" excludes="**" basedir="${outdir}"
-         comment="This package is only available in the Marketplace" />
+         comment="This package is only available in the Marketplace"/>
     <artifact:attach file="${outdir}/dummy-package.zip" type="zip"/>
   </target>
 

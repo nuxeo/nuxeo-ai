@@ -2,7 +2,8 @@
 <component name="org.nuxeo.enrichment.stream.test" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="test.simpleEnrich" kind="/tagging/imageLabels" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider">
+    <enrichment name="test.simpleEnrich" kind="/tagging/imageLabels"
+                class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
       </mimeTypes>
@@ -27,7 +28,7 @@
     <streamProcessor name="tagsProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
       <option name="source">test/images-out</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 
@@ -35,7 +36,7 @@
     <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <option name="source">test/images-out</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 
@@ -43,7 +44,7 @@
     <streamProcessor name="customEventProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.CustomEnrichmentConsumer">
       <option name="source">test/images-out</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 
@@ -52,7 +53,7 @@
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
       <option name="source">test/images-out</option>
       <option name="eventName">myCustomMetadataCreated</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 
@@ -95,7 +96,7 @@
     <streamProcessor name="suggestProcessor" defaultConcurrency="1" defaultPartitions="1"
                      class="org.nuxeo.ai.enrichment.CustomSuggestionConsumer">
       <option name="source">test/suggestion</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false" />
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
     </streamProcessor>
   </extension>
 

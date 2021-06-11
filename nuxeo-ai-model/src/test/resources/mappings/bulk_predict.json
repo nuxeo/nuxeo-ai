@@ -6,13 +6,18 @@
   "response": {
     "status": 200,
     "jsonBody": {
-      "results": [{
-        "output_names": ["dc:nature", "dc:creator"],
-        "dc:nature": [2.545878714954597e-06, 3.418835206048243e-07, 0.1650407910346985, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
-        "dc:nature_labels": ["LOC", "HUM", "worksheet", "ABBR", "ENTY", "report"],
-        "dc:creator": [0.952817481607199, 0.8343720436096191],
-        "dc:creator_labels": ["me", "Administrator"]
-      }]
+      "results": [
+        {
+          "output_names": ["dc:nature", "dc:creator"],
+          "dc:nature": [
+            2.545878714954597e-06, 3.418835206048243e-07, 0.1650407910346985, 2.9189225259074192e-08,
+            0.0005842817481607199, 0.8343720436096191
+          ],
+          "dc:nature_labels": ["LOC", "HUM", "worksheet", "ABBR", "ENTY", "report"],
+          "dc:creator": [0.952817481607199, 0.8343720436096191],
+          "dc:creator_labels": ["me", "Administrator"]
+        }
+      ]
     },
     "headers": {
       "Content-Type": "application/json"

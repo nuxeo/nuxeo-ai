@@ -6,169 +6,149 @@
   "response": {
     "status": 200,
     "jsonBody": {
-      "entity-type":"documents",
-      "entries":[
+      "entity-type": "documents",
+      "entries": [
         {
-          "entity-type":"document",
-          "repository":"default",
-          "uid":"6b93bace-4ed3-408f-8efe-79a8dd287199",
-          "path":"/Nuxeo Jira/models/Components._1559257870909_.trashed",
-          "type":"AI_Model",
-          "state":"start",
-          "parentRef":"2c276419-0ee8-4a1b-b8b4-1c7051d41f0a",
-          "isCheckedOut":true,
-          "isVersion":false,
-          "isProxy":false,
-          "changeToken":"34-0",
-          "isTrashed":true,
-          "title":"Components",
-          "lastModified":"2019-05-30T20:11:00.132Z",
-          "properties":{
-            "ai_model:corpus":[
+          "entity-type": "document",
+          "repository": "default",
+          "uid": "6b93bace-4ed3-408f-8efe-79a8dd287199",
+          "path": "/Nuxeo Jira/models/Components._1559257870909_.trashed",
+          "type": "AI_Model",
+          "state": "start",
+          "parentRef": "2c276419-0ee8-4a1b-b8b4-1c7051d41f0a",
+          "isCheckedOut": true,
+          "isVersion": false,
+          "isProxy": false,
+          "changeToken": "34-0",
+          "isTrashed": true,
+          "title": "Components",
+          "lastModified": "2019-05-30T20:11:00.132Z",
+          "properties": {
+            "ai_model:corpus": [
               "a3660985-5ece-41fd-9dfc-4f5e6e43975a"
             ],
-            "ai_model:main_result":null,
-            "ai_model:training_information":{
-              "jobId":"Nx-Opt-20190530-1936-05-481",
-              "comments":"error",
-              "start":"2019-05-30T19:36:05.981Z",
-              "end":"2019-05-30T20:10:36.108Z",
-              "training":false,
-              "error":"No training job succeeded after 5 attempts. Please take a look at the training job failures to get more details.",
-              "logs":null,
-              "optimization_job":null
+            "ai_model:main_result": null,
+            "ai_model:training_information": {
+              "jobId": "Nx-Opt-20190530-1936-05-481",
+              "comments": "error",
+              "start": "2019-05-30T19:36:05.981Z",
+              "end": "2019-05-30T20:10:36.108Z",
+              "training": false,
+              "error": "No training job succeeded after 5 attempts. Please take a look at the training job failures to get more details.",
+              "logs": null,
+              "optimization_job": null
             },
-            "ai_model:labels":[
+            "ai_model:labels": [
               "dev"
             ],
-            "ai_model:outputs":[
+            "ai_model:outputs": [
               {
-                "output_name":null,
-                "categories_transformation":null,
-                "name":"tc:components",
-                "multi_class":false,
-                "language":null,
-                "categories":[
-                  "Core",
-                  "Security / Rights",
-                  "Web Common"
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "tc:components",
+                "multi_class": false,
+                "language": null,
+                "categories": [
+                  "Core", "Security / Rights", "Web Common"
                 ],
-                "type":"cat"
+                "type": "cat"
               }
             ],
-            "ai_model:deployment_information":{
-              "endpoint":null,
-              "publishing_state":"published",
-              "modified":null,
-              "deployment_error":null,
-              "deployer":""
+            "ai_model:deployment_information": {
+              "endpoint": null,
+              "publishing_state": "published",
+              "modified": null,
+              "deployment_error": null,
+              "deployer": ""
             },
-            "ai_model:inputs":[
+            "ai_model:inputs": [
               {
-                "name":"dc:title",
-                "multi_class":false,
-                "language":"en",
-                "categories":[
-
+                "name": "dc:title",
+                "multi_class": false,
+                "language": "en",
+                "categories": [
                 ],
-                "type":"txt"
-              },
-              {
-                "name":"tc:description",
-                "multi_class":false,
-                "language":"en",
-                "categories":[
-
+                "type": "txt"
+              }, {
+                "name": "tc:description",
+                "multi_class": false,
+                "language": "en",
+                "categories": [
                 ],
-                "type":"txt"
+                "type": "txt"
               }
             ],
-            "ai_model:name":"Components"
+            "ai_model:name": "Components"
           },
-          "facets":[
-            "Versionable",
-            "NXTag",
-            "Publishable",
-            "Commentable",
-            "HasRelatedText",
-            "Downloadable"
+          "facets": [
+            "Versionable", "NXTag", "Publishable", "Commentable", "HasRelatedText", "Downloadable"
           ]
-        },
-        {
-          "entity-type":"document",
-          "repository":"default",
-          "uid":"c0d8d37f-1df0-47f6-b7d5-758d770e3e19",
-          "path":"/Nuxeo Jira/models/tags from components._1559253366125_.trashed",
-          "type":"AI_Model",
-          "state":"start",
-          "parentRef":"2c276419-0ee8-4a1b-b8b4-1c7051d41f0a",
-          "isCheckedOut":true,
-          "isVersion":false,
-          "isProxy":false,
-          "changeToken":"14-0",
-          "isTrashed":true,
-          "title":"tags from components",
-          "lastModified":"2019-05-23T19:09:12.110Z",
-          "properties":{
-            "ai_model:corpus":[
+        }, {
+          "entity-type": "document",
+          "repository": "default",
+          "uid": "c0d8d37f-1df0-47f6-b7d5-758d770e3e19",
+          "path": "/Nuxeo Jira/models/tags from components._1559253366125_.trashed",
+          "type": "AI_Model",
+          "state": "start",
+          "parentRef": "2c276419-0ee8-4a1b-b8b4-1c7051d41f0a",
+          "isCheckedOut": true,
+          "isVersion": false,
+          "isProxy": false,
+          "changeToken": "14-0",
+          "isTrashed": true,
+          "title": "tags from components",
+          "lastModified": "2019-05-23T19:09:12.110Z",
+          "properties": {
+            "ai_model:corpus": [
               "7b769c6f-701d-4eba-bbc2-a3e2f2528ea2"
             ],
-            "ai_model:main_result":null,
-            "ai_model:training_information":{
-              "jobId":null,
-              "comments":null,
-              "start":null,
-              "end":null,
-              "training":false,
-              "error":null,
-              "logs":null,
-              "optimization_job":null
+            "ai_model:main_result": null,
+            "ai_model:training_information": {
+              "jobId": null,
+              "comments": null,
+              "start": null,
+              "end": null,
+              "training": false,
+              "error": null,
+              "logs": null,
+              "optimization_job": null
             },
-            "ai_model:labels":[
-
+            "ai_model:labels": [
             ],
-            "ai_model:outputs":[
+            "ai_model:outputs": [
               {
-                "output_name":null,
-                "categories_transformation":null,
-                "name":"tc:tags",
-                "multi_class":true,
-                "language":null,
-                "categories":[
-                  "toresolveafter",
-                  "fix53x",
-                  "tocloseagain"
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "tc:tags",
+                "multi_class": true,
+                "language": null,
+                "categories": [
+                  "toresolveafter", "fix53x", "tocloseagain"
                 ],
-                "type":"cat"
+                "type": "cat"
               }
             ],
-            "ai_model:deployment_information":{
-              "endpoint":null,
-              "publishing_state":"never_published",
-              "modified":null,
-              "deployment_error":null,
-              "deployer":"sagemaker"
+            "ai_model:deployment_information": {
+              "endpoint": null,
+              "publishing_state": "never_published",
+              "modified": null,
+              "deployment_error": null,
+              "deployer": "sagemaker"
             },
-            "ai_model:inputs":[
+            "ai_model:inputs": [
               {
-                "name":"tc:components",
-                "multi_class":false,
-                "language":null,
-                "categories":[
-
+                "name": "tc:components",
+                "multi_class": false,
+                "language": null,
+                "categories": [
                 ],
-                "type":"cat"
+                "type": "cat"
               }
             ],
-            "ai_model:name":"tags"
+            "ai_model:name": "tags"
           },
-          "facets":[
-            "Versionable",
-            "NXTag",
-            "Publishable",
-            "Commentable",
-            "HasRelatedText",
-            "Downloadable"
+          "facets": [
+            "Versionable", "NXTag", "Publishable", "Commentable", "HasRelatedText", "Downloadable"
           ]
         }
       ]

@@ -6,13 +6,15 @@
   "response": {
     "status": 200,
     "jsonBody": {
-      "results": [{
-        "output_names": ["dc:description", "dc:title"],
-        "dc:description": [0.1650407910346985, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
-        "dc:description_labels": ["big thing", "small", "nice", "Great work"],
-        "dc:title": [0.952817481607199, 0.8343720436096191],
-        "dc:title_labels": ["you", "Administrator"]
-      }]
+      "results": [
+        {
+          "output_names": ["dc:description", "dc:title"],
+          "dc:description": [0.1650407910346985, 2.9189225259074192e-08, 0.0005842817481607199, 0.8343720436096191],
+          "dc:description_labels": ["big thing", "small", "nice", "Great work"],
+          "dc:title": [0.952817481607199, 0.8343720436096191],
+          "dc:title_labels": ["you", "Administrator"]
+        }
+      ]
     },
     "headers": {
       "Content-Type": "application/json"
