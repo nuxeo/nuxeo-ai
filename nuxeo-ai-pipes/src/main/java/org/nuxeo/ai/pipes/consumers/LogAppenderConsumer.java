@@ -19,7 +19,6 @@
 package org.nuxeo.ai.pipes.consumers;
 
 import java.util.function.Consumer;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.lib.stream.computation.Record;
@@ -32,6 +31,7 @@ import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 public class LogAppenderConsumer implements Consumer<Record>, AutoCloseable {
 
     private static final Log log = LogFactory.getLog(LogAppenderConsumer.class);
+
     private final CloseableLogAppender<Record> appender;
 
     public LogAppenderConsumer(CloseableLogAppender<Record> appender) {

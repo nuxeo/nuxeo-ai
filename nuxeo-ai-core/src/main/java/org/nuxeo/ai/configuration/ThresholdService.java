@@ -31,7 +31,8 @@ public interface ThresholdService extends Reloadable {
 
     /**
      * Provides type/facet based threshold value from {@link ThresholdConfiguratorDescriptor}
-     * @param doc {@link DocumentModel}'s type or facet to be used for finding threshold value
+     *
+     * @param doc   {@link DocumentModel}'s type or facet to be used for finding threshold value
      * @param xpath of a property
      * @return if no contribution made returns confidence; if a global confidence level given and no property threshold
      * global is used
@@ -40,7 +41,8 @@ public interface ThresholdService extends Reloadable {
 
     /**
      * Provides autofill type/facet based threshold value from {@link ThresholdConfiguratorDescriptor}
-     * @param doc {@link DocumentModel}'s type or facet to be used for finding threshold value
+     *
+     * @param doc   {@link DocumentModel}'s type or facet to be used for finding threshold value
      * @param xpath of a property
      * @return if no contribution made returns confidence; if a global confidence level given and no property threshold
      * global is used
@@ -49,7 +51,8 @@ public interface ThresholdService extends Reloadable {
 
     /**
      * Provides autocorrect type/facet based threshold value from {@link ThresholdConfiguratorDescriptor}
-     * @param doc {@link DocumentModel}'s type or facet to be used for finding threshold value
+     *
+     * @param doc   {@link DocumentModel}'s type or facet to be used for finding threshold value
      * @param xpath of a property
      * @return if no contribution made returns confidence; if a global confidence level given and no property threshold
      * global is used

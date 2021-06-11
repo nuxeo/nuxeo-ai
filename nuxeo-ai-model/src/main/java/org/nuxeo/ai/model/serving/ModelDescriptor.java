@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.pipes.functions.Predicates;
 import org.nuxeo.common.xmap.annotation.XNode;
@@ -34,7 +33,6 @@ import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.model.Descriptor;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -74,7 +72,6 @@ public class ModelDescriptor implements Descriptor {
     @XNode("@class")
     @JsonIgnore
     protected Class<? extends RuntimeModel> clazz;
-
 
     public Set<ModelProperty> getInputs() {
         return inputProperties.properties;

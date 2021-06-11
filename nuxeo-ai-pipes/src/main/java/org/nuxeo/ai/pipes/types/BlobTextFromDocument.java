@@ -25,12 +25,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -154,10 +152,10 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
             return false;
         }
         BlobTextFromDocument that = (BlobTextFromDocument) o;
-        return Objects.equals(id, that.id) && Objects.equals(repositoryName, that.repositoryName)
-                && Objects.equals(parentId, that.parentId) && Objects.equals(primaryType, that.primaryType)
-                && Objects.equals(facets, that.facets) && Objects.equals(blobs, that.blobs)
-                && Objects.equals(blobTypes, that.blobTypes) && Objects.equals(properties, that.properties);
+        return Objects.equals(id, that.id) && Objects.equals(repositoryName, that.repositoryName) && Objects.equals(
+                parentId, that.parentId) && Objects.equals(primaryType, that.primaryType) && Objects.equals(facets,
+                that.facets) && Objects.equals(blobs, that.blobs) && Objects.equals(blobTypes, that.blobTypes)
+                && Objects.equals(properties, that.properties);
     }
 
     @Override

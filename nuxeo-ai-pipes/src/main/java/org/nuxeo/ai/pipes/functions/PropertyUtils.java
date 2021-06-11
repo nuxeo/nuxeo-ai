@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -104,8 +103,9 @@ public class PropertyUtils {
                 return (T) base64EncodeBlob((Blob) propVal);
             } else if (propVal instanceof Calendar && type.isAssignableFrom(String.class)) {
                 return (T) ((Calendar) propVal).toInstant().toString();
-            } else if (propVal.getClass().isArray()
-                    && propVal.getClass().getComponentType().isAssignableFrom(String.class)) {
+            } else if (propVal.getClass().isArray() && propVal.getClass()
+                                                              .getComponentType()
+                                                              .isAssignableFrom(String.class)) {
                 return (T) serializeArray(propVal);
             } else if (type.isAssignableFrom(String.class)) {
                 return (T) propVal.toString();
@@ -272,6 +272,7 @@ public class PropertyUtils {
 
     /**
      * Text sanitizer
+     *
      * @param source {@link String} to process
      * @return {@link String} sanitized result
      */

@@ -19,10 +19,10 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
-
 public class Face {
 
     private float single;
+
     private float multiple;
 
     public float getSingle() {

@@ -21,6 +21,7 @@ package org.nuxeo.ai.imagequality.pojo;
 public class FeatureXY {
 
     private float x;
+
     private float y;
 
     public float getX() {

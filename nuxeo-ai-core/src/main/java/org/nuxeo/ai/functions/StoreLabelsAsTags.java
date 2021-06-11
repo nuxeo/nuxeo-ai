@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.functions;
 
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
@@ -26,8 +27,6 @@ import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.platform.tag.TagService;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import java.util.regex.Pattern;
 
 /**
  * A stream processor that saves enrichment labels as tags.

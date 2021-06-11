@@ -20,7 +20,6 @@
 package org.nuxeo.ai.services;
 
 import java.util.List;
-
 import org.nuxeo.ai.metadata.Caption;
 import org.nuxeo.ecm.core.api.Blob;
 

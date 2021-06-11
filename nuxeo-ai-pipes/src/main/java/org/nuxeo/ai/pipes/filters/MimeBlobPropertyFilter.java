@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.pipes.filters;
 
-
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;

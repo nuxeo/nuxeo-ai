@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
@@ -44,7 +43,6 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-
 import com.google.cloud.vision.v1.AnnotateImageRequest;
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.BatchAnnotateImagesResponse;
@@ -58,7 +56,7 @@ import com.google.protobuf.util.JsonFormat;
 
 /**
  * Abstract class representing any GCP based provider for acquiring Tags
- * 
+ *
  * @param <T> which conforms to {@link MessageOrBuilder}. See {@link com.google.cloud.vision.v1.EntityAnnotation},
  *            {@link com.google.cloud.vision.v1.FaceAnnotation}, and
  *            {@link com.google.cloud.vision.v1.LocalizedObjectAnnotation}

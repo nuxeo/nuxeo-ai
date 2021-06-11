@@ -34,7 +34,6 @@ import java.util.List;
  * <p>
  * The returned value is between 0 and 1. Images with a sharpness value closer to 1 will
  * be sharper while images with a sharpness value closer to 0 will be perceived as blurrier.
- *
  * <strong>RECOMMENDED THRESHOLDS</strong>
  * <ul>
  * <li>Below 0.4: Very blurry</li>
@@ -50,7 +49,6 @@ import java.util.List;
  * <p>
  * The brightness of the image is returned as a between 0 and 1. Images with a value closer to 1 will be
  * brighter while images with a value closer to 0 will be darker.
- *
  * <strong>RECOMMENDED THRESHOLDS</strong>
  * <ul>
  * <li>Equal or inferior to 0.2: Very dark</li>
@@ -64,7 +62,6 @@ import java.util.List;
  * Contrast Detection
  * =======================
  * The returned value is between 0 and 1.
- *
  * <strong>RECOMMENDED THRESHOLDS</strong>
  * <ul>
  * <li>Equal or inferior to 0.3: Low contrast</li>
@@ -81,7 +78,6 @@ public class ImageProperties {
      * Below 0.4: Very blurry
      */
     public static final float SHARPNESS_VERY_BLURRY = 0.4F;
-
 
     // Sharpness / Blurriness Detection
 
@@ -139,7 +135,6 @@ public class ImageProperties {
      * Equal or inferior to 0.2: Very dark
      */
     public static final float BRIGHTNESS_VERY_DARK = 0.2F;
-
 
     // Brightness Detection
 
@@ -242,7 +237,6 @@ public class ImageProperties {
 
     /**
      * a value between 0 (very blurry) and 1 (very sharp)
-     *
      * <strong>RECOMMENDED THRESHOLDS</strong>
      * <ul>
      * <li>Below 0.4: Very blurry</li>
@@ -256,7 +250,6 @@ public class ImageProperties {
 
     /**
      * a value between 0 (low contrast) and 1 (high contrast)
-     *
      * <strong>RECOMMENDED THRESHOLDS</strong>
      * <ul>
      * <li>Equal or inferior to 0.2: Very dark</li>
@@ -270,7 +263,6 @@ public class ImageProperties {
 
     /**
      * a value between 0 (very dark) and 1 (very bright)
-     *
      * <strong>RECOMMENDED THRESHOLDS</strong>
      * <ul>
      * <li>Equal or inferior to 0.3: Low contrast</li>
@@ -314,9 +306,13 @@ public class ImageProperties {
     }
 
     private Type type;
+
     private Face face;
+
     private Scam scam;
+
     private Text text;
+
     private Offensive offensive;
 
     public Face getFace() {
@@ -471,7 +467,6 @@ public class ImageProperties {
         return SHARPNESS_TXT_UNKNOWN;
     }
 
-
     /**
      * Images with a value closer to 1 will be brighter while images with a value closer to 0 will be darker.
      * <p>
@@ -498,7 +493,6 @@ public class ImageProperties {
 
         return BRIGHTNESS_TXT_UNKNOWN;
     }
-
 
     /**
      * The returned value is between 0 and 1.

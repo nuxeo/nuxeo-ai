@@ -8,7 +8,13 @@
  */
 package org.nuxeo.ai.test;
 
-import com.sun.jersey.core.spi.factory.ResponseImpl;
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
+import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
+
+import java.util.List;
+import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.internal.InitAudit;
@@ -31,13 +37,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
-import java.util.List;
-
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
+import com.sun.jersey.core.spi.factory.ResponseImpl;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, RuntimeFeature.class, AuditFeature.class })

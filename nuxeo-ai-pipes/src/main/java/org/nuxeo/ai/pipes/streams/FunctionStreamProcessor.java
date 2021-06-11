@@ -18,8 +18,13 @@
  */
 package org.nuxeo.ai.pipes.streams;
 
-import io.dropwizard.metrics5.MetricRegistry;
-import io.dropwizard.metrics5.SharedMetricRegistries;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,13 +36,8 @@ import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.metrics.MetricsService;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-
-import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
+import io.dropwizard.metrics5.MetricRegistry;
+import io.dropwizard.metrics5.SharedMetricRegistries;
 
 /**
  * A stream processor using a Function.
@@ -74,9 +74,9 @@ public class FunctionStreamProcessor {
     public static String buildName(String simpleName, String streamIn, String streamOut) {
         String name = toValid(simpleName);
         String in = streamIn != null ? toValid(streamIn) : "void";
-        String out = streamOut != null ? "_" + toValid(streamOut): "";
+        String out = streamOut != null ? "_" + toValid(streamOut) : "";
 
-        return "ai/" + name + "_" +  in + out;
+        return "ai/" + name + "_" + in + out;
     }
 
     protected static String toValid(String in) {
@@ -91,8 +91,8 @@ public class FunctionStreamProcessor {
         FunctionMetrics metrics = registerMetrics(new FunctionMetrics(computationName), computationName);
         return Topology.builder()
                        .addComputation(
-                               () -> new FunctionComputation(streams.size() - 1,
-                                                             computationName, metrics, function), streams)
+                               () -> new FunctionComputation(streams.size() - 1, computationName, metrics, function),
+                               streams)
                        .build();
     }
 
@@ -104,9 +104,9 @@ public class FunctionStreamProcessor {
             MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
             registry.registerAll(metrics);
         } catch (IllegalArgumentException e) {
-            log.warn(
-                    String.format("Metrics are already registered for %s. They will only be recorded again after a full restart.",
-                                  name));
+            log.warn(String.format(
+                    "Metrics are already registered for %s. They will only be recorded again after a full restart.",
+                    name));
         }
         return metrics;
     }
@@ -120,8 +120,8 @@ public class FunctionStreamProcessor {
 
         protected final Function<Record, Optional<Record>> function;
 
-        public FunctionComputation(int outputStreams, String name,
-                                   FunctionMetrics metrics, Function<Record, Optional<Record>> function) {
+        public FunctionComputation(int outputStreams, String name, FunctionMetrics metrics,
+                Function<Record, Optional<Record>> function) {
 
             super(name, 1, outputStreams);
             this.metrics = metrics;

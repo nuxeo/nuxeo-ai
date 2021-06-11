@@ -25,7 +25,6 @@ import static org.nuxeo.ecm.automation.core.Constants.CAT_SERVICES;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;

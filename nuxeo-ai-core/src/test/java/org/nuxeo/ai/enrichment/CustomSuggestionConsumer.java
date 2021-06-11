@@ -31,6 +31,6 @@ public class CustomSuggestionConsumer extends AbstractEnrichmentConsumer {
 
     @Override
     public void accept(EnrichmentMetadata EnrichmentMetadata) {
-        log.info("Metadata is "+ EnrichmentMetadata);
+        log.info("Metadata is " + EnrichmentMetadata);
     }
 }

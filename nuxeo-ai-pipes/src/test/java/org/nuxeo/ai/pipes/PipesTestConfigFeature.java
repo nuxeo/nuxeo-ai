@@ -18,8 +18,8 @@
  */
 package org.nuxeo.ai.pipes;
 
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RunnerFeature;
 

@@ -21,11 +21,9 @@ package org.nuxeo.ecm.core.blob;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
-
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.impl.blob.AbstractBlob;
 import org.nuxeo.runtime.api.Framework;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -35,17 +33,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class BlobMetaImpl extends AbstractBlob implements ManagedBlob {
 
     private static final long serialVersionUID = -3811624887207152594L;
+
     protected final String providerId;
+
     protected final String key;
+
     protected final Long length;
 
     @JsonCreator
-    public BlobMetaImpl(@JsonProperty("providerId") String providerId,
-                        @JsonProperty("mimeType") String mimeType,
-                        @JsonProperty("key") String key,
-                        @JsonProperty("digest") String digest,
-                        @JsonProperty("encoding") String encoding,
-                        @JsonProperty("length") long length) {
+    public BlobMetaImpl(@JsonProperty("providerId") String providerId, @JsonProperty("mimeType") String mimeType,
+            @JsonProperty("key") String key, @JsonProperty("digest") String digest,
+            @JsonProperty("encoding") String encoding, @JsonProperty("length") long length) {
         this.providerId = providerId;
         this.mimeType = mimeType;
         this.key = key;
@@ -63,13 +61,10 @@ public class BlobMetaImpl extends AbstractBlob implements ManagedBlob {
             return false;
         }
         BlobMetaImpl blobInfo = (BlobMetaImpl) o;
-        return Objects.equals(key, blobInfo.key)
-                && Objects.equals(mimeType, blobInfo.mimeType)
-                && Objects.equals(encoding, blobInfo.encoding)
-                && Objects.equals(filename, blobInfo.filename)
-                && Objects.equals(length, blobInfo.length)
-                && Objects.equals(providerId, blobInfo.providerId)
-                && Objects.equals(digest, blobInfo.digest);
+        return Objects.equals(key, blobInfo.key) && Objects.equals(mimeType, blobInfo.mimeType) && Objects.equals(
+                encoding, blobInfo.encoding) && Objects.equals(filename, blobInfo.filename) && Objects.equals(length,
+                blobInfo.length) && Objects.equals(providerId, blobInfo.providerId) && Objects.equals(digest,
+                blobInfo.digest);
     }
 
     @Override

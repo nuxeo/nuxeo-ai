@@ -28,7 +28,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.Blob;
@@ -70,7 +69,8 @@ public class AiResizePictureConverter implements Converter {
                 Blob result = new IMImageUtils.ImageMagickCaller() {
                     @Override
                     public void callImageMagick() throws CommandNotAvailable, CommandException {
-                        AiImageResizer.resize(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), width, height, depth);
+                        AiImageResizer.resize(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), width, height,
+                                depth);
                     }
                 }.call(source, format, AI_RESIZER_COMMAND);
 

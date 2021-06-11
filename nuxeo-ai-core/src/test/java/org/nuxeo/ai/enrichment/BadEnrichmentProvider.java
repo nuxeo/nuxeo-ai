@@ -20,7 +20,6 @@ package org.nuxeo.ai.enrichment;
 
 import java.util.Collection;
 import java.util.Collections;
-
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 public class BadEnrichmentProvider extends AbstractEnrichmentProvider {

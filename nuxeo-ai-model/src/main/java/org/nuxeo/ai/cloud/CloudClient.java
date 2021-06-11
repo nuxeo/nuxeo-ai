@@ -18,6 +18,10 @@
  */
 package org.nuxeo.ai.cloud;
 
+import java.io.IOException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.ResponseHandler;
@@ -25,12 +29,6 @@ import org.nuxeo.ai.sdk.rest.client.InsightClient;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * A client that connects to Nuxeo Cloud AI
@@ -78,8 +76,7 @@ public interface CloudClient {
      */
     boolean notifyOnExportDone(CoreSession session, String exportId);
 
-    String predict(CoreSession session, String modelName, TensorInstances instances)
-            throws IOException;
+    String predict(CoreSession session, String modelName, TensorInstances instances) throws IOException;
 
     /**
      * @return a list of AI Models retrieved from AI Cloud

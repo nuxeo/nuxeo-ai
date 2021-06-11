@@ -27,9 +27,7 @@ import static org.nuxeo.ai.convert.AiPDFConverter.PDF_MIME_TYPE;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.common.utils.FileUtils;
@@ -46,7 +44,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 @Deploy("org.nuxeo.ai.ai-core")
 @RepositoryConfig(cleanup = Granularity.METHOD)
 public class TestAiPDFConverter {

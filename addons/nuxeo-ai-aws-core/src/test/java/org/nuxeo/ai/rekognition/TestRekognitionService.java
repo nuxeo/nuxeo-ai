@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import javax.inject.Inject;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,8 +53,8 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.aws.aws-core", "org.nuxeo.ai.aws.aws-core:OSGI-INF/rekognition-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.aws.aws-core", "org.nuxeo.ai.aws.aws-core:OSGI-INF/rekognition-test.xml" })
 public class TestRekognitionService {
 
     @Inject
@@ -79,7 +78,7 @@ public class TestRekognitionService {
         assertEquals(blobTextFromDoc.getId(), metadata.context.documentRef);
         assertEquals(1, metadata.context.digests.size());
         assertEquals(blobTextFromDoc.getBlobs().entrySet().iterator().next().getValue().getDigest(),
-                     metadata.context.digests.iterator().next());
+                metadata.context.digests.iterator().next());
         assertNotNull(metadata.getLabels());
     }
 
@@ -125,7 +124,8 @@ public class TestRekognitionService {
         blobTextFromDoc = setupBlobTextFromDocument("creative_adults-beautiful-blue.jpg");
         metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        assertTrue(metadataCollection.iterator().next().getLabels().stream().mapToInt(l -> l.getValues().size()).sum() >= 2);
+        assertTrue(metadataCollection.iterator().next().getLabels().stream().mapToInt(l -> l.getValues().size()).sum()
+                >= 2);
     }
 
     @Test
@@ -163,8 +163,6 @@ public class TestRekognitionService {
     }
 
     private ManagedBlob blob(Blob blob, String key) {
-        return new BlobMetaImpl("test", blob.getMimeType(), key,
-                                key, blob.getEncoding(), blob.getLength()
-        );
+        return new BlobMetaImpl("test", blob.getMimeType(), key, key, blob.getEncoding(), blob.getLength());
     }
 }

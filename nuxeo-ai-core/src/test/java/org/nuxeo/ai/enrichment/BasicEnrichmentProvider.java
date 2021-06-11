@@ -18,8 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,8 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 public class BasicEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 

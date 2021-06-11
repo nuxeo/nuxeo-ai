@@ -18,6 +18,19 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
+import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants.AUTO;
@@ -33,20 +46,6 @@ import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
 
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
-import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
-import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
-
 /**
  * A bulk action to remove enrichment metadata
  */
@@ -56,7 +55,7 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
 
     public static final String INPUT_STREAM = "ai/" + ACTION_NAME;
 
-    public static final String COMPUTATION_NAME  =  INPUT_STREAM;
+    public static final String COMPUTATION_NAME = INPUT_STREAM;
 
     public static final String PARAM_MODEL = "modelId";
 
@@ -65,11 +64,8 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
     @Override
     public Topology getTopology(Map<String, String> options) {
 
-        return Topology.builder()
-                       .addComputation(RemovalComputation::new,
-                                       Arrays.asList(INPUT_1 + ":" + INPUT_STREAM, //
-                                                     OUTPUT_1 + ":" + STATUS_STREAM))
-                       .build();
+        return Topology.builder().addComputation(RemovalComputation::new, Arrays.asList(INPUT_1 + ":" + INPUT_STREAM, //
+                OUTPUT_1 + ":" + STATUS_STREAM)).build();
     }
 
     public static class RemovalComputation extends AbstractBulkComputation {

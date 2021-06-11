@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.inject.Inject;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +21,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.ServletContainerFeature;
-
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -31,7 +29,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 @RunWith(FeaturesRunner.class)
-@Features({WebEngineFeature.class, CoreFeature.class})
+@Features({ WebEngineFeature.class, CoreFeature.class })
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ecm.platform.web.common")
 @RepositoryConfig(cleanup = Granularity.METHOD)
@@ -61,13 +59,18 @@ public class TestRekognition {
     public void shouldCreateNotification() throws IOException {
         ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
         arrayNode.add(new ObjectNode(JsonNodeFactory.instance));
-        WebResource webResource = client.resource(getBaseURL()).path("aiaddons").path("rekognition").path("callback").path("labels");
+        WebResource webResource = client.resource(getBaseURL())
+                                        .path("aiaddons")
+                                        .path("rekognition")
+                                        .path("callback")
+                                        .path("labels");
 
         File jsonPayload = FileUtils.getResourceFileFromContext("sns-success-resp.json");
         byte[] jsonData = Files.readAllBytes(Paths.get(jsonPayload.toURI()));
         String jsonPost = new String(jsonData, StandardCharsets.UTF_8);
-        ClientResponse response = webResource.accept(CONTENT_TYPE).type(CONTENT_TYPE).post(ClientResponse.class,
-                jsonPost);
+        ClientResponse response = webResource.accept(CONTENT_TYPE)
+                                             .type(CONTENT_TYPE)
+                                             .post(ClientResponse.class, jsonPost);
         assertEquals(200, response.getStatus());
 
         eventService.waitForAsyncCompletion();

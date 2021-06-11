@@ -21,7 +21,6 @@ package org.nuxeo.ai;
 import static org.junit.Assume.assumeTrue;
 
 import org.apache.commons.lang3.StringUtils;
-
 import com.amazonaws.SDKGlobalConfiguration;
 
 /**

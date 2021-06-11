@@ -35,7 +35,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -54,7 +53,6 @@ import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -68,7 +66,7 @@ public class Rekognition {
 
     private static final String SUBSCRIPTION_CONFIRMATION = "SubscriptionConfirmation";
 
-    private static final String TYPE_JSON_FIELD= "Type";
+    private static final String TYPE_JSON_FIELD = "Type";
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -79,12 +77,13 @@ public class Rekognition {
      * - {@link DetectFacesEnrichmentProvider} for faces tracking
      * - {@link DetectCelebritiesEnrichmentProvider} for celebrity detection
      * - {@link DetectUnsafeImagesEnrichmentProvider} for unsafe content detection
+     *
      * @param request of a Notification service
      * @return {@link Response}
      */
     @POST
     @Path("callback/labels")
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Consumes({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     public Response callback(@Context HttpServletRequest request) throws IOException {
         Notification.Message message;
         String json = null;
@@ -110,28 +109,22 @@ public class Rekognition {
         String event;
         boolean succeeded = message.isSucceeded();
         switch (message.getApi()) {
-            case LabelsEnrichmentProvider
-                    .ASYNC_ACTION_NAME:
-                event = succeeded ? AsyncLabelResultListener.SUCCESS_EVENT
-                        : AsyncLabelResultListener.FAILURE_EVENT;
-                break;
-            case DetectFacesEnrichmentProvider
-                    .ASYNC_ACTION_NAME:
-                event = succeeded ? AsyncFaceResultListener.SUCCESS_EVENT
-                        : AsyncFaceResultListener.FAILURE_EVENT;
-                break;
-            case DetectCelebritiesEnrichmentProvider
-                    .ASYNC_ACTION_NAME:
-                event = succeeded ? AsyncCelebritiesResultListener.SUCCESS_EVENT
-                        : AsyncCelebritiesResultListener.FAILURE_EVENT;
-                break;
-            case DetectUnsafeImagesEnrichmentProvider
-                    .ASYNC_ACTION_NAME:
-                event = succeeded ? AsyncUnsafeResultListener.SUCCESS_EVENT
-                        : AsyncUnsafeResultListener.FAILURE_EVENT;
-                break;
-            default:
-                throw new NuxeoException("Unknown API used: " + message.getApi());
+        case LabelsEnrichmentProvider.ASYNC_ACTION_NAME:
+            event = succeeded ? AsyncLabelResultListener.SUCCESS_EVENT : AsyncLabelResultListener.FAILURE_EVENT;
+            break;
+        case DetectFacesEnrichmentProvider.ASYNC_ACTION_NAME:
+            event = succeeded ? AsyncFaceResultListener.SUCCESS_EVENT : AsyncFaceResultListener.FAILURE_EVENT;
+            break;
+        case DetectCelebritiesEnrichmentProvider.ASYNC_ACTION_NAME:
+            event = succeeded ?
+                    AsyncCelebritiesResultListener.SUCCESS_EVENT :
+                    AsyncCelebritiesResultListener.FAILURE_EVENT;
+            break;
+        case DetectUnsafeImagesEnrichmentProvider.ASYNC_ACTION_NAME:
+            event = succeeded ? AsyncUnsafeResultListener.SUCCESS_EVENT : AsyncUnsafeResultListener.FAILURE_EVENT;
+            break;
+        default:
+            throw new NuxeoException("Unknown API used: " + message.getApi());
         }
 
         EventService es = Framework.getService(EventService.class);

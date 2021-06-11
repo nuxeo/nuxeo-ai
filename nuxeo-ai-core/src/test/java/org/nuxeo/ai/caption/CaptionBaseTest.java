@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -43,7 +42,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 @Deploy("org.nuxeo.ai.ai-core")
 public class CaptionBaseTest {
 
@@ -72,9 +71,9 @@ public class CaptionBaseTest {
         doc = session.saveDocument(doc);
         assertNotNull(doc);
         @SuppressWarnings("unchecked")
-        List<Map<String, Serializable>> captions = (List<Map<String, Serializable>>) doc.getPropertyValue("cap:captions");
+        List<Map<String, Serializable>> captions = (List<Map<String, Serializable>>) doc.getPropertyValue(
+                "cap:captions");
         assertNotNull(captions);
-        assertThat(captions).isNotEmpty()
-                .hasSize(1);
+        assertThat(captions).isNotEmpty().hasSize(1);
     }
 }

@@ -19,7 +19,6 @@
 package org.nuxeo.ai.pipes.filters;
 
 import java.util.function.Predicate;
-
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
 

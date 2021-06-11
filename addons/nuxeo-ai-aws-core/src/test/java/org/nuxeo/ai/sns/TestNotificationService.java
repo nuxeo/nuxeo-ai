@@ -19,9 +19,13 @@
  */
 package org.nuxeo.ai.sns;
 
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.GetTopicAttributesRequest;
-import com.amazonaws.services.sns.model.GetTopicAttributesResult;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import javax.inject.Inject;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,14 +36,9 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
-
-import javax.inject.Inject;
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.GetTopicAttributesRequest;
+import com.amazonaws.services.sns.model.GetTopicAttributesResult;
 
 @RunWith(FeaturesRunner.class)
 @Features({ RuntimeFeature.class, PlatformFeature.class })

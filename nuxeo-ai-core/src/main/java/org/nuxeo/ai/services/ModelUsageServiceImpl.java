@@ -1,5 +1,6 @@
 package org.nuxeo.ai.services;
 
+import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants;
@@ -9,8 +10,6 @@ import org.nuxeo.elasticsearch.http.readonly.filter.DefaultSearchRequestFilter;
 import org.nuxeo.elasticsearch.http.readonly.filter.SearchRequestFilter;
 import org.nuxeo.elasticsearch.http.readonly.service.RequestFilterService;
 import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
 
 public class ModelUsageServiceImpl implements ModelUsageService {
 

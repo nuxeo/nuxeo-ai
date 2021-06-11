@@ -21,7 +21,9 @@ package org.nuxeo.ai.imagequality.pojo;
 public class Nudity {
 
     private float raw;
+
     private float partial;
+
     private float safe;
 
     public float getRaw() {

@@ -19,11 +19,10 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * A POJO for marshaling response from Amazon Transcribe
@@ -163,5 +162,3 @@ public class AudioTranscription {
         }
     }
 }
-
-

@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
+import javax.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -58,83 +58,80 @@ import org.nuxeo.ecm.core.schema.types.SimpleTypeImpl;
 import org.nuxeo.ecm.core.schema.types.Type;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
-
-import com.fasterxml.jackson.core.JsonGenerator;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
-
-import javax.servlet.http.HttpServletRequest;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * Resolves all given properties for given documents <code>
  * Example:
  * <code>
- *     [
- *     {
- *         "docId": "20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b",
- *         "inputs": [
- *             {
- *                 "name": "dc:description",
- *                 "isArray": false,
- *                 "type": "clob",
- *                 "value": "Description 11"
- *             },
- *             {
- *                 "resolver": "userManagerResolver",
- *                 "isArray": true,
- *                 "name": "dc:contributors",
- *                 "type": "contributorList",
- *                 "value": [
- *                     {
- *                         "entity-type": "user",
- *                         "id": "system",
- *                         "extendedGroups": [
- *                             {
- *                                 "name": "administrators",
- *                                 "label": "Administrators group",
- *                                 "url": "group/administrators"
- *                             }
- *                         ],
- *                         "isAdministrator": true,
- *                         "isAnonymous": false
- *                     }
- *                 ]
- *             },
- *             {
- *                 "name": "dc:subjects",
- *                 "isArray": true,
- *                 "type": "subjectList",
- *                 "value": [
- *                     "art/architecture",
- *                     "art/danse"
- *                 ]
- *             },
- *             {
- *                 "name": "file:content",
- *                 "isArray": false,
- *                 "type": "content",
- *                 "value": {
- *                     "name": "nxblob-67186932984972622.tmp",
- *                     "mime-type": null,
- *                     "encoding": null,
- *                     "digestAlgorithm": "MD5",
- *                     "digest": "144d66206d7e2fd7c7bea9bb34362ff4",
- *                     "length": "1025580",
- *                     "data": "http://fake-url.nuxeo.com/nxfile/test/20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b/file:content/nxblob-67186932984972622.tmp?changeToken=0-0"
- *                 }
- *             },
- *             {
- *                 "resolver": "documentResolver",
- *                 "isArray": false,
- *                 "name": "extrafile:docprop",
- *                 "type": "string",
- *                 "value": {
- *                     "documentURL": null
- *                 }
- *             }
- *         ],
- *         "outputs": [...],
- *     },
- *     ....
+ * [
+ * {
+ * "docId": "20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b",
+ * "inputs": [
+ * {
+ * "name": "dc:description",
+ * "isArray": false,
+ * "type": "clob",
+ * "value": "Description 11"
+ * },
+ * {
+ * "resolver": "userManagerResolver",
+ * "isArray": true,
+ * "name": "dc:contributors",
+ * "type": "contributorList",
+ * "value": [
+ * {
+ * "entity-type": "user",
+ * "id": "system",
+ * "extendedGroups": [
+ * {
+ * "name": "administrators",
+ * "label": "Administrators group",
+ * "url": "group/administrators"
+ * }
+ * ],
+ * "isAdministrator": true,
+ * "isAnonymous": false
+ * }
+ * ]
+ * },
+ * {
+ * "name": "dc:subjects",
+ * "isArray": true,
+ * "type": "subjectList",
+ * "value": [
+ * "art/architecture",
+ * "art/danse"
+ * ]
+ * },
+ * {
+ * "name": "file:content",
+ * "isArray": false,
+ * "type": "content",
+ * "value": {
+ * "name": "nxblob-67186932984972622.tmp",
+ * "mime-type": null,
+ * "encoding": null,
+ * "digestAlgorithm": "MD5",
+ * "digest": "144d66206d7e2fd7c7bea9bb34362ff4",
+ * "length": "1025580",
+ * "data": "http://fake-url.nuxeo.com/nxfile/test/20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b/file:content/nxblob-67186932984972622.tmp?changeToken=0-0"
+ * }
+ * },
+ * {
+ * "resolver": "documentResolver",
+ * "isArray": false,
+ * "name": "extrafile:docprop",
+ * "type": "string",
+ * "value": {
+ * "documentURL": null
+ * }
+ * }
+ * ],
+ * "outputs": [...],
+ * },
+ * ....
  * </code>
  */
 @Operation(id = FetchDocsToAnnotate.ID, category = Constants.CAT_DOCUMENT, description = "Fetch document(s) content given properties")
@@ -173,8 +170,13 @@ public class FetchDocsToAnnotate {
             if (uids.isEmpty()) {
                 throw new NuxeoException("Please refer uids");
             }
-            DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('"
-                    + uids.stream().map(String::valueOf).collect(Collectors.joining("','")) + "')");
+            DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('" + uids.stream()
+                                                                                                           .map(String::valueOf)
+                                                                                                           .collect(
+                                                                                                                   Collectors
+                                                                                                                           .joining(
+                                                                                                                                   "','"))
+                    + "')");
             if (docs.isEmpty()) {
                 return Blobs.createJSONBlob(MAPPER.writeValueAsString(EMPTY_JSON_LIST));
             }
@@ -189,15 +191,13 @@ public class FetchDocsToAnnotate {
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .fetchInDoc("properties")
                                                            .base(VirtualHostHelper.getBaseURL(request))
-                                                           .get(),
-                                DocumentPropertyJsonWriter.class);
+                                                           .get(), DocumentPropertyJsonWriter.class);
                         DocumentUrlJsonEnricher enricher = registry.getInstance(
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .session(coreSession)
                                                            .fetchInDoc("properties")
                                                            .base(VirtualHostHelper.getBaseURL(request))
-                                                           .get(),
-                                DocumentUrlJsonEnricher.class);
+                                                           .get(), DocumentUrlJsonEnricher.class);
                         // workaround to be able to have the data url for a given blob
                         List<Map<String, Object>> inputs = new ArrayList<>();
                         List<Map<String, Object>> outputs = new ArrayList<>();

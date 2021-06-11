@@ -29,7 +29,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-
 import org.assertj.core.api.Condition;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,7 +51,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 @RunWith(FeaturesRunner.class)
-@Features({CoreFeature.class})
+@Features({ CoreFeature.class })
 @Deploy("org.nuxeo.ecm.platform.commandline.executor")
 @Deploy("org.nuxeo.ecm.actions")
 @Deploy("org.nuxeo.ecm.platform.picture.core")
@@ -117,13 +116,12 @@ public class TestVideoConversions {
         adapter.getVideo();
         TranscodedVideo convert = vs.convert(adapter.getVideo(), "WAV 16K");
         assertNotNull(convert);
-        assertThat(convert.getBlob()).isNotNull()
-                .is(new Condition<Blob>() {
-                    @Override
-                    public boolean matches(Blob value) {
-                        String ext = FileUtils.getFileExtension(value.getFilename()).toLowerCase();
-                        return value.getLength() > 0 && "wav".equals(ext);
-                    }
-                });
+        assertThat(convert.getBlob()).isNotNull().is(new Condition<Blob>() {
+            @Override
+            public boolean matches(Blob value) {
+                String ext = FileUtils.getFileExtension(value.getFilename()).toLowerCase();
+                return value.getLength() > 0 && "wav".equals(ext);
+            }
+        });
     }
 }
