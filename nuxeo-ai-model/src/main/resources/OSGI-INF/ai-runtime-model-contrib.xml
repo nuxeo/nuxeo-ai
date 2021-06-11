@@ -7,7 +7,6 @@
   <service>
     <provide interface="org.nuxeo.ai.model.serving.ModelServingService"/>
   </service>
-  `
   <extension-point name="models">
     <documentation>
     </documentation>
