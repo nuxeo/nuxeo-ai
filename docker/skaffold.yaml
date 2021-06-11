@@ -5,16 +5,16 @@ build:
     envTemplate:
       template: '{{.VERSION}}'
   artifacts:
-    - image: ${DOCKER_REGISTRY}/${ORG}/${APP_NAME}
-      context: .
-      kaniko:
-        buildArgs:
-          BUILD_TAG: "${BUILD_TAG}"
-          SCM_REF: "${SCM_REF}"
-          VERSION: "${VERSION}"
-          PLATFORM_VERSION: "${PLATFORM_VERSION}"
-        cache:
-          repo: ${DOCKER_REGISTRY}/${ORG}/cache
+  - image: ${DOCKER_REGISTRY}/${ORG}/${APP_NAME}
+    context: .
+    kaniko:
+      buildArgs:
+        BUILD_TAG: "${BUILD_TAG}"
+        SCM_REF: "${SCM_REF}"
+        VERSION: "${VERSION}"
+        PLATFORM_VERSION: "${PLATFORM_VERSION}"
+      cache:
+        repo: ${DOCKER_REGISTRY}/${ORG}/cache
   cluster:
     namespace: ai
     pullSecretName: kaniko-secret
@@ -22,8 +22,8 @@ build:
       secretName: jenkins-docker-cfg
     timeout: 180m
     tolerations:
-      - key: team
-        operator: "Equal"
-        value: ai
-        effect: "NoSchedule"
-        tolerationseconds: null
+    - key: team
+      operator: "Equal"
+      value: ai
+      effect: "NoSchedule"
+      tolerationseconds: null

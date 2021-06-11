@@ -5,8 +5,8 @@
     <enrichment name="aws.unsafeImages" kind="/classification/imageLabels"
                 class="org.nuxeo.ai.enrichment.DetectUnsafeImagesEnrichmentProvider">
       <mimeTypes>
-        <mimeType name="image/jpeg" normalized="true" />
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
       </mimeTypes>
       <option name="minConfidence">55</option>
     </enrichment>

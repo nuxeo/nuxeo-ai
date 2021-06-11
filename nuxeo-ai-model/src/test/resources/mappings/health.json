@@ -5,7 +5,9 @@
   },
   "response": {
     "status": 200,
-    "jsonBody": {"health":"OK"},
+    "jsonBody": {
+      "health": "OK"
+    },
     "headers": {
       "Content-Type": "application/json"
     }

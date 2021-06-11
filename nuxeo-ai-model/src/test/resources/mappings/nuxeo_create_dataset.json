@@ -43,13 +43,7 @@
         "dc:publisher": null
       },
       "facets": [
-        "Versionable",
-        "NXTag",
-        "Publishable",
-        "AiEvaluable",
-        "Commentable",
-        "AiJobSagemaker",
-        "HasRelatedText",
+        "Versionable", "NXTag", "Publishable", "AiEvaluable", "Commentable", "AiJobSagemaker", "HasRelatedText",
         "Downloadable"
       ]
     },

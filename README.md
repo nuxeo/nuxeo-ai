@@ -1,12 +1,15 @@
 # Nuxeo AI Core
+
 Core functionality for using AI with the Nuxeo Platform.
 
 This repository provides 3 packages:
-  * nuxeo-ai-core - Contains the core interfaces and AI component
-  * nuxeo-ai-image-quality - Enrichment services that uses [Sightengine](https://sightengine.com/).
-  * nuxeo-ai-aws - Enrichment services that use Amazon Web Services.
+
+* nuxeo-ai-core - Contains the core interfaces and AI component
+* nuxeo-ai-image-quality - Enrichment services that uses [Sightengine](https://sightengine.com/).
+* nuxeo-ai-aws - Enrichment services that use Amazon Web Services.
 
 ## Installation
+
 #### Version Support
 
 | Ai-core Version | Nuxeo Version
@@ -21,8 +24,8 @@ This repository provides 3 packages:
 
 1. Install the nuxeo-ai-core package. `./bin/nuxeoctl mp-install nuxeo-ai-core`
 
-
 #### Export Configuration
+
 You can set these in your `nuxeo.conf`.
 <div class="table-scroll">
 <table class="hover">
@@ -62,8 +65,10 @@ You can set these in your `nuxeo.conf`.
 </div>
 
 #### Indexing and Search
-It is recommended that the Elasticsearch mappings are updated to allow a full text search on enrichment labels.
- The following code will add this mapping to a server running locally.
+
+It is recommended that the Elasticsearch mappings are updated to allow a full text search on enrichment labels. The
+following code will add this mapping to a server running locally.
+
 ```
 curl -X PUT \
   http://localhost:9200/nuxeo/_mapping/doc/ \
@@ -148,7 +153,9 @@ curl -X PUT \
   }
 }'
 ```
+
 #### Configuration Parameters
+
 You can set these in your `nuxeo.conf`.
 <div class="table-scroll">
 <table class="hover">
@@ -241,20 +248,26 @@ You can set these in your `nuxeo.conf`.
 </table>
 </div>
 
-
 ## Nuxeo AI Core
+
 Nuxeo AI Core provides 3 Java modules:
-  * nuxeo-ai-core - Contains the core interfaces and AI component
-  * nuxeo-ai-pipes - Nuxeo Pipes, short for "Pipelines" provides the ability to operate with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream).  Nuxeo Stream provides a Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
-  * nuxeo-ai-model - Adds support for custom machine learning models
+
+* nuxeo-ai-core - Contains the core interfaces and AI component
+* nuxeo-ai-pipes - Nuxeo Pipes, short for "Pipelines" provides the ability to operate
+  with [Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream). Nuxeo Stream provides a
+  Log storage abstraction and a Stream processing pattern. Nuxeo Stream has implementations
+  with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).
+* nuxeo-ai-model - Adds support for custom machine learning models
 
 ### Features
- * Provides an `AIComponent` to register services.  eg. An enrichment service.
- * Interfaces and helper classes for building services.
- * Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentProvider`.
- * An Operation called `EnrichmentOp` to call an `EnrichmentProvider` and return the result.
- * Provides a `RestClient` and `RestEnrichmentProvider` for easily calling a custom json rest api.
- * Provides a `ThresholdComponents` to register type/facet based thresholds. 
+
+* Provides an `AIComponent` to register services. eg. An enrichment service.
+* Interfaces and helper classes for building services.
+* Provides a `EnrichingStreamProcessor` to act on a stream using an Java `EnrichmentProvider`.
+* An Operation called `EnrichmentOp` to call an `EnrichmentProvider` and return the result.
+* Provides a `RestClient` and `RestEnrichmentProvider` for easily calling a custom json rest api.
+* Provides a `ThresholdComponents` to register type/facet based thresholds.
+
  ```xml
 <extension target="org.nuxeo.ai.configuration.ThresholdComponent"
              point="thresholdConfiguration">
@@ -269,10 +282,10 @@ Nuxeo AI Core provides 3 Java modules:
     </thresholdConfiguration>
 </extension>
 ```
-  
-  * Continues Export - to enable such you must contribute a cron contribution to your instance. 
-  It has to fire `startContinuousExport` at a give time. 
-  For instance to export weekly you might use the following example:
+
+* Continues Export - to enable such you must contribute a cron contribution to your instance. It has to
+  fire `startContinuousExport` at a give time. For instance to export weekly you might use the following example:
+
   ```xml
     <extension target="org.nuxeo.ecm.core.scheduler.SchedulerService" point="schedule">
         <schedule id="continuous_export_default">
@@ -282,43 +295,61 @@ Nuxeo AI Core provides 3 Java modules:
         </schedule>
       </extension>
   ```
-  On such event the system will retrieve all AI Model defined under
-  configured project and perform evaluation of the current data to check if it needs to be uploaded.
-  
+
+On such event the system will retrieve all AI Model defined under configured project and perform evaluation of the
+current data to check if it needs to be uploaded.
 
 ## Nuxeo Pipes
-### Features
- * Enables sending custom events to a nuxeo stream.
- * Provides a `FunctionStreamProcessorTopology` to act on a stream using a Java `Function<T, R>`.
- * Provides 4 customizable document streams:
-    * `images` - When a image is added to a document.
-    * `videos` - When a video is added to a document.
-    * `audio` - When an audio file is added to a document.
-    * `text` - When binary text is extracted from a document.
 
-These streams are *disabled by default* but can be enabled by the [corresponding configuration parameters](#configuration-parameters).
+### Features
+
+* Enables sending custom events to a nuxeo stream.
+* Provides a `FunctionStreamProcessorTopology` to act on a stream using a Java `Function<T, R>`.
+* Provides 4 customizable document streams:
+  * `images` - When a image is added to a document.
+  * `videos` - When a video is added to a document.
+  * `audio` - When an audio file is added to a document.
+  * `text` - When binary text is extracted from a document.
+
+These streams are *disabled by default* but can be enabled by
+the [corresponding configuration parameters](#configuration-parameters).
 
 ### Customization
-##### Sample configuration for DAM Installations.
-The [configuration parameters](#configuration-parameters) are used to configure Nuxeo xml contributions, instead you can provide your own configuration that meets your requirements.
 
-A [Sample DAM configuration is available to download](https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-pipes/src/test/resources/ai-dam-config.xml), and defines 2 pipelines:
+##### Sample configuration for DAM Installations.
+
+The [configuration parameters](#configuration-parameters) are used to configure Nuxeo xml contributions, instead you can
+provide your own configuration that meets your requirements.
+
+A [Sample DAM configuration is available to download](https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-pipes/src/test/resources/ai-dam-config.xml)
+, and defines 2 pipelines:
+
 ###### Images Pipeline
- * Listens for `pictureViewsGenerationDone` and sends `picture:views/3/content` to the `images` stream.
- * Configures an `EnrichingStreamProcessor` to read from the  `images` stream, calls the `aws.celebrityDetection` enrichment service and puts the response in the `ai/images-enrichment-in` stream.
- * The next stream processor reads from the `ai/images-enrichment-in` stream, and raises an `imageMetadataCreated` event for each new enrichment entry.
- * An example listener for the  `imageMetadataCreated` event writes a log message.
+
+* Listens for `pictureViewsGenerationDone` and sends `picture:views/3/content` to the `images` stream.
+* Configures an `EnrichingStreamProcessor` to read from the  `images` stream, calls the `aws.celebrityDetection`
+  enrichment service and puts the response in the `ai/images-enrichment-in` stream.
+* The next stream processor reads from the `ai/images-enrichment-in` stream, and raises an `imageMetadataCreated` event
+  for each new enrichment entry.
+* An example listener for the  `imageMetadataCreated` event writes a log message.
 
 ###### Video Pipeline
- * Listens for new `vid:storyboard` modifications for a document in a path containing `movies` and sends 4 of the video storyboard images to the `video` stream.
- * Configures an `EnrichingStreamProcessor` to read from the `video` stream, calls the `aws.imageLabels` enrichment service and puts the response in the `ai/video-enrichment-in` stream.
- * The next stream processor reads from the `ai/video-enrichment-in` stream and creates document tags for the enrichment labels.
 
-Please note that the `EnrichingStreamProcessors` are using a stream processing policy of `continueOnFailure=true`, this means that *stream processing will continue even if the enrichment failed*.
+* Listens for new `vid:storyboard` modifications for a document in a path containing `movies` and sends 4 of the video
+  storyboard images to the `video` stream.
+* Configures an `EnrichingStreamProcessor` to read from the `video` stream, calls the `aws.imageLabels` enrichment
+  service and puts the response in the `ai/video-enrichment-in` stream.
+* The next stream processor reads from the `ai/video-enrichment-in` stream and creates document tags for the enrichment
+  labels.
+
+Please note that the `EnrichingStreamProcessors` are using a stream processing policy of `continueOnFailure=true`, this
+means that *stream processing will continue even if the enrichment failed*.
 
 ##### Events
+
 Using an Nuxeo extension you can dynamically register a pipeline for any custom event.  
 For example to send `MY_EVENT` to a stream called `mystream` you would use the following configuration.
+
 ```xml
   <extension point="pipes" target="org.nuxeo.ai.Pipeline">
     <pipe id="pipe.mypipe" enabled="true" function="org.nuxeo.my.DocumentPipeFunction">
@@ -333,17 +364,22 @@ For example to send `MY_EVENT` to a stream called `mystream` you would use the f
     </pipe>
   </extension>
 ```
-Transforming an input Event into an output stream is done using a function specified by the `function` parameter. Functions are explained below.
+
+Transforming an input Event into an output stream is done using a function specified by the `function` parameter.
+Functions are explained below.
 
 ##### Nuxeo Insight Cloud enrichments
 
-To enable/disable Nuxeo Insight Cloud enrichers based on your custom model set `nuxeo.ai.insight.enrichment.enabled` to the desired value.
-Default value is `true`
+To enable/disable Nuxeo Insight Cloud enrichers based on your custom model set `nuxeo.ai.insight.enrichment.enabled` to
+the desired value. Default value is `true`
 
 ##### Custom enrichment services
- New enrichment services can be added by implementing `EnrichmentProvider`.  `AbstractEnrichmentProvider` is a good starting point.
- If you wish to call a custom rest api then extending `RestEnrichmentProvider` would allow access to the various `RestClient`
- helper methods. To register your extension you would use configuration similar to this.
+
+New enrichment services can be added by implementing `EnrichmentProvider`.  `AbstractEnrichmentProvider` is a good
+starting point. If you wish to call a custom rest api then extending `RestEnrichmentProvider` would allow access to the
+various `RestClient`
+helper methods. To register your extension you would use configuration similar to this.
+
  ```xml
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
     <enrichment name="custom1" kind="/classification/custom"
@@ -354,16 +390,23 @@ Default value is `true`
 ```
 
 ##### Functions
-Actions on streams or events are based on the standard Java `Function<T, R>` interface.  To send an event to a stream you would need to implement the `Function<Event, Record>` interface. `Record` is the type used for items in a nuxeo-stream.
+
+Actions on streams or events are based on the standard Java `Function<T, R>` interface. To send an event to a stream you
+would need to implement the `Function<Event, Record>` interface. `Record` is the type used for items in a nuxeo-stream.
 For examples, look at `PropertiesToStream` and its helper class `DocEventToStream`.
 
-These is also a `FilterFunction` that first tests a `Predicate` before applying the function.  Predicates can be built with the help of the `Predicates` class.
- To create a predicate for _only document events with documents which are not system documents or proxies and aren't "Folderish"_ you would use this predicate: `docEvent(notSystem().and(d -> !d.hasFacet("Folderish"))`.
+These is also a `FilterFunction` that first tests a `Predicate` before applying the function. Predicates can be built
+with the help of the `Predicates` class. To create a predicate for _only document events with documents which are not
+system documents or proxies and aren't "Folderish"_ you would use this
+predicate: `docEvent(notSystem().and(d -> !d.hasFacet("Folderish"))`.
 
 ##### Stream processing
-Stream processing is achieved using a computation stream pattern that enables you to compose producers/consumers into a complex topology.
 
-To use a custom processor, create a class that implements `FunctionStreamProcessorTopology` and specify it in the `class` parameter as shown below.
+Stream processing is achieved using a computation stream pattern that enables you to compose producers/consumers into a
+complex topology.
+
+To use a custom processor, create a class that implements `FunctionStreamProcessorTopology` and specify it in
+the `class` parameter as shown below.
 
 ```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
@@ -376,12 +419,14 @@ To use a custom processor, create a class that implements `FunctionStreamProcess
 ```
 
 ##### Enrichment stream processing
-You can register your custom enrichment services to act as a stream processor using the `EnrichingStreamProcessor`.
-For example, the following configuration would register a stream processor that acts on a source stream called `images`,
-it runs the `custom1` enrichment service on each record and sends the result to the `ai/enrichment-in` stream.
+
+You can register your custom enrichment services to act as a stream processor using the `EnrichingStreamProcessor`. For
+example, the following configuration would register a stream processor that acts on a source stream called `images`, it
+runs the `custom1` enrichment service on each record and sends the result to the `ai/enrichment-in` stream.
+
 ```xml
 <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-<streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"                 
+<streamProcessor name="myCustomProcessor1" defaultConcurrency="2" defaultPartitions="4"
                  class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
   <option name="source">ai/images</option>
   <option name="sink">ai/enrichment-in</option>
@@ -389,9 +434,11 @@ it runs the `custom1` enrichment service on each record and sends the result to 
 </streamProcessor>
 </extension>
 ```
-### Monitoring
-Nuxeo AI adds additional metrics to the standard [Nuxeo Metrics reporting](https://doc.nuxeo.com/nxdoc/metrics-and-monitoring/#metrics).
 
+### Monitoring
+
+Nuxeo AI adds additional metrics to the
+standard [Nuxeo Metrics reporting](https://doc.nuxeo.com/nxdoc/metrics-and-monitoring/#metrics).
 
 | Metric name | Metric
 | --- | --- |
@@ -411,11 +458,14 @@ Nuxeo AI adds additional metrics to the standard [Nuxeo Metrics reporting](https
 | nuxeo.ai.streams.func.[functionName].produced| How many records were produced by the function.|
 
 ### Notes
+
 * When using the Chronicle implementation of nuxeo-stream you should make sure your `defaultPartitons` setting for
-stream processors matches the number of partitions you have, eg. 4.
+  stream processors matches the number of partitions you have, eg. 4.
 
 #### Useful log config:
+
 Edit `$NUXEO_HOME/lib/log4j2.xml`, in the `<Appenders>` section, add a `AI-FILE` appender:
+
 ```xml
 <RollingFile name="AI-FILE" fileName="${sys:nuxeo.log.dir}/nuxeo-ai.log"
              filePattern="${sys:nuxeo.log.dir}/nuxeo-ai-%d{yyyy-MM-dd}.log.gz" append="true">
@@ -424,7 +474,9 @@ Edit `$NUXEO_HOME/lib/log4j2.xml`, in the `<Appenders>` section, add a `AI-FILE`
   <DefaultRolloverStrategy />
 </RollingFile>
 ```
+
 Then in the `<Loggers>` section, add a logger pointing to the `AI-FILE` appender:
+
 ```xml
 <Logger name="org.nuxeo.ai" level="debug">
   <AppenderRef ref="AI-FILE" />
@@ -433,49 +485,70 @@ Then in the `<Loggers>` section, add a logger pointing to the `AI-FILE` appender
 
 #### Useful stream commands:
 
-[Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream) is either implemented with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/).  To watch the progress of messages in the stream you can use:
+[Nuxeo Stream](https://github.com/nuxeo/nuxeo/tree/master/nuxeo-runtime/nuxeo-stream) is either implemented
+with [Chronicle Queues](https://github.com/OpenHFT/Chronicle-Queue) or [Apache Kafka](http://kafka.apache.org/). To
+watch the progress of messages in the stream you can use:
+
 ```
 $NUXEO_HOME/bin/stream.sh --help
 ```
-For example, to see the last 8 messages in the "images" stream, for chronicle you would use the first command below (passing in `--chronicle nxserver/data/stream/pipes`) and for Kafka you would use the second command below (passing in just `-k`).
+
+For example, to see the last 8 messages in the "images" stream, for chronicle you would use the first command below (
+passing in `--chronicle nxserver/data/stream/pipes`) and for Kafka you would use the second command below (passing in
+just `-k`).
+
 ```
 ./bin/stream.sh tail -n 8 --chronicle nxserver/data/stream/pipes -l images --codec avro
 ./bin/stream.sh tail -n 8 -k -l images --data-size 2000 --codec avro
 ```
-Similarly, to view the consumer lag on the "images" stream, for chronicle use the first command, and the second for kafka.  The response format is Markdown.
+
+Similarly, to view the consumer lag on the "images" stream, for chronicle use the first command, and the second for
+kafka. The response format is Markdown.
+
 ```
 ./bin/stream.sh lag --chronicle nxserver/data/stream/pipes -l images --verbose
 ./bin/stream.sh lag -k -l images --verbose
 ```
+
 ### Automatic Property Filling
-When a document is enriched with suggestions, the suggestions are stored in the `Enrichment` facet.
-It is possible to automatically set a property with a suggested value in two ways.
-If the property currently has no value then you can use `Autofill`, if the property already has a value then use `Autocorrect`.
+
+When a document is enriched with suggestions, the suggestions are stored in the `Enrichment` facet. It is possible to
+automatically set a property with a suggested value in two ways. If the property currently has no value then you can
+use `Autofill`, if the property already has a value then use `Autocorrect`.
 
 #### Autofill Logic
- * If the target property is `null` or its previously been autofilled then attempt to set the property.
- * Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.  
-    * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.
- * If we have already autofilled this property but it doesn't meet the threshold then reset it to `null`.
- * Raise an `AUTO_FILLED` document event.
+
+* If the target property is `null` or its previously been autofilled then attempt to set the property.
+* Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.
+  * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.
+* If we have already autofilled this property but it doesn't meet the threshold then reset it to `null`.
+* Raise an `AUTO_FILLED` document event.
 
 #### Autocorrect Logic
- * If its previously autofilled then don't attempt an autocorrect because autofill and autocorrect are mutually exclusive.
- * Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.  
-    * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.  
-    * Save the previous value in the history blob (unless it was previously auto-corrected).
- * If we have already autocorrected this property but it doesn't meet the threshold then reset it to the previous value from the history.
- * Raise an `AUTO_CORRECTED` document event.
+
+* If its previously autofilled then don't attempt an autocorrect because autofill and autocorrect are mutually
+  exclusive.
+* Calculate the highest ranking suggestion from the suggestions stored in the "Enrichment" facet.
+  * If its confidence is greater than the threshold returned from the `ThresholdService` then set the property value.
+  * Save the previous value in the history blob (unless it was previously auto-corrected).
+* If we have already autocorrected this property but it doesn't meet the threshold then reset it to the previous value
+  from the history.
+* Raise an `AUTO_CORRECTED` document event.
 
 #### Stream Bulk Actions
-Dataset exports use the [Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/).  To track progress of your bulk action you can use a command like this:
+
+Dataset exports use the [Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/). To track progress
+of your bulk action you can use a command like this:
+
 ```
 export COMMAND_ID=your-bulk-action-id
 curl -s -X GET "localhost:8080/nuxeo/api/v1/bulk/$COMMAND_ID" -u Administrator:Administrator -H 'content-type: application/json'
 
 ```
 
-The documentation on [Debugging The Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/#debugging) has more useful stream commands.  Some further examples are:
+The documentation on [Debugging The Bulk Action Framework](https://doc.nuxeo.com/nxdoc/bulk-action-framework/#debugging)
+has more useful stream commands. Some further examples are:
+
 ```
 ./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l ai/bulkDatasetExport
 ./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l ai/training
@@ -485,8 +558,14 @@ The documentation on [Debugging The Bulk Action Framework](https://doc.nuxeo.com
 ```
 
 # License
+
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 # About Nuxeo
 
-Nuxeo dramatically improves how content-based applications are built, managed and deployed, making customers more agile, innovative and successful. Nuxeo provides a next generation, enterprise ready platform for building traditional and cutting-edge content oriented applications. Combining a powerful application development environment with SaaS-based tools and a modular architecture, the Nuxeo Platform and Products provide clear business value to some of the most recognizable brands including Verizon, Electronic Arts, Netflix, Sharp, FICO, the U.S. Navy, and Boeing. Nuxeo is headquartered in New York and Paris. More information is available at www.nuxeo.com.
+Nuxeo dramatically improves how content-based applications are built, managed and deployed, making customers more agile,
+innovative and successful. Nuxeo provides a next generation, enterprise ready platform for building traditional and
+cutting-edge content oriented applications. Combining a powerful application development environment with SaaS-based
+tools and a modular architecture, the Nuxeo Platform and Products provide clear business value to some of the most
+recognizable brands including Verizon, Electronic Arts, Netflix, Sharp, FICO, the U.S. Navy, and Boeing. Nuxeo is
+headquartered in New York and Paris. More information is available at www.nuxeo.com.

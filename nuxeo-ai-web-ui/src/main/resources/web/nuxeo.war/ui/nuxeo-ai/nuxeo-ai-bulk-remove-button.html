@@ -23,12 +23,12 @@ limitations under the License.
 <dom-module id="nuxeo-ai-bulk-remove-button">
   <template>
     <template is="dom-if" if="[[_isAvailable()]]">
-        <nuxeo-operation-button id="aiBulkRemoveOpBtn" operation="Bulk.RunAction" input="[[provider]]"
-                                params="[[_params(provider, modelId, xpaths)]]" icon="nuxeo-ai:nuxeo-ai-bots-off"
-                                label="ai.bulkRemoveButton.label" show-label$=[[showLabel]]
-                                error-label="ai.bulkRemoveButton.action.error"
-                                on-response="_responseReceived">
-        </nuxeo-operation-button>
+      <nuxeo-operation-button id="aiBulkRemoveOpBtn" operation="Bulk.RunAction" input="[[provider]]"
+                              params="[[_params(provider, modelId, xpaths)]]" icon="nuxeo-ai:nuxeo-ai-bots-off"
+                              label="ai.bulkRemoveButton.label" show-label$=[[showLabel]]
+                              error-label="ai.bulkRemoveButton.action.error"
+                              on-response="_responseReceived">
+      </nuxeo-operation-button>
     </template>
   </template>
   <script>
@@ -93,9 +93,9 @@ limitations under the License.
               this.fire('notify', {message: this.i18n('ai.bulkRemoveButton.action.poll')});
           },
 
-          _isAvailable: function() {
-            return Nuxeo.UI.config && Nuxeo.UI.config.insight && Nuxeo.UI.config.insight.client 
-                && Nuxeo.UI.config.insight.client.enabled || false;
+          _isAvailable: function () {
+              return Nuxeo.UI.config && Nuxeo.UI.config.insight && Nuxeo.UI.config.insight.client
+                  && Nuxeo.UI.config.insight.client.enabled || false;
           }
       });
   </script>

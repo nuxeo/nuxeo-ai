@@ -19,15 +19,18 @@
       <option name="maxResults">50</option>
       <option name="features">all</option>
     </enrichment>
-    <enrichment name="test.e2" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider" maxSize="45">
+    <enrichment name="test.e2" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider"
+                maxSize="45">
       <mimeTypes>
-        <mimeType name="image/png" normalized="true" />
+        <mimeType name="image/png" normalized="true"/>
       </mimeTypes>
       <option name="maxResults">100</option>
     </enrichment>
-    <enrichment name="test.e3" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider" />
-    <enrichment name="test.logging" kind="/classification/sentiment" class="org.nuxeo.ai.enrichment.LoggingEnrichmentProvider" />
-    <enrichment name="test.reverse" kind="/classification/sentiment" transientStore="myTransient" class="org.nuxeo.ai.enrichment.TextReversingEnrichmentProvider" />
+    <enrichment name="test.e3" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider"/>
+    <enrichment name="test.logging" kind="/classification/sentiment"
+                class="org.nuxeo.ai.enrichment.LoggingEnrichmentProvider"/>
+    <enrichment name="test.reverse" kind="/classification/sentiment" transientStore="myTransient"
+                class="org.nuxeo.ai.enrichment.TextReversingEnrichmentProvider"/>
   </extension>
 
 </component>

@@ -6,8 +6,8 @@
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>
-  <installer restart="true" />
-  <uninstaller restart="true" />
+  <installer restart="true"/>
+  <uninstaller restart="true"/>
   <!-- <hotreload-support>false</hotreload-support> -->
   <!-- <require-terms-and-conditions-acceptance>false</require-terms-and-conditions-acceptance> -->
   <!-- Nuxeo Validation: none | inprocess | primary_validation | nuxeo_certified -->
@@ -21,10 +21,10 @@
   </platforms>
   <!-- Dependencies on other packages -->
   <dependencies>
-  <!-- <package>another-package:1.0.0:1.0.0</package> -->
-  <!-- If you require JSF UI package:  -->
-  <!-- <package>nuxeo-jsf-ui</package> -->
-  <!-- If you require WEB UI package:  -->
+    <!-- <package>another-package:1.0.0:1.0.0</package> -->
+    <!-- If you require JSF UI package:  -->
+    <!-- <package>nuxeo-jsf-ui</package> -->
+    <!-- If you require WEB UI package:  -->
     <package>nuxeo-web-ui</package>
   </dependencies>
   <!-- Conflicts with other packages -->

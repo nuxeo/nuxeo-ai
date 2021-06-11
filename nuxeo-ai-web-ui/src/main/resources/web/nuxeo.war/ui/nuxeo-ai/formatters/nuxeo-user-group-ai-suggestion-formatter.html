@@ -22,27 +22,28 @@ limitations under the License.
   <template>
 
     <style include="nuxeo-ai-suggestion-formatter-styles">
-      :host {
-        padding: 4px 9px 4px 5px;
-      }
-      nuxeo-user-tag,
-      nuxeo-group-tag {
-        display: flex;
-        pointer-events: none;
-        --nuxeo-tag: {
-          display: inline-block;
-          background-color: transparent;
-          padding: 0;
-          margin: 0 !important;
-          color: var(--nuxeo-tag-text);
-          font-size: 0.8rem;
-          letter-spacing: 0.02em;
-          line-height: 1rem;
-          border-radius: 2em;
-          text-decoration: none;
-          vertical-align: baseline;
+        :host {
+            padding: 4px 9px 4px 5px;
         }
-      }
+
+        nuxeo-user-tag,
+        nuxeo-group-tag {
+            display: flex;
+            pointer-events: none;
+            --nuxeo-tag: {
+                display: inline-block;
+                background-color: transparent;
+                padding: 0;
+                margin: 0 !important;
+                color: var(--nuxeo-tag-text);
+                font-size: 0.8rem;
+                letter-spacing: 0.02em;
+                line-height: 1rem;
+                border-radius: 2em;
+                text-decoration: none;
+                vertical-align: baseline;
+            }
+        }
     </style>
     <dom-if if="[[_isUser(suggestion.value)]]">
       <template>
@@ -59,23 +60,23 @@ limitations under the License.
   </template>
 
   <script>
-    {
-      class UserGroupAISuggestionFormatter extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
-        static get is() {
-          return 'nuxeo-user-group-ai-suggestion-formatter';
-        }
+      {
+          class UserGroupAISuggestionFormatter extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
+              static get is() {
+                  return 'nuxeo-user-group-ai-suggestion-formatter';
+              }
 
-        _isUser(model) {
-          return model['entity-type'] === 'user';
-        }
+              _isUser(model) {
+                  return model['entity-type'] === 'user';
+              }
 
-        _isGroup(model) {
-          return model['entity-type'] === 'group';
-        }
+              _isGroup(model) {
+                  return model['entity-type'] === 'group';
+              }
+          }
+
+          customElements.define(UserGroupAISuggestionFormatter.is, UserGroupAISuggestionFormatter);
+          Nuxeo.UserGroupAISuggestionFormatter = UserGroupAISuggestionFormatter;
       }
-
-      customElements.define(UserGroupAISuggestionFormatter.is, UserGroupAISuggestionFormatter);
-      Nuxeo.UserGroupAISuggestionFormatter = UserGroupAISuggestionFormatter;
-    }
   </script>
 </dom-module>

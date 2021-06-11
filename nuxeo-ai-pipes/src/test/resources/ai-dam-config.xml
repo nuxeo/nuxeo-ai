@@ -35,7 +35,7 @@
       <option name="sink">ai/images-enrichment-in</option>
       <option name="enrichmentProviderName">aws.celebrityDetection</option>
       <option name="cache">true</option>
-      <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+      <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
     </streamProcessor>
   </extension>
 
@@ -60,7 +60,9 @@
       <operation id="Context.FetchDocument"/>
       <operation id="Log">
         <param type="string" name="level">warn</param>
-        <param type="string" name="message">A new image event, you can use ctx.Event.context.getProperty("enrichmentMetadata")</param>
+        <param type="string"
+               name="message">A new image event, you can use ctx.Event.context.getProperty("enrichmentMetadata")
+        </param>
         <param type="string" name="category">org.nuxeo.ai.event</param>
       </operation>
     </chain>
@@ -107,7 +109,7 @@
       <option name="sink">ai/video-enrichment-in</option>
       <option name="enrichmentProviderName">aws.videoLabels</option>
       <option name="cache">true</option>
-      <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+      <policy name="default" maxRetries="1" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
     </streamProcessor>
   </extension>
 

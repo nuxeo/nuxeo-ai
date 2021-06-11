@@ -12,7 +12,7 @@ expose:
 
 cleanup:
   Args:
-    - --cleanup
+  - --cleanup
   Annotations:
     helm.sh/hook: pre-delete
     helm.sh/hook-delete-policy: hook-succeeded
@@ -20,10 +20,10 @@ cleanup:
 nuxeo:
   fullnameOverride: preview
   tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
+  - key: team
+    operator: Equal
+    value: ai
+    effect: NoSchedule
   nodeSelector:
     team: ai
   nuxeo:
@@ -60,16 +60,16 @@ nuxeo:
       nuxeo.url=${PREVIEW_URL}/nuxeo
       nuxeo.cors.urls=${PREVIEW_URL} https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io
     customEnvs:
-      - name: NUXEO_CLID
-        valueFrom:
-          secretKeyRef:
-            name: instance-clid
-            key: instance.clid
-      - name: AI_INSIGHT_CLIENT_TOKEN
-        valueFrom:
-          secretKeyRef:
-            name: ai-insight-client-token
-            key: text
+    - name: NUXEO_CLID
+      valueFrom:
+        secretKeyRef:
+          name: instance-clid
+          key: instance.clid
+    - name: AI_INSIGHT_CLIENT_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: ai-insight-client-token
+          key: text
     persistence:
       enabled: ${PERSISTENCE}
     livenessProbe:
@@ -107,10 +107,10 @@ nuxeo:
       team: ai
       usage: preview
     tolerations:
-      - key: team
-        operator: Equal
-        value: ai
-        effect: NoSchedule
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
     nodeSelector:
       team: ai
   elasticsearch:
@@ -127,10 +127,10 @@ nuxeo:
       team: ai
       usage: preview
     tolerations:
-      - key: team
-        operator: Equal
-        value: ai
-        effect: NoSchedule
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
     nodeSelector:
       team: ai
   kafka:
@@ -143,26 +143,26 @@ nuxeo:
       team: ai
       usage: preview
     tolerations:
-      - key: team
-        operator: Equal
-        value: ai
-        effect: NoSchedule
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
     nodeSelector:
       team: ai
     autoCreateTopicsEnable: false
     deleteTopicEnable: true
     transactionStateLogMinIsr: 1
     extraEnvVars:
-      - name: KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS
-        value: "100"
-      - name: KAFKA_CFG_LOG_RETENTION_MINUTES
-        value: "20"
-      - name: KAFKA_CFG_OFFSETS_RETENTION_MINUTES
-        value: "20"
-      - name: KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS
-        value: "5"
-      - name: KAFKA_CFG_STATE_LOG_REPLICATION_FACTOR
-        value: "1"
+    - name: KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS
+      value: "100"
+    - name: KAFKA_CFG_LOG_RETENTION_MINUTES
+      value: "20"
+    - name: KAFKA_CFG_OFFSETS_RETENTION_MINUTES
+      value: "20"
+    - name: KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS
+      value: "5"
+    - name: KAFKA_CFG_STATE_LOG_REPLICATION_FACTOR
+      value: "1"
     zookeeper:
       persistence:
         enabled: ${PERSISTENCE}
@@ -172,10 +172,10 @@ nuxeo:
         team: ai
         usage: preview
       tolerations:
-        - key: team
-          operator: Equal
-          value: ai
-          effect: NoSchedule
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
       nodeSelector:
         team: ai
 

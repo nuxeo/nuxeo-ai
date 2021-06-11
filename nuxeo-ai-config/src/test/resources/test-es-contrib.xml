@@ -2,13 +2,13 @@
 <component name="org.nuxeo.ai.test.elasticsearch.test.contrib">
   <extension point="elasticSearchEmbeddedServer" target="org.nuxeo.elasticsearch.ElasticSearchComponent">
     <elasticSearchEmbeddedServer clusterName="nuxeoTestClusterLocal" httpEnabled="true" indexStoreType="mmapfs"
-                                 nodeName="nuxeoTestNode" />
+                                 nodeName="nuxeoTestNode"/>
   </extension>
   <extension point="elasticSearchClient" target="org.nuxeo.elasticsearch.ElasticSearchComponent">
-    <elasticSearchClient class="org.nuxeo.elasticsearch.test.ESTestClientFactory" />
+    <elasticSearchClient class="org.nuxeo.elasticsearch.test.ESTestClientFactory"/>
   </extension>
   <extension point="elasticSearchIndex" target="org.nuxeo.elasticsearch.ElasticSearchComponent">
-    <elasticSearchIndex name="auditnxutest" repository="test" type="entry" />
-    <elasticSearchIndex name="nxutest" repository="test" type="doc" />
+    <elasticSearchIndex name="auditnxutest" repository="test" type="entry"/>
+    <elasticSearchIndex name="nxutest" repository="test" type="doc"/>
   </extension>
 </component>

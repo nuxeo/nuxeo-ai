@@ -28,15 +28,15 @@ limitations under the License.
   </template>
 
   <script>
-    {
-      class DefaultAISuggestionFormatter extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
-        static get is() {
-          return 'nuxeo-default-ai-suggestion-formatter';
-        }
-      }
+      {
+          class DefaultAISuggestionFormatter extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
+              static get is() {
+                  return 'nuxeo-default-ai-suggestion-formatter';
+              }
+          }
 
-      customElements.define(DefaultAISuggestionFormatter.is, DefaultAISuggestionFormatter);
-      Nuxeo.DefaultAISuggestionFormatter = DefaultAISuggestionFormatter;
-    }
+          customElements.define(DefaultAISuggestionFormatter.is, DefaultAISuggestionFormatter);
+          Nuxeo.DefaultAISuggestionFormatter = DefaultAISuggestionFormatter;
+      }
   </script>
 </dom-module>

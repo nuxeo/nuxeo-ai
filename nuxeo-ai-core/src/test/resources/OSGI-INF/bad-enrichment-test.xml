@@ -2,8 +2,8 @@
 <component name="org.nuxeo.enrichment.test.bad" version="1.0">
 
   <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
-    <enrichment name="b1" kind="/classification" class="org.nuxeo.ai.enrichment.BadEnrichmentProvider" />
-    <enrichment name="ok1" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider" />
+    <enrichment name="b1" kind="/classification" class="org.nuxeo.ai.enrichment.BadEnrichmentProvider"/>
+    <enrichment name="ok1" kind="/classification" class="org.nuxeo.ai.enrichment.BasicEnrichmentProvider"/>
     <enrichment name="errorService" kind="/classification" class="org.nuxeo.ai.enrichment.ErroringEnrichmentProvider">
       <mimeTypes>
         <mimeType name="image/jpeg"/>
