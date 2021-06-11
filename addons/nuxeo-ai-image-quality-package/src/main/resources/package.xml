@@ -2,12 +2,13 @@
 <package type="addon" name="nuxeo-ai-image-quality" version="@VERSION@">
   <title>Nuxeo AI Image Quality</title>
   <description>
-    <p>An Enrichment Service that uses <a href="https://sightengine.com/">Sightengine</a> to determine image quality.</p>
+    <p>An Enrichment Service that uses <a href="https://sightengine.com/">Sightengine</a> to determine image quality.
+    </p>
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>
-  <installer restart="true" />
-  <uninstaller restart="true" />
+  <installer restart="true"/>
+  <uninstaller restart="true"/>
   <nuxeo-validation>nuxeo_certified</nuxeo-validation>
   <!-- Production State: production_ready | testing | proto -->
   <production-state>production_ready</production-state>

@@ -18,12 +18,11 @@
  */
 package org.nuxeo.ai.model;
 
+import java.util.Objects;
+import javax.annotation.Nonnull;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
-
-import javax.annotation.Nonnull;
-import java.util.Objects;
 
 /**
  * A property used by a model.

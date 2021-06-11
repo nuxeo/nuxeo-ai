@@ -19,7 +19,6 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
-
 public class Scam {
 
     private float prob;

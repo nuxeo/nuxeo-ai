@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
@@ -41,7 +40,6 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
-
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
 import com.amazonaws.services.rekognition.model.Label;

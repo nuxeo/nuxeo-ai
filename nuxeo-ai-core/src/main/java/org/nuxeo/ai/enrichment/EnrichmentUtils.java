@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,7 +59,6 @@ import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -315,13 +313,17 @@ public class EnrichmentUtils {
      */
     public static <T extends AIMetadata> T copyMetadata(T metadata, BlobTextFromDocument blobTextFromDoc) {
         EnrichmentMetadata meta = (EnrichmentMetadata) metadata;
-        return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.modelName,
-                blobTextFromDoc).withLabels(meta.getLabels())
-                                .withTags(meta.getTags())
-                                .withRawKey(meta.rawKey)
-                                .withDocumentProperties(meta.context.inputProperties)
-                                .withCreator(meta.creator)
-                                .build();
+        return new EnrichmentMetadata.Builder(meta.created, meta.kind, meta.modelName, blobTextFromDoc).withLabels(
+                meta.getLabels())
+                                                                                                       .withTags(
+                                                                                                               meta.getTags())
+                                                                                                       .withRawKey(
+                                                                                                               meta.rawKey)
+                                                                                                       .withDocumentProperties(
+                                                                                                               meta.context.inputProperties)
+                                                                                                       .withCreator(
+                                                                                                               meta.creator)
+                                                                                                       .build();
     }
 
     /**

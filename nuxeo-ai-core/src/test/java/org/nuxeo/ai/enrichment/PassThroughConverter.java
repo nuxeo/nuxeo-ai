@@ -20,7 +20,6 @@ package org.nuxeo.ai.enrichment;
 
 import java.io.Serializable;
 import java.util.Map;
-
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.convert.api.ConversionException;

@@ -25,7 +25,6 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -41,7 +40,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
 import com.amazonaws.services.rekognition.model.AmazonRekognitionException;
 
 /**
@@ -79,7 +77,7 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
         getStore().setTTL(jobId, 1); // release key
 
         try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-             ObjectInputStream ois = new ObjectInputStream(bais)) {
+                ObjectInputStream ois = new ObjectInputStream(bais)) {
 
             @SuppressWarnings("unchecked")
             Map<String, Serializable> params = (Map<String, Serializable>) ois.readObject();
@@ -95,21 +93,19 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
     }
 
     protected void saveMetadata(EnrichmentMetadata metadata) {
-        TransactionHelper.runInTransaction(
-                () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
-                    DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
-                    DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
-                    if (doc != null) {
-                        try {
-                            session.saveDocument(doc);
-                        } catch (DocumentValidationException e) {
-                            log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
-                        }
-                    } else {
-                        log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);
-                    }
-                })
-        );
+        TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
+            DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
+            DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
+            if (doc != null) {
+                try {
+                    session.saveDocument(doc);
+                } catch (DocumentValidationException e) {
+                    log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
+                }
+            } else {
+                log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);
+            }
+        }));
     }
 
     protected KeyValueStore getStore() {
@@ -128,10 +124,11 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
     protected abstract String getFailureEventName();
 
     /**
-     * @param jobId reference for AWS Rekognition Job
+     * @param jobId  reference for AWS Rekognition Job
      * @param params additional parameters
      * @return A {@link Collection} of {@link EnrichmentMetadata} for given job id
      */
-    protected abstract Collection<EnrichmentMetadata> getEnrichmentMetadata(String jobId, Map<String, Serializable> params);
+    protected abstract Collection<EnrichmentMetadata> getEnrichmentMetadata(String jobId,
+            Map<String, Serializable> params);
 
 }

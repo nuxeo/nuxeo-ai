@@ -19,7 +19,6 @@
 package org.nuxeo.ai.rekognition;
 
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.model.Attribute;
 import com.amazonaws.services.rekognition.model.DetectFacesResult;

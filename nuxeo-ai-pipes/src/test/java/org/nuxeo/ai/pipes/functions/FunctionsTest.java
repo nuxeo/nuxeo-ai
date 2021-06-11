@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.pipes.functions;
 
-import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -42,17 +41,18 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.filters.DocumentEventFilter;
 import org.nuxeo.ai.pipes.filters.DocumentPathFilter;
+import org.nuxeo.ai.pipes.filters.FacetFilter;
+import org.nuxeo.ai.pipes.filters.Filter;
 import org.nuxeo.ai.pipes.filters.NoVersionFilter;
 import org.nuxeo.ai.pipes.filters.PrimaryTypeFilter;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelFactory;
 import org.nuxeo.ecm.core.api.DocumentRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.VersioningOption;
@@ -61,18 +61,14 @@ import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.ai.pipes.filters.DocumentEventFilter;
-import org.nuxeo.ai.pipes.filters.FacetFilter;
-import org.nuxeo.ai.pipes.filters.Filter;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes"})
+@Features({ PlatformFeature.class })
+@Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes" })
 public class FunctionsTest {
 
     @Inject
@@ -110,7 +106,7 @@ public class FunctionsTest {
 
         func = new PreFilterFunction<>(in -> true, s -> {
             throw new NuxeoException("Invalid");
-        } );
+        });
         assertNull(func.apply(event));
     }
 
@@ -246,14 +242,13 @@ public class FunctionsTest {
         Filter.EventFilter eventFilter = new DocumentEventFilter.Builder().build();
         assertNotNull(eventFilter);
 
-        eventFilter = new DocumentEventFilter.Builder()
-                .withDocumentFilter(d -> d.hasSchema("schema"))
-                .build();
+        eventFilter = new DocumentEventFilter.Builder().withDocumentFilter(d -> d.hasSchema("schema")).build();
 
         assertNotNull(eventFilter);
     }
 
-    public static <T,R> PreFilterFunction<T,R> filterFunc(Predicate<? super T> filter, Function<? super T, ? extends R> transformation) {
+    public static <T, R> PreFilterFunction<T, R> filterFunc(Predicate<? super T> filter,
+            Function<? super T, ? extends R> transformation) {
         return new PreFilterFunction<>(filter, transformation);
     }
 }

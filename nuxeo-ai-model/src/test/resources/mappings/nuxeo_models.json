@@ -5,7 +5,9 @@
   },
   "response": {
     "status": 200,
-    "jsonBody": {"just":"ignored"},
+    "jsonBody": {
+      "just": "ignored"
+    },
     "headers": {
       "Content-Type": "application/json"
     }

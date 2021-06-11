@@ -26,8 +26,9 @@
     </openUrl>
   </extension>
 
-  <extension target="org.nuxeo.ecm.platform.web.common.requestcontroller.service.RequestControllerService" point="corsConfig">
-    <corsConfig name="sns_cors" supportedMethods ="GET,POST,HEAD,OPTIONS,DELETE,PUT">
+  <extension target="org.nuxeo.ecm.platform.web.common.requestcontroller.service.RequestControllerService"
+             point="corsConfig">
+    <corsConfig name="sns_cors" supportedMethods="GET,POST,HEAD,OPTIONS,DELETE,PUT">
       <pattern>/nuxeo/.*</pattern>
     </corsConfig>
   </extension>

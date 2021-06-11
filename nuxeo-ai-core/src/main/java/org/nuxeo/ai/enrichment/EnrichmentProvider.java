@@ -56,21 +56,19 @@ public interface EnrichmentProvider {
      */
     @SuppressWarnings("unchecked")
     default RetryPolicy getRetryPolicy() {
-        return new RetryPolicy()
-                .abortOn(NuxeoException.class, FatalEnrichmentError.class)
-                .withMaxRetries(2)
-                .withBackoff(3, 36, TimeUnit.SECONDS);
+        return new RetryPolicy().abortOn(NuxeoException.class, FatalEnrichmentError.class)
+                                .withMaxRetries(2)
+                                .withBackoff(3, 36, TimeUnit.SECONDS);
     }
 
     /**
      * The circuit breaker for the provider
      */
     default CircuitBreaker getCircuitBreaker() {
-        return new CircuitBreaker()
-                .withFailureThreshold(8, 9)
-                .withDelay(2, TimeUnit.MINUTES)
-                .withSuccessThreshold(1)
-                .withTimeout(60, TimeUnit.SECONDS);
+        return new CircuitBreaker().withFailureThreshold(8, 9)
+                                   .withDelay(2, TimeUnit.MINUTES)
+                                   .withSuccessThreshold(1)
+                                   .withTimeout(60, TimeUnit.SECONDS);
     }
 
 }

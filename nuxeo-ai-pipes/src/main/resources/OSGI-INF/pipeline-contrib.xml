@@ -37,7 +37,7 @@
       <code>
         <text windowSize="12">
           <consumer>
-            <stream name="text" />
+            <stream name="text"/>
           </consumer>
         </text>
       </code>

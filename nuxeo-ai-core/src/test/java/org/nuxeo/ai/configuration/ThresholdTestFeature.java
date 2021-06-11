@@ -26,10 +26,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RunnerFeature;
 
-@Deploy({"org.nuxeo.runtime.stream",
-        "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ecm.default.config",
-        "org.nuxeo.ai.ai-core"})
+@Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes", "org.nuxeo.ecm.default.config",
+        "org.nuxeo.ai.ai-core" })
 public class ThresholdTestFeature implements RunnerFeature {
 
     @Override

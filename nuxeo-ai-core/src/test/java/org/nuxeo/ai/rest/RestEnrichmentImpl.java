@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -40,11 +39,8 @@ public class RestEnrichmentImpl extends RestEnrichmentProvider {
 
     @Override
     protected RestClient createClient(Map<String, String> options) {
-        return new RestClient(options, httpClientBuilder ->
-                httpClientBuilder
-                .disableAutomaticRetries()
-                .disableCookieManagement()
-                .build());
+        return new RestClient(options,
+                httpClientBuilder -> httpClientBuilder.disableAutomaticRetries().disableCookieManagement().build());
     }
 
     @Override
@@ -61,18 +57,16 @@ public class RestEnrichmentImpl extends RestEnrichmentProvider {
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
 
         try {
-            MAPPER.readTree(content).fieldNames()
+            MAPPER.readTree(content)
+                  .fieldNames()
                   .forEachRemaining(s -> labels.add(new EnrichmentMetadata.Label(s, 1, 0L)));
         } catch (IOException e) {
             log.warn(String.format("Unable to read the json response: %s", content), e);
         }
 
         return Collections.singletonList(
-                new EnrichmentMetadata.Builder(kind,
-                                               name,
-                                               blobTextFromDoc)
-                        .withLabels(asLabels(labels))
-                        .withRawKey(rawKey)
-                        .build());
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .build());
     }
 }

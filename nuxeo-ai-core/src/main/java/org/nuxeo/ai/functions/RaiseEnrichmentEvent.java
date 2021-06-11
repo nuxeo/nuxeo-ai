@@ -39,7 +39,7 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 /**
  * Raises an event when new enrichment data is added
  */
-public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer implements Initializable  {
+public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer implements Initializable {
 
     public static final String ENRICHMENT_CREATED = "enrichmentMetadataCreated";
 
@@ -58,25 +58,23 @@ public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer implements 
 
     @Override
     public void accept(EnrichmentMetadata metadata) {
-        TransactionHelper.runInTransaction(
-            () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
-                EventContextImpl eCtx;
-                try {
-                    DocumentModel input = session.getDocument(new IdRef(metadata.context.documentRef));
-                    eCtx = new DocumentEventContext(session, session.getPrincipal(), input);
-                } catch (DocumentNotFoundException e) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Document Not Found: " + metadata.context.documentRef);
-                    }
-                    eCtx = new EventContextImpl();
+        TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
+            EventContextImpl eCtx;
+            try {
+                DocumentModel input = session.getDocument(new IdRef(metadata.context.documentRef));
+                eCtx = new DocumentEventContext(session, session.getPrincipal(), input);
+            } catch (DocumentNotFoundException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Document Not Found: " + metadata.context.documentRef);
                 }
-                eCtx.setProperty(CoreEventConstants.REPOSITORY_NAME, metadata.context.repositoryName);
-                eCtx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
-                eCtx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
-                eCtx.setProperty(ENRICHMENT_METADATA, metadata);
-                Event event = eCtx.newEvent(eventName);
-                Framework.getService(EventProducer.class).fireEvent(event);
-            })
-        );
+                eCtx = new EventContextImpl();
+            }
+            eCtx.setProperty(CoreEventConstants.REPOSITORY_NAME, metadata.context.repositoryName);
+            eCtx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
+            eCtx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
+            eCtx.setProperty(ENRICHMENT_METADATA, metadata);
+            Event event = eCtx.newEvent(eventName);
+            Framework.getService(EventProducer.class).fireEvent(event);
+        }));
     }
 }

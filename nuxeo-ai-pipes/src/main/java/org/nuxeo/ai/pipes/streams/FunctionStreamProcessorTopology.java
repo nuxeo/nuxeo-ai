@@ -21,7 +21,6 @@ package org.nuxeo.ai.pipes.streams;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;

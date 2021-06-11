@@ -33,7 +33,6 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.metadata.Caption;
@@ -45,7 +44,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 @Deploy("org.nuxeo.ai.ai-core")
 public class CaptionServiceTest {
 
@@ -62,17 +61,15 @@ public class CaptionServiceTest {
         assertEquals(TEXT_VTT_MIME_TYPE, blob.getMimeType());
 
         File file = blob.getFile();
-        assertThat(file).isNotNull()
-                .hasExtension("vtt");
+        assertThat(file).isNotNull().hasExtension("vtt");
         assertThat(file.length()).isNotZero();
 
         try (FileInputStream fis = new FileInputStream(file);
-             BufferedReader br = new BufferedReader(new InputStreamReader(fis, UTF_8))) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(fis, UTF_8))) {
             String[] lines = br.lines().toArray(String[]::new);
             assertThat(lines).hasSize(4);
             assertThat(lines[0]).isEqualTo("WEBVTT");
-            assertThat(lines[2]).startsWith("00:00.00.000")
-                    .endsWith("00:00.01.000");
+            assertThat(lines[2]).startsWith("00:00.00.000").endsWith("00:00.01.000");
         }
     }
 }

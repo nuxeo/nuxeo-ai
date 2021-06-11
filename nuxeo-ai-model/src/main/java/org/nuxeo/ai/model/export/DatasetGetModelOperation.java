@@ -22,8 +22,6 @@ package org.nuxeo.ai.model.export;
 import static org.nuxeo.ecm.automation.core.Constants.CAT_SERVICES;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.core.annotations.Context;
@@ -32,11 +30,7 @@ import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 
-@Operation(
-        id = DatasetGetModelOperation.ID,
-        category = CAT_SERVICES, label = "Retrieve AI Model",
-        description = "Executes REST call to AI Services to get all AI models available"
-)
+@Operation(id = DatasetGetModelOperation.ID, category = CAT_SERVICES, label = "Retrieve AI Model", description = "Executes REST call to AI Services to get all AI models available")
 public class DatasetGetModelOperation {
 
     public static final String ID = "AI.GetModel";

@@ -18,19 +18,9 @@
  */
 package org.nuxeo.ai.enrichment.async;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.GetContentModerationResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
-import net.jodah.failsafe.RetryPolicy;
-import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
-import org.nuxeo.ai.enrichment.EnrichmentCachable;
-import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.kv.KeyValueStore;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -40,10 +30,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
+import org.nuxeo.ai.enrichment.EnrichmentCachable;
+import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueStore;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.GetContentModerationResult;
+import com.amazonaws.services.rekognition.model.ModerationLabel;
 
-import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Detect unsafe content in images.

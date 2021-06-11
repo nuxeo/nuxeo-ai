@@ -19,6 +19,19 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
+import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
+import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.adapters.DatasetExport;
@@ -33,20 +46,6 @@ import org.nuxeo.runtime.codec.CodecService;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TYPE_PROP;
-import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
-import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
 public abstract class ExportHelper {
 

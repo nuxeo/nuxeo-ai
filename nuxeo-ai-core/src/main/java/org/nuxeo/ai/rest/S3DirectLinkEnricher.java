@@ -18,7 +18,11 @@
  */
 package org.nuxeo.ai.rest;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import static org.nuxeo.ecm.core.io.registry.reflect.Instantiations.SINGLETON;
+import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.REFERENCE;
+
+import java.io.IOException;
+import java.net.URI;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolderAdapterService;
@@ -28,11 +32,7 @@ import org.nuxeo.ecm.core.io.download.RedirectResolver;
 import org.nuxeo.ecm.core.io.marshallers.json.enrichers.AbstractJsonEnricher;
 import org.nuxeo.ecm.core.io.registry.reflect.Setup;
 import org.nuxeo.runtime.api.Framework;
-import java.io.IOException;
-import java.net.URI;
-
-import static org.nuxeo.ecm.core.io.registry.reflect.Instantiations.SINGLETON;
-import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.REFERENCE;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 @Setup(mode = SINGLETON, priority = REFERENCE)
 public class S3DirectLinkEnricher extends AbstractJsonEnricher<DocumentModel> {

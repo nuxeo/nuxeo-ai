@@ -22,11 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
-
+import org.nuxeo.ai.pipes.filters.Filter.EventFilter;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.ai.pipes.filters.Filter.EventFilter;
 
 /**
  * Filters document events based on an <code>Event</code> or <code>DocumentModel</code> <code>Predicate</code>
@@ -34,6 +33,7 @@ import org.nuxeo.ai.pipes.filters.Filter.EventFilter;
 public class DocumentEventFilter implements EventFilter {
 
     protected final Predicate<Event> eventPredicate;
+
     protected final Predicate<DocumentModel> docPredicate;
 
     protected DocumentEventFilter(Predicate<Event> eventPredicate, Predicate<DocumentModel> docPredicate) {
@@ -64,6 +64,7 @@ public class DocumentEventFilter implements EventFilter {
     public static class Builder {
 
         protected List<Predicate<DocumentModel>> documentFilters = new ArrayList<>();
+
         protected List<Predicate<Event>> eventFilters = new ArrayList<>();
 
         public Builder withDocumentFilter(DocumentFilter filter) {

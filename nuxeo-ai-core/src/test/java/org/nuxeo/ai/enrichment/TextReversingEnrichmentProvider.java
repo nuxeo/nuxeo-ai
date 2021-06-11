@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.security.SecurityConstants;
@@ -42,20 +41,19 @@ public class TextReversingEnrichmentProvider extends AbstractEnrichmentProvider 
 
         String rawKey = saveJsonAsRawBlob(reversedText);
         //Return 2 records
-        return Arrays.asList(
-                new EnrichmentMetadata.Builder("/classification/custom",
-                                               name,
-                                               blobTextFromDoc)
-                    .withLabels(asLabels(labels))
-                    .withRawKey(rawKey)
-                    .withCreator(SecurityConstants.SYSTEM_USERNAME).build(),
-                new EnrichmentMetadata.Builder("/classification/custom",
-                                               name,
-                                               blobTextFromDoc)
-                    .withLabels(asLabels(labels))
-                    .withRawKey(rawKey)
-                    .withDocumentProperties(Stream.of("dc:description").collect(Collectors.toSet()))
-                    .withCreator(SecurityConstants.SYSTEM_USERNAME).build()
-        );
+        return Arrays.asList(new EnrichmentMetadata.Builder("/classification/custom", name, blobTextFromDoc).withLabels(
+                asLabels(labels)).withRawKey(rawKey).withCreator(SecurityConstants.SYSTEM_USERNAME).build(),
+                new EnrichmentMetadata.Builder("/classification/custom", name, blobTextFromDoc).withLabels(
+                        asLabels(labels))
+                                                                                               .withRawKey(rawKey)
+                                                                                               .withDocumentProperties(
+                                                                                                       Stream.of(
+                                                                                                               "dc:description")
+                                                                                                             .collect(
+                                                                                                                     Collectors
+                                                                                                                             .toSet()))
+                                                                                               .withCreator(
+                                                                                                       SecurityConstants.SYSTEM_USERNAME)
+                                                                                               .build());
     }
 }

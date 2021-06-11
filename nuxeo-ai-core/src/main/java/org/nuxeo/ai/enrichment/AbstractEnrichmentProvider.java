@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.TagSuggestion;
@@ -124,7 +123,7 @@ public abstract class AbstractEnrichmentProvider implements EnrichmentProvider, 
         ConfigurationService cs = Framework.getService(ConfigurationService.class);
         long duration = cs.getLong(CALLBACK_KVS_TTL, TimeUnit.DAYS.toMillis(1));
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(params);
             store.put(jobId, baos.toByteArray(), duration);
         } catch (IOException e) {

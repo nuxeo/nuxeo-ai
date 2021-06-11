@@ -19,12 +19,14 @@
  */
 package org.nuxeo.ai.enrichment.async;
 
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.TranscriptionJob;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.FAILED;
+import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.IN_PROGRESS;
+import static org.nuxeo.ecm.platform.video.VideoConstants.VIDEO_FACET;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -53,15 +55,12 @@ import org.nuxeo.ecm.platform.video.TranscodedVideo;
 import org.nuxeo.ecm.platform.video.VideoDocument;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.FAILED;
-import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.IN_PROGRESS;
-import static org.nuxeo.ecm.platform.video.VideoConstants.VIDEO_FACET;
+import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
+import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
+import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
+import com.amazonaws.services.transcribe.model.TranscriptionJob;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
 

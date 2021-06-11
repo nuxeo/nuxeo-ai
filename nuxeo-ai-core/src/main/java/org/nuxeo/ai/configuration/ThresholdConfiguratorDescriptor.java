@@ -19,13 +19,12 @@
  */
 package org.nuxeo.ai.configuration;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.runtime.model.Descriptor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @XObject("thresholdConfiguration")
 public class ThresholdConfiguratorDescriptor implements Descriptor {
@@ -82,6 +81,7 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
 
         /**
          * Merges with another {@link Threshold} prioritizing max value for each value
+         *
          * @param that another {@link Threshold}
          */
         public void merge(Threshold that) {

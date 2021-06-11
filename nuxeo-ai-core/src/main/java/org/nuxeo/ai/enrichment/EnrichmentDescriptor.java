@@ -19,11 +19,11 @@
 package org.nuxeo.ai.enrichment;
 
 import static org.nuxeo.ecm.core.transientstore.TransientStorageComponent.DEFAULT_STORE_NAME;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
@@ -82,7 +82,8 @@ public class EnrichmentDescriptor {
             }
             return serviceInstance;
         } catch (IllegalAccessException | NullPointerException | InstantiationException e) {
-            throw new NuxeoException(String.format("EnrichmentDescriptor for %s must define a valid EnrichmentProvider", name), e);
+            throw new NuxeoException(
+                    String.format("EnrichmentDescriptor for %s must define a valid EnrichmentProvider", name), e);
         }
     }
 

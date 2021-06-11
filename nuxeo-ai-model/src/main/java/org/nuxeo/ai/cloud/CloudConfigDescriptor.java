@@ -19,7 +19,6 @@
 package org.nuxeo.ai.cloud;
 
 import java.time.Duration;
-
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.runtime.model.Descriptor;

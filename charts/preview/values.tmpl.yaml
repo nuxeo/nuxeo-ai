@@ -12,7 +12,7 @@ expose:
 
 cleanup:
   Args:
-    - --cleanup
+  - --cleanup
   Annotations:
     helm.sh/hook: pre-delete
     helm.sh/hook-delete-policy: hook-succeeded
@@ -61,11 +61,11 @@ nuxeo:
       nuxeo.jwt.asym.ttl=4320
       insight.active.learning.mongo.enabled=true
     customEnvs:
-      - name: NUXEO_CLID
-        valueFrom:
-          secretKeyRef:
-            name: instance-clid
-            key: instance.clid
+    - name: NUXEO_CLID
+      valueFrom:
+        secretKeyRef:
+          name: instance-clid
+          key: instance.clid
     persistence:
       enabled: ${PERSISTENCE}
     livenessProbe:
@@ -103,20 +103,20 @@ nuxeo:
       team: ai
       usage: preview
     tolerations:
-      - key: team
-        operator: Equal
-        value: ai
-        effect: NoSchedule
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
     nodeSelector:
       team: ai
   elasticsearch:
     deploy: ${PERSISTENCE}
     client:
       tolerations:
-        - key: team
-          operator: Equal
-          value: ai
-          effect: NoSchedule
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
       nodeSelector:
         team: ai
       resources:
@@ -130,10 +130,10 @@ nuxeo:
       persistence:
         enabled: ${PERSISTENCE}
       tolerations:
-        - key: team
-          operator: Equal
-          value: ai
-          effect: NoSchedule
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
       nodeSelector:
         team: ai
       resources:
@@ -147,10 +147,10 @@ nuxeo:
       persistence:
         enabled: ${PERSISTENCE}
       tolerations:
-        - key: team
-          operator: Equal
-          value: ai
-          effect: NoSchedule
+      - key: team
+        operator: Equal
+        value: ai
+        effect: NoSchedule
       nodeSelector:
         team: ai
       resources:
@@ -161,10 +161,10 @@ nuxeo:
           cpu: "25m"
           memory: "2Gi"
   tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
+  - key: team
+    operator: Equal
+    value: ai
+    effect: NoSchedule
   nodeSelector:
     team: ai
 

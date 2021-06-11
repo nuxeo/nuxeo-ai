@@ -18,9 +18,17 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import com.amazonaws.services.textract.model.Block;
-import com.amazonaws.services.textract.model.DetectDocumentTextResult;
-import net.jodah.failsafe.RetryPolicy;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
@@ -34,18 +42,10 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+import com.amazonaws.services.textract.model.Block;
+import com.amazonaws.services.textract.model.DetectDocumentTextResult;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Detects text in a document.

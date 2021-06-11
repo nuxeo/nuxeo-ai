@@ -1,6 +1,13 @@
 package org.nuxeo.ai.model.serving;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
+import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
+
+import java.util.List;
+import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,15 +34,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import javax.inject.Inject;
-import java.util.List;
-
-import static java.lang.String.format;
-import static java.time.Duration.ofSeconds;
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
-import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class,
@@ -45,7 +44,7 @@ import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLa
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
-@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml"})
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml" })
 public class AnnotationConfirmTest extends BaseBulkEnrich {
 
     @Rule

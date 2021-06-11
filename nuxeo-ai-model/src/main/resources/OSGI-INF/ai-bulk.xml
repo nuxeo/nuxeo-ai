@@ -14,7 +14,8 @@
       <policy name="validation" batchCapacity="100" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
       <!--   1048576 = 1MB   -->
       <stream name="exp-training" partitions="1">
-        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+        <filter name="overflow"
+                class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
           <option name="storeTTL">4h</option>
@@ -22,7 +23,8 @@
       </stream>
 
       <stream name="exp-validation" partitions="1">
-        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+        <filter name="overflow"
+                class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
           <option name="storeTTL">4h</option>
@@ -30,7 +32,8 @@
       </stream>
 
       <stream name="exp-dataset-update" partitions="1">
-        <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
+        <filter name="overflow"
+                class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
           <option name="storeTTL">4h</option>

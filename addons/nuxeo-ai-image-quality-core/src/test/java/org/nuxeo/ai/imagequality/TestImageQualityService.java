@@ -22,7 +22,10 @@ package org.nuxeo.ai.imagequality;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import javax.inject.Inject;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,15 +39,12 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.nuxeo-ai-image-quality-core",
-        "org.nuxeo.ai.nuxeo-ai-image-quality-core:OSGI-INF/test-image-quality.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.nuxeo-ai-image-quality-core",
+        "org.nuxeo.ai.nuxeo-ai-image-quality-core:OSGI-INF/test-image-quality.xml" })
 public class TestImageQualityService {
 
     // This is used to mock the external service.  See mappings/check.json.
@@ -68,8 +68,8 @@ public class TestImageQualityService {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("ai.imagequality.mock.fail");
         assertNotNull(service);
 
-        List<EnrichmentMetadata> metadata = (List<EnrichmentMetadata>)
-                service.enrich(EnrichmentTestFeature.blobTestImage(manager));
+        List<EnrichmentMetadata> metadata = (List<EnrichmentMetadata>) service.enrich(
+                EnrichmentTestFeature.blobTestImage(manager));
         assertEquals("Service must fail gracefully.", 0, metadata.size());
 
         service = aiComponent.getEnrichmentProvider("ai.imagequality.mock");
@@ -85,8 +85,7 @@ public class TestImageQualityService {
      *  Calls the real siteengine service instead of a mock. For this to work you will need to set your
      *  service nuxeo.ai.sightengine.apiKey & nuxeo.ai.sightengine.apiSecret (see the bottom of test-image-quality.xml).
      *  It is ignored so it doesn't run on Jenkins.
-     */
-    public void realServiceTest() throws IOException {
+     */ public void realServiceTest() throws IOException {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("ai.imagequality.real");
         assertNotNull(service);
 

@@ -58,12 +58,12 @@ public class ErroringEnrichmentProvider extends AbstractEnrichmentProvider {
         this.numRetries = Integer.parseInt(descriptor.options.get("retries"));
         try {
             String exceptionClass = descriptor.options.get("exception");
-            exception = (RuntimeException)
-                    Class.forName(exceptionClass).getDeclaredConstructor(String.class)
-                         .newInstance(String.format("Deliberate Enrichment error for %s, retries %s. failures %s.",
-                                                    descriptor.name, numFailures, numRetries));
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException
-                | ClassNotFoundException | NoSuchMethodException e) {
+            exception = (RuntimeException) Class.forName(exceptionClass)
+                                                .getDeclaredConstructor(String.class)
+                                                .newInstance(String.format(
+                                                        "Deliberate Enrichment error for %s, retries %s. failures %s.",
+                                                        descriptor.name, numFailures, numRetries));
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | ClassNotFoundException | NoSuchMethodException e) {
             throw new NuxeoException("Failed to configure ErroringEnrichmentProvider", e);
         }
     }
@@ -78,9 +78,6 @@ public class ErroringEnrichmentProvider extends AbstractEnrichmentProvider {
         if (++attempts <= numFailures) {
             throw exception;
         }
-        return Collections.singletonList(
-                new EnrichmentMetadata.Builder("test",
-                                               name,
-                                               blobTextFromDoc).build());
+        return Collections.singletonList(new EnrichmentMetadata.Builder("test", name, blobTextFromDoc).build());
     }
 }

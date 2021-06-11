@@ -80,8 +80,8 @@ public class FunctionStreamProcessor {
         FunctionMetrics metrics = registerMetrics(new FunctionMetrics(computationName), computationName);
         return Topology.builder()
                        .addComputation(
-                               () -> new FunctionComputation(streams.size() - 1,
-                                                             computationName, metrics, function), streams)
+                               () -> new FunctionComputation(streams.size() - 1, computationName, metrics, function),
+                               streams)
                        .build();
     }
 
@@ -93,9 +93,9 @@ public class FunctionStreamProcessor {
             MetricRegistry registry = SharedMetricRegistries.getOrCreate(MetricsService.class.getName());
             registry.registerAll(metrics);
         } catch (IllegalArgumentException e) {
-            log.warn(
-                    String.format("Metrics are already registered for %s. They will only be recorded again after a full restart.",
-                                  name));
+            log.warn(String.format(
+                    "Metrics are already registered for %s. They will only be recorded again after a full restart.",
+                    name));
         }
         return metrics;
     }
@@ -109,8 +109,8 @@ public class FunctionStreamProcessor {
 
         protected final Function<Record, Optional<Record>> function;
 
-        public FunctionComputation(int outputStreams, String name,
-                                   FunctionMetrics metrics, Function<Record, Optional<Record>> function) {
+        public FunctionComputation(int outputStreams, String name, FunctionMetrics metrics,
+                Function<Record, Optional<Record>> function) {
 
             super(name, 1, outputStreams);
             this.metrics = metrics;

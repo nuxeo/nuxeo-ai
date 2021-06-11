@@ -20,13 +20,8 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
-import net.jodah.failsafe.RetryPolicy;
-import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.ai.comprehend.ComprehendService;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.runtime.api.Framework;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingProperties;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,9 +29,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.comprehend.ComprehendService;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
 
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingProperties;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import net.jodah.failsafe.RetryPolicy;
 
 public class TextEntitiesProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 

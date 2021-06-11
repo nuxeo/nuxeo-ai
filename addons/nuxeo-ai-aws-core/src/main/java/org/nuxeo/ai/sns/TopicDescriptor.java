@@ -46,7 +46,6 @@ public class TopicDescriptor {
     @XNode("@topicArn")
     protected String topicArn;
 
-
     public String getType() {
         return type;
     }

@@ -6,8 +6,8 @@
   </description>
   <!-- <home-page>http://doc.nuxeo.com/</home-page> -->
   <vendor>Nuxeo</vendor>
-  <installer restart="true" />
-  <uninstaller restart="true" />
+  <installer restart="true"/>
+  <uninstaller restart="true"/>
   <nuxeo-validation>nuxeo_certified</nuxeo-validation>
   <!-- Production State: production_ready | testing | proto -->
   <production-state>production_ready</production-state>

@@ -19,9 +19,7 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
-
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -34,9 +32,8 @@ public class Text {
     private final List<Box> boxes;
 
     @JsonCreator
-    public Text(@JsonProperty("has_artificial") Float hasArtificial,
-                @JsonProperty("has_natural") Float hasNatural,
-                @JsonProperty("boxes") List<Box> boxes) {
+    public Text(@JsonProperty("has_artificial") Float hasArtificial, @JsonProperty("has_natural") Float hasNatural,
+            @JsonProperty("boxes") List<Box> boxes) {
         this.hasArtificial = hasArtificial;
         this.hasNatural = hasNatural;
         this.boxes = boxes;

@@ -26,7 +26,6 @@ import static org.junit.Assert.fail;
 
 import java.util.Collection;
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -38,12 +37,11 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.amazonaws.services.translate.model.UnsupportedLanguagePairException;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.ai.aws.aws-core", "org.nuxeo.ai.aws.aws-core:OSGI-INF/translate-test.xml"})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.ai.aws.aws-core", "org.nuxeo.ai.aws.aws-core:OSGI-INF/translate-test.xml" })
 public class TestTranslateService {
 
     @Inject

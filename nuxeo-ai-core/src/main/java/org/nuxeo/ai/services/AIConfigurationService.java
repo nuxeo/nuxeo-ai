@@ -20,7 +20,6 @@ package org.nuxeo.ai.services;
 
 import java.io.IOException;
 import java.util.List;
-
 import org.nuxeo.runtime.model.Descriptor;
 
 /**
@@ -30,26 +29,29 @@ public interface AIConfigurationService {
 
     /**
      * Persist a descriptor in KVS and load it in the component registry via pubsub.
+     *
      * @return the associated key
      */
     String set(Descriptor descriptor) throws IOException;
 
     /**
      * Persist XML contribution in KVS and load it in the component registry via pubsub.
+     *
      * @return the associated key
      */
     String set(String key, String xml);
 
     /**
      * Persist threshold XML contribution in KVS and load it in the component registry via pubsub.
-     * @return the associated key
+     *
      * @param key
      * @param value
+     * @return the associated key
      */
     String setConfVar(String key, String value);
 
     /**
-     * @param key id of {@link Descriptor} to retrieve
+     * @param key   id of {@link Descriptor} to retrieve
      * @param clazz that conforms to {@link Descriptor}
      * @return requested {@link Descriptor} or null if none found
      * @throws IOException in case

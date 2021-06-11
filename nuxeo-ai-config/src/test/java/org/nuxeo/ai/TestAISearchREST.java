@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.ws.rs.core.Response;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -66,7 +64,7 @@ public class TestAISearchREST extends BaseTest {
     @Test
     public void iCanTemplateEsJSON() throws IOException, TemplateException, URISyntaxException {
         AISearchObject aiSearchObject = new AISearchObject();
-        String query = aiSearchObject.getESQuery("Model", "\"EVENT\"", null, null, null,false);
+        String query = aiSearchObject.getESQuery("Model", "\"EVENT\"", null, null, null, false);
         assertThat(query).isNotEmpty();
         assertThat(query).doesNotContain("agg");
         assertThat(query).contains("\"extended.model\"");
@@ -81,7 +79,7 @@ public class TestAISearchREST extends BaseTest {
         assertThat(query).contains("\"from\": \"now-90d\"");
         assertThat(query).contains("\"to\": \"now\"");
         assertThat(query).contains("\"eventId\": [\"AUTO_FILLED\",\"AUTO_CORRECTED\"]");
-        query = aiSearchObject.getESQuery("Model", "\"AUTO_CORRECTED\",\"AUTO_FILLED\"", "now-1d","now", "0", true);
+        query = aiSearchObject.getESQuery("Model", "\"AUTO_CORRECTED\",\"AUTO_FILLED\"", "now-1d", "now", "0", true);
         assertThat(query).isNotEmpty();
         assertThat(query).contains("agg");
         assertThat(query).contains("\"extended.model\": \"Model\"");

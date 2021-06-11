@@ -55,11 +55,10 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-
 @RunWith(FeaturesRunner.class)
-@Features({PipesTestConfigFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml"})
+@Features({ PipesTestConfigFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
+        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml" })
 public class StreamsPipesTest {
 
     @Inject
@@ -173,9 +172,7 @@ public class StreamsPipesTest {
 
     @Test
     public void testBuildName() {
-        assertEquals("Should not error even though nulls passed in",
-                     "aname", buildName("aname", null, null)
-        );
+        assertEquals("Should not error even though nulls passed in", "aname", buildName("aname", null, null));
         assertEquals("bob$king$hope", buildName("king", "bob", "hope"));
         assertEquals("bob$king$hope,rope", buildName("king", "bob", "hope,rope"));
 

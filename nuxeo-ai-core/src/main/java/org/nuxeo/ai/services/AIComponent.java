@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -85,7 +84,8 @@ public class AIComponent extends DefaultComponent {
     @Override
     public int getApplicationStartedOrder() {
         Component component = (Component) Framework.getRuntime()
-                .getComponent("org.nuxeo.ecm.core.convert.service.ConversionServiceImpl");
+                                                   .getComponent(
+                                                           "org.nuxeo.ecm.core.convert.service.ConversionServiceImpl");
         if (component == null) {
             // TF Writers are using the conversion service when starting up
             return super.getApplicationStartedOrder() + 1;
@@ -131,16 +131,17 @@ public class AIComponent extends DefaultComponent {
         if (!enrichmentProviders.containsKey(descriptor.name)) {
             MimetypeRegistry mimeRegistry = Framework.getService(MimetypeRegistry.class);
             EnrichmentProvider enrichmentProvider = descriptor.getProvider();
-            if (StringUtils.isEmpty(enrichmentProvider.getName()) || StringUtils.isEmpty(enrichmentProvider.getKind())) {
+            if (StringUtils.isEmpty(enrichmentProvider.getName()) || StringUtils.isEmpty(
+                    enrichmentProvider.getKind())) {
                 throw new IllegalArgumentException(
                         String.format("An enrichment provider must be configured with a name %s and kind %s",
-                                      descriptor.name, descriptor.getKind()));
+                                descriptor.name, descriptor.getKind()));
             }
 
             if (!getKindResolver().validate(descriptor.getKind())) {
                 throw new IllegalArgumentException(
                         String.format("The %s kind for provider %s must be defined in the %s vocabulary",
-                                      descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY));
+                                descriptor.getKind(), descriptor.name, AI_KIND_DIRECTORY));
             }
 
             if (enrichmentProvider instanceof EnrichmentSupport) {
@@ -215,10 +216,8 @@ public class AIComponent extends DefaultComponent {
     protected DirectoryEntryResolver getKindResolver() {
         if (kindResolver == null) {
             ObjectResolverService objectResolverService = Framework.getService(ObjectResolverService.class);
-            kindResolver =
-                    (DirectoryEntryResolver) objectResolverService
-                            .getResolver(DirectoryEntryResolver.NAME,
-                                         singletonMap(DirectoryEntryResolver.PARAM_DIRECTORY, AI_KIND_DIRECTORY));
+            kindResolver = (DirectoryEntryResolver) objectResolverService.getResolver(DirectoryEntryResolver.NAME,
+                    singletonMap(DirectoryEntryResolver.PARAM_DIRECTORY, AI_KIND_DIRECTORY));
         }
         return kindResolver;
     }

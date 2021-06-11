@@ -19,7 +19,6 @@
 package org.nuxeo.ai.enrichment;
 
 import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.functions.AbstractEnrichmentConsumer;
@@ -36,21 +35,19 @@ public class CustomEnrichmentConsumer extends AbstractEnrichmentConsumer {
 
     @Override
     public void accept(EnrichmentMetadata metadata) {
-        TransactionHelper.runInTransaction(
-                () -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
-                    try {
-                        // DocumentModel doc = session.getDocument(new IdRef(metadata.context.documentRef));
-                        metadata.getTags().forEach(tag -> log.debug("A tag " + tag));
-                        metadata.getLabels().forEach(label -> log.debug("A label " + label));
-                        String raw = EnrichmentUtils.getRawBlob(metadata);
-                        log.debug("Raw is " + raw);
-                        // session.saveDocument(doc);
-                    } catch (DocumentNotFoundException e) {
-                        log.info("Missing doc " + metadata.context.documentRef);
-                    } catch (IOException e) {
-                        log.warn("Enrichment error ", e);
-                    }
-                })
-        );
+        TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
+            try {
+                // DocumentModel doc = session.getDocument(new IdRef(metadata.context.documentRef));
+                metadata.getTags().forEach(tag -> log.debug("A tag " + tag));
+                metadata.getLabels().forEach(label -> log.debug("A label " + label));
+                String raw = EnrichmentUtils.getRawBlob(metadata);
+                log.debug("Raw is " + raw);
+                // session.saveDocument(doc);
+            } catch (DocumentNotFoundException e) {
+                log.info("Missing doc " + metadata.context.documentRef);
+            } catch (IOException e) {
+                log.warn("Enrichment error ", e);
+            }
+        }));
     }
 }

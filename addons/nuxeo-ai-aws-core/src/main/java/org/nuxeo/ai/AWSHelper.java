@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,7 +40,6 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
 import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
 import org.nuxeo.runtime.services.config.ConfigurationService;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.logs.model.UnrecognizedClientException;
@@ -68,9 +66,9 @@ public class AWSHelper {
 
     public static final String NEW_LINE = "\n";
 
-    protected static final Set<String> FATAL_ERRORS = new HashSet<>(Arrays.asList(
-            UnrecognizedClientException.class.getSimpleName(),
-            AccessDeniedException.class.getSimpleName()));
+    protected static final Set<String> FATAL_ERRORS = new HashSet<>(
+            Arrays.asList(UnrecognizedClientException.class.getSimpleName(),
+                    AccessDeniedException.class.getSimpleName()));
 
     private static final Logger log = LogManager.getLogger(AWSHelper.class);
 
@@ -89,8 +87,9 @@ public class AWSHelper {
         ImageHelperWithS3 imageHelperWithS3;
         try {
             Class.forName(S3_MANAGER_NAME);
-            imageHelperWithS3 = Framework.getService(ConfigurationService.class)
-                                         .isBooleanPropertyFalse(CONFIG_USE_S3) ? null : new ImageHelperWithS3();
+            imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanPropertyFalse(CONFIG_USE_S3) ?
+                    null :
+                    new ImageHelperWithS3();
         } catch (ClassNotFoundException e) {
             imageHelperWithS3 = null;
         }
@@ -144,6 +143,7 @@ public class AWSHelper {
 
     /**
      * Gets the AWS Textract Document using a managed blob.
+     *
      * @since 2.1.2
      */
     public Document getDocument(ManagedBlob managedBlob) {
@@ -198,6 +198,7 @@ public class AWSHelper {
 
     /**
      * Debug a block element
+     *
      * @since 2.1.2
      */
     public String debugTextractBlock(Block block) {
@@ -253,6 +254,7 @@ public class AWSHelper {
 
     /**
      * Gets Textract blocks from the enrichment metadata raw blob.
+     *
      * @since 2.1.2
      */
     public List<Block> getTextractBlocks(EnrichmentMetadata metadata) throws IOException {

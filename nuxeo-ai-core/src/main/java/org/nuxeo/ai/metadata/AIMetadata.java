@@ -28,10 +28,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,8 +53,7 @@ public abstract class AIMetadata implements Serializable {
 
     public final String rawKey;
 
-    public AIMetadata(String modelName, String kind, Context context,
-                      String creator, Instant created, String rawKey) {
+    public AIMetadata(String modelName, String kind, Context context, String creator, Instant created, String rawKey) {
         this.kind = kind;
         this.context = context;
         this.created = created;
@@ -96,15 +93,16 @@ public abstract class AIMetadata implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AIMetadata that = (AIMetadata) o;
-        return Objects.equals(created, that.created) &&
-                Objects.equals(creator, that.creator) &&
-                Objects.equals(modelName, that.modelName) &&
-                Objects.equals(kind, that.kind) &&
-                Objects.equals(context, that.context) &&
-                Objects.equals(rawKey, that.rawKey);
+        return Objects.equals(created, that.created) && Objects.equals(creator, that.creator) && Objects.equals(
+                modelName, that.modelName) && Objects.equals(kind, that.kind) && Objects.equals(context, that.context)
+                && Objects.equals(rawKey, that.rawKey);
     }
 
     @Override
@@ -129,9 +127,8 @@ public abstract class AIMetadata implements Serializable {
 
         @JsonCreator
         public Context(@JsonProperty("repositoryName") String repositoryName,
-                       @JsonProperty("documentRef") String documentRef,
-                       @JsonProperty("digests") Set<String> digests,
-                       @JsonProperty("inputProperties") Set<String> inputProperties) {
+                @JsonProperty("documentRef") String documentRef, @JsonProperty("digests") Set<String> digests,
+                @JsonProperty("inputProperties") Set<String> inputProperties) {
             this.repositoryName = repositoryName;
             this.documentRef = documentRef;
             this.digests = digests != null ? unmodifiableSet(digests) : emptySet();
@@ -140,13 +137,16 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) { return true; }
-            if (o == null || getClass() != o.getClass()) { return false; }
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Context context = (Context) o;
-            return Objects.equals(repositoryName, context.repositoryName) &&
-                    Objects.equals(documentRef, context.documentRef) &&
-                    Objects.equals(digests, context.digests) &&
-                    Objects.equals(inputProperties, context.inputProperties);
+            return Objects.equals(repositoryName, context.repositoryName) && Objects.equals(documentRef,
+                    context.documentRef) && Objects.equals(digests, context.digests) && Objects.equals(inputProperties,
+                    context.inputProperties);
         }
 
         @Override
@@ -156,12 +156,11 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public String toString() {
-            return new ToStringBuilder(this)
-                    .append("repositoryName", repositoryName)
-                    .append("documentRef", documentRef)
-                    .append("digests", digests)
-                    .append("inputProperties", inputProperties)
-                    .toString();
+            return new ToStringBuilder(this).append("repositoryName", repositoryName)
+                                            .append("documentRef", documentRef)
+                                            .append("digests", digests)
+                                            .append("inputProperties", inputProperties)
+                                            .toString();
         }
     }
 
@@ -183,18 +182,19 @@ public abstract class AIMetadata implements Serializable {
         }
 
         @JsonCreator
-        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence, @JsonProperty("timestamp") long timestamp) {
+        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence,
+                @JsonProperty("timestamp") long timestamp) {
             this.name = name;
             this.confidence = confidence;
             this.timestamp = timestamp;
         }
 
-//        @JsonCreator
-//        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
-//            this.name = name;
-//            this.confidence = confidence;
-//            this.timestamp = 0L;
-//        }
+        //        @JsonCreator
+        //        public Label(@JsonProperty("name") String name, @JsonProperty("confidence") float confidence) {
+        //            this.name = name;
+        //            this.confidence = confidence;
+        //            this.timestamp = 0L;
+        //        }
 
         public String getName() {
             return name;
@@ -217,8 +217,7 @@ public abstract class AIMetadata implements Serializable {
                 return false;
             }
             Label label = (Label) o;
-            return Float.compare(label.confidence, confidence) == 0 &&
-                    Objects.equals(name, label.name);
+            return Float.compare(label.confidence, confidence) == 0 && Objects.equals(name, label.name);
         }
 
         @Override
@@ -228,10 +227,7 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public String toString() {
-            return new ToStringBuilder(this)
-                    .append("name", name)
-                    .append("confidence", confidence)
-                    .toString();
+            return new ToStringBuilder(this).append("name", name).append("confidence", confidence).toString();
         }
     }
 
@@ -254,12 +250,9 @@ public abstract class AIMetadata implements Serializable {
         public final List<Label> features;
 
         @JsonCreator
-        public Tag(@JsonProperty("name") String name,
-                   @JsonProperty("kind") String kind,
-                   @JsonProperty("reference") String reference,
-                   @JsonProperty("box") Box box,
-                   @JsonProperty("features") List<Label> features,
-                   @JsonProperty("confidence") float confidence) {
+        public Tag(@JsonProperty("name") String name, @JsonProperty("kind") String kind,
+                @JsonProperty("reference") String reference, @JsonProperty("box") Box box,
+                @JsonProperty("features") List<Label> features, @JsonProperty("confidence") float confidence) {
             this.name = name;
             this.kind = kind;
             this.reference = reference;
@@ -274,15 +267,16 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) { return true; }
-            if (o == null || getClass() != o.getClass()) { return false; }
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Tag tag = (Tag) o;
-            return Float.compare(tag.confidence, confidence) == 0 &&
-                    Objects.equals(name, tag.name) &&
-                    Objects.equals(kind, tag.kind) &&
-                    Objects.equals(reference, tag.reference) &&
-                    Objects.equals(box, tag.box) &&
-                    Objects.equals(features, tag.features);
+            return Float.compare(tag.confidence, confidence) == 0 && Objects.equals(name, tag.name) && Objects.equals(
+                    kind, tag.kind) && Objects.equals(reference, tag.reference) && Objects.equals(box, tag.box)
+                    && Objects.equals(features, tag.features);
         }
 
         @Override
@@ -292,14 +286,13 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public String toString() {
-            return new ToStringBuilder(this)
-                    .append("name", name)
-                    .append("kind", kind)
-                    .append("reference", reference)
-                    .append("box", box)
-                    .append("confidence", confidence)
-                    .append("features", features)
-                    .toString();
+            return new ToStringBuilder(this).append("name", name)
+                                            .append("kind", kind)
+                                            .append("reference", reference)
+                                            .append("box", box)
+                                            .append("confidence", confidence)
+                                            .append("features", features)
+                                            .toString();
         }
     }
 
@@ -318,10 +311,8 @@ public abstract class AIMetadata implements Serializable {
         public final float top;
 
         @JsonCreator
-        public Box(@JsonProperty("width") float width,
-                   @JsonProperty("height") float height,
-                   @JsonProperty("left") float left,
-                   @JsonProperty("top") float top) {
+        public Box(@JsonProperty("width") float width, @JsonProperty("height") float height,
+                @JsonProperty("left") float left, @JsonProperty("top") float top) {
             this.width = width;
             this.height = height;
             this.left = left;
@@ -330,13 +321,15 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) { return true; }
-            if (o == null || getClass() != o.getClass()) { return false; }
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Box box = (Box) o;
-            return Float.compare(box.width, width) == 0 &&
-                    Float.compare(box.height, height) == 0 &&
-                    Float.compare(box.left, left) == 0 &&
-                    Float.compare(box.top, top) == 0;
+            return Float.compare(box.width, width) == 0 && Float.compare(box.height, height) == 0
+                    && Float.compare(box.left, left) == 0 && Float.compare(box.top, top) == 0;
         }
 
         @Override
@@ -346,12 +339,11 @@ public abstract class AIMetadata implements Serializable {
 
         @Override
         public String toString() {
-            return new ToStringBuilder(this)
-                    .append("width", width)
-                    .append("height", height)
-                    .append("left", left)
-                    .append("top", top)
-                    .toString();
+            return new ToStringBuilder(this).append("width", width)
+                                            .append("height", height)
+                                            .append("left", left)
+                                            .append("top", top)
+                                            .toString();
         }
     }
 }

@@ -21,7 +21,6 @@ package org.nuxeo.ai.pipes.services;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.time.Instant;
-
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
@@ -29,7 +28,6 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.lib.stream.computation.Record;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -56,8 +54,8 @@ public class JacksonUtil {
         module.addDeserializer(Instant.class, new InstantDeserializer());
         module.addSerializer(Instant.class, new InstantSerializer());
         module.addSerializer(ManagedBlob.class, new ManagedBlobSerializer());
-        module.addDeserializer(ManagedBlob.class, new StdDelegatingDeserializer<>(
-                new StdConverter<BlobMetaImpl, ManagedBlob>() {
+        module.addDeserializer(ManagedBlob.class,
+                new StdDelegatingDeserializer<>(new StdConverter<BlobMetaImpl, ManagedBlob>() {
                     @Override
                     public ManagedBlob convert(BlobMetaImpl value) {
                         return value;
@@ -85,9 +83,13 @@ public class JacksonUtil {
      */
     public static DocumentModel toDoc(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
-        if (docCtx == null) { return null; }
+        if (docCtx == null) {
+            return null;
+        }
         DocumentModel doc = docCtx.getSourceDocument();
-        if (doc == null) { return null; }
+        if (doc == null) {
+            return null;
+        }
         return doc;
     }
 
@@ -132,7 +134,6 @@ public class JacksonUtil {
             jg.writeObject(instant.toString());
         }
     }
-
 
     /**
      * Serializes a ManagedBlob

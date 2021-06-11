@@ -86,7 +86,8 @@ void buildJob(String repo, String maintenance = null) {
         }
     }
     String targetBranch
-    if (env.CHANGE_TARGET) { // Current is a PR
+    if (env.CHANGE_TARGET) {
+        // Current is a PR
         targetBranch = prefix + env.CHANGE_BRANCH + suffix
         def prNumber = getPR(repo, "nuxeo:${targetBranch}")
         if (prNumber) {
@@ -297,7 +298,7 @@ kubectl -n ${TEST_NAMESPACE} rollout status deployment ${MONGODB_WR} --timeout=5
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${ELASTICSEARCH_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${KAFKA_WR} --timeout=5m
 """
-//                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
+                            //                    withAWS(region: AWS_REGION, credentials: 'aws-762822024843-jenkins-nuxeo-ai') { // jenkinsci/pipeline-aws-plugin#151
                             withCredentials([[$class       : 'AmazonWebServicesCredentialsBinding',
                                               credentialsId: 'aws-762822024843-jenkins-nuxeo-ai']]) {
                                 sh "mvn test --fail-never -nsu ${getMavenArgs()} ${MONGODB_MAVEN_ARGS} ${ELASTICSEARCH_MAVEN_ARGS} ${KAFKA_MAVEN_ARGS}"

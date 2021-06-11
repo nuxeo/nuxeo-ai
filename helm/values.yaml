@@ -12,10 +12,10 @@ mongodb:
     team: ai
     usage: test
   tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
+  - key: team
+    operator: Equal
+    value: ai
+    effect: NoSchedule
   nodeSelector:
     team: ai
 elasticsearch:
@@ -38,10 +38,10 @@ elasticsearch:
       team: ai
       usage: test
   tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
+  - key: team
+    operator: Equal
+    value: ai
+    effect: NoSchedule
   nodeSelector:
     team: ai
 kafka:
@@ -51,26 +51,26 @@ kafka:
     team: ai
     usage: test
   tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
+  - key: team
+    operator: Equal
+    value: ai
+    effect: NoSchedule
   nodeSelector:
     team: ai
   autoCreateTopicsEnable: false
   deleteTopicEnable: true
   transactionStateLogMinIsr: 1
   extraEnvVars:
-    - name: KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS
-      value: "100"
-    - name: KAFKA_CFG_LOG_RETENTION_MINUTES
-      value: "20"
-    - name: KAFKA_CFG_OFFSETS_RETENTION_MINUTES
-      value: "20"
-    - name: KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS
-      value: "5"
-    - name: KAFKA_CFG_STATE_LOG_REPLICATION_FACTOR
-      value: "1"
+  - name: KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS
+    value: "100"
+  - name: KAFKA_CFG_LOG_RETENTION_MINUTES
+    value: "20"
+  - name: KAFKA_CFG_OFFSETS_RETENTION_MINUTES
+    value: "20"
+  - name: KAFKA_CFG_OFFSETS_TOPIC_NUM_PARTITIONS
+    value: "5"
+  - name: KAFKA_CFG_STATE_LOG_REPLICATION_FACTOR
+    value: "1"
   zookeeper:
     podLabels:
       branch: "$BRANCH_NAME_LABEL"
@@ -78,10 +78,10 @@ kafka:
       team: ai
       usage: test
     tolerations:
-      - key: team
-        operator: Equal
-        value: ai
-        effect: NoSchedule
+    - key: team
+      operator: Equal
+      value: ai
+      effect: NoSchedule
     nodeSelector:
       team: ai
 tags:

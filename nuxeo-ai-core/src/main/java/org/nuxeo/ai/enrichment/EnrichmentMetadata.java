@@ -18,34 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
-import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.metadata.TagSuggestion;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.services.AIComponent;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.transientstore.api.TransientStore;
-import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
@@ -61,6 +33,33 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_TIMESTAMP;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.metadata.TagSuggestion;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.runtime.api.Framework;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A normalized view of the result of an Enrichment Service. This class is designed to be serialized as JSON.

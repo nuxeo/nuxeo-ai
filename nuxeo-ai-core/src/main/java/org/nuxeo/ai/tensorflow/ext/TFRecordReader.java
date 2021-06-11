@@ -22,11 +22,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- *  See https://github.com/tensorflow/ecosystem/blob/master/hadoop/src/main/java/org/tensorflow/hadoop/util/TFRecordReader.java
- *
+ * See https://github.com/tensorflow/ecosystem/blob/master/hadoop/src/main/java/org/tensorflow/hadoop/util/TFRecordReader.java
  */
 public class TFRecordReader {
     private final DataInput input;
+
     private final boolean crcCheck;
 
     public TFRecordReader(DataInput input, boolean crcCheck) {
@@ -59,8 +59,9 @@ public class TFRecordReader {
             input.readFully(lenCrc32Bytes);
             int lenCrc32 = fromInt32LE(lenCrc32Bytes);
             if (lenCrc32 != Crc32C.maskedCrc32c(lenBytes)) {
-                throw new IOException("Length header crc32 checking failed: " + lenCrc32 + " != " +
-                                              Crc32C.maskedCrc32c(lenBytes) + ", length = " + len);
+                throw new IOException(
+                        "Length header crc32 checking failed: " + lenCrc32 + " != " + Crc32C.maskedCrc32c(lenBytes)
+                                + ", length = " + len);
             }
         }
 
@@ -78,8 +79,7 @@ public class TFRecordReader {
             input.readFully(dataCrc32Bytes);
             int dataCrc32 = fromInt32LE(dataCrc32Bytes);
             if (dataCrc32 != Crc32C.maskedCrc32c(data)) {
-                throw new IOException("Data crc32 checking failed: " + dataCrc32 + " != " +
-                                              Crc32C.maskedCrc32c(data));
+                throw new IOException("Data crc32 checking failed: " + dataCrc32 + " != " + Crc32C.maskedCrc32c(data));
             }
         }
         return data;

@@ -50,7 +50,8 @@ The "release" increment mode removes any PRERELEASE or BUILD parts (see VERSION)
                                 def releaseProps = readProperties file: 'release.properties'
                                 def jobName = '/nuxeo/nuxeo-ai/v' + releaseProps['RELEASE_VERSION']
                                 while (!Jenkins.instance.getItemByFullName(jobName)) {
-                                    build job: '/nuxeo/nuxeo-ai/', propagate: false, wait: false // can't wait for non-job item
+                                    build job: '/nuxeo/nuxeo-ai/', propagate: false, wait: false
+                                    // can't wait for non-job item
                                     sleep time: 1, unit: 'MINUTES'
                                 }
                                 build job: jobName, propagate: false, wait: false

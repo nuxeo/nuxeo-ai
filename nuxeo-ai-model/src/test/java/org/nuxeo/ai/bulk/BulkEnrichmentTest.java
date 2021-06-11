@@ -18,45 +18,6 @@
  */
 package org.nuxeo.ai.bulk;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.collect.Sets;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.nuxeo.ai.auto.AutoHistory;
-import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
-import org.nuxeo.ai.model.export.DatasetExportService;
-import org.nuxeo.ai.sdk.objects.PropertyType;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
-import org.nuxeo.ecm.core.api.PathRef;
-import org.nuxeo.ecm.core.api.model.Property;
-import org.nuxeo.ecm.core.bulk.BulkService;
-import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
-import org.nuxeo.ecm.core.bulk.message.BulkCommand;
-import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
-import org.nuxeo.lib.stream.log.LogManager;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.stream.StreamService;
-import org.nuxeo.runtime.test.runner.Deploy;
-import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RandomBug;
-import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import javax.inject.Inject;
-import java.io.Serializable;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -72,6 +33,41 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
+import java.io.Serializable;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import javax.inject.Inject;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.nuxeo.ai.auto.AutoHistory;
+import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
+import org.nuxeo.ai.model.export.DatasetExportService;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.bulk.BulkService;
+import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.ecm.core.bulk.message.BulkCommand;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
+import org.nuxeo.lib.stream.log.LogManager;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.stream.StreamService;
+import org.nuxeo.runtime.test.runner.Deploy;
+import org.nuxeo.runtime.test.runner.Features;
+import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.RandomBug;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.Sets;
+
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class,
         RepositoryElasticSearchFeature.class })
@@ -79,7 +75,7 @@ import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
-@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml"})
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class BulkEnrichmentTest extends BaseBulkEnrich {
 

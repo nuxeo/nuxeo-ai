@@ -18,16 +18,15 @@
  */
 package org.nuxeo.ai.model.export;
 
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * For a given dataset provides exporting capabilities.
