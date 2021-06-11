@@ -49,9 +49,9 @@ You can set these in your `nuxeo.conf`.
 </tr>
 <tr>
 <tr>
-<td colspan="1">`nuxeo.enrichment.gcp.images`</td>
+<td colspan="1"><code>nuxeo.enrichment.gcp.images</code></td>
 <td colspan="1">Run GCP enrichment services on images.</td>
-<td colspan="1">`false`</td>
+<td colspan="1"><code>false</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 </tbody>

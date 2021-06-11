@@ -36,21 +36,21 @@ You can set these in your `nuxeo.conf`.
 <th width="150" colspan="1">Since</th>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.sightengine.apiKey`</td>
+<td colspan="1"><code>nuxeo.ai.sightengine.apiKey</code></td>
 <td colspan="1">The api key for sightengine</td>
 <td colspan="1"></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.sightengine.apiSecret`</td>
+<td colspan="1"><code>nuxeo.ai.sightengine.apiSecret</code></td>
 <td colspan="1">The api secret for sightengine</td>
 <td colspan="1"></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>
-<td colspan="1">`nuxeo.ai.sightengine.all`</td>
-<td colspan="1">Configure an enrichment service to process the `images` stream and call all sightengine models</td>
-<td colspan="1">`true`</td>
+<td colspan="1"><code>nuxeo.ai.sightengine.all</code></td>
+<td colspan="1">Configure an enrichment service to process the <code>images</code> stream and call all sightengine models</td>
+<td colspan="1"><code>true</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 </tbody>
