@@ -55,7 +55,7 @@ import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
 import com.amazonaws.services.textract.model.Block;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, RuntimeFeature.class, PlatformFeature.class})
+@Features({ EnrichmentTestFeature.class, RuntimeFeature.class, PlatformFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-textract-config.xml")
@@ -113,8 +113,8 @@ public class TestTextractService {
         List<Block> rawBlock = result.getBlocks();
         assertNotNull(rawBlock);
 
-        try (Stream<String> stream =
-                     Files.lines(Paths.get(this.getClass().getResource("/files/textract.json").toURI()))) {
+        try (Stream<String> stream = Files.lines(
+                Paths.get(this.getClass().getResource("/files/textract.json").toURI()))) {
 
             stream.forEach(line -> {
                 try {
@@ -149,6 +149,5 @@ public class TestTextractService {
         assertEquals(1, metadata.getLabels().size());
         assertTrue(metadata.getLabels().get(0).getValues().get(0).getName().contains("There are 1 blocks"));
     }
-
 
 }

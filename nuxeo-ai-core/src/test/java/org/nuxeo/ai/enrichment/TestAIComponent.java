@@ -18,6 +18,18 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
+
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -33,19 +45,6 @@ import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import javax.inject.Inject;
-
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
-import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 
 /**
  * Tests the overall AIComponent
@@ -246,9 +245,9 @@ public class TestAIComponent {
             aiComponent.getEnrichmentProvider(badProvider);
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(
-                    e.getMessage()
-                     .contains("The /NOT_ME kind for provider bad provider must be defined in the aikind vocabulary"));
+            assertTrue(e.getMessage()
+                        .contains(
+                                "The /NOT_ME kind for provider bad provider must be defined in the aikind vocabulary"));
         }
 
         descriptor.kind = "/classification/sentiment";

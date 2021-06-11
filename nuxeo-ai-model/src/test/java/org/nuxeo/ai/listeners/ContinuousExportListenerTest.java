@@ -23,7 +23,6 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.nuxeo.ai.listeners.ContinuousExportListener.START_CONTINUOUS_EXPORT;
 
 import javax.inject.Inject;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,20 +39,20 @@ import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class, RepositoryElasticSearchFeature.class})
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class,
+        RepositoryElasticSearchFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class ContinuousExportListenerTest {
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(options().extensions(new ResponseTemplateTransformer(true))
-            .port(5089));
+    public WireMockRule wireMockRule = new WireMockRule(
+            options().extensions(new ResponseTemplateTransformer(true)).port(5089));
 
     @Inject
     protected CoreSession session;

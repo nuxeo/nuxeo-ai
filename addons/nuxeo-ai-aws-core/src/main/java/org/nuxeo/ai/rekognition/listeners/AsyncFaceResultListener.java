@@ -24,14 +24,12 @@ import static org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider.ENRICH
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.runtime.api.Framework;
-
 import com.amazonaws.services.rekognition.model.GetFaceDetectionRequest;
 import com.amazonaws.services.rekognition.model.GetFaceDetectionResult;
 
@@ -56,14 +54,14 @@ public class AsyncFaceResultListener extends BaseAsyncResultListener {
 
     @Override
     protected Collection<EnrichmentMetadata> getEnrichmentMetadata(String jobId, Map<String, Serializable> params) {
-        GetFaceDetectionRequest request = new GetFaceDetectionRequest()
-                .withJobId(jobId);
+        GetFaceDetectionRequest request = new GetFaceDetectionRequest().withJobId(jobId);
 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         GetFaceDetectionResult result = rs.getClient().getFaceDetection(request);
 
         AIComponent service = Framework.getService(AIComponent.class);
-        DetectFacesEnrichmentProvider es = (DetectFacesEnrichmentProvider) service.getEnrichmentProvider(ENRICHMENT_NAME);
+        DetectFacesEnrichmentProvider es = (DetectFacesEnrichmentProvider) service.getEnrichmentProvider(
+                ENRICHMENT_NAME);
         return es.processResults((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
     }
 }

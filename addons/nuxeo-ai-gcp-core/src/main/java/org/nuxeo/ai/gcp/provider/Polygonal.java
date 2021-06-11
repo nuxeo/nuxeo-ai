@@ -20,9 +20,7 @@
 package org.nuxeo.ai.gcp.provider;
 
 import java.util.List;
-
 import org.nuxeo.ai.metadata.AIMetadata;
-
 import com.google.cloud.vision.v1.BoundingPoly;
 import com.google.cloud.vision.v1.Vertex;
 

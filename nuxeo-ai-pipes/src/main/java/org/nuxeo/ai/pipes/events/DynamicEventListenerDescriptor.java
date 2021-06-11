@@ -29,11 +29,13 @@ import org.nuxeo.ecm.core.event.impl.EventListenerDescriptor;
  */
 public class DynamicEventListenerDescriptor extends EventListenerDescriptor {
 
-    public DynamicEventListenerDescriptor(String eventName, EventListener eventListener, boolean isAsync, boolean isPostCommit) {
+    public DynamicEventListenerDescriptor(String eventName, EventListener eventListener, boolean isAsync,
+            boolean isPostCommit) {
         this(eventName + "_" + UUID.randomUUID(), isPostCommit, isAsync, eventName, eventListener);
     }
 
-    public DynamicEventListenerDescriptor(String name, boolean isPostCommit, boolean isAsync, String eventName, EventListener eventListener) {
+    public DynamicEventListenerDescriptor(String name, boolean isPostCommit, boolean isAsync, String eventName,
+            EventListener eventListener) {
         this.name = name;
         this.isPostCommit = isPostCommit;
         this.isAsync = isAsync;

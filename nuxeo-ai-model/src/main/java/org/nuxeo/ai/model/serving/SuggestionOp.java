@@ -18,8 +18,16 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import com.fasterxml.jackson.annotation.JsonRawValue;
-import com.fasterxml.jackson.core.JsonGenerator;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -41,26 +49,15 @@ import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.impl.DocumentPartImpl;
 import org.nuxeo.ecm.core.api.model.impl.PropertyFactory;
-import org.nuxeo.ecm.core.io.avro.AvroConstants;
 import org.nuxeo.ecm.core.io.marshallers.json.document.DocumentPropertyJsonWriter;
 import org.nuxeo.ecm.core.io.registry.MarshallerRegistry;
 import org.nuxeo.ecm.core.io.registry.context.RenderingContext;
 import org.nuxeo.ecm.core.schema.SchemaManager;
-import org.nuxeo.ecm.core.schema.TypeService;
 import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.types.ListType;
 import org.nuxeo.ecm.core.schema.types.Schema;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.fasterxml.jackson.annotation.JsonRawValue;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * Suggests metadata for the specified document.
@@ -121,16 +118,16 @@ public class SuggestionOp {
         }
 
         ByteArrayOutputStream outWriter = new ByteArrayOutputStream();
-        DocumentPropertyJsonWriter writer = references
-                ? registry.getInstance(RenderingContext.CtxBuilder.fetchInDoc("properties").get(),
-                DocumentPropertyJsonWriter.class)
-                : null;
+        DocumentPropertyJsonWriter writer = references ?
+                registry.getInstance(RenderingContext.CtxBuilder.fetchInDoc("properties").get(),
+                        DocumentPropertyJsonWriter.class) :
+                null;
         try (JsonGenerator jg = MAPPER.getFactory().createGenerator(outWriter)) {
             List<SuggestionsAsJson> suggestionsAsJson = suggestions.stream()
-                    .map(metadata -> writeJson(metadata, doc, writer,
-                            outWriter, jg))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                                                                   .map(metadata -> writeJson(metadata, doc, writer,
+                                                                           outWriter, jg))
+                                                                   .filter(Objects::nonNull)
+                                                                   .collect(Collectors.toList());
             return Blobs.createJSONBlob(MAPPER.writeValueAsString(suggestionsAsJson));
         } catch (IOException e) {
             throw new NuxeoException("Unable to turn data into a json String", e);
@@ -141,7 +138,7 @@ public class SuggestionOp {
      * Write property information alongside suggestions.
      */
     protected SuggestionsAsJson writeJson(EnrichmentMetadata metadata, DocumentModel input,
-                                          DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter, JsonGenerator jg) {
+            DocumentPropertyJsonWriter writer, ByteArrayOutputStream outWriter, JsonGenerator jg) {
         try {
             List<SuggestionListAsJson> suggestionList = new ArrayList<>();
             for (LabelSuggestion labelSuggestion : metadata.getLabels()) {

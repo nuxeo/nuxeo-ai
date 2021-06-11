@@ -24,6 +24,7 @@ import java.util.List;
 public class Offensive {
 
     private float prob;
+
     private List<Box> boxes = null;
 
     public float getProb() {

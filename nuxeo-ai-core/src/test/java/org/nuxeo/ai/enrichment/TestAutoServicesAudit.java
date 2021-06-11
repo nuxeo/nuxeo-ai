@@ -18,8 +18,26 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
+import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
+import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
+import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
+import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
+import static org.nuxeo.elasticsearch.test.ESTestClientFactory.ADDRESS_LIST_PROPERTY;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,27 +62,8 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import javax.inject.Inject;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
-import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
-import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
-import static org.nuxeo.elasticsearch.test.ESTestClientFactory.ADDRESS_LIST_PROPERTY;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AuditFeature.class, RepositoryElasticSearchFeature.class })

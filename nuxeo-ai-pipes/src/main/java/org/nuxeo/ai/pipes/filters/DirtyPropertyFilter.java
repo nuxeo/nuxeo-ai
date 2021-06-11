@@ -18,16 +18,14 @@
  */
 package org.nuxeo.ai.pipes.filters;
 
-
 import static org.nuxeo.ai.pipes.events.DirtyEventListener.makeDirtyKey;
 
 import java.util.List;
 import java.util.Map;
-
-import org.nuxeo.ecm.core.event.Event;
-import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ai.pipes.filters.Filter.EventFilter;
 import org.nuxeo.ai.pipes.streams.Initializable;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 
 /**
  * A filter that returns true if dirty property is found in the document context.

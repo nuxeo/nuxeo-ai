@@ -29,16 +29,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
 import com.amazonaws.services.rekognition.model.ModerationLabel;
+
 import net.jodah.failsafe.RetryPolicy;
 
 /**
@@ -51,7 +50,6 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
     public static final String DEFAULT_CONFIDENCE = "70";
 
     protected float minConfidence;
-
 
     protected EnrichmentMetadata.Label newLabel(ModerationLabel l) {
         if (l.getConfidence() >= minConfidence) {
@@ -93,21 +91,21 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                           DetectModerationLabelsResult result) {
+            DetectModerationLabelsResult result) {
         List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
-                .stream()
-                .map(this::newLabel)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                                                      .stream()
+                                                      .map(this::newLabel)
+                                                      .filter(Objects::nonNull)
+                                                      .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                .withLabels(asLabels(labels))
-                .withRawKey(rawKey)
-                .withDocumentProperties(singleton(propName))
-                .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
     }
 
     @Override

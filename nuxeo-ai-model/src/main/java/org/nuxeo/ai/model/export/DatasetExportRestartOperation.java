@@ -28,10 +28,7 @@ import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 
-@Operation(id = DatasetExportRestartOperation.ID,
-        category = CAT_SERVICES,
-        label = "Restart AI Dataset Export",
-        description = "Restarts an aborted/completed dataset export")
+@Operation(id = DatasetExportRestartOperation.ID, category = CAT_SERVICES, label = "Restart AI Dataset Export", description = "Restarts an aborted/completed dataset export")
 public class DatasetExportRestartOperation {
 
     public static final String ID = "AI.ExportRestart";

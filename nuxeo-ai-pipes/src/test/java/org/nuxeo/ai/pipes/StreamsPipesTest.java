@@ -18,7 +18,20 @@
  */
 package org.nuxeo.ai.pipes;
 
-import org.junit.Ignore;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
+import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
+import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.UUID;
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -44,26 +57,10 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
-import javax.inject.Inject;
-import java.time.Duration;
-import java.util.List;
-import java.util.UUID;
-
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.nuxeo.ai.pipes.events.EventPipesTest.getTestEvent;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
-import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
-import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
-
-
 @RunWith(FeaturesRunner.class)
-@Features({PipesTestConfigFeature.class, PlatformFeature.class})
-@Deploy({"org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml"})
+@Features({ PipesTestConfigFeature.class, PlatformFeature.class })
+@Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
+        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml" })
 public class StreamsPipesTest {
 
     @Inject
@@ -193,9 +190,7 @@ public class StreamsPipesTest {
 
     @Test
     public void testBuildName() {
-        assertEquals("Should not error even though nulls passed in",
-                "ai/aname_void", buildName("aname", null, null)
-        );
+        assertEquals("Should not error even though nulls passed in", "ai/aname_void", buildName("aname", null, null));
         assertEquals("ai/king_bob_hope", buildName("king", "bob", "hope"));
         assertEquals("ai/king_bob_hope-rope", buildName("king", "bob", "hope,rope"));
 

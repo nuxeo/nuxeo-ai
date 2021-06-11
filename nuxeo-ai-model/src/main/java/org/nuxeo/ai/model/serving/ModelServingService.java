@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-
 import org.nuxeo.ai.configuration.Reloadable;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.model.ModelProperty;
@@ -63,6 +62,7 @@ public interface ModelServingService extends Reloadable {
 
     /**
      * Get all the input properties for all models that match the provided document.
+     *
      * @return
      */
     Set<ModelProperty> getInputs(DocumentModel document);

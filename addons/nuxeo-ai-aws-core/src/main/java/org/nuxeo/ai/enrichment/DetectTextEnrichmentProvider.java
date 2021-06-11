@@ -74,9 +74,8 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
         if (textD.getConfidence() >= minConfidence && textTypes.contains(textD.getType())) {
             BoundingBox box = textD.getGeometry().getBoundingBox();
             return new EnrichmentMetadata.Tag(textD.getDetectedText(), kind, null,
-                                              new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box
-                                                      .getTop()),
-                                              null, textD.getConfidence() / 100);
+                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), null,
+                    textD.getConfidence() / 100);
         }
         return null;
     }
@@ -86,8 +85,7 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                DetectTextResult result = Framework.getService(RekognitionService.class)
-                                                   .detectText(blob.getValue());
+                DetectTextResult result = Framework.getService(RekognitionService.class).detectText(blob.getValue());
                 if (result != null && !result.getTextDetections().isEmpty()) {
                     enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
                 }
@@ -99,7 +97,8 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName, DetectTextResult result) {
+    protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
+            DetectTextResult result) {
         List<AIMetadata.Tag> tags = result.getTextDetections()
                                           .stream()
                                           .map(this::newTag)
@@ -107,11 +106,11 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
                                           .collect(Collectors.toList());
         String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withTags(asTags(tags))
-                                                 .withRawKey(rawKey)
-                                                 .withDocumentProperties(singleton(propName))
-                                                 .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
     }
 
     @Override

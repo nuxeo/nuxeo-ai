@@ -19,14 +19,13 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import com.amazonaws.services.transcribe.AmazonTranscribe;
-import com.amazonaws.services.transcribe.AmazonTranscribeClientBuilder;
-import com.amazonaws.services.transcribe.model.ConflictException;
-import com.amazonaws.services.transcribe.model.DeleteTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.Media;
-import com.amazonaws.services.transcribe.model.MediaFormat;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
+import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,14 +39,14 @@ import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.storage.sql.S3BinaryManager;
 import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
+import com.amazonaws.services.transcribe.AmazonTranscribe;
+import com.amazonaws.services.transcribe.AmazonTranscribeClientBuilder;
+import com.amazonaws.services.transcribe.model.ConflictException;
+import com.amazonaws.services.transcribe.model.DeleteTranscriptionJobRequest;
+import com.amazonaws.services.transcribe.model.Media;
+import com.amazonaws.services.transcribe.model.MediaFormat;
+import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
+import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
 
 public class TranscribeServiceImpl implements TranscribeService {
 
@@ -114,7 +113,7 @@ public class TranscribeServiceImpl implements TranscribeService {
     }
 
     @Override
-    public StartTranscriptionJobResult requestTranscription(Blob blob, String ...languages) {
+    public StartTranscriptionJobResult requestTranscription(Blob blob, String... languages) {
         URI blobURI = getBlobURI(blob, false);
         Media media = new Media().withMediaFileUri(blobURI.toString());
         StartTranscriptionJobRequest request = new StartTranscriptionJobRequest().withIdentifyLanguage(true)

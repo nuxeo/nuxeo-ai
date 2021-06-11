@@ -20,10 +20,10 @@ package org.nuxeo.ai.metadata;
 
 import static java.util.Collections.emptySet;
 
-import org.apache.commons.lang3.StringUtils;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A builder for AIMetadata
@@ -55,9 +55,8 @@ public abstract class AbstractMetaDataBuilder {
 
     protected String creator;
 
-    public AbstractMetaDataBuilder(Instant created, String kind, String modelName,
-                                   String repositoryName, String documentRef, Set<String> digests,
-                                   Set<String> inputProperties) {
+    public AbstractMetaDataBuilder(Instant created, String kind, String modelName, String repositoryName,
+            String documentRef, Set<String> digests, Set<String> inputProperties) {
         this.created = created;
         this.kind = kind;
         this.modelName = modelName;

@@ -22,7 +22,6 @@ import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatus;
 
 import java.time.Instant;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.ExportStatus;
@@ -57,8 +56,8 @@ public class DatasetExportStatusComputation extends AbstractComputation {
             deltaStatus.setProcessingStartTime(Instant.now());
         }
 
-        log.info("Received status {} batch id {} processed: {} errored: {}",
-                export.getCommandId(), export.getId(), export.getProcessed(), export.getErrored());
+        log.info("Received status {} batch id {} processed: {} errored: {}", export.getCommandId(), export.getId(),
+                export.getProcessed(), export.getErrored());
 
         deltaStatus.setProcessingEndTime(Instant.now());
         deltaStatus.setErrorCount(export.getErrored());

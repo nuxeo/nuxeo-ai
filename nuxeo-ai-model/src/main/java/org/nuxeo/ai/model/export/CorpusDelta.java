@@ -19,12 +19,6 @@
  */
 package org.nuxeo.ai.model.export;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang3.StringUtils;
-import org.nuxeo.ai.sdk.objects.PropertyType;
-import org.nuxeo.runtime.api.Framework;
-
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -32,6 +26,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.runtime.api.Framework;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Corpus Delta POJO

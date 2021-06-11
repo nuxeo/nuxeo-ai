@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -42,7 +41,6 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
-
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.CelebrityDetail;
 import com.amazonaws.services.rekognition.model.CelebrityRecognition;
@@ -86,24 +84,25 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
      * Processes the result of the call to AWS
      */
     public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                            GetCelebrityRecognitionResult result) {
-        List<AIMetadata.Tag> tags = result.getCelebrities().stream()
-                .map(c -> newCelebrityTag(c.getCelebrity(), c.getTimestamp()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+            GetCelebrityRecognitionResult result) {
+        List<AIMetadata.Tag> tags = result.getCelebrities()
+                                          .stream()
+                                          .map(c -> newCelebrityTag(c.getCelebrity(), c.getTimestamp()))
+                                          .filter(Objects::nonNull)
+                                          .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("celebrityFaces", result.getCelebrities().stream()
-                    .map(CelebrityRecognition::getCelebrity));
+            jg.writeObjectField("celebrityFaces",
+                    result.getCelebrities().stream().map(CelebrityRecognition::getCelebrity));
             jg.writeObjectField("unrecognizedFaces", Collections.emptyList());
         });
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                .withTags(asTags(tags))
-                .withRawKey(rawKey)
-                .withDocumentProperties(singleton(propName))
-                .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
     }
 
     /**
@@ -115,8 +114,7 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
             return new AIMetadata.Tag(celebrity.getName(), kind, celebrity.getId(),
                     new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
                     Collections.singletonList(new AIMetadata.Label(null, 0, timestamp)),
-                    celebrity.getFace().getConfidence() / 100
-            );
+                    celebrity.getFace().getConfidence() / 100);
         }
         return null;
     }

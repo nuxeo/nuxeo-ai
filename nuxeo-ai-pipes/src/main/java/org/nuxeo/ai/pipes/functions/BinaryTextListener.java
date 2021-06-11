@@ -69,9 +69,9 @@ public class BinaryTextListener implements EventListener {
         this.timeout = windowSizeSeconds;
         this.useWindow = timeout > 0;
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Creating a BinaryTextListener for %s property and a %s source property.  " +
-                                            "Sending to a '%s' stream, window size is %s (in seconds)",
-                                    binaryProperty, inputProperty, consumerName, windowSizeSeconds));
+            log.debug(String.format("Creating a BinaryTextListener for %s property and a %s source property.  "
+                            + "Sending to a '%s' stream, window size is %s (in seconds)", binaryProperty, inputProperty,
+                    consumerName, windowSizeSeconds));
         }
     }
 
@@ -94,8 +94,7 @@ public class BinaryTextListener implements EventListener {
                     } else {
                         if (log.isDebugEnabled()) {
                             log.debug(String.format("Skipping because there is already an event for %s and %s",
-                                                    doc.getId(),
-                                                    text.substring(0, text.length() < 25 ? text.length() : 25)));
+                                    doc.getId(), text.substring(0, text.length() < 25 ? text.length() : 25)));
                         }
                     }
                 } else {

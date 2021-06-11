@@ -21,7 +21,6 @@ package org.nuxeo.ai.rekognition;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,7 +32,6 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-
 import com.amazonaws.AmazonWebServiceResult;
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
@@ -60,6 +58,7 @@ import com.amazonaws.services.rekognition.model.StartFaceDetectionResult;
 import com.amazonaws.services.rekognition.model.StartLabelDetectionRequest;
 import com.amazonaws.services.rekognition.model.StartLabelDetectionResult;
 import com.amazonaws.services.rekognition.model.Video;
+
 import io.dropwizard.metrics5.Counter;
 import io.dropwizard.metrics5.Timer;
 

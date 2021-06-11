@@ -26,7 +26,6 @@ import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.ExportRecord;
@@ -59,8 +58,8 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
         Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
         Map<String, List<ExportRecord>> grouped = records.stream()
-                .map(r -> codec.decode(r.getData()))
-                .collect(groupingBy(ExportRecord::getId, toList()));
+                                                         .map(r -> codec.decode(r.getData()))
+                                                         .collect(groupingBy(ExportRecord::getId, toList()));
 
         boolean training = isTraining();
         ExportStatus eb = new ExportStatus();
@@ -89,8 +88,8 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
     @Override
     public void batchFailure(ComputationContext context, String inputStream, List<Record> records) {
         String commandId = records.isEmpty() ? "" : records.get(0).getKey();
-        log.warn("Batch failure \"{}\" batch of {} records with command {}.",
-                metadata.name(), records.size(), commandId);
+        log.warn("Batch failure \"{}\" batch of {} records with command {}.", metadata.name(), records.size(),
+                commandId);
     }
 
     protected boolean isTraining() {

@@ -25,7 +25,6 @@ import static java.util.stream.Collectors.toList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
@@ -34,7 +33,6 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-
 import com.amazonaws.services.textract.AmazonTextract;
 import com.amazonaws.services.textract.AmazonTextractClientBuilder;
 import com.amazonaws.services.textract.model.AnalyzeDocumentRequest;
@@ -45,7 +43,7 @@ import com.amazonaws.services.textract.model.Document;
 
 /**
  * Implementation of TextractService
- * 
+ *
  * @since 2.1.2
  */
 public class TextractServiceImpl extends DefaultComponent implements TextractService {

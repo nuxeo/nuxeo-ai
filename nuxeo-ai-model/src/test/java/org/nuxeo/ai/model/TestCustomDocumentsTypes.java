@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.Blob;
@@ -109,11 +108,10 @@ public class TestCustomDocumentsTypes {
         assertEquals(split, returnLong);
 
         // Now check complex types
-        List<Map<String, Object>> dataFeatures =
-                (List<Map<String, Object>>) doc.getPropertyValue(DATASET_EXPORT_INPUTS);
+        List<Map<String, Object>> dataFeatures = (List<Map<String, Object>>) doc.getPropertyValue(
+                DATASET_EXPORT_INPUTS);
         assertFeatures(dataFeatures);
-        dataFeatures =
-                (List<Map<String, Object>>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
+        dataFeatures = (List<Map<String, Object>>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
         assertFeatures(dataFeatures);
     }
 

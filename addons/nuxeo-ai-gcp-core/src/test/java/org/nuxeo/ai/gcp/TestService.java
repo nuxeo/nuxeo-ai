@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +56,6 @@ import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.google.cloud.vision.v1.AnnotateImageRequest;
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.BatchAnnotateImagesResponse;
@@ -178,12 +176,11 @@ public class TestService {
         assertEquals(btd.getBlobs().entrySet().iterator().next().getValue().getDigest(),
                 metadata.context.digests.iterator().next());
         assertThat(metadata.getTags()).isNotEmpty();
-        boolean thereIsJoy = metadata.getTags()
-                                     .get(0)
-                                     .getValues()
-                                     .get(0).features.stream()
-                                                     .filter(tag -> tag.getName().equals("joy"))
-                                                     .anyMatch(tag -> tag.getConfidence() > 2);
+        boolean thereIsJoy = metadata.getTags().get(0).getValues().get(0).features.stream()
+                                                                                  .filter(tag -> tag.getName()
+                                                                                                    .equals("joy"))
+                                                                                  .anyMatch(tag -> tag.getConfidence()
+                                                                                          > 2);
         assertThat(thereIsJoy).isTrue();
     }
 
@@ -204,9 +201,11 @@ public class TestService {
                 metadata.context.digests.iterator().next());
         assertThat(metadata.getTags()).isNotEmpty();
         List<String> tags = metadata.getTags()
-                .get(0)
-                .getValues()
-                .stream().map(tag -> tag.name).collect(Collectors.toList());
+                                    .get(0)
+                                    .getValues()
+                                    .stream()
+                                    .map(tag -> tag.name)
+                                    .collect(Collectors.toList());
         assertThat(tags).contains("Google");
     }
 
@@ -227,9 +226,11 @@ public class TestService {
                 metadata.context.digests.iterator().next());
         assertThat(metadata.getTags()).isNotEmpty();
         List<String> tags = metadata.getTags()
-                .get(0)
-                .getValues()
-                .stream().map(tag -> tag.name).collect(Collectors.toList());
+                                    .get(0)
+                                    .getValues()
+                                    .stream()
+                                    .map(tag -> tag.name)
+                                    .collect(Collectors.toList());
         assertThat(tags).contains("Sacré-Cœur");
     }
 
@@ -250,9 +251,11 @@ public class TestService {
                 metadata.context.digests.iterator().next());
         assertThat(metadata.getTags()).isNotEmpty();
         List<String> tags = metadata.getTags()
-                .get(0)
-                .getValues()
-                .stream().map(tag -> tag.name).collect(Collectors.toList());
+                                    .get(0)
+                                    .getValues()
+                                    .stream()
+                                    .map(tag -> tag.name)
+                                    .collect(Collectors.toList());
         assertThat(tags).contains("Bicycle");
     }
 
@@ -312,7 +315,6 @@ public class TestService {
         assertThat(tag.box.width > 0);
         assertThat(tag.box.height > 0);
     }
-
 
     protected ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key, key, blob.getEncoding(), blob.getLength());

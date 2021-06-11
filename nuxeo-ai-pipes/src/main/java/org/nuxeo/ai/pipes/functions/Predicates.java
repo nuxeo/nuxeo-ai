@@ -21,7 +21,6 @@ package org.nuxeo.ai.pipes.functions;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Predicate;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
@@ -52,7 +51,7 @@ public class Predicates {
         Objects.requireNonNull(predicate);
         return eventPredicate.and(e -> {
             DocumentEventContext docCtx = (DocumentEventContext) e.getContext();
-            if (docCtx == null)  {
+            if (docCtx == null) {
                 return false;
             }
             DocumentModel doc = docCtx.getSourceDocument();

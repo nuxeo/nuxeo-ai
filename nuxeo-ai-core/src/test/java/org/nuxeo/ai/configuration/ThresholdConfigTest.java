@@ -22,7 +22,6 @@ package org.nuxeo.ai.configuration;
 import static org.junit.Assert.assertEquals;
 
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -33,7 +32,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({ThresholdTestFeature.class, PlatformFeature.class})
+@Features({ ThresholdTestFeature.class, PlatformFeature.class })
 public class ThresholdConfigTest {
 
     @Inject
@@ -43,7 +42,7 @@ public class ThresholdConfigTest {
     protected ThresholdService thresholdService;
 
     @Test
-    @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/threshold-config-test.xml"})
+    @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/threshold-config-test.xml" })
     public void shouldContainThresholdConfigs() {
         DocumentModel file = coreSession.createDocumentModel("/", "MyFile", "File");
         file.setPropertyValue("dc:title", "My File");
@@ -60,7 +59,7 @@ public class ThresholdConfigTest {
     }
 
     @Test
-    @Deploy({"org.nuxeo.ai.ai-core:OSGI-INF/threshold-config-test.xml"})
+    @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/threshold-config-test.xml" })
     public void shouldNotContainValidThresholdConfig() {
         DocumentModel fakeDoc = coreSession.createDocumentModel("/", "FakeDoc", "Document");
         float thsldTitle = thresholdService.getAutoCorrectThreshold(fakeDoc, "dc:title");

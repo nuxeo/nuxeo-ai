@@ -18,9 +18,21 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,30 +55,17 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 /**
  * Tests the Suggestion Operation.
  */
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class})
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, AutomationFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
-@Deploy({"org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml"})
+@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/model-serving-test.xml" })
 public class TestSuggestionOp {
 
     @Rule
@@ -124,8 +123,8 @@ public class TestSuggestionOp {
     @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
     public void shouldCall() throws OperationException, IOException {
 
-        DocumentModel referencedDoc = new DocumentModelImpl("File", "123456", new Path("referenced doc"), null,
-                null, null, null, null, false, null, null, null);
+        DocumentModel referencedDoc = new DocumentModelImpl("File", "123456", new Path("referenced doc"), null, null,
+                null, null, null, false, null, null, null);
         session.importDocuments(Collections.singletonList(referencedDoc));
 
         String title = "My document suggestion";
@@ -173,22 +172,22 @@ public class TestSuggestionOp {
         for (JsonNode suggestion : suggestions) {
             List<JsonNode> asProperty = suggestion.get("values").findValues("value");
             Set<String> entityType = asProperty.stream()
-                    .map(jsonNode -> jsonNode.get("entity-type"))
-                    .filter(Objects::nonNull)
-                    .map(JsonNode::asText)
-                    .collect(Collectors.toSet());
+                                               .map(jsonNode -> jsonNode.get("entity-type"))
+                                               .filter(Objects::nonNull)
+                                               .map(JsonNode::asText)
+                                               .collect(Collectors.toSet());
             switch (suggestion.get("property").asText()) {
-                case "dr:docIdOnlyRef":
-                    assertTrue(entityType.contains("document"));
-                    break;
-                case "dc:creator":
-                    assertTrue(entityType.contains("user"));
-                    break;
-                case "dc:nature":
-                    assertTrue(entityType.contains("directoryEntry"));
-                    break;
-                case "dc:subjects":
-                    assertTrue(entityType.contains("directoryEntry"));
+            case "dr:docIdOnlyRef":
+                assertTrue(entityType.contains("document"));
+                break;
+            case "dc:creator":
+                assertTrue(entityType.contains("user"));
+                break;
+            case "dc:nature":
+                assertTrue(entityType.contains("directoryEntry"));
+                break;
+            case "dc:subjects":
+                assertTrue(entityType.contains("directoryEntry"));
             }
         }
     }

@@ -20,12 +20,11 @@ package org.nuxeo.ai.pipes.filters;
 
 import java.util.List;
 import java.util.Map;
-
+import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
-import org.nuxeo.ai.pipes.streams.Initializable;
 
 /**
  * Filters document properties

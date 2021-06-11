@@ -73,18 +73,20 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
     /**
      * Processes the result of the call to AWS
      */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName, DetectSentimentResult result) {
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
+            DetectSentimentResult result) {
         List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
         String raw = toJsonString(jg -> {
             jg.writeObjectField("sentimentScore", result.getSentimentScore());
             jg.writeStringField("sentiment", result.getSentiment());
         });
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                                                 .withLabels(asLabels(labels))
-                                                 .withRawKey(rawKey)
-                                                 .withDocumentProperties(Collections.singleton(propName))
-                                                 .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(
+                                                                                   Collections.singleton(propName))
+                                                                           .build());
     }
 
     /**
@@ -102,24 +104,25 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
 
         Float confidence;
         switch (sentiment) {
-            case POSITIVE:
-                confidence = sentimentScore.getPositive();
-                break;
-            case NEGATIVE:
-                confidence = sentimentScore.getNegative();
-                break;
-            case MIXED:
-                confidence = sentimentScore.getMixed();
-                break;
-            case NEUTRAL:
-                confidence = sentimentScore.getNeutral();
-                break;
-            default:
-                throw new NuxeoException("Invalid sentiment: " + sentiment);
+        case POSITIVE:
+            confidence = sentimentScore.getPositive();
+            break;
+        case NEGATIVE:
+            confidence = sentimentScore.getNegative();
+            break;
+        case MIXED:
+            confidence = sentimentScore.getMixed();
+            break;
+        case NEUTRAL:
+            confidence = sentimentScore.getNeutral();
+            break;
+        default:
+            throw new NuxeoException("Invalid sentiment: " + sentiment);
         }
 
         if (confidence == null) {
-            throw new NuxeoException(String.format("A %s sentiment has been returned without any confidence score", sentiment));
+            throw new NuxeoException(
+                    String.format("A %s sentiment has been returned without any confidence score", sentiment));
         }
 
         labels.add(new EnrichmentMetadata.Label(sentiment.toString(), confidence / 100));

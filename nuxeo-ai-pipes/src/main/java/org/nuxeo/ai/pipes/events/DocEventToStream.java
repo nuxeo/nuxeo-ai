@@ -18,6 +18,16 @@
  */
 package org.nuxeo.ai.pipes.events;
 
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -27,17 +37,6 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PropertyException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
-
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toDoc;
 
 /**
  * Take a document event and turn it into a stream BlobTextFromDocument.

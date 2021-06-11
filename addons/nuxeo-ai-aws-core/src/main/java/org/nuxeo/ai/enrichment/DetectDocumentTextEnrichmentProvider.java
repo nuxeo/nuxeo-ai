@@ -49,6 +49,7 @@ import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Detects text in a document.
+ *
  * @since 2.1.2
  */
 public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
@@ -62,7 +63,8 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
     /**
      * Process the Textract response with any available processors.
      */
-    protected static void processWithProcessors(BlobTextFromDocument blobTextFromDoc, List<Block> blocks, EnrichmentMetadata.Builder builder, String name) {
+    protected static void processWithProcessors(BlobTextFromDocument blobTextFromDoc, List<Block> blocks,
+            EnrichmentMetadata.Builder builder, String name) {
         List<TextractProcessor> processors = Framework.getService(TextractService.class).getProcessors(name);
         if (!processors.isEmpty()) {
             TransactionHelper.runInTransaction(
@@ -75,8 +77,7 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
                                 log.warn("Textract processing error.", e);
                             }
                         }
-                    })
-            );
+                    }));
         }
     }
 
@@ -96,8 +97,8 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                DetectDocumentTextResult result =
-                        Framework.getService(TextractService.class).detectText(blob.getValue());
+                DetectDocumentTextResult result = Framework.getService(TextractService.class)
+                                                           .detectText(blob.getValue());
                 if (result != null && !result.getBlocks().isEmpty()) {
                     enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
                 }
@@ -110,24 +111,20 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
      * Process the result of the call
      */
     protected Collection<? extends EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc,
-                                                                      String propName,
-                                                                      List<Block> blocks) {
+            String propName, List<Block> blocks) {
 
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc);
         processWithProcessors(blobTextFromDoc, blocks, builder, name);
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", blocks));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(builder
-                                                 .withRawKey(rawKey)
-                                                 .withDocumentProperties(singleton(propName))
-                                                 .build());
+        return Collections.singletonList(
+                builder.withRawKey(rawKey).withDocumentProperties(singleton(propName)).build());
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return new RetryPolicy()
-                .abortOn(NuxeoException.class, FatalEnrichmentError.class)
-                .withMaxRetries(2)
-                .withBackoff(10, 60, TimeUnit.SECONDS);
+        return new RetryPolicy().abortOn(NuxeoException.class, FatalEnrichmentError.class)
+                                .withMaxRetries(2)
+                                .withBackoff(10, 60, TimeUnit.SECONDS);
     }
 }

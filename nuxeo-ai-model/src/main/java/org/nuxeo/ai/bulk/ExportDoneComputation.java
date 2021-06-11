@@ -19,6 +19,12 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.Message;
@@ -35,13 +41,6 @@ import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Date;
-
-import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 
 public class ExportDoneComputation extends AbstractComputation {
 

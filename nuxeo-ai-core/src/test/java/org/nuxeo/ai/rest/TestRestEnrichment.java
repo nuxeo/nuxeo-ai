@@ -29,9 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.inject.Inject;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +46,6 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -124,11 +121,10 @@ public class TestRestEnrichment {
         options.put("uri", "http://explorer.nuxeo.com/nuxeo/runningstatus");
         options.put("header.X-Authentication-Token", "3456");
         client = new RestClient(options, null);
-        assertEquals("3456",
-                client.headers.stream()
-                              .filter(h -> "X-Authentication-Token".equals(h.getName()))
-                              .findFirst()
-                              .get()
-                              .getValue());
+        assertEquals("3456", client.headers.stream()
+                                           .filter(h -> "X-Authentication-Token".equals(h.getName()))
+                                           .findFirst()
+                                           .get()
+                                           .getValue());
     }
 }

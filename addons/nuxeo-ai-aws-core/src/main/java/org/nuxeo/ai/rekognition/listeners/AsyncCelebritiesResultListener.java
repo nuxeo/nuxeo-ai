@@ -25,14 +25,12 @@ import static org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider.
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.runtime.api.Framework;
-
 import com.amazonaws.services.rekognition.model.GetCelebrityRecognitionRequest;
 import com.amazonaws.services.rekognition.model.GetCelebrityRecognitionResult;
 
@@ -58,15 +56,15 @@ public class AsyncCelebritiesResultListener extends BaseAsyncResultListener {
     @Override
     protected Collection<EnrichmentMetadata> getEnrichmentMetadata(String jobId, Map<String, Serializable> params) {
         int max = (int) params.getOrDefault(MAX_RESULTS, 10);
-        GetCelebrityRecognitionRequest request = new GetCelebrityRecognitionRequest()
-                .withJobId(jobId)
-                .withMaxResults(max);
+        GetCelebrityRecognitionRequest request = new GetCelebrityRecognitionRequest().withJobId(jobId)
+                                                                                     .withMaxResults(max);
 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         GetCelebrityRecognitionResult result = rs.getClient().getCelebrityRecognition(request);
 
         AIComponent service = Framework.getService(AIComponent.class);
-        DetectCelebritiesEnrichmentProvider es = (DetectCelebritiesEnrichmentProvider) service.getEnrichmentProvider(ENRICHMENT_NAME);
+        DetectCelebritiesEnrichmentProvider es = (DetectCelebritiesEnrichmentProvider) service.getEnrichmentProvider(
+                ENRICHMENT_NAME);
         return es.processResults((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
     }
 }

@@ -21,7 +21,6 @@ package org.nuxeo.ai.model.export;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -62,9 +61,9 @@ public class ExportProgressOperation {
         List<BulkStatus> statuses = bulkService.getStatuses(user);
 
         Optional<ExportProgressStatus> status = statuses.stream()
-                                              .filter(st -> st.getId().equals(export.getJobId()))
-                                              .map(ExportProgressStatus::new)
-                                              .findAny();
+                                                        .filter(st -> st.getId().equals(export.getJobId()))
+                                                        .map(ExportProgressStatus::new)
+                                                        .findAny();
 
         return status.orElse(null);
     }

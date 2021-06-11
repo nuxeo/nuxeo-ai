@@ -18,6 +18,26 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.AUTO;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
+import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
+import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.auto.AutoHistory;
@@ -40,27 +60,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.AUTO;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
-import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
-import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class })
@@ -104,7 +103,8 @@ public class TestAutoServices {
 
         testDoc = session.getDocument(testDoc.getRef());
         @SuppressWarnings("unchecked")
-        List<Map<String, String>> property = (List<Map<String, String>>) testDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO.FILLED.lowerName());
+        List<Map<String, String>> property = (List<Map<String, String>>) testDoc.getProperty(ENRICHMENT_SCHEMA_NAME,
+                AUTO.FILLED.lowerName());
         assertThat(property).isNotEmpty().hasSize(1);
         Map<String, String> pred = property.get(0);
         assertThat(pred.get("xpath")).isEqualTo("dc:title");
@@ -149,8 +149,8 @@ public class TestAutoServices {
 
         for (String schema : testDoc.getSchemas()) {
             for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
-                System.out.println(schema + " prop " + entry.getKey() + " is list "
-                        + testDoc.getPropertyObject(schema, entry.getKey()).isList());
+                System.out.println(schema + " prop " + entry.getKey() + " is list " + testDoc.getPropertyObject(schema,
+                        entry.getKey()).isList());
             }
         }
 
@@ -314,14 +314,14 @@ public class TestAutoServices {
         history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(1, history.size());
 
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "","NOT_OLD", comment);
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "","OLD", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:title", "", "NOT_OLD", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "", "OLD", comment);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(2, history.size());
 
-        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "","OLDISH", comment);
+        docMetadataService.updateAuto(testDoc, AUTO.FILLED, "dc:format", "", "OLDISH", comment);
         testDoc = session.saveDocument(testDoc);
         txFeature.nextTransaction();
         history = docMetadataService.getAutoHistory(testDoc);

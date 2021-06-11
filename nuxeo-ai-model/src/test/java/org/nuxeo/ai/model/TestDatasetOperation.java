@@ -29,9 +29,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.inject.Inject;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,7 +55,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
@@ -223,8 +220,7 @@ public class TestDatasetOperation {
         assertThat(progressStatus.getId()).isEqualTo(returned);
 
         statusParams.put("modelId", "non_existing");
-        progressStatus = (ExportProgressStatus) automationService.run(ctx,
-                ExportProgressOperation.ID, statusParams);
+        progressStatus = (ExportProgressStatus) automationService.run(ctx, ExportProgressOperation.ID, statusParams);
         assertNull(progressStatus);
     }
 }

@@ -28,6 +28,7 @@ import com.amazonaws.services.textract.model.BoundingBox;
 
 /**
  * A processor of a Textract Response
+ *
  * @since 2.1.2
  */
 public interface TextractProcessor {

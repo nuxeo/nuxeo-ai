@@ -9,6 +9,13 @@
 
 package org.nuxeo.ai.internal;
 
+import static org.nuxeo.ai.internal.InitDatasetDocuments.ID;
+import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collections;
+import javax.ws.rs.core.Response;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
@@ -20,13 +27,6 @@ import org.nuxeo.ecm.core.api.NuxeoPrincipal;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.platform.usermanager.UserManager;
 import org.nuxeo.runtime.api.Framework;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-
-import static org.nuxeo.ai.internal.InitDatasetDocuments.ID;
-import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
 
 @Operation(id = ID, category = "Insight", label = "Create the dataset documents")
 public class InitDatasetDocuments {

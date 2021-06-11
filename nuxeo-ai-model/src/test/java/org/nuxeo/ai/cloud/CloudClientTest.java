@@ -52,9 +52,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
 import javax.inject.Inject;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,7 +77,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -254,10 +251,12 @@ public class CloudClientTest {
 
         CorpusDelta delta = MAPPER.readValue(corpusDelta.getStream(), CorpusDelta.class);
         assertNotNull(delta);
-        assertThat(delta.getInputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(
-                1).contains("file:content");
-        assertThat(delta.getOutputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(
-                1).contains("dc:title");
+        assertThat(delta.getInputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(1)
+                                                                                                      .contains(
+                                                                                                              "file:content");
+        assertThat(delta.getOutputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(1)
+                                                                                                       .contains(
+                                                                                                               "dc:title");
     }
 
     @Test

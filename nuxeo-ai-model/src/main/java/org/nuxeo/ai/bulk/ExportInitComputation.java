@@ -19,7 +19,40 @@
  */
 package org.nuxeo.ai.bulk;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import static java.util.Collections.shuffle;
+import static java.util.stream.Collectors.toMap;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
+import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETERS;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PARAMETERS;
+import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY_PARAM;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,41 +82,7 @@ import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.shuffle;
-import static java.util.stream.Collectors.toMap;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_END_DATE;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
-import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PARAMETERS;
-import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY_PARAM;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Splits document into batches and randomly splits it into 2 groups for training and validation.

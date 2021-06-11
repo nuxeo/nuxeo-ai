@@ -34,8 +34,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -65,7 +63,7 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
-
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * An implementation of a service that serves runtime AI models
@@ -253,7 +251,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
             throw new NuxeoException(e);
         }
     }
-
 
     protected void modelInvalidator(String topic, byte[] message) {
         log.info("Model Invalidation received");

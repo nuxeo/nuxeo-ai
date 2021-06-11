@@ -21,7 +21,6 @@ package org.nuxeo.ai.bulk;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-
 import org.nuxeo.ai.pipes.types.ExportRecord;
 import org.nuxeo.ecm.core.api.Blob;
 

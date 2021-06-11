@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -77,8 +76,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         String computationName = buildName(enricherName, streamIn, streamOut);
         EnrichmentMetrics metrics = registerMetrics(new EnrichmentMetrics(computationName), computationName);
         return Topology.builder()
-                       .addComputation(() -> new EnrichmentComputation(streams.size() - 1, computationName,
-                               enricherName, metrics, shouldCache), streams)
+                       .addComputation(
+                               () -> new EnrichmentComputation(streams.size() - 1, computationName, enricherName,
+                                       metrics, shouldCache), streams)
                        .build();
     }
 
@@ -147,8 +147,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 } catch (CircuitBreakerOpenException cboe) {
                     metrics.circuitBreaker();
                     // The circuit break is open, throw NuxeoException so it doesn't continue processing.
-                    throw new NuxeoException(String.format(
-                            "Stream circuit breaker for %s.  Stopping processing the stream.", enricherName));
+                    throw new NuxeoException(
+                            String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
+                                    enricherName));
                 } catch (FatalEnrichmentError fee) {
                     metrics.fatal();
                     // Fatal error so throw it to stop processing
@@ -186,7 +187,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         /**
          * Get an entry from the enrichment cache
-         * 
+         *
          * @return
          */
         protected Collection<? extends AIMetadata> cacheGet(String cacheKey) {
@@ -230,8 +231,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             if (!blobTextFromDoc.getBlobs().isEmpty() && enrichmentSupport != null) {
                 for (ManagedBlob blob : blobTextFromDoc.getBlobs().values()) {
                     // Only checks if the first blob matches
-                    if (enrichmentSupport.supportsMimeType(blob.getMimeType())
-                            && enrichmentSupport.supportsSize(blob.getLength())) {
+                    if (enrichmentSupport.supportsMimeType(blob.getMimeType()) && enrichmentSupport.supportsSize(
+                            blob.getLength())) {
                         return () -> getAiMetadata(blobTextFromDoc);
                     } else {
                         log.info(String.format("%s does not support a blob with these characteristics %s %s",

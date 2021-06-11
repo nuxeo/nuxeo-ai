@@ -23,11 +23,9 @@ import static com.google.protobuf.WireFormat.WIRETYPE_LENGTH_DELIMITED;
 
 import java.io.IOException;
 import java.util.Objects;
-
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.tensorflow.example.Features;
-
 import com.google.protobuf.AbstractParser;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
@@ -60,7 +58,8 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
     public static class RecordParser extends AbstractParser<TFRecord> {
 
         @Override
-        public TFRecord parsePartialFrom(CodedInputStream is, ExtensionRegistryLite registry) throws InvalidProtocolBufferException {
+        public TFRecord parsePartialFrom(CodedInputStream is, ExtensionRegistryLite registry)
+                throws InvalidProtocolBufferException {
             try {
                 return new TFRecord(is, registry);
             } catch (IOException e) {
@@ -76,6 +75,7 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
 
     /**
      * Must be never called explicitly. For PB internal use only
+     *
      * @throws IOException in case of broken record
      */
     protected TFRecord(CodedInputStream is, ExtensionRegistryLite registry) throws IOException {
@@ -87,34 +87,34 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
             while (!done) {
                 int tag = is.readTag();
                 switch (tag) {
-                    case 0: // 0 means EOF
+                case 0: // 0 means EOF
+                    done = true;
+                    break;
+                case DOC_ID_TAG:
+                    String id = is.readString();
+                    if (StringUtils.isEmpty(docId)) {
+                        this.docId = id;
+                    }
+                    break;
+                case 10: {
+                    Features.Builder subBuilder = null;
+                    if (features != null) {
+                        subBuilder = features.toBuilder();
+                    }
+                    features = is.readMessage(Features.parser(), registry);
+                    if (subBuilder != null) {
+                        subBuilder.mergeFrom(features);
+                        features = subBuilder.buildPartial();
+                    }
+                    break;
+                }
+                default: {
+                    // We don't really use unknown fields. It's more to know all ingested data
+                    if (!parseUnknownFieldProto3(is, unknownBuilder, registry, tag)) {
                         done = true;
-                        break;
-                    case DOC_ID_TAG:
-                        String id = is.readString();
-                        if (StringUtils.isEmpty(docId)) {
-                            this.docId = id;
-                        }
-                        break;
-                    case 10: {
-                        Features.Builder subBuilder = null;
-                        if (features != null) {
-                            subBuilder = features.toBuilder();
-                        }
-                        features = is.readMessage(Features.parser(), registry);
-                        if (subBuilder != null) {
-                            subBuilder.mergeFrom(features);
-                            features = subBuilder.buildPartial();
-                        }
-                        break;
                     }
-                    default: {
-                        // We don't really use unknown fields. It's more to know all ingested data
-                        if (!parseUnknownFieldProto3(is, unknownBuilder, registry, tag)) {
-                            done = true;
-                        }
-                        break;
-                    }
+                    break;
+                }
                 }
             }
         } catch (InvalidProtocolBufferException e) {
@@ -160,7 +160,8 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
     @Override
     public int getSerializedSize() {
         int size = memoizedSize;
-        if (size != -1) return size;
+        if (size != -1)
+            return size;
 
         size = 0;
         if (features != null) {
@@ -177,6 +178,7 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
 
     /**
      * Deserialization method
+     *
      * @param bytes to restore the object
      * @return restored {@link TFRecord}
      * @throws InvalidProtocolBufferException in case of broken record

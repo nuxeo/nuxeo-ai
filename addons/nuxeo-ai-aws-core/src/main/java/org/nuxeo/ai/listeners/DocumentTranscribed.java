@@ -19,7 +19,23 @@
  */
 package org.nuxeo.ai.listeners;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
+import static org.nuxeo.ai.metadata.Caption.CAPTIONS_PROP;
+import static org.nuxeo.ai.metadata.Caption.VTT_KEY_PROP;
+import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.Caption;
@@ -33,24 +49,7 @@ import org.nuxeo.ecm.core.event.EventContext;
 import org.nuxeo.ecm.core.event.PostCommitEventListener;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
-import static org.nuxeo.ai.metadata.Caption.CAPTIONS_PROP;
-import static org.nuxeo.ai.metadata.Caption.VTT_KEY_PROP;
-import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Asynchronous listener for adding captions to a transcribed video

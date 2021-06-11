@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -139,8 +138,7 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
         if (blobTextFromDoc.getBlobs().size() != 1) {
             throw new NuxeoException("Sightengine only supports one blob image at a time.");
         }
-        File file = getBlobFromProvider(
-                blobTextFromDoc.getBlobs().values().stream().findFirst().get()).getFile();
+        File file = getBlobFromProvider(blobTextFromDoc.getBlobs().values().stream().findFirst().get()).getFile();
 
         // Use the multipart builder
         setMultipart(requestBuilder, builder -> {

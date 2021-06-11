@@ -37,7 +37,7 @@ public class AutoHistory {
 
     @JsonCreator
     public AutoHistory(@JsonProperty("id") long id, @JsonProperty("property") String property,
-                       @JsonProperty("previousValue") Object previousValue) {
+            @JsonProperty("previousValue") Object previousValue) {
         this.id = id;
         this.property = property;
         this.previousValue = previousValue;
@@ -61,21 +61,23 @@ public class AutoHistory {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("id", id)
-                .append("property", property)
-                .append("previousValue", previousValue)
-                .toString();
+        return new ToStringBuilder(this).append("id", id)
+                                        .append("property", property)
+                                        .append("previousValue", previousValue)
+                                        .toString();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AutoHistory that = (AutoHistory) o;
-        return id == that.id &&
-                Objects.equals(property, that.property) &&
-                Objects.equals(previousValue, that.previousValue);
+        return id == that.id && Objects.equals(property, that.property) && Objects.equals(previousValue,
+                that.previousValue);
     }
 
     @Override

@@ -18,6 +18,10 @@
  */
 package org.nuxeo.ai.model.export;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
 import org.nuxeo.ai.sdk.objects.FieldStatistics;
 import org.nuxeo.ai.sdk.objects.PropertyType;
@@ -35,11 +39,6 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.types.Type;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Operation(id = DatasetStatsOperation.ID, category = Constants.CAT_SERVICES, label = "Statistics on a dataset", description = "Return statistics on a set of documents expressed by a NXQL query.")
 public class DatasetStatsOperation {
