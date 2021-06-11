@@ -29,9 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -47,7 +45,8 @@ public class LabelSuggestion implements Serializable {
     protected List<AIMetadata.Label> values;
 
     @JsonCreator
-    public LabelSuggestion(@JsonProperty("property") String property, @JsonProperty("values") List<AIMetadata.Label> values) {
+    public LabelSuggestion(@JsonProperty("property") String property,
+            @JsonProperty("values") List<AIMetadata.Label> values) {
         this.property = property;
         this.values = values != null ? unmodifiableList(values) : emptyList();
     }
@@ -61,9 +60,7 @@ public class LabelSuggestion implements Serializable {
     }
 
     public void keepUniqueOnly() {
-        values = getValues().stream()
-                .filter(distinctByKey(AIMetadata.Label::getName))
-                .collect(Collectors.toList());
+        values = getValues().stream().filter(distinctByKey(AIMetadata.Label::getName)).collect(Collectors.toList());
     }
 
     public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
@@ -90,9 +87,6 @@ public class LabelSuggestion implements Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("property", property)
-                .append("values", values)
-                .toString();
+        return new ToStringBuilder(this).append("property", property).append("values", values).toString();
     }
 }

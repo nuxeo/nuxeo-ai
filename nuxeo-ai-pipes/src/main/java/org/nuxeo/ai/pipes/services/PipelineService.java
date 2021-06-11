@@ -21,7 +21,6 @@ package org.nuxeo.ai.pipes.services;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.lib.stream.computation.Record;
@@ -39,16 +38,16 @@ public interface PipelineService {
     /**
      * Adds a special listener for binary text
      *
-     * @param eventName The name of the event to act on, e.g. binaryTextUpdated
-     * @param logName   The name of the log to which the details will be appended
-     * @param partitions The number of partitions
-     * @param propertyName The name of the property to listen to e.g. fulltextBinary
-     * @param inputProperty The name of the property to check for isDirty()
+     * @param eventName         The name of the event to act on, e.g. binaryTextUpdated
+     * @param logName           The name of the log to which the details will be appended
+     * @param partitions        The number of partitions
+     * @param propertyName      The name of the property to listen to e.g. fulltextBinary
+     * @param inputProperty     The name of the property to check for isDirty()
      * @param windowSizeSeconds Uses a windowing approach to only emit an event
      *                          if it hasn't been emitted for {windowSizeSeconds} seconds.
      */
     void addBinaryTextListener(String eventName, String logName, int partitions, String propertyName,
-                               String inputProperty, int windowSizeSeconds);
+            String inputProperty, int windowSizeSeconds);
 
     /**
      * Get a log consumer if its already configured by the service
@@ -66,13 +65,14 @@ public interface PipelineService {
      * @param isPostCommit  Is this a post commit listener
      * @param consumer      A consumer to consume the result
      */
-    <R> void addEventPipe(String eventName, String pipelineId,
-                          Function<Event, Collection<R>> eventFunction, boolean isAsync, boolean isPostCommit, Consumer<R> consumer);
+    <R> void addEventPipe(String eventName, String pipelineId, Function<Event, Collection<R>> eventFunction,
+            boolean isAsync, boolean isPostCommit, Consumer<R> consumer);
 
     /**
      * Add an event listener and consumer
-     * @param eventName The name of the event to act on
-     * @param isAsync Is the event listener asynchronous
+     *
+     * @param eventName     The name of the event to act on
+     * @param isAsync       Is the event listener asynchronous
      * @param isPostCommit  Is this a post commit listener
      * @param eventConsumer A consumer to consume the result
      */

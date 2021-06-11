@@ -20,11 +20,10 @@
  */
 package org.nuxeo.ai.pipes.filters;
 
-import org.nuxeo.ai.pipes.streams.Initializable;
-import org.nuxeo.ecm.core.api.DocumentModel;
-
 import java.util.List;
 import java.util.Map;
+import org.nuxeo.ai.pipes.streams.Initializable;
+import org.nuxeo.ecm.core.api.DocumentModel;
 
 public class NoVersionFilter implements Filter.DocumentFilter, Initializable {
 

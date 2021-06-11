@@ -18,7 +18,22 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import static java.util.Collections.singletonMap;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -48,22 +63,7 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.singletonMap;
-import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.notNull;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * An implementation of a service that serves runtime AI models

@@ -24,9 +24,7 @@ import static java.util.Collections.unmodifiableList;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -42,7 +40,8 @@ public class TagSuggestion implements Serializable {
     protected final List<AIMetadata.Tag> values;
 
     @JsonCreator
-    public TagSuggestion(@JsonProperty("property") String property, @JsonProperty("values") List<AIMetadata.Tag> values) {
+    public TagSuggestion(@JsonProperty("property") String property,
+            @JsonProperty("values") List<AIMetadata.Tag> values) {
         this.property = property;
         this.values = values != null ? unmodifiableList(values) : emptyList();
     }
@@ -74,9 +73,6 @@ public class TagSuggestion implements Serializable {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("property", property)
-                .append("values", values)
-                .toString();
+        return new ToStringBuilder(this).append("property", property).append("values", values).toString();
     }
 }

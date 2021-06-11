@@ -41,9 +41,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -171,22 +169,23 @@ public class PropertyUtilsTest {
     @Test
     public void iCanSerializeDoc() {
         // Test with blob text
-        Set<PropertyType> properties = new HashSet<>(Arrays.asList(new PropertyType("dc:title",TEXT_TYPE),
-                new PropertyType(FILE_CONTENT, TEXT_TYPE)));
+        Set<PropertyType> properties = new HashSet<>(
+                Arrays.asList(new PropertyType("dc:title", TEXT_TYPE), new PropertyType(FILE_CONTENT, TEXT_TYPE)));
         DocumentModel doc = session.createDocumentModel("/", "Text", "File");
         Blob textBlob = Blobs.createBlob("My text is not very long.", TEST_MIME_TYPE);
         doc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
         doc = session.createDocument(doc);
         BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, properties);
         assertThat(blobTextFromDocument).isNotNull();
-        ManagedBlob blobResult = blobTextFromDocument.computePropertyBlobs().get(new PropertyType(FILE_CONTENT, TEXT_TYPE));
+        ManagedBlob blobResult = blobTextFromDocument.computePropertyBlobs()
+                                                     .get(new PropertyType(FILE_CONTENT, TEXT_TYPE));
         textBlob = (Blob) doc.getPropertyValue(FILE_CONTENT);
         assertThat(blobResult).isNotNull();
         assertThat(blobResult.getDigest()).isEqualTo(textBlob.getDigest());
 
         // Test with pictures
-        properties = new HashSet<>(Arrays.asList(new PropertyType("dc:title",TEXT_TYPE),
-                new PropertyType(FILE_CONTENT, IMAGE_TYPE)));
+        properties = new HashSet<>(
+                Arrays.asList(new PropertyType("dc:title", TEXT_TYPE), new PropertyType(FILE_CONTENT, IMAGE_TYPE)));
         doc = session.createDocumentModel("/", "picture", "Picture");
         File file = FileUtils.getResourceFileFromContext("files/plane.jpg");
         FileBlob imageBlob = new FileBlob(file);

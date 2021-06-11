@@ -33,7 +33,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.common.utils.FileUtils;
@@ -51,7 +50,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 @Deploy("org.nuxeo.ecm.platform.picture.api")
 @Deploy("org.nuxeo.ecm.platform.picture.core")
 @Deploy("org.nuxeo.ecm.platform.picture.convert")

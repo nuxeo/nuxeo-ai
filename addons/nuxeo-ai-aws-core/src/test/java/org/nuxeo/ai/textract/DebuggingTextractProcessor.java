@@ -48,7 +48,8 @@ public class DebuggingTextractProcessor implements TextractProcessor, Initializa
     }
 
     @Override
-    public void process(List<Block> blocks, CoreSession session, DocumentRef docRef, EnrichmentMetadata.Builder builder) {
+    public void process(List<Block> blocks, CoreSession session, DocumentRef docRef,
+            EnrichmentMetadata.Builder builder) {
         blocks.forEach(block -> {
             if (log.isDebugEnabled()) {
                 log.debug(AWSHelper.getInstance().debugTextractBlock(block));

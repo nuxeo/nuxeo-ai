@@ -19,7 +19,24 @@
  */
 package org.nuxeo.ai.tensorflow;
 
-import com.google.protobuf.ByteString;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,25 +58,7 @@ import org.tensorflow.example.BytesList;
 import org.tensorflow.example.Feature;
 import org.tensorflow.example.Features;
 import org.tensorflow.example.Int64List;
-
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.LIST_DELIMITER_PATTERN;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.google.protobuf.ByteString;
 
 /**
  * Write TFRecords

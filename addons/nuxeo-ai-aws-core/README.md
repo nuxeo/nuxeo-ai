@@ -43,7 +43,7 @@ add a contribution like this:
     <region>MY_REGION</region>
   </configuration>
 </extension>
-  
+
 <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
   <property name="nuxeo.enrichment.aws.s3">false</property>
 </extension>
@@ -89,7 +89,7 @@ nuxeo.enrichment.aws.transcribe.enabled=true
 along with enabled video pipeline
 
 ```
-nuxeo.ai.video.enabled=true 
+nuxeo.ai.video.enabled=true
 ```
 
 Transcribe works via the same enrichment pipeline and detects language automatically. Despite that, you might want to
@@ -109,7 +109,9 @@ override the default Enrichment provider and supply a list of languages that mig
   </streamProcessor>
 </extension>
 ```
-For Language Options refer to [AWS Documentation](https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html#API_StartTranscriptionJob_RequestSyntax)
+
+For Language Options refer
+to [AWS Documentation](https://docs.aws.amazon.com/transcribe/latest/dg/API_StartTranscriptionJob.html#API_StartTranscriptionJob_RequestSyntax)
 
 For AWS Rekognition video analysis:
 Video analysis relies on AWS SNS. Make sure the used role has permissions to create SNS topics. SNS will send a

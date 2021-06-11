@@ -18,7 +18,30 @@
  */
 package org.nuxeo.ai.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -43,31 +66,7 @@ import org.nuxeo.ecm.platform.audit.api.LogEntry;
 import org.nuxeo.ecm.platform.audit.impl.ExtendedInfoImpl;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * An implementation of DocMetadataService

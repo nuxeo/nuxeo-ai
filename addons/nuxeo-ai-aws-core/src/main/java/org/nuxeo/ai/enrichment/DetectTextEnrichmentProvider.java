@@ -18,15 +18,10 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.DetectTextResult;
-import com.amazonaws.services.rekognition.model.TextDetection;
-import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,11 +33,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.rekognition.RekognitionService;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.runtime.api.Framework;
+import com.amazonaws.services.rekognition.model.BoundingBox;
+import com.amazonaws.services.rekognition.model.DetectTextResult;
+import com.amazonaws.services.rekognition.model.TextDetection;
 
 /**
  * Detects words and lines in an image.

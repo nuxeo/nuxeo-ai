@@ -20,7 +20,6 @@
 package org.nuxeo.ai.sns;
 
 import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -49,10 +48,10 @@ public class Notification {
     protected String unsubscribeURL;
 
     public Notification(@JsonProperty("Type") String type, @JsonProperty("TopicArn") String topicArn,
-                        @JsonProperty("MessageId") String messageId, @JsonProperty("Message") String message,
-                        @JsonProperty("Timestamp") String timestamp, @JsonProperty("SignatureVersion") String version,
-                        @JsonProperty("Signature") String sign, @JsonProperty("SigningCertURL") String certURL,
-                        @JsonProperty("UnsubscribeURL") String unsubscribeURL) {
+            @JsonProperty("MessageId") String messageId, @JsonProperty("Message") String message,
+            @JsonProperty("Timestamp") String timestamp, @JsonProperty("SignatureVersion") String version,
+            @JsonProperty("Signature") String sign, @JsonProperty("SigningCertURL") String certURL,
+            @JsonProperty("UnsubscribeURL") String unsubscribeURL) {
         this.type = type;
         this.topicArn = topicArn;
         this.messageId = messageId;
@@ -63,7 +62,6 @@ public class Notification {
         this.signCertURL = certURL;
         this.unsubscribeURL = unsubscribeURL;
     }
-
 
     public String type() {
         return type;
@@ -79,12 +77,12 @@ public class Notification {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Notification that = (Notification) o;
-        return type.equals(that.type) &&
-                topicArn.equals(that.topicArn) &&
-                messageId.equals(that.messageId);
+        return type.equals(that.type) && topicArn.equals(that.topicArn) && messageId.equals(that.messageId);
     }
 
     @Override
@@ -110,8 +108,8 @@ public class Notification {
         protected Video video;
 
         public Message(@JsonProperty("JobId") String jobId, @JsonProperty("Status") String status,
-                       @JsonProperty("API") String api, @JsonProperty("JobTag") String jobTag,
-                       @JsonProperty("Timestamp") long timestamp, @JsonProperty("Video") Video video) {
+                @JsonProperty("API") String api, @JsonProperty("JobTag") String jobTag,
+                @JsonProperty("Timestamp") long timestamp, @JsonProperty("Video") Video video) {
             this.jobId = jobId;
             this.status = status;
             this.api = api;
@@ -149,13 +147,13 @@ public class Notification {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             Message message = (Message) o;
-            return jobId.equals(message.jobId) &&
-                    status.equals(message.status) &&
-                    api.equals(message.api) &&
-                    jobTag.equals(message.jobTag);
+            return jobId.equals(message.jobId) && status.equals(message.status) && api.equals(message.api)
+                    && jobTag.equals(message.jobTag);
         }
 
         @Override
@@ -188,11 +186,12 @@ public class Notification {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             Video video = (Video) o;
-            return Objects.equals(objectName, video.objectName) &&
-                    Objects.equals(bucket, video.bucket);
+            return Objects.equals(objectName, video.objectName) && Objects.equals(bucket, video.bucket);
         }
 
         @Override

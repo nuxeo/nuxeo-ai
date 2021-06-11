@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.model.export;
 
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -29,8 +31,6 @@ import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
-
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 
 @Operation(id = DatasetUploadOperation.ID, category = Constants.CAT_SERVICES, label = "Upload a dataset", description = "Uploads the dataset specified in a dataset_export document.")
 public class DatasetUploadOperation {

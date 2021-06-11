@@ -31,14 +31,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.Celebrity;
 import com.amazonaws.services.rekognition.model.ComparedFace;
@@ -66,8 +64,8 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
                 RecognizeCelebritiesResult result = rs.detectCelebrityFaces(blob.getValue());
-                if (result != null &&
-                        (!result.getCelebrityFaces().isEmpty() || !result.getUnrecognizedFaces().isEmpty())) {
+                if (result != null && (!result.getCelebrityFaces().isEmpty() || !result.getUnrecognizedFaces()
+                                                                                       .isEmpty())) {
                     enriched.addAll(processResults(doc, blob.getKey(), result));
                 }
             }
@@ -79,11 +77,11 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
-                                                            RecognizeCelebritiesResult result) {
-        List<AIMetadata.Tag> tags = Stream.concat(
-                result.getCelebrityFaces().stream().map(this::newCelebrityTag),
-                result.getUnrecognizedFaces().stream().map(this::newFaceTag)
-        ).filter(Objects::nonNull).collect(Collectors.toList());
+            RecognizeCelebritiesResult result) {
+        List<AIMetadata.Tag> tags = Stream.concat(result.getCelebrityFaces().stream().map(this::newCelebrityTag),
+                result.getUnrecognizedFaces().stream().map(this::newFaceTag))
+                                          .filter(Objects::nonNull)
+                                          .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> {
             jg.writeObjectField("celebrityFaces", result.getCelebrityFaces());
@@ -92,11 +90,11 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
         });
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                .withTags(asTags(tags))
-                .withRawKey(rawKey)
-                .withDocumentProperties(singleton(propName))
-                .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
     }
 
     /**
@@ -106,10 +104,8 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
         BoundingBox box = celebrity.getFace().getBoundingBox();
         if (celebrity.getMatchConfidence() >= minConfidence) {
             return new AIMetadata.Tag(celebrity.getName(), kind, celebrity.getId(),
-                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
-                    null,
-                    celebrity.getMatchConfidence() / 100
-            );
+                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), null,
+                    celebrity.getMatchConfidence() / 100);
         }
         return null;
     }
@@ -121,10 +117,8 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
         BoundingBox box = faceDetail.getBoundingBox();
         if (faceDetail.getConfidence() >= minConfidence) {
             return new AIMetadata.Tag("face", "/tagging/face", null,
-                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()),
-                    null,
-                    faceDetail.getConfidence() / 100
-            );
+                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), null,
+                    faceDetail.getConfidence() / 100);
         }
         return null;
     }

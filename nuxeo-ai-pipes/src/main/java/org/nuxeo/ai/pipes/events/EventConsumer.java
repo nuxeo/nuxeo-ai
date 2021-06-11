@@ -21,13 +21,12 @@ package org.nuxeo.ai.pipes.events;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ai.pipes.functions.MetricsProducer;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
-import org.nuxeo.ai.pipes.functions.MetricsProducer;
 
 /**
  * An event handler that uses a function and consumer.
@@ -35,10 +34,13 @@ import org.nuxeo.ai.pipes.functions.MetricsProducer;
 public class EventConsumer<R> implements EventListener, MetricsProducer {
 
     private static final Log log = LogFactory.getLog(EventConsumer.class);
+
     private final Function<Event, Collection<R>> function;
+
     private final Consumer<R> consumer;
 
     private long handled = 0;
+
     private long consumed = 0;
 
     public EventConsumer(Function<Event, Collection<R>> function, Consumer<R> consumer) {

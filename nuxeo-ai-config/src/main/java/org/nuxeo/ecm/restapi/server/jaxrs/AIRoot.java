@@ -18,20 +18,10 @@
  */
 package org.nuxeo.ecm.restapi.server.jaxrs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
-import org.nuxeo.ai.model.serving.ModelServingService;
-import org.nuxeo.ai.services.AIConfigurationService;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.webengine.model.Resource;
-import org.nuxeo.ecm.webengine.model.WebObject;
-import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
-import org.nuxeo.runtime.api.Framework;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOUS_EXPORT_ENABLE;
+
+import java.io.IOException;
+import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -42,10 +32,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.Map;
-
-import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOUS_EXPORT_ENABLE;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
+import org.nuxeo.ai.model.serving.ModelServingService;
+import org.nuxeo.ai.services.AIConfigurationService;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.webengine.model.Resource;
+import org.nuxeo.ecm.webengine.model.WebObject;
+import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
+import org.nuxeo.runtime.api.Framework;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  * Start endpoint for AI Core Config custom REST api.

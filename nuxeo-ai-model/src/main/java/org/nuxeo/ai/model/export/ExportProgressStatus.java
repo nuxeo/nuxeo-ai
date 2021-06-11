@@ -38,7 +38,8 @@ public class ExportProgressStatus {
 
     protected long processed;
 
-    public ExportProgressStatus() {}
+    public ExportProgressStatus() {
+    }
 
     public ExportProgressStatus(BulkStatus status) {
         this.id = status.getId();

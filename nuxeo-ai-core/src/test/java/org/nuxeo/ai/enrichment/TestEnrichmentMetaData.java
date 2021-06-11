@@ -18,6 +18,22 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
+import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,24 +49,6 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
-import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })

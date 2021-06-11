@@ -5,7 +5,13 @@
   },
   "response": {
     "status": 201,
-    "jsonBody": {"uploaded":"true","fileIdx":"0","uploadType":"normal","uploadedSize":"593","batchId":"batchId-160babc8-3345-4f09-8521-7f6c0bb32e02"},
+    "jsonBody": {
+      "uploaded": "true",
+      "fileIdx": "0",
+      "uploadType": "normal",
+      "uploadedSize": "593",
+      "batchId": "batchId-160babc8-3345-4f09-8521-7f6c0bb32e02"
+    },
     "headers": {
       "Content-Type": "application/json"
     }

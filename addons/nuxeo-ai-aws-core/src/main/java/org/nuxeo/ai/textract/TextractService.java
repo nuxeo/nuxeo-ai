@@ -25,6 +25,7 @@ import com.amazonaws.services.textract.model.DetectDocumentTextResult;
 
 /**
  * Works with AWS Textract
+ *
  * @since 2.1.2
  */
 public interface TextractService {

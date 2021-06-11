@@ -24,9 +24,8 @@ import static org.nuxeo.ai.convert.AiResizePictureConverter.AI_JPEG_RESIZER_COMM
 import static org.nuxeo.ai.convert.AiResizePictureConverter.AI_RESIZER_COMMAND;
 import static org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants.JPEG_CONVERSATION_FORMAT;
 
-import java.awt.Point;
+import java.awt.*;
 import java.io.File;
-
 import org.nuxeo.ecm.platform.commandline.executor.api.CmdParameters;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandException;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandLineExecutorService;
@@ -40,6 +39,7 @@ import org.nuxeo.runtime.api.Framework;
 /**
  * Unit command to extract a simplified view of a JPEG file using ImageMagick = extract the needed picture information
  * to reach the target definition level
+ *
  * @since 2.2.0
  */
 public class AiImageResizer extends MagickExecutor {
@@ -57,7 +57,7 @@ public class AiImageResizer extends MagickExecutor {
     public static final int MAX_JPEG_DIMENSION = 65500;
 
     public static ImageInfo resize(String inputFile, String outputFile, int targetWidth, int targetHeight,
-                                   int targetDepth) throws CommandNotAvailable, CommandException {
+            int targetDepth) throws CommandNotAvailable, CommandException {
         if (targetDepth == -1) {
             targetDepth = ImageIdentifier.getInfo(inputFile).getDepth();
         }
@@ -92,8 +92,8 @@ public class AiImageResizer extends MagickExecutor {
     /**
      * Adapts width and height to a max conserving ratio.
      *
-     * @since 2.2.0
      * @return new Point to scale or the original one if none is > max.
+     * @since 2.2.0
      */
     public static Point scaleToMax(int width, int height, int max) {
         if (max > 0 && (width > max || height > max)) {

@@ -19,7 +19,6 @@
 package org.nuxeo.ai.metrics;
 
 import org.nuxeo.runtime.metrics.MetricsService;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;

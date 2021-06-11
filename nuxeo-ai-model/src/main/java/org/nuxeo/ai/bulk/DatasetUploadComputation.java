@@ -18,6 +18,9 @@
  */
 package org.nuxeo.ai.bulk;
 
+import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
+import static org.nuxeo.ai.bulk.ExportHelper.runInTransaction;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -32,9 +35,6 @@ import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
-
-import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
-import static org.nuxeo.ai.bulk.ExportHelper.runInTransaction;
 
 /**
  * Listens for the end of the Dataset export and uploads to the cloud.

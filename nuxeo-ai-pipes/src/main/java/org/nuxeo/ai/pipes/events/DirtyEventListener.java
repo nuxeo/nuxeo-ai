@@ -20,14 +20,13 @@ package org.nuxeo.ai.pipes.events;
 
 import java.util.List;
 import java.util.Map;
-
+import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.ai.pipes.streams.Initializable;
 
 /**
  * An Event listener that adds a key in the DocumentEventContext if a doc property is dirty
@@ -35,7 +34,9 @@ import org.nuxeo.ai.pipes.streams.Initializable;
 public class DirtyEventListener implements EventListener, Initializable {
 
     public static final String DIRTY = "dirty_prop_";
+
     public static final String DIRTY_EVENT_NAME = "beforeDocumentModification";
+
     protected List<String> properties;
 
     public DirtyEventListener(Map<String, String> options) {

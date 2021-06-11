@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.nuxeo.ai.listeners.VideoAboutToChange.CAPTIONABLE_FACET;
 
 import javax.inject.Inject;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -35,7 +34,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({CoreFeature.class})
+@Features({ CoreFeature.class })
 @Deploy("org.nuxeo.ecm.platform.commandline.executor")
 @Deploy("org.nuxeo.ecm.actions")
 @Deploy("org.nuxeo.ecm.platform.picture.api")

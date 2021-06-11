@@ -19,7 +19,6 @@
 package org.nuxeo.ai;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +28,7 @@ import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-config.xml")
@@ -39,8 +38,8 @@ public class TestAWSHelper {
     public void testCustomCredentials() {
         assertEquals("MY_REGION", AWSHelper.getInstance().getRegion());
         assertEquals("MY_XML_ACCESS_KEY_ID",
-                     AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSAccessKeyId());
+                AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSAccessKeyId());
         assertEquals("MY_XML_SECRET_KEY",
-                     AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSSecretKey());
+                AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSSecretKey());
     }
 }

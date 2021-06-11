@@ -24,11 +24,17 @@ import java.util.Map;
 public class Faces {
 
     private float x1;
+
     private float y1;
+
     private float x2;
+
     private float y2;
+
     private Map<String, FeatureXY> features;
+
     private Map<String, Float> attributes;
+
     private List<Celebrity> celebrity;
 
     public float getX1() {

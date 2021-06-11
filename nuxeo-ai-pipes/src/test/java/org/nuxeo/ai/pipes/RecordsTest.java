@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.pipes;
 
-
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotNull;
@@ -36,11 +35,11 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.pipes.functions.PropertiesToStream;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -49,15 +48,13 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.ai.pipes.functions.PropertiesToStream;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
-@Features({PlatformFeature.class})
+@Features({ PlatformFeature.class })
 public class RecordsTest {
 
     private static final Log log = LogFactory.getLog(RecordsTest.class);
@@ -91,7 +88,7 @@ public class RecordsTest {
         log.debug("Result is " + andBack);
         assertEquals("File", andBack.getPrimaryType());
         assertEquals("Administrator", andBack.getProperties().get("dc:creator"));
-        ManagedBlob blob =  andBack.computePropertyBlobs().get(new PropertyType("file:content", "txt"));
+        ManagedBlob blob = andBack.computePropertyBlobs().get(new PropertyType("file:content", "txt"));
         assertNotNull(blob);
         assertEquals(7, blob.getLength());
         assertEquals(TEST_MIME_TYPE, blob.getMimeType());

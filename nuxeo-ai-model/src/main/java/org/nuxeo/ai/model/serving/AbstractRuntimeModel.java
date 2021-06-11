@@ -18,6 +18,15 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,16 +41,6 @@ import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
 import org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants;
 import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.CONVERSION_SERVICE;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 
 /**
  * An abstract implementation of a Runtime Model

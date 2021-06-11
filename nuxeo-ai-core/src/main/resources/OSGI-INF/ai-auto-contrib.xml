@@ -13,8 +13,8 @@
   </extension>
 
   <extension target="org.nuxeo.ecm.platform.audit.service.NXAuditEventsService" point="event">
-    <event name="AUTO_FILLED" />
-    <event name="AUTO_CORRECTED" />
+    <event name="AUTO_FILLED"/>
+    <event name="AUTO_CORRECTED"/>
   </extension>
 
 </component>

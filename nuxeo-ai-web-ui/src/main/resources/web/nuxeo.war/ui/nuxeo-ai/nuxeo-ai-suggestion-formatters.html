@@ -19,31 +19,31 @@ limitations under the License.
 <link rel="import" href="formatters/nuxeo-default-ai-suggestion-formatter.html">
 
 <script>
-  const FORMATTERS = {
-    default: Nuxeo.DefaultAISuggestionFormatter.is,
-    types: {},
-    properties: {},
-  };
+    const FORMATTERS = {
+        default: Nuxeo.DefaultAISuggestionFormatter.is,
+        types: {},
+        properties: {},
+    };
 
-  Nuxeo.AISuggestionFormatters = {
-    register: (formatter, rules) => {
-      if (rules.type) {
-        FORMATTERS.types[rules.type] = formatter;
-      }
-      if (rules.property) {
-        FORMATTERS.properties[rules.property] = formatter;
-      }
-    },
+    Nuxeo.AISuggestionFormatters = {
+        register: (formatter, rules) => {
+            if (rules.type) {
+                FORMATTERS.types[rules.type] = formatter;
+            }
+            if (rules.property) {
+                FORMATTERS.properties[rules.property] = formatter;
+            }
+        },
 
-    get: (rules) => {
-      let formatter = null;
-      if (rules.property) {
-        formatter = FORMATTERS.properties[rules.property];
-      }
-      if (!formatter && rules.type) {
-        formatter = FORMATTERS.types[rules.type];
-      }
-      return formatter || FORMATTERS.default;
-    },
-  };
+        get: (rules) => {
+            let formatter = null;
+            if (rules.property) {
+                formatter = FORMATTERS.properties[rules.property];
+            }
+            if (!formatter && rules.type) {
+                formatter = FORMATTERS.types[rules.type];
+            }
+            return formatter || FORMATTERS.default;
+        },
+    };
 </script>

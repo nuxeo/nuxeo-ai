@@ -19,10 +19,10 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
-
 public class Type {
 
     private float photo;
+
     private float illustration;
 
     public float getPhoto() {

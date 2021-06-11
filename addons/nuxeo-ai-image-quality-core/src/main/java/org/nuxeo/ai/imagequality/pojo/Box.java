@@ -19,14 +19,18 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
-
 public class Box {
 
     private int x1;
+
     private int y1;
+
     private float x2;
+
     private float y2;
+
     private String label;
+
     private float prob;
 
     public int getX1() {

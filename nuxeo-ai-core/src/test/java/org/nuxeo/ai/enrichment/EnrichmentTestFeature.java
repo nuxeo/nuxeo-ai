@@ -23,7 +23,6 @@ import static org.nuxeo.ai.configuration.ThresholdComponent.AUTO_CORRECT_DEFAULT
 
 import java.io.IOException;
 import java.util.UUID;
-
 import org.nuxeo.ai.pipes.services.PipelineServiceImpl;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;

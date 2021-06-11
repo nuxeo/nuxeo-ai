@@ -19,7 +19,6 @@
 package org.nuxeo.ai.gcp;
 
 import java.io.IOException;
-
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
 
 /**
@@ -29,7 +28,7 @@ public interface AIGoogleService {
 
     /**
      * @return {@link ImageAnnotatorClient} that conforms to {@link AutoCloseable} and must be used within
-     *         try-with-resources or manually closed
+     * try-with-resources or manually closed
      * @throws IOException in case Credentials weren't available in the system
      */
     ImageAnnotatorClient getOrCreateClient() throws IOException;

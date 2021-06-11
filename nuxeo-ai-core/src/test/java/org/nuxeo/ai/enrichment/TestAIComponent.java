@@ -245,9 +245,9 @@ public class TestAIComponent {
             aiComponent.getEnrichmentProvider(badProvider);
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(
-                    e.getMessage()
-                     .contains("The /NOT_ME kind for provider bad provider must be defined in the aikind vocabulary"));
+            assertTrue(e.getMessage()
+                        .contains(
+                                "The /NOT_ME kind for provider bad provider must be defined in the aikind vocabulary"));
         }
 
         descriptor.kind = "/classification/sentiment";

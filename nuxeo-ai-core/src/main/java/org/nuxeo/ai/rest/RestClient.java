@@ -88,9 +88,9 @@ public class RestClient implements AutoCloseable {
      * Create a rest client with the specified options and a prefix that will be used when getting the options
      */
     public RestClient(Map<String, String> options, String optionPrefix,
-                      Function<HttpClientBuilder, CloseableHttpClient> clientBuilderFunc) {
-        contentType = options
-                .getOrDefault(optionPrefix + OPTION_CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+            Function<HttpClientBuilder, CloseableHttpClient> clientBuilderFunc) {
+        contentType = options.getOrDefault(optionPrefix + OPTION_CONTENT_TYPE,
+                ContentType.APPLICATION_JSON.getMimeType());
         accept = options.getOrDefault(optionPrefix + OPTION_ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
         method = options.getOrDefault(optionPrefix + OPTION_METHOD_NAME, HttpPost.METHOD_NAME);
         String uriParam = options.get(optionPrefix + OPTION_URI);
@@ -168,9 +168,7 @@ public class RestClient implements AutoCloseable {
      */
     public List<Header> getDefaultHeaders() {
         return Arrays.asList(new BasicHeader(HttpHeaders.CACHE_CONTROL, "no-cache"),
-                             new BasicHeader(HttpHeaders.CONTENT_TYPE, contentType),
-                             new BasicHeader(HttpHeaders.ACCEPT, accept)
-        );
+                new BasicHeader(HttpHeaders.CONTENT_TYPE, contentType), new BasicHeader(HttpHeaders.ACCEPT, accept));
     }
 
     /**

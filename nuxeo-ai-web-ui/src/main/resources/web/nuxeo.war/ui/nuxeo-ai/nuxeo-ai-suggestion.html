@@ -21,68 +21,70 @@ limitations under the License.
   <template>
 
     <style>
-      :host {
-        @apply --layout-horizontal;
-        max-width: 200px;
-      }
-      :host([hidden]) {
-        display: none;
-      }
-      #container {
-        width: 100%;
-      }
+        :host {
+            @apply --layout-horizontal;
+            max-width: 200px;
+        }
+
+        :host([hidden]) {
+            display: none;
+        }
+
+        #container {
+            width: 100%;
+        }
     </style>
     <div id="container"></div>
 
   </template>
 
   <script>
-    {
-      class AISuggestion extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
+      {
+          class AISuggestion extends Nuxeo.AISuggestionMixin(Nuxeo.Element) {
 
-        static get is() {
-          return 'nuxeo-ai-suggestion';
-        }
+              static get is() {
+                  return 'nuxeo-ai-suggestion';
+              }
 
-        static get observers() {
-          return ['_updateContainer(suggestion, property, match)'];
-        }
+              static get observers() {
+                  return ['_updateContainer(suggestion, property, match)'];
+              }
 
-        created() {
-          Object.keys(this.constructor.properties).forEach((prop) => {
-            this.constructor.createMethodObserver(`_forwardProp("${prop}", ${prop})`);
-          });
-        }
+              created() {
+                  Object.keys(this.constructor.properties).forEach((prop) => {
+                      this.constructor.createMethodObserver(`_forwardProp("${prop}", ${prop})`);
+                  });
+              }
 
-        _forwardProp(prop, value) {
-          if (this._instance) {
-            this._instance[prop] = value;
+              _forwardProp(prop, value) {
+                  if (this._instance) {
+                      this._instance[prop] = value;
+                  }
+              }
+
+              _updateContainer(suggestion, property) {
+                  let ruleset = {};
+                  if (suggestion.value && suggestion.value['entity-type']) {
+                      ruleset = {type: suggestion.value['entity-type'], property};
+                  }
+                  const formatter = Nuxeo.AISuggestionFormatters.get(ruleset);
+                  if (!this._instance || this._instance.nodeName.toLowerCase() !== formatter) {
+                      this._instance = document.createElement(formatter);
+                      if (this.$.container.hasChildNodes()) {
+                          this.$.container.replaceChild(this._instance, this.$.container.firstChild);
+                      } else {
+                          this.$.container.appendChild(this._instance);
+                      }
+                  }
+                  Object.keys(this.constructor.properties).forEach((prop) => {
+                      this._instance[prop] = this[prop];
+                  });
+              }
+
           }
-        }
 
-        _updateContainer(suggestion, property) {
-          let ruleset = {};
-          if (suggestion.value && suggestion.value['entity-type']) {
-            ruleset = { type: suggestion.value['entity-type'], property };
-          }
-          const formatter = Nuxeo.AISuggestionFormatters.get(ruleset);
-          if (!this._instance || this._instance.nodeName.toLowerCase() !== formatter) {
-            this._instance = document.createElement(formatter);
-            if (this.$.container.hasChildNodes()) {
-              this.$.container.replaceChild(this._instance, this.$.container.firstChild);
-            } else {
-              this.$.container.appendChild(this._instance);
-            }
-          }
-          Object.keys(this.constructor.properties).forEach((prop) => {
-            this._instance[prop] = this[prop];
-          });
-        }
-
+          customElements.define(AISuggestion.is, AISuggestion);
+          Nuxeo.AISuggestion = AISuggestion;
       }
-
-      customElements.define(AISuggestion.is, AISuggestion);
-      Nuxeo.AISuggestion = AISuggestion;
-    }
   </script>
 </dom-module>

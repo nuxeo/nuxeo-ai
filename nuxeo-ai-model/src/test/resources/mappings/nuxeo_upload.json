@@ -5,7 +5,9 @@
   },
   "response": {
     "status": 201,
-    "jsonBody": {"batchId":"batchId-160babc8-3345-4f09-8521"},
+    "jsonBody": {
+      "batchId": "batchId-160babc8-3345-4f09-8521"
+    },
     "headers": {
       "Content-Type": "application/json"
     }

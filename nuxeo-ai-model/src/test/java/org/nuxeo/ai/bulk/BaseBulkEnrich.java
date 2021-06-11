@@ -1,6 +1,16 @@
 package org.nuxeo.ai.bulk;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import javax.inject.Inject;
 import org.junit.After;
 import org.junit.Before;
 import org.nuxeo.ai.AIConstants.AUTO;
@@ -14,18 +24,7 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import javax.inject.Inject;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 public class BaseBulkEnrich {
 

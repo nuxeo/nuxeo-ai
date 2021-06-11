@@ -18,14 +18,16 @@
  */
 package org.nuxeo.ai.metadata;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.AIConstants.AUTO;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.model.Property;
-import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
-import org.nuxeo.ecm.core.schema.types.Type;
-import org.nuxeo.ecm.core.schema.types.primitives.StringType;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
+import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
+import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,17 +39,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_ITEMS;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_MODEL;
-import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_CONFIDENCE;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABEL;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_LABELS;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
-import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.AIConstants.AUTO;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.model.Property;
+import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
+import org.nuxeo.ecm.core.schema.types.Type;
+import org.nuxeo.ecm.core.schema.types.primitives.StringType;
 
 /**
  * An wrapper around suggestion metadata that pre-processes the data to make it easier to use.

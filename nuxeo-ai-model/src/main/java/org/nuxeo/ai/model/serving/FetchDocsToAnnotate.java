@@ -18,7 +18,19 @@
  */
 package org.nuxeo.ai.model.serving;
 
-import com.fasterxml.jackson.core.JsonGenerator;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -49,91 +61,79 @@ import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
 import org.nuxeo.ecm.directory.DirectoryEntryResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
-import javax.servlet.http.HttpServletRequest;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * Resolves all given properties for given documents <code>
  * Example:
  * <code>
- *     [
- *     {
- *         "docId": "20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b",
- *         "inputs": [
- *             {
- *                 "name": "dc:description",
- *                 "isArray": false,
- *                 "type": "clob",
- *                 "value": "Description 11"
- *             },
- *             {
- *                 "resolver": "userManagerResolver",
- *                 "isArray": true,
- *                 "name": "dc:contributors",
- *                 "type": "contributorList",
- *                 "value": [
- *                     {
- *                         "entity-type": "user",
- *                         "id": "system",
- *                         "extendedGroups": [
- *                             {
- *                                 "name": "administrators",
- *                                 "label": "Administrators group",
- *                                 "url": "group/administrators"
- *                             }
- *                         ],
- *                         "isAdministrator": true,
- *                         "isAnonymous": false
- *                     }
- *                 ]
- *             },
- *             {
- *                 "name": "dc:subjects",
- *                 "isArray": true,
- *                 "type": "subjectList",
- *                 "value": [
- *                     "art/architecture",
- *                     "art/danse"
- *                 ]
- *             },
- *             {
- *                 "name": "file:content",
- *                 "isArray": false,
- *                 "type": "content",
- *                 "value": {
- *                     "name": "nxblob-67186932984972622.tmp",
- *                     "mime-type": null,
- *                     "encoding": null,
- *                     "digestAlgorithm": "MD5",
- *                     "digest": "144d66206d7e2fd7c7bea9bb34362ff4",
- *                     "length": "1025580",
- *                     "data": "http://fake-url.nuxeo.com/nxfile/test/20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b/file:content/nxblob-67186932984972622.tmp?changeToken=0-0"
- *                 }
- *             },
- *             {
- *                 "resolver": "documentResolver",
- *                 "isArray": false,
- *                 "name": "extrafile:docprop",
- *                 "type": "string",
- *                 "value": {
- *                     "documentURL": null
- *                 }
- *             }
- *         ],
- *         "outputs": [...],
- *     },
- *     ....
+ * [
+ * {
+ * "docId": "20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b",
+ * "inputs": [
+ * {
+ * "name": "dc:description",
+ * "isArray": false,
+ * "type": "clob",
+ * "value": "Description 11"
+ * },
+ * {
+ * "resolver": "userManagerResolver",
+ * "isArray": true,
+ * "name": "dc:contributors",
+ * "type": "contributorList",
+ * "value": [
+ * {
+ * "entity-type": "user",
+ * "id": "system",
+ * "extendedGroups": [
+ * {
+ * "name": "administrators",
+ * "label": "Administrators group",
+ * "url": "group/administrators"
+ * }
+ * ],
+ * "isAdministrator": true,
+ * "isAnonymous": false
+ * }
+ * ]
+ * },
+ * {
+ * "name": "dc:subjects",
+ * "isArray": true,
+ * "type": "subjectList",
+ * "value": [
+ * "art/architecture",
+ * "art/danse"
+ * ]
+ * },
+ * {
+ * "name": "file:content",
+ * "isArray": false,
+ * "type": "content",
+ * "value": {
+ * "name": "nxblob-67186932984972622.tmp",
+ * "mime-type": null,
+ * "encoding": null,
+ * "digestAlgorithm": "MD5",
+ * "digest": "144d66206d7e2fd7c7bea9bb34362ff4",
+ * "length": "1025580",
+ * "data": "http://fake-url.nuxeo.com/nxfile/test/20ac2a8e-8bf0-4958-a6d8-14ed68bddd0b/file:content/nxblob-67186932984972622.tmp?changeToken=0-0"
+ * }
+ * },
+ * {
+ * "resolver": "documentResolver",
+ * "isArray": false,
+ * "name": "extrafile:docprop",
+ * "type": "string",
+ * "value": {
+ * "documentURL": null
+ * }
+ * }
+ * ],
+ * "outputs": [...],
+ * },
+ * ....
  * </code>
  */
 @Operation(id = FetchDocsToAnnotate.ID, category = Constants.CAT_DOCUMENT, description = "Fetch document(s) content given properties")

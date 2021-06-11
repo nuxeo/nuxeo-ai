@@ -60,7 +60,8 @@ public class TextractProcessorDescriptor implements Descriptor {
             }
             return processorInstance;
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
-            throw new NuxeoException(String.format("TextractProcessorDescriptor for %s must define a valid TextractProcessor", id), e);
+            throw new NuxeoException(
+                    String.format("TextractProcessorDescriptor for %s must define a valid TextractProcessor", id), e);
         }
     }
 }

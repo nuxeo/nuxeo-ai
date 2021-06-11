@@ -19,9 +19,8 @@
 package org.nuxeo.ai.pipes;
 
 import java.util.Optional;
-
-import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.ai.pipes.streams.FunctionStreamProcessorTopology;
+import org.nuxeo.lib.stream.computation.Record;
 
 /**
  * Just a simple pass through

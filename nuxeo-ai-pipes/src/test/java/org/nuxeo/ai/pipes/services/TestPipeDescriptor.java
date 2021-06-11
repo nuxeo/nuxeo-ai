@@ -24,7 +24,6 @@ import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.function.UnaryOperator;
-
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.stream.LogConfigDescriptor;

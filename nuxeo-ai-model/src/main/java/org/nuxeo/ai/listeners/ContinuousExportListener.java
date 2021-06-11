@@ -19,6 +19,24 @@
  */
 package org.nuxeo.ai.listeners;
 
+import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
+import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -42,25 +60,6 @@ import org.nuxeo.ecm.core.query.sql.model.Reference;
 import org.nuxeo.ecm.core.query.sql.model.SQLQuery;
 import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
-import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
-import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
-import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
-import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
 
 /**
  * Asynchronous listener acting upon `startContinuousExport` event Performs REST Calls via {@link CloudClient} to obtain

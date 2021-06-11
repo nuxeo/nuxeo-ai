@@ -19,13 +19,16 @@
  */
 package org.nuxeo.ai.gcp.provider;
 
-import com.google.cloud.vision.v1.AnnotateImageResponse;
-import com.google.cloud.vision.v1.ColorInfo;
-import com.google.cloud.vision.v1.Feature;
-import com.google.cloud.vision.v1.ImageProperties;
-import com.google.protobuf.util.JsonFormat;
-import com.google.type.Color;
-import net.jodah.failsafe.RetryPolicy;
+import static com.google.cloud.vision.v1.Feature.Type.IMAGE_PROPERTIES;
+import static java.util.Collections.singleton;
+import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
@@ -34,22 +37,20 @@ import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import com.google.cloud.vision.v1.AnnotateImageResponse;
+import com.google.cloud.vision.v1.ColorInfo;
+import com.google.cloud.vision.v1.Feature;
+import com.google.cloud.vision.v1.ImageProperties;
+import com.google.protobuf.util.JsonFormat;
+import com.google.type.Color;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.google.cloud.vision.v1.Feature.Type.IMAGE_PROPERTIES;
-import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
+import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Finds items in an image and labels them
  */
-public class ImagePropertiesEnrichmentProvider extends AbstractTagProvider<ImageProperties> implements EnrichmentCachable {
+public class ImagePropertiesEnrichmentProvider extends AbstractTagProvider<ImageProperties>
+        implements EnrichmentCachable {
 
     private static final Logger log = LogManager.getLogger(ImagePropertiesEnrichmentProvider.class);
 
@@ -75,7 +76,7 @@ public class ImagePropertiesEnrichmentProvider extends AbstractTagProvider<Image
 
     @Override
     protected List<EnrichmentMetadata> processResult(BlobTextFromDocument doc, List<ManagedBlob> blobs,
-                                                     List<AnnotateImageResponse> responses) {
+            List<AnnotateImageResponse> responses) {
         Iterator<ManagedBlob> iterator = blobs.iterator();
         List<EnrichmentMetadata> results = new ArrayList<>();
         for (AnnotateImageResponse res : responses) {
@@ -91,18 +92,18 @@ public class ImagePropertiesEnrichmentProvider extends AbstractTagProvider<Image
 
             List<ColorInfo> colorInfos = annotations.get(0).getDominantColors().getColorsList();
             List<AIMetadata.Label> labels = colorInfos.stream()
-                    .map(this::toLabel)
-                    .filter(label -> label.getConfidence() >= minConfidence)
-                    .collect(Collectors.toList());
+                                                      .map(this::toLabel)
+                                                      .filter(label -> label.getConfidence() >= minConfidence)
+                                                      .collect(Collectors.toList());
 
             String raw = toJsonString(jg -> jg.writeObjectField("labels", JsonFormat.printer().print(res)));
             String rawKey = saveJsonAsRawBlob(raw);
 
             EnrichmentMetadata build = new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
-                    .withRawKey(rawKey)
-                    .withDocumentProperties(singleton(
-                            iterator.next().getKey()))
-                    .build();
+                                                                                      .withRawKey(rawKey)
+                                                                                      .withDocumentProperties(singleton(
+                                                                                              iterator.next().getKey()))
+                                                                                      .build();
             results.add(build);
         }
 
@@ -112,8 +113,8 @@ public class ImagePropertiesEnrichmentProvider extends AbstractTagProvider<Image
     protected EnrichmentMetadata.Label toLabel(ColorInfo colorInfo) {
         float score = colorInfo.getScore();
         Color color = colorInfo.getColor();
-        String desc = String.format("%f,%f,%f,%f",
-                color.getRed(), color.getGreen(), color.getBlue(), colorInfo.getPixelFraction());
+        String desc = String.format("%f,%f,%f,%f", color.getRed(), color.getGreen(), color.getBlue(),
+                colorInfo.getPixelFraction());
         return new EnrichmentMetadata.Label(desc, score);
     }
 

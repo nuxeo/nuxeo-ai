@@ -18,7 +18,31 @@
  */
 package org.nuxeo.ai.model.export;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static java.util.Collections.emptyList;
+import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
+import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
+import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
+import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,32 +79,7 @@ import org.nuxeo.elasticsearch.api.EsResult;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
-
-import javax.annotation.Nonnull;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.emptyList;
-import static org.nuxeo.ai.AIConstants.EXPORT_ACTION_NAME;
-import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Exports data
@@ -176,15 +175,19 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             }
         }).collect(Collectors.toList());
 
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME,
-                notNullNXQL).user(username)
-                            .repository(session.getRepositoryName())
-                            .param(QUERY_PARAM, nxql)
-                            .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
-                            .param(OUTPUT_PARAMETERS, (Serializable) outputAsParameter)
-                            .param(MODEL_PARAMETERS, (Serializable) modelParams)
-                            .param(EXPORT_SPLIT_PARAM, split)
-                            .build();
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL).user(username)
+                                                                                          .repository(
+                                                                                                  session.getRepositoryName())
+                                                                                          .param(QUERY_PARAM, nxql)
+                                                                                          .param(INPUT_PARAMETERS,
+                                                                                                  (Serializable) inputAsParameter)
+                                                                                          .param(OUTPUT_PARAMETERS,
+                                                                                                  (Serializable) outputAsParameter)
+                                                                                          .param(MODEL_PARAMETERS,
+                                                                                                  (Serializable) modelParams)
+                                                                                          .param(EXPORT_SPLIT_PARAM,
+                                                                                                  split)
+                                                                                          .build();
 
         if (log.isDebugEnabled()) {
             log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());

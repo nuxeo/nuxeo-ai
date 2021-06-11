@@ -39,9 +39,7 @@ public class VideoAboutToChange implements EventListener {
         }
         DocumentEventContext docCtx = (DocumentEventContext) ctx;
         DocumentModel doc = docCtx.getSourceDocument();
-        if (doc.hasFacet(VIDEO_FACET)
-                && !doc.hasFacet(CAPTIONABLE_FACET)
-                && !doc.isProxy()) {
+        if (doc.hasFacet(VIDEO_FACET) && !doc.hasFacet(CAPTIONABLE_FACET) && !doc.isProxy()) {
             doc.addFacet(CAPTIONABLE_FACET);
         }
     }

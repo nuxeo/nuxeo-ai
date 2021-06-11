@@ -21,6 +21,7 @@ package org.nuxeo.ai.imagequality.pojo;
 public class Celebrity {
 
     private String name;
+
     private float prob;
 
     public String getName() {

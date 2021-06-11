@@ -23,13 +23,11 @@ import static org.nuxeo.ecm.core.io.registry.reflect.Priorities.REFERENCE;
 
 import java.io.IOException;
 import java.util.Set;
-
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.io.marshallers.json.enrichers.AbstractJsonEnricher;
 import org.nuxeo.ecm.core.io.registry.reflect.Setup;
 import org.nuxeo.runtime.api.Framework;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 
 /**

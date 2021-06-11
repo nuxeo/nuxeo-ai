@@ -25,7 +25,6 @@ import static org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider.ENRICHMENT_
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -34,7 +33,6 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.runtime.api.Framework;
-
 import com.amazonaws.services.rekognition.model.GetLabelDetectionRequest;
 import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
 
@@ -63,9 +61,7 @@ public class AsyncLabelResultListener extends BaseAsyncResultListener {
 
     protected Collection<EnrichmentMetadata> getEnrichmentMetadata(String jobId, Map<String, Serializable> params) {
         int max = (int) params.getOrDefault(MAX_RESULTS, 10);
-        GetLabelDetectionRequest request = new GetLabelDetectionRequest()
-                .withJobId(jobId)
-                .withMaxResults(max);
+        GetLabelDetectionRequest request = new GetLabelDetectionRequest().withJobId(jobId).withMaxResults(max);
 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         GetLabelDetectionResult result = rs.getClient().getLabelDetection(request);

@@ -19,13 +19,11 @@
 package org.nuxeo.ecm.core.storage.sql;
 
 import java.util.function.BiFunction;
-
 import org.nuxeo.ecm.blob.s3.S3BlobProvider;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-
 import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.Video;
 import com.amazonaws.services.textract.model.Document;
@@ -42,9 +40,10 @@ public class ImageHelperWithS3 {
      * Gets the image from the S3BinaryManager as a reference to an S3 object
      */
     public Image getImage(ManagedBlob blob) {
-        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (blobProvider,
-                key) -> new com.amazonaws.services.rekognition.model.S3Object().withName(key)
-                                                                               .withBucket(bucketName(blobProvider)));
+        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob,
+                (blobProvider, key) -> new com.amazonaws.services.rekognition.model.S3Object().withName(key)
+                                                                                              .withBucket(bucketName(
+                                                                                                      blobProvider)));
         if (s3Object != null) {
             return new Image().withS3Object(s3Object);
         }
@@ -55,9 +54,10 @@ public class ImageHelperWithS3 {
      * Gets the image from the S3BinaryManager as a reference to an S3 object
      */
     public Video getVideo(ManagedBlob blob) {
-        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob, (blobProvider,
-                key) -> new com.amazonaws.services.rekognition.model.S3Object().withName(key)
-                                                                               .withBucket(bucketName(blobProvider)));
+        com.amazonaws.services.rekognition.model.S3Object s3Object = getS3Object(blob,
+                (blobProvider, key) -> new com.amazonaws.services.rekognition.model.S3Object().withName(key)
+                                                                                              .withBucket(bucketName(
+                                                                                                      blobProvider)));
         if (s3Object != null) {
             return new Video().withS3Object(s3Object);
         }
@@ -66,13 +66,14 @@ public class ImageHelperWithS3 {
 
     /**
      * Gets the image from the S3BinaryManager as a reference to an S3 object as a Document
-     * 
+     *
      * @since 2.1.2
      */
     public Document getDocument(ManagedBlob blob) {
-        com.amazonaws.services.textract.model.S3Object s3Object = getS3Object(blob, (blobProvider,
-                key) -> new com.amazonaws.services.textract.model.S3Object().withName(key)
-                                                                            .withBucket(bucketName(blobProvider)));
+        com.amazonaws.services.textract.model.S3Object s3Object = getS3Object(blob,
+                (blobProvider, key) -> new com.amazonaws.services.textract.model.S3Object().withName(key)
+                                                                                           .withBucket(bucketName(
+                                                                                                   blobProvider)));
         if (s3Object != null) {
             return new Document().withS3Object(s3Object);
         }
