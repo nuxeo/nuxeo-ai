@@ -48,9 +48,11 @@ import org.nuxeo.ai.services.AIConfigurationServiceImpl;
 import org.nuxeo.ai.services.PersistedConfigurationService;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.api.repository.RepositoryManager;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
@@ -256,7 +258,9 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     protected void modelInvalidator(String topic, byte[] message) {
         log.info("Model Invalidation received");
-        try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem("default")) {
+        String defaultRepository = Framework.getService(RepositoryManager.class).getDefaultRepository().getName();
+        try {
+            CoreSession session = CoreInstance.getCoreSession(defaultRepository);
             CloudClient cc = Framework.getService(CloudClient.class);
             JSONBlob published = cc.getPublishedModels(session);
 
