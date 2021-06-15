@@ -20,6 +20,7 @@
     <tensorflow.version>1.11.0</tensorflow.version>
     <!-- distribution server compliance: "target platform" -->
     <nuxeo.target.version>10.10</nuxeo.target.version>
+    <nuxeo.log4j.version>1.0.1</nuxeo.log4j.version>
     <!-- used for the base image, should be kept up to date -->
     <nuxeo.latest.version>10.10-HF45</nuxeo.latest.version>
     <wiremock.version>2.18.0</wiremock.version>
@@ -176,6 +177,11 @@
         <groupId>org.tensorflow</groupId>
         <artifactId>proto</artifactId>
         <version>${tensorflow.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.log4j</groupId>
+        <artifactId>nuxeo-log4j-core</artifactId>
+        <version>${nuxeo.log4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
