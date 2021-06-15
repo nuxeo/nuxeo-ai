@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.setupBlobForStream;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -44,6 +45,7 @@ import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
@@ -104,7 +106,6 @@ public class TestTextractService {
 
     @Test
     public void testBlocks() throws URISyntaxException, IOException {
-
         Block b = new Block();
         b.setBlockType("LINE");
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", Arrays.asList(b)));
@@ -113,22 +114,10 @@ public class TestTextractService {
         List<Block> rawBlock = result.getBlocks();
         assertNotNull(rawBlock);
 
-        try (Stream<String> stream = Files.lines(
-                Paths.get(this.getClass().getResource("/files/textract.json").toURI()))) {
-
-            stream.forEach(line -> {
-                try {
-                    AnalyzeDocumentResult helper = JacksonUtil.MAPPER.readValue(line, AnalyzeDocumentResult.class);
-                    List<Block> blocks = helper.getBlocks();
-                    assertNotNull(blocks);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    fail("Invalid json " + e.getMessage());
-                }
-            });
-        } catch (IOException e) {
-            fail("Invalid json " + e.getMessage());
-        }
+        File json = FileUtils.getResourceFileFromContext("files/textract.json");
+        AnalyzeDocumentResult helper = JacksonUtil.MAPPER.readValue(json, AnalyzeDocumentResult.class);
+        List<Block> blocks = helper.getBlocks();
+        assertNotNull(blocks);
     }
 
     @Test
