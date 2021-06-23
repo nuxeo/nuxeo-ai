@@ -28,7 +28,7 @@
     <nuxeo.insight-demos.version>0.2.0</nuxeo.insight-demos.version>
     <jackson.version>2.10.2</jackson.version>
     <nuxeo.ai.client.version>1.0.1</nuxeo.ai.client.version>
-    <nuxeo.ai.jwt.version>1.0.2</nuxeo.ai.jwt.version>
+    <nuxeo.ai.jwt.version>1.0.3</nuxeo.ai.jwt.version>
   </properties>
 
   <modules>
