@@ -165,6 +165,24 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
         Framework.getService(EventService.class).fireEvent(event);
     }
 
+    protected void modelSubscriber(String topic, byte[] message) {
+        String contribKey = new String(message);
+        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
+        try {
+            Descriptor desc = pcs.retrieve(contribKey);
+            if (desc == null) {
+                this.models.remove(contribKey);
+                this.predicates.remove(contribKey);
+                this.filterPredicates.remove(contribKey);
+            }
+            if (desc instanceof ModelDescriptor) {
+                this.reload(desc);
+            }
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
+    }
+
     @Override
     public void addModel(ModelDescriptor descriptor) {
         if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
@@ -233,24 +251,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                          .map(e -> models.get(e.getKey()).predict(document))
                          .filter(Objects::nonNull)
                          .collect(Collectors.toList());
-    }
-
-    protected void modelSubscriber(String topic, byte[] message) {
-        String contribKey = new String(message);
-        PersistedConfigurationService pcs = Framework.getService(PersistedConfigurationService.class);
-        try {
-            Descriptor desc = pcs.retrieve(contribKey);
-            if (desc == null) {
-                this.models.remove(contribKey);
-                this.predicates.remove(contribKey);
-                this.filterPredicates.remove(contribKey);
-            }
-            if (desc instanceof ModelDescriptor) {
-                this.reload(desc);
-            }
-        } catch (IOException e) {
-            throw new NuxeoException(e);
-        }
     }
 
     protected void modelInvalidator(String topic, byte[] message) {
