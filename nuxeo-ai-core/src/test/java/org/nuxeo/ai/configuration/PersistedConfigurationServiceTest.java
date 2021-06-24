@@ -21,15 +21,14 @@ package org.nuxeo.ai.configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
+import static org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor.normalize;
 import static org.nuxeo.ai.services.PersistedConfigurationServiceImpl.KEY_VALUE_STORE;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-
 import javax.inject.Inject;
-
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,6 +71,16 @@ public class PersistedConfigurationServiceTest {
             "      </thresholds>\n" + //
             "    </thresholdConfiguration>";
 
+    protected static final String thresholdFileOne = "<thresholdConfiguration type=\"File\"\n" + //
+            "                            global=\"1.0\">\n" + //
+            "      <thresholds>\n" + //
+            "        <threshold xpath=\"dc:title\"\n" + //
+            "                   value=\"100\"\n" + //
+            "                   autofill=\"100\"\n" + //
+            "                   autocorrect=\"100\"/>\n" + //
+            "      </thresholds>\n" + //
+            "    </thresholdConfiguration>";
+
     protected static final String thresholdFolder = "<thresholdConfiguration type=\"Folder\"\n" + //
             "                            global=\"0.88\">\n" + //
             "      <thresholds>\n" + //
@@ -86,6 +95,23 @@ public class PersistedConfigurationServiceTest {
     public void cleanUp() {
         PersistedConfigurationServiceImpl impl = (PersistedConfigurationServiceImpl) this.pcs;
         impl.clear();
+    }
+
+    @Test
+    public void shouldNormalize () throws IOException {
+        pcs.register(ThresholdConfiguratorDescriptor.class);
+
+        getStore().put("testKey", thresholdFileOne);
+
+        Descriptor descriptor = pcs.retrieve("testKey");
+        assertThat(descriptor).isNotNull().isInstanceOf(ThresholdConfiguratorDescriptor.class);
+
+        ThresholdConfiguratorDescriptor tcd = (ThresholdConfiguratorDescriptor) descriptor;
+
+        ThresholdConfiguratorDescriptor.Threshold threshold = tcd.getThresholds().get(0);
+        assertThat(threshold.getAutofillValue()).isEqualTo(1.0f);
+        assertThat(normalize(threshold.getAutofillValue())).isEqualTo(1.0f);
+        assertThat(threshold.getAutocorrect()).isEqualTo(1.0f);
     }
 
     @Test
@@ -121,7 +147,8 @@ public class PersistedConfigurationServiceTest {
     public void iCanPropagateConfiguration() throws InterruptedException {
         int thresholdSize = ((ThresholdComponent) Framework.getRuntime()
                                                            .getComponent(
-                                                                   "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
+                                                                   "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds
+                .size();
         // TODO: AICORE-366
         // messageReceivedLatch = new CountDownLatch(1);
         aiConfigurationService.set(UUID.randomUUID().toString(), thresholdFolder);
@@ -137,7 +164,8 @@ public class PersistedConfigurationServiceTest {
         while (System.currentTimeMillis() < deadline) {
             newThresholdSize = ((ThresholdComponent) Framework.getRuntime()
                                                               .getComponent(
-                                                                      "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
+                                                                      "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds
+                    .size();
             if (newThresholdSize == thresholdSize + 1) {
                 return;
             }
