@@ -81,20 +81,6 @@ public class ThresholdConfiguratorDescriptor implements Descriptor {
         protected float autocorrect = -1.f;
 
         /**
-         * Merges with another {@link Threshold} prioritizing max value for each value
-         * @param that another {@link Threshold}
-         */
-        public void merge(Threshold that) {
-            if (that == null) {
-                return;
-            }
-
-            value = Math.max(getValue(), that.getValue());
-            autofillValue = Math.max(getAutofillValue(), that.getAutofillValue());
-            autocorrect = Math.max(getAutocorrect(), that.getAutocorrect());
-        }
-
-        /**
          * @return XPath to property
          */
         public String getXPath() {

@@ -223,10 +223,10 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
 
         typeThresholds.computeIfAbsent(type, key -> new HashMap<>());
 
-        for (Threshold t : descriptor.getThresholds()) {
+        for (Threshold threshold : descriptor.getThresholds()) {
             Map<String, Threshold> map = typeThresholds.get(type);
-            t.merge(map.get(t.getXPath()));
-            map.put(t.getXPath(), t);
+            threshold = map.get(threshold.getXPath());
+            map.put(threshold.getXPath(), threshold);
         }
     }
 
