@@ -63,6 +63,7 @@ import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import org.nuxeo.runtime.model.Descriptor;
 import org.nuxeo.runtime.pubsub.PubSubService;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -254,33 +255,35 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     protected void modelInvalidator(String topic, byte[] message) {
         log.info("Model Invalidation received");
-        String defaultRepository = Framework.getService(RepositoryManager.class).getDefaultRepository().getName();
-        try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(defaultRepository)) {
-            CloudClient cc = Framework.getService(CloudClient.class);
-            JSONBlob published = cc.getPublishedModels(session);
+        TransactionHelper.runInNewTransaction(() -> {
+            String defaultRepository = Framework.getService(RepositoryManager.class).getDefaultRepository().getName();
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(defaultRepository)) {
+                CloudClient cc = Framework.getService(CloudClient.class);
+                JSONBlob published = cc.getPublishedModels(session);
 
-            Map<String, Serializable> resp = MAPPER.readValue(published.getStream(), RESPONSE_TYPE_REFERENCE);
-            if (resp.containsKey(ENTRIES_KEY)) {
-                clearAll();
+                Map<String, Serializable> resp = MAPPER.readValue(published.getStream(), RESPONSE_TYPE_REFERENCE);
+                if (resp.containsKey(ENTRIES_KEY)) {
+                    clearAll();
 
-                @SuppressWarnings("unchecked")
-                List<Map<String, Serializable>> entries = (List<Map<String, Serializable>>) resp.get(ENTRIES_KEY);
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Serializable>> entries = (List<Map<String, Serializable>>) resp.get(ENTRIES_KEY);
 
-                Map<String, ModelDescriptor> newModels = entries.stream()
-                                                                .map(this::construct)
-                                                                .collect(Collectors.toMap(
-                                                                        desc -> desc.info.get(MODEL_NAME_KEY),
-                                                                        desc -> desc));
-                newModels.values().forEach(this::addModel);
-                log.info("Insight cloud has {} published model definitions; Model registry size after update {}",
-                        newModels.size(), models.size());
-            } else {
-                log.warn("No active models were found");
+                    Map<String, ModelDescriptor> newModels = entries.stream()
+                                                                    .map(this::construct)
+                                                                    .collect(Collectors.toMap(
+                                                                            desc -> desc.info.get(MODEL_NAME_KEY),
+                                                                            desc -> desc));
+                    newModels.values().forEach(this::addModel);
+                    log.info("Insight cloud has {} published model definitions; Model registry size after update {}",
+                            newModels.size(), models.size());
+                } else {
+                    log.warn("No active models were found");
+                }
+            } catch (IOException e) {
+                log.error(e);
+                throw new NuxeoException(e);
             }
-        } catch (IOException e) {
-            log.error(e);
-            throw new NuxeoException(e);
-        }
+        });
     }
 
     protected void clearAll() {
