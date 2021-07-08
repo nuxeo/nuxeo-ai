@@ -101,7 +101,7 @@ echo "\${REG_SHA256} /usr/bin/reg" | sha256sum -c - && chmod +x /usr/bin/reg
                         sh '''#!/bin/bash -xe
 PACKAGES="\$(ls $PACKAGE_PATTERN)"
 for file in \$PACKAGES ; do
-    cp $file ../docker/$(basename ${file%-[0-9]*}).zip
+    cp $file ../docker/$(basename ${file%%-[0-9]*}).zip
 done
 '''
                     }
