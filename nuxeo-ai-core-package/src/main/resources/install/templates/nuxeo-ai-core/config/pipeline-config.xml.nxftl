@@ -17,13 +17,6 @@
 
   <pipe id="pipe.images" enabled="${nuxeo.ai.images.enabled}">
     <supplier>
-      <event name="pictureViewsGenerationDone">
-        <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
-        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
-        <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
-          <option name="includedFacets">Picture</option>
-        </filter>
-      </event>
       <event name="documentCreated">
         <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
         <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
@@ -55,6 +48,25 @@
       <option name="blobProperties">file:content</option>
       <option name="blobPropertiesType">img</option>
       <option name="customProperties">picture:info/width,picture:info/height</option>
+    </transformer>
+  </pipe>
+
+  <pipe id="pipe.pictures" enabled="${nuxeo.ai.images.enabled}">
+    <supplier>
+      <event name="pictureViewsGenerationDone">
+        <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
+        <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+          <option name="includedFacets">Picture</option>
+        </filter>
+      </event>
+    </supplier>
+    <consumer>
+      <stream name="images"/>
+    </consumer>
+    <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
+      <option name="blobProperties">picture:views/1/content</option>
+      <option name="blobPropertiesType">img</option>
     </transformer>
   </pipe>
 
