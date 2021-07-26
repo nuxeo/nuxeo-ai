@@ -199,7 +199,7 @@ public class TestDatasetOperation {
 
         ctx = new OperationContext(session);
         params = new HashMap<>();
-        params.put("commandId", returned);
+//        params.put("commandId", returned);
 
         @SuppressWarnings("unchecked")
         List<ExportProgressStatus> result = (List<ExportProgressStatus>) automationService.run(ctx,
@@ -207,6 +207,17 @@ public class TestDatasetOperation {
 
         assertThat(result).isNotEmpty().hasSize(1);
         ExportProgressStatus status = result.get(0);
+        assertThat(status.getId()).isEqualTo(returned);
+        assertThat(status.getName()).isEqualTo("Fake Name");
+
+        params.put("global", true);
+
+        @SuppressWarnings("unchecked")
+        List<ExportProgressStatus> globalResult = (List<ExportProgressStatus>) automationService.run(ctx,
+                DatasetExportUpdaterOperation.ID, params);
+
+        assertThat(globalResult).isNotEmpty().hasSize(1);
+        status = globalResult.get(0);
         assertThat(status.getId()).isEqualTo(returned);
         assertThat(status.getName()).isEqualTo("Fake Name");
 
