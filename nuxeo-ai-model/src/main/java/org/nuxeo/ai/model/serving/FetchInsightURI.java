@@ -26,6 +26,7 @@ import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.cloud.CloudConfigDescriptor;
 import org.nuxeo.ai.keystore.JWTKeyService;
+import org.nuxeo.ai.sdk.objects.JWTClaims;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -71,6 +72,7 @@ public class FetchInsightURI {
         if (groups.length > 0) {
             claims.put(NuxeoClaim.GROUP, groups);
         }
+        claims.put(JWTClaims.DATASOURCE, cloudConfig.getDatasource());
         String token = jwt.generateJWT(projectId, claims);
         String urlCore = Framework.getProperty("nuxeo.url");
         return buildResponse(url, token, projectId, urlCore);
