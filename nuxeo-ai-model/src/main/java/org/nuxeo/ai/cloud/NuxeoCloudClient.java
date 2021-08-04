@@ -190,7 +190,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             client.connect();
             return client;
         } catch (NuxeoClientRemoteException e) {
-            log.error("Authentication/Connection issue with Insight cloud", e);
+            log.warn(
+                    "Authentication/Connection issue with Insight cloud: please verify JWT configuration with project {} and Insight url {}",
+                    descriptor.projectId, descriptor.url);
             return null;
         }
     }
