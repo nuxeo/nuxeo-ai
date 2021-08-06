@@ -61,6 +61,7 @@ import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
+import org.nuxeo.ai.sdk.objects.JWTClaims;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.ResponseHandler;
 import org.nuxeo.ai.sdk.rest.client.API;
@@ -170,6 +171,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
             String[] groups = { descriptor.projectId + "-managers" };
             claims.put(NuxeoClaim.GROUP, groups);
+            claims.put(JWTClaims.DATASOURCE, datasource);
 
             String token = jwt.generateJWT(descriptor.projectId, claims);
             Authentication authentication = new Authentication(token);
