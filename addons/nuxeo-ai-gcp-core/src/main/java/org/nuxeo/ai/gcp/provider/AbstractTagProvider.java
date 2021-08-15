@@ -75,12 +75,9 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
 
     protected float minConfidence;
 
-    protected GCPMetrics gcpMetrics;
-
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        gcpMetrics = Framework.getService(GCPMetrics.class);
         Map<String, String> options = descriptor.options;
         maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
         minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
@@ -124,6 +121,7 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
     }
 
     protected void registerMetrics() {
+        GCPMetrics gcpMetrics = Framework.getService(GCPMetrics.class);
         switch (getType()) {
         case FACE_DETECTION:
             gcpMetrics.getFaceCalls().inc();
