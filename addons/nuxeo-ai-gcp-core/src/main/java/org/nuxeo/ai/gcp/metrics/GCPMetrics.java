@@ -82,6 +82,7 @@ public class GCPMetrics extends DefaultComponent {
         logoCalls = registry.counter(MetricRegistry.name(visionName, "logoCalls"));
         objectLocalizationCalls = registry.counter(MetricRegistry.name(visionName, "objectLocalizationCalls"));
         textCalls = registry.counter(MetricRegistry.name(visionName, "textCalls"));
+        cropHintsCalls = registry.counter(MetricRegistry.name(visionName, "cropHintsCalls"));
     }
 
     /**
