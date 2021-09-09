@@ -1,4 +1,5 @@
 OS := $(shell uname)
+
 ifeq ($(OS),Darwin)
 SED=sed -i ''
 else ifeq ($(OS),Linux)
@@ -15,7 +16,6 @@ init:
 	helm repo add chartmuseum.platform.dev.nuxeo.com https://chartmuseum.platform.dev.nuxeo.com
 	helm repo add chartmuseum.ai.dev.nuxeo.com https://chartmuseum.ai.dev.nuxeo.com
 
-build: init
+preview: init
 	envsubst < values.tmpl.yaml > values.yaml
-	$(SED) -e "s/version:.*/version: $(VERSION)/" Chart.yaml
-	jx step helm build --verbose
+	$(SED) -e "s/version:.*/version: $(PREVIEW_VERSION)/" Chart.yaml
