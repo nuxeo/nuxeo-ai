@@ -11,7 +11,7 @@ endif
 
 init:
 	helm init --client-only --stable-repo-url=https://charts.helm.sh/stable
-	helm repo add jenkins-x http://chartmuseum.jenkins-x.io
+	helm repo add jenkins-x https://jenkins-x-charts.github.io/v2/
 	helm repo add jenkins-x-local http://jenkins-x-chartmuseum:8080
 	helm repo add chartmuseum.platform.dev.nuxeo.com https://chartmuseum.platform.dev.nuxeo.com
 	helm repo add chartmuseum.ai.dev.nuxeo.com https://chartmuseum.ai.dev.nuxeo.com
