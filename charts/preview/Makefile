@@ -19,4 +19,3 @@ init:
 preview: init
 	envsubst < values.tmpl.yaml > values.yaml
 	$(SED) -e "s/version:.*/version: $(PREVIEW_VERSION)/" Chart.yaml
-	jx step helm build --verbose
