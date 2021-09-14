@@ -15,6 +15,7 @@ init:
 	helm repo add jenkins-x-local http://jenkins-x-chartmuseum:8080
 	helm repo add chartmuseum.platform.dev.nuxeo.com https://chartmuseum.platform.dev.nuxeo.com
 	helm repo add chartmuseum.ai.dev.nuxeo.com https://chartmuseum.ai.dev.nuxeo.com
+	helm dependency update .
 
 preview: init
 	envsubst < values.tmpl.yaml > values.yaml
