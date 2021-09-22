@@ -165,7 +165,7 @@ skaffold build -f skaffold.yaml~gen
                                 sh """#!/bin/bash -xe
 kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true --now
 kubectl create ns ${TEST_NAMESPACE}
-make build
+make preview
 jx step helm install ./ -n ${TEST_CHART_NAME} --namespace=${TEST_NAMESPACE}
 kubectl -n ${TEST_NAMESPACE} rollout status deployment ${MONGODB_WR} --timeout=5m
 kubectl -n ${TEST_NAMESPACE} rollout status statefulset ${ELASTICSEARCH_WR} --timeout=5m
@@ -256,7 +256,7 @@ kubectl delete ns ${TEST_NAMESPACE} --ignore-not-found=true
                                         sh """#!/bin/bash -xe
 kubectl delete ns ${PREVIEW_NAMESPACE} --ignore-not-found=true --now
 kubectl create ns ${PREVIEW_NAMESPACE}
-make build
+make preview
 # detach process that would never succeed, patch the deployment, then reattach and wait
 jx preview --namespace ${PREVIEW_NAMESPACE} --verbose --source-url=$GIT_URL --preview-health-timeout 15m --alias nuxeo --no-comment=$JX_NO_COMMENT &
 until (kubectl -n ${PREVIEW_NAMESPACE} get deploy preview 2>/dev/null); do sleep 5; done
