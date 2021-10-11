@@ -157,7 +157,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     protected Optional<InsightClient> configureClient(CoreSession session, @Nonnull CloudConfigDescriptor descriptor) {
         try {
             if (isAnyBlank(descriptor.url, descriptor.projectId)) {
-                throw new IllegalArgumentException("url and projectId are mandatory fields for cloud configuration.");
+                log.error("url and projectId are mandatory fields for cloud configuration.");
+                return Optional.empty();
             }
 
             String datasource;
@@ -210,6 +211,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     public Optional<InsightClient> getClient(CoreSession session) {
         String actingUser = session.getPrincipal().getActingUser();
         CloudConfigDescriptor config = getCloudConfig();
+        if (config == null) {
+            return Optional.empty();
+        }
+
         try {
             Callable<Optional<InsightClient>> loader = () -> configureClient(session, config);
             // try to acquire client twice in case of first connection or cache problem
@@ -220,7 +225,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 insightClient = cachedClients.get(actingUser, loader);
             }
 
-            return config != null ? insightClient : Optional.empty();
+            return insightClient;
         } catch (ExecutionException e) {
             log.warn("User {} attempts to acquire nonexistent client", actingUser, e);
             return Optional.empty();

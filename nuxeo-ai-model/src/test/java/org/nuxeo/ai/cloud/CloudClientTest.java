@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
@@ -120,12 +119,8 @@ public class CloudClientTest {
         DocumentModel not_used = session.createDocumentModel("/", "not_used", DATASET_EXPORT_TYPE);
         assertNull(client.uploadedDataset(not_used));
 
-        try {
-            ((NuxeoCloudClient) client).configureClient(session, new CloudConfigDescriptor());
-            fail();
-        } catch (IllegalArgumentException e) {
-            // Success
-        }
+        assertThat(((NuxeoCloudClient) client).configureClient(session, new CloudConfigDescriptor())
+                                              .orElse(null)).isNull();
     }
 
     @Test
