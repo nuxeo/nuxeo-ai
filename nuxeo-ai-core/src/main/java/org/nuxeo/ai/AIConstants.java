@@ -60,6 +60,12 @@ public class AIConstants {
 
     public static final String EXPORT_SPLIT_PARAM = "split";
 
+    public static final String MANAGERS_GROUP_SUFFIX = "-managers";
+
+    public static final String LIBRARIANS_GROUP_SUFFIX = "-librarians";
+
+    public static final String INSIGHT_PREFIX = "insight";
+
     private AIConstants() {
         // just Constants
     }
