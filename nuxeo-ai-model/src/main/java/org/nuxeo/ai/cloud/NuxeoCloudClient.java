@@ -19,6 +19,8 @@
 package org.nuxeo.ai.cloud;
 
 import static org.apache.commons.lang3.StringUtils.isAnyBlank;
+import static org.nuxeo.ai.AIConstants.INSIGHT_PREFIX;
+import static org.nuxeo.ai.AIConstants.MANAGERS_GROUP_SUFFIX;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
@@ -172,7 +174,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             JWTKeyService jwt = Framework.getService(JWTKeyService.class);
             Map<String, Serializable> claims = new HashMap<>();
             claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
-            String[] groups = { descriptor.projectId + "-managers" };
+
+            // TODO: AICORE-541 - use session to apply correct groups
+            String[] groups = { INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX };
             claims.put(NuxeoClaim.GROUP, groups);
             claims.put(JWTClaims.DATASOURCE, datasource);
 
