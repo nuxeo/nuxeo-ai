@@ -132,7 +132,7 @@ public class CloudClientTest {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testConfiguredSuccess() throws IOException {
         assertNotNull(client.uploadedDataset(testDocument()));
-        String secret = client.getClient(session).getConfiguration().getAuthentication().getSecret();
+        String secret = client.getClient(session).get().getConfiguration().getAuthentication().getSecret();
         assertThat(secret).isNotEmpty();
 
         DecodedJWT decode = JWT.decode(secret);
@@ -204,6 +204,7 @@ public class CloudClientTest {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testGetPut() {
         String result = client.getClient(session)
+                              .get()
                               .get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
                                       response -> response.isSuccessful() ? response.body().string() : null);
 
@@ -214,6 +215,7 @@ public class CloudClientTest {
 
         String putBody = "could be anything";
         String resBody = client.getClient(session)
+                               .get()
                                .put(client.byProjectId("/dev/models"), putBody,
                                        response -> response.isSuccessful() ? response.body().string() : null);
         assertTrue(resBody.contains(putBody));
