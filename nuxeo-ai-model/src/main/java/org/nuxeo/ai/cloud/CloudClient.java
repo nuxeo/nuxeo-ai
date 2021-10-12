@@ -19,6 +19,7 @@
 package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,7 @@ import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
  */
 public interface CloudClient {
 
-    InsightClient getClient(CoreSession session);
+    Optional<InsightClient> getClient(CoreSession session);
 
     /**
      * Is the cloud available to call?

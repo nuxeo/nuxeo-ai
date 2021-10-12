@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,7 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.objects.TensorInstances.Tensor;
+import org.nuxeo.ai.sdk.rest.client.InsightClient;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CloseableCoreSession;
@@ -74,6 +76,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
  */
 public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentProvider {
 
+    private static final Logger log = LogManager.getLogger(TFRuntimeModel.class);
+
     public static final String PREDICTION_CUSTOM = "/prediction/custommodel";
 
     public static final String KIND_CONFIG = "kind";
@@ -85,8 +89,6 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
     public static final String JSON_OUTPUTS = "output_names";
 
     public static final String JSON_LABELS = "_labels";
-
-    private static final Logger log = LogManager.getLogger(TFRuntimeModel.class);
 
     protected Set<String> inputNames;
 
@@ -133,7 +135,12 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
                     }
                     return meta;
                 } else {
-                    log.warn("Unsuccessful call to ({}), ", client.getClient(session).getProjectId());
+                    Optional<InsightClient> ic = client.getClient(session);
+                    if (ic.isPresent()) {
+                        log.warn("Unsuccessful call to ({}), ", ic.get().getProjectId());
+                    } else {
+                        log.warn("Unsuccessful call and cannot resolve Insight client");
+                    }
                     return null;
                 }
             }
