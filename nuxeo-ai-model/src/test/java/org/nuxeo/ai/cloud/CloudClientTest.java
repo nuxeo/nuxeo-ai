@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
@@ -120,19 +119,15 @@ public class CloudClientTest {
         DocumentModel not_used = session.createDocumentModel("/", "not_used", DATASET_EXPORT_TYPE);
         assertNull(client.uploadedDataset(not_used));
 
-        try {
-            ((NuxeoCloudClient) client).configureClient(session, new CloudConfigDescriptor());
-            fail();
-        } catch (IllegalArgumentException e) {
-            // Success
-        }
+        assertThat(((NuxeoCloudClient) client).configureClient(session, new CloudConfigDescriptor())
+                                              .orElse(null)).isNull();
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testConfiguredSuccess() throws IOException {
         assertNotNull(client.uploadedDataset(testDocument()));
-        String secret = client.getClient(session).getConfiguration().getAuthentication().getSecret();
+        String secret = client.getClient(session).get().getConfiguration().getAuthentication().getSecret();
         assertThat(secret).isNotEmpty();
 
         DecodedJWT decode = JWT.decode(secret);
@@ -204,6 +199,7 @@ public class CloudClientTest {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testGetPut() {
         String result = client.getClient(session)
+                              .get()
                               .get(API_AI + client.byProjectId("/dev/models?enrichers.document=children"),
                                       response -> response.isSuccessful() ? response.body().string() : null);
 
@@ -214,6 +210,7 @@ public class CloudClientTest {
 
         String putBody = "could be anything";
         String resBody = client.getClient(session)
+                               .get()
                                .put(client.byProjectId("/dev/models"), putBody,
                                        response -> response.isSuccessful() ? response.body().string() : null);
         assertTrue(resBody.contains(putBody));
