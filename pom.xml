@@ -9,13 +9,13 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>3.4.0-2021-SNAPSHOT</version>
+  <version>3.4.0</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
 
   <properties>
-    <nuxeo.ai.version>3.4.0-2021-SNAPSHOT</nuxeo.ai.version>
+    <nuxeo.ai.version>3.4.0</nuxeo.ai.version>
     <dropwizard.version>4.1.17</dropwizard.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>2021.*</nuxeo.target.version>
