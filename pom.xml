@@ -38,6 +38,7 @@
     <module>nuxeo-ai-internal</module>
     <module>nuxeo-ai-core-package</module>
     <module>addons</module>
+    <module>nuxeo-ai-similar-content</module>
   </modules>
 
   <repositories>
