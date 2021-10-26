@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema targetNamespace="http://www.nuxeo.org/ai/schemas/deduplication/"
+           xmlns:nxdedup="http://www.nuxeo.org/ai/schemas/deduplication/"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:complexType name="itemsType">
+    <xs:sequence>
+      <xs:element name="xpath" type="xs:string"/>
+      <xs:element name="index" type="xs:boolean"/>
+      <xs:element name="date" type="xs:date"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="itemsList">
+    <xs:sequence>
+      <xs:element name="prediction" type="nxdedup:itemsType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="history" type="nxdedup:itemsList"/>
+
+
+</xs:schema>
