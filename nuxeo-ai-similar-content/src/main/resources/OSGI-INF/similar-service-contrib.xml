@@ -21,4 +21,19 @@
     <object class="org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor"/>
   </extension-point>
 
+  <extension-point name="filter">
+    <documentation>
+      Filter documents based on parameters of the filter
+      <code>
+        <filter id="dedup">
+          <rule grant="true">
+            <type>Picture</type>
+            <condition>currentDocument.getPropertyValue("ecm:tags").contains('not_duplicate')</condition>
+          </rule>
+        </filter>
+      </code>
+    </documentation>
+    <object class="org.nuxeo.ai.similar.content.configuration.ResultsFilter"/>
+  </extension-point>
+
 </component>

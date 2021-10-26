@@ -25,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -39,6 +41,9 @@ public class SimilarContentServiceTest {
     @Inject
     protected SimilarContentService scs;
 
+    @Inject
+    protected CoreSession session;
+
     @Test
     public void shouldContainConfiguration() {
         String query = scs.getQuery("test");
@@ -46,6 +51,21 @@ public class SimilarContentServiceTest {
 
         String xpath = scs.getXPath("test");
         assertThat(query).isNotEmpty();
+    }
+
+    @Test
+    public void shouldFilterDocuments() {
+        DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
+        fileDoc = session.createDocument(fileDoc);
+        session.save();
+
+        assertThat(fileDoc).isNotNull();
+
+        assertThat(scs.test("testType", fileDoc)).isTrue();
+        assertThat(scs.test("testNegateType", fileDoc)).isFalse();
+
+        assertThat(scs.test("testSchema", fileDoc)).isTrue();
+        assertThat(scs.test("testNegateSchema", fileDoc)).isFalse();
     }
 
 }

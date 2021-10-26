@@ -20,26 +20,48 @@
  */
 package org.nuxeo.ai.similar.content.services;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor;
+import org.nuxeo.ai.similar.content.configuration.ResultsFilter;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 public class SimilarServiceComponent extends DefaultComponent implements SimilarContentService {
 
+    private static final Logger log = LogManager.getLogger(SimilarServiceComponent.class);
+
     public static final String DEDUPLICATION_CONFIG_XP = "configuration";
 
+    public static final String DEDUPLICATION_FILTER_CONFIG_XP = "filter";
+
     protected final Map<String, DeduplicationDescriptor> dedupDescriptors = new HashMap<>();
+
+    protected final Map<String, ResultsFilter> filters = new HashMap<>();
 
     @Override
     public void registerContribution(Object contribution, String xp, ComponentInstance component) {
         if (DEDUPLICATION_CONFIG_XP.equals(xp)) {
             DeduplicationDescriptor desc = (DeduplicationDescriptor) contribution;
             dedupDescriptors.put(desc.getName(), desc);
+        } else if (DEDUPLICATION_FILTER_CONFIG_XP.equals(xp)) {
+            ResultsFilter filter = (ResultsFilter) contribution;
+            filters.put(filter.getId(), filter);
         }
+    }
+
+    @Override
+    public boolean test(String filterId, DocumentModel doc) {
+        if (!filters.containsKey(filterId)) {
+            log.warn("No such filter: {}", filterId);
+            return false;
+        }
+
+        ResultsFilter resultsFilter = filters.get(filterId);
+        return resultsFilter.accept(doc);
     }
 
     @Override

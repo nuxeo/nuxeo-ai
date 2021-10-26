@@ -9,4 +9,30 @@
     </deduplication>
   </extension>
 
+  <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="filter">
+    <filter id="testType">
+      <rule grant="true">
+        <type>File</type>
+      </rule>
+    </filter>
+
+    <filter id="testNegateType">
+      <rule grant="false">
+        <type>File</type>
+      </rule>
+    </filter>
+
+    <filter id="testSchema">
+      <rule grant="true">
+        <schema>file</schema>
+      </rule>
+    </filter>
+
+    <filter id="testNegateSchema">
+      <rule grant="false">
+        <schema>file</schema>
+      </rule>
+    </filter>
+  </extension>
+
 </component>
