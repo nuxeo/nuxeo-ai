@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.similar.content.services.test" version="1.0">
+
+  <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="configuration">
+    <deduplication
+        name="test"
+        query="SELECT * FROM Document WHERE ecm:mixinType = 'Picture' AND ecm:tag NOT IN ('not_duplicate')">
+      <xpath>file:content</xpath>
+    </deduplication>
+  </extension>
+
+</component>
