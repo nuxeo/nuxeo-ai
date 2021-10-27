@@ -28,7 +28,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
  */
 public interface SimilarContentService {
 
-    boolean test(String filterId, DocumentModel doc);
+    boolean test(String config, DocumentModel doc);
 
     String getQuery(String name);
 

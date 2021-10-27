@@ -36,23 +36,23 @@ public class ResultsRule {
 
     protected String cacheKey;
 
-    @XNode(value = "@grant")
-    boolean grant = false;
-
     @XNodeList(value = "permission", type = String[].class, componentType = String.class)
-    String[] permissions;
+    protected String[] permissions;
 
     @XNodeList(value = "facet", type = String[].class, componentType = String.class)
-    String[] facets;
+    protected String[] facets;
 
     @XNodeList(value = "type", type = String[].class, componentType = String.class)
-    String[] types;
+    protected String[] types;
 
     @XNodeList(value = "schema", type = String[].class, componentType = String.class)
-    String[] schemas;
+    protected String[] schemas;
 
     @XNodeList(value = "group", type = String[].class, componentType = String.class)
-    String[] groups;
+    protected String[] groups;
+
+    @XNode(value = "@grant")
+    boolean grant = false;
 
     public ResultsRule() {
     }

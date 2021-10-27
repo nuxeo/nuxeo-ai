@@ -50,7 +50,7 @@ public class SimilarContentServiceTest {
         assertThat(query).isNotEmpty();
 
         String xpath = scs.getXPath("test");
-        assertThat(query).isNotEmpty();
+        assertThat(xpath).isNotEmpty();
     }
 
     @Test
@@ -61,11 +61,11 @@ public class SimilarContentServiceTest {
 
         assertThat(fileDoc).isNotNull();
 
-        assertThat(scs.test("testType", fileDoc)).isTrue();
-        assertThat(scs.test("testNegateType", fileDoc)).isFalse();
+        assertThat(scs.test("test", fileDoc)).isTrue();
+        assertThat(scs.test("test2", fileDoc)).isFalse();
 
-        assertThat(scs.test("testSchema", fileDoc)).isTrue();
-        assertThat(scs.test("testNegateSchema", fileDoc)).isFalse();
+        assertThat(scs.test("test3", fileDoc)).isTrue();
+        assertThat(scs.test("test4", fileDoc)).isFalse();
     }
 
 }
