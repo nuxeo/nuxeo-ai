@@ -21,10 +21,14 @@
 
 package org.nuxeo.ai.similar.content.services;
 
+import org.nuxeo.ecm.core.api.DocumentModel;
+
 /**
  * Service responsible for configuration of Similarity search
  */
 public interface SimilarContentService {
+
+    boolean test(String config, DocumentModel doc);
 
     String getQuery(String name);
 

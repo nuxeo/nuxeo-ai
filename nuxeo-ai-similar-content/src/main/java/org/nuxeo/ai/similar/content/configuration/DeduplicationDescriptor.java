@@ -22,6 +22,7 @@
 package org.nuxeo.ai.similar.content.configuration;
 
 import org.nuxeo.common.xmap.annotation.XNode;
+import org.nuxeo.common.xmap.annotation.XNodeList;
 import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.runtime.model.Descriptor;
 
@@ -41,6 +42,9 @@ public class DeduplicationDescriptor implements Descriptor {
     @XNode("xpath")
     protected String xpath = DEFAULT_XPATH;
 
+    @XNodeList(value = "filter", type = String[].class, componentType = ResultsFilter.class)
+    protected ResultsFilter[] filters;
+
     @Override
     public String getId() {
         return name;
@@ -56,5 +60,9 @@ public class DeduplicationDescriptor implements Descriptor {
 
     public String getXPath() {
         return xpath;
+    }
+
+    public ResultsFilter[] getFilters() {
+        return filters;
     }
 }
