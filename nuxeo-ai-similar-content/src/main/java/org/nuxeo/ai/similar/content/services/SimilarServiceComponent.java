@@ -20,15 +20,19 @@
  */
 package org.nuxeo.ai.similar.content.services;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 public class SimilarServiceComponent extends DefaultComponent implements SimilarContentService {
+
+    private static final Logger log = LogManager.getLogger(SimilarServiceComponent.class);
 
     public static final String DEDUPLICATION_CONFIG_XP = "configuration";
 
@@ -40,6 +44,16 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             DeduplicationDescriptor desc = (DeduplicationDescriptor) contribution;
             dedupDescriptors.put(desc.getName(), desc);
         }
+    }
+
+    @Override
+    public boolean test(String config, DocumentModel doc) {
+        if (!dedupDescriptors.containsKey(config)) {
+            log.warn("No such configuration: {}", config);
+            return false;
+        }
+
+        return Stream.of(dedupDescriptors.get(config).getFilters()).allMatch(filter -> filter.accept(doc));
     }
 
     @Override
