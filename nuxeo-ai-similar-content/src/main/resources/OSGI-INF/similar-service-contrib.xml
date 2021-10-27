@@ -15,6 +15,12 @@
             name="main"
             query="SELECT * FROM Document WHERE ecm:mixinType = 'Picture' AND ecm:tag NOT IN ('not_duplicate')">
           <xpath>file:content</xpath>
+
+          <filter id="dedup">
+            <rule grant="true">
+              <type>Picture</type>
+            </rule>
+          </filter>
         </deduplication>
       </code>
     </documentation>
