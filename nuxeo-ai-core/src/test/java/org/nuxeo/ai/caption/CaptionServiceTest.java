@@ -69,7 +69,7 @@ public class CaptionServiceTest {
             String[] lines = br.lines().toArray(String[]::new);
             assertThat(lines).hasSize(4);
             assertThat(lines[0]).isEqualTo("WEBVTT");
-            assertThat(lines[2]).startsWith("00:00.00.000").endsWith("00:00.01.000");
+            assertThat(lines[2]).startsWith("00:00:00.000").endsWith("00:00:01.000");
         }
     }
 }
