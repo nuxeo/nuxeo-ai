@@ -44,7 +44,7 @@ public class CaptionServiceImpl implements CaptionService {
 
     protected static final String CAPTIONS_SUFFIX = ".vtt";
 
-    protected static final String TIME_FORMAT = "HH:mm.ss.SSS";
+    protected static final String TIME_FORMAT = "HH:mm:ss.SSS";
 
     protected static final byte[] NO_CAPTIONS_COMMENT = "NOTE no captions available\n".getBytes();
 
