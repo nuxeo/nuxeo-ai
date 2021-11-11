@@ -78,6 +78,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock-standalone</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.elasticsearch</groupId>
       <artifactId>nuxeo-elasticsearch-core</artifactId>
       <type>test-jar</type>
