@@ -23,6 +23,7 @@ package org.nuxeo.ai.similar.content.services;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor;

@@ -6,4 +6,3 @@ Bundle-Version: 1.0.0
 Bundle-Name: nuxeo-ai-similar-content
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.nuxeo.ai.similar-content-test;singleton=true
-Nuxeo-Component: OSGI-INF/pipeline-contrib.xml
