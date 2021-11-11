@@ -1,0 +1,7 @@
+<component name="org.nuxeo.ai.similar.content.operations">
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="operations">
+    <operation class="org.nuxeo.ai.similar.content.operation.DedupIndexOperation"/>
+    <operation class="org.nuxeo.ai.similar.content.operation.DedupDeleteIndexOperation"/>
+    <operation class="org.nuxeo.ai.similar.content.operation.FindSimilar"/>
+  </extension>
+</component>
