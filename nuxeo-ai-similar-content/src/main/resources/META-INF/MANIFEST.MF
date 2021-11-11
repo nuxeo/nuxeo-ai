@@ -6,6 +6,6 @@ Bundle-Version: 1.0.0
 Bundle-Name: nuxeo-ai-similar-content
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.nuxeo.ai.similar-content;singleton=true
-Nuxeo-Component: OSGI-INF/operation-contrib.xml,
-  OSGI-INF/similar-content-schema-contrib.xml,
-  OSGI-INF/similar-service-contrib.xml
+Nuxeo-Component: OSGI-INF/similar-content-schema-contrib.xml,
+  OSGI-INF/similar-service-contrib.xml,
+  OSGI-INF/similar-content-operations-contrib.xml
