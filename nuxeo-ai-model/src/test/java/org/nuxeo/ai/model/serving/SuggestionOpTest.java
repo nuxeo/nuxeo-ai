@@ -103,7 +103,7 @@ public class SuggestionOpTest {
         ctx.setInput(documentModel);
 
         Set<ModelProperty> props = Sets.newHashSet(ModelProperty.of("dc:description", "txt"));
-        when(modelServingService.getInputs(eq(documentModel))).thenReturn(props);
+        when(modelServingService.getInputs(eq(documentModel))).thenReturn(Collections.singleton(props));
         when(modelServingService.predict(eq(documentModel))).thenReturn(getSamplePrediction());
     }
 
@@ -170,7 +170,7 @@ public class SuggestionOpTest {
 
         Set<ModelProperty> props = Sets.newHashSet(ModelProperty.of("dc:title", "txt"),
                 ModelProperty.of("dc:description", "txt"));
-        when(modelServingService.getInputs(fileDoc)).thenReturn(props);
+        when(modelServingService.getInputs(fileDoc)).thenReturn(Collections.singleton(props));
 
         OperationContext opCtx = new OperationContext(session);
         opCtx.setInput(fileDoc);
