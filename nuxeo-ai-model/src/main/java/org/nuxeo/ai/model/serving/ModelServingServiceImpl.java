@@ -234,13 +234,24 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
-    public Set<Set<ModelProperty>> getInputs(DocumentModel document) {
+    public Set<Set<ModelProperty>> getGroupedInputs(DocumentModel document) {
         return filterPredicates.entrySet()
                                .stream()
                                .filter(e -> e.getValue().test(document))
                                .map(e -> models.get(e.getKey()))
                                .filter(Objects::nonNull)
                                .map(AIModel::getInputs)
+                               .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<ModelProperty> getFlatInputs(DocumentModel document) {
+        return filterPredicates.entrySet()
+                               .stream()
+                               .filter(e -> e.getValue().test(document))
+                               .map(e -> models.get(e.getKey()))
+                               .filter(Objects::nonNull)
+                               .flatMap(m -> m.getInputs().stream())
                                .collect(Collectors.toSet());
     }
 

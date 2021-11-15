@@ -65,7 +65,14 @@ public interface ModelServingService extends Reloadable {
      *
      * @return
      */
-    Set<Set<ModelProperty>> getInputs(DocumentModel document);
+    Set<Set<ModelProperty>> getGroupedInputs(DocumentModel document);
+
+    /**
+     * Get all the input properties for all models that match the provided document.
+     *
+     * @return
+     */
+    Set<ModelProperty> getFlatInputs(DocumentModel document);
 
     /**
      * For each running model, evaluate if the supplied document passes the predicate test for a model, if so call the

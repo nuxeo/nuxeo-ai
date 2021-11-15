@@ -27,7 +27,6 @@ import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,10 +86,7 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> options) {
             ModelServingService modelServingService = Framework.getService(ModelServingService.class);
             for (DocumentModel doc : loadDocuments(coreSession, ids)) {
-                Set<Set<ModelProperty>> modelsInputs = modelServingService.getInputs(doc);
-                Set<ModelProperty> inputs = modelsInputs.stream()
-                                                        .flatMap(Collection::stream)
-                                                        .collect(Collectors.toSet());
+                Set<ModelProperty> inputs = modelServingService.getFlatInputs(doc);
                 if (!inputs.isEmpty()) {
                     Set<PropertyType> inputPairs = inputs.stream()
                                                          .map(p -> PropertyType.of(p.getName(), p.getType()))

@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -231,17 +230,17 @@ public class TestModelServing {
         assertEquals(3, models.size());
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "FileRefDoc");
-        Set<Set<ModelProperty>> modelDefs = modelServingService.getInputs(testDoc);
+        Set<Set<ModelProperty>> modelDefs = modelServingService.getGroupedInputs(testDoc);
         assertEquals(2, modelDefs.size());
 
-        Set<ModelProperty> inputs = modelDefs.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        Set<ModelProperty> inputs = modelServingService.getFlatInputs(testDoc);
         assertEquals(4, inputs.size());
 
         testDoc = session.createDocumentModel("/", "My note Doc", "Note");
-        modelDefs = modelServingService.getInputs(testDoc);
+        modelDefs = modelServingService.getGroupedInputs(testDoc);
         assertEquals(1, modelDefs.size());
 
-        inputs = modelDefs.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        inputs = modelServingService.getFlatInputs(testDoc);
         assertEquals(1, inputs.size());
     }
 

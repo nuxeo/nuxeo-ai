@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -99,10 +98,7 @@ public class SuggestionOp {
     @OperationMethod
     public Blob run(DocumentModel doc) {
         if (updatedDoc != null) {
-            Set<ModelProperty> inputs = modelServingService.getInputs(doc)
-                                                           .stream()
-                                                           .flatMap(Collection::stream)
-                                                           .collect(Collectors.toSet());
+            Set<ModelProperty> inputs = modelServingService.getFlatInputs(doc);
             for (ModelProperty predicted : inputs) {
                 if (schemaManager.getField(predicted.getName()) == null) {
                     log.debug("Cannot apply field " + predicted.getName());
