@@ -28,9 +28,27 @@ import org.nuxeo.ecm.core.api.DocumentModel;
  */
 public interface SimilarContentService {
 
+    /**
+     *
+     * @param config
+     * @param doc
+     * @return
+     */
     boolean test(String config, DocumentModel doc);
 
+    boolean anyMatch(DocumentModel doc);
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     String getQuery(String name);
 
+    /**
+     *
+     * @param name
+     * @return
+     */
     String getXPath(String name);
 }
