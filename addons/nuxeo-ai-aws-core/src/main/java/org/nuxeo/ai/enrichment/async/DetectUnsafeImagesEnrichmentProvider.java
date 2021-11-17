@@ -23,6 +23,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -39,7 +41,11 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
+
 import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.ContentModerationDetection;
+import com.amazonaws.services.rekognition.model.ContentModerationSortBy;
+import com.amazonaws.services.rekognition.model.GetContentModerationRequest;
 import com.amazonaws.services.rekognition.model.GetContentModerationResult;
 import com.amazonaws.services.rekognition.model.ModerationLabel;
 
@@ -97,15 +103,32 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         return super.getRetryPolicy().abortOn(SdkClientException.class);
     }
 
-    public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            GetContentModerationResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
-                                                      .stream()
-                                                      .map(l -> newLabel(l.getModerationLabel(), l.getTimestamp()))
-                                                      .filter(Objects::nonNull)
-                                                      .collect(Collectors.toList());
+    public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName, String jobId) {
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
+        RekognitionService rs = Framework.getService(RekognitionService.class);
+        List<EnrichmentMetadata.Label> labels = new ArrayList<>();
+        List<ContentModerationDetection> nativeLabelObjects = new ArrayList<>();
+        GetContentModerationResult result = null;
+        do {
+            GetContentModerationRequest request = new GetContentModerationRequest().withJobId(
+                    jobId).withSortBy(ContentModerationSortBy.TIMESTAMP);
+
+            if (result != null && result.getNextToken() != null) {
+                request.withNextToken(result.getNextToken());
+            }
+            result = rs.getClient().getContentModeration(request);
+
+            List<EnrichmentMetadata.Label> currentPageLabels = result.getModerationLabels()
+                    .stream()
+                    .map(l -> newLabel(l.getModerationLabel(), l.getTimestamp()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            labels.addAll(currentPageLabels);
+            nativeLabelObjects.addAll(result.getModerationLabels());
+        } while (result.getNextToken() != null);
+
+        String raw = toJsonString(jg -> jg.writeObjectField("labels", nativeLabelObjects));
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(

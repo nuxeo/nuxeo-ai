@@ -19,20 +19,17 @@
  */
 package org.nuxeo.ai.rekognition.listeners;
 
-import static org.nuxeo.ai.enrichment.AbstractEnrichmentProvider.MAX_RESULTS;
 import static org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider.ENRICHMENT_NAME;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.rekognition.model.GetContentModerationRequest;
-import com.amazonaws.services.rekognition.model.GetContentModerationResult;
 
 /**
  * Receives a notification from the system to start detect of unsafe content in a video.
@@ -55,14 +52,9 @@ public class AsyncUnsafeResultListener extends BaseAsyncResultListener {
 
     @Override
     protected Collection<EnrichmentMetadata> getEnrichmentMetadata(String jobId, Map<String, Serializable> params) {
-        int max = (int) params.getOrDefault(MAX_RESULTS, 10);
-        GetContentModerationRequest request = new GetContentModerationRequest().withJobId(jobId).withMaxResults(max);
-
-        RekognitionService rs = Framework.getService(RekognitionService.class);
-        GetContentModerationResult result = rs.getClient().getContentModeration(request);
         AIComponent service = Framework.getService(AIComponent.class);
         DetectUnsafeImagesEnrichmentProvider es = (DetectUnsafeImagesEnrichmentProvider) service.getEnrichmentProvider(
                 ENRICHMENT_NAME);
-        return es.processResult((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), result);
+        return es.processResult((BlobTextFromDocument) params.get("doc"), (String) params.get("key"), jobId);
     }
 }
