@@ -23,12 +23,14 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
@@ -40,9 +42,13 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
+
 import com.amazonaws.SdkClientException;
+import com.amazonaws.services.rekognition.model.GetLabelDetectionRequest;
 import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
 import com.amazonaws.services.rekognition.model.Label;
+import com.amazonaws.services.rekognition.model.LabelDetection;
+import com.amazonaws.services.rekognition.model.LabelDetectionSortBy;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -104,13 +110,32 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
     }
 
     public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            GetLabelDetectionResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getLabels()
-                                                      .stream()
-                                                      .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
-                                                      .collect(Collectors.toList());
+            String jobId) {
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getLabels()));
+        RekognitionService rs = Framework.getService(RekognitionService.class);
+        List<EnrichmentMetadata.Label> labels = new ArrayList<>();
+        List<LabelDetection> nativeLabelObjects = new ArrayList<>();
+        GetLabelDetectionResult result = null;
+        do {
+            GetLabelDetectionRequest request = new GetLabelDetectionRequest().withJobId(
+                    jobId).withSortBy(LabelDetectionSortBy.TIMESTAMP);
+
+            if (result != null && result.getNextToken() != null) {
+                request.withNextToken(result.getNextToken());
+            }
+            result = rs.getClient().getLabelDetection(request);
+
+            List<EnrichmentMetadata.Label> currentPageLabels = result.getLabels()
+                    .stream()
+                    .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
+                    .collect(Collectors.toList());
+
+            labels.addAll(currentPageLabels);
+            nativeLabelObjects.addAll(result.getLabels());
+        } while (result.getNextToken() != null);
+
+
+        String raw = toJsonString(jg -> jg.writeObjectField("labels", nativeLabelObjects));
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(
