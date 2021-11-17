@@ -55,7 +55,6 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
 import org.nuxeo.ecm.core.api.IdRef;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 
 @Operation(id = FindSimilar.ID, category = "Insight", label = "Find duplicate documents")
@@ -95,7 +94,7 @@ public class FindSimilar {
     public List<DocumentModel> run(Blob blob) throws OperationException {
         if (blob.getLength() >= Long.parseLong(
                 Framework.getProperty(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE))) {
-            throw new OperationException("Blob is to large; size = " + blob.getLength());
+            throw new OperationException("Blob is too large; size = " + blob.getLength());
         }
 
         List<String> ids = findSimilarIds(null, blob);
@@ -110,7 +109,7 @@ public class FindSimilar {
         }
 
         String id = doc == null ? null : doc.getId();
-        TensorInstances tensor = constructTensor((ManagedBlob) blob, id);
+        TensorInstances tensor = constructTensor(blob, id);
 
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(UID, id);
@@ -141,7 +140,7 @@ public class FindSimilar {
         return session.getDocuments(refs.toArray(DocumentRef[]::new));
     }
 
-    protected TensorInstances constructTensor(ManagedBlob blob, String id) {
+    protected TensorInstances constructTensor(Blob blob, String id) {
         if (blob == null) {
             return null;
         }

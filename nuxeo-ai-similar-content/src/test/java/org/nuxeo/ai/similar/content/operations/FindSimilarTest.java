@@ -43,9 +43,7 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
-import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -73,9 +71,6 @@ public class FindSimilarTest {
     @Inject
     protected AutomationService automationService;
 
-    @Inject
-    protected BlobManager manager;
-
     @Test
     public void shouldRunOperationOnDocument() throws OperationException {
         DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
@@ -96,12 +91,9 @@ public class FindSimilarTest {
 
     @Test
     public void shouldRunOperationOnBlob() throws OperationException, IOException {
-        BlobProvider provider = manager.getBlobProvider("test");
         Blob textBlob = Blobs.createBlob("this is a blob");
-        Blob blob = blob(textBlob, provider.writeBlob(textBlob));
-
         DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
-        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) blob);
+        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
         fileDoc = session.createDocument(fileDoc);
         session.save();
 
@@ -109,7 +101,7 @@ public class FindSimilarTest {
         stubFor(WireMock.post(url).willReturn(okJson("[\"" + fileDoc.getId() + "\"]")));
 
         OperationContext ctx = new OperationContext(session);
-        ctx.setInput(blob);
+        ctx.setInput(textBlob);
         ctx.put("xpath", FILE_CONTENT);
         @SuppressWarnings("unchecked")
         List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
