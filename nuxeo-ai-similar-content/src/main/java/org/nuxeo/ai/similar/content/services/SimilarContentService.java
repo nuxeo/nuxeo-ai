@@ -29,26 +29,35 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 public interface SimilarContentService {
 
     /**
+     * Tests if given Document is allowed by given configuration
      *
-     * @param config
-     * @param doc
-     * @return
+     * @param config {@link String} configuration name; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}
+     * @param doc    {@link DocumentModel} Document to test
+     * @return true if the Document allowed, false otherwise
      */
     boolean test(String config, DocumentModel doc);
 
+    /**
+     * Tests given Document against all available configurations; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}
+     *
+     * @param doc {@link DocumentModel} Document to test
+     * @return true if the Document allowed, false otherwise
+     */
     boolean anyMatch(DocumentModel doc);
 
     /**
+     * Gets a query from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}
      *
-     * @param name
-     * @return
+     * @param name {@link String} configuration name
+     * @return {@link String} as an NXQL query
      */
     String getQuery(String name);
 
     /**
+     * Get XPath from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}
      *
-     * @param name
-     * @return
+     * @param name {@link String} configuration name
+     * @return {@link String} as XPath
      */
     String getXPath(String name);
 }

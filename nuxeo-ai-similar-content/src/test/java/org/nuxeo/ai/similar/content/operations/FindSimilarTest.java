@@ -105,7 +105,7 @@ public class FindSimilarTest {
         fileDoc = session.createDocument(fileDoc);
         session.save();
 
-        String url = "/api/v1/ai/dedup/mockTestProject/find/" + fileDoc.getId() + "/file:content" + "?distance=0";
+        String url = "/api/v1/ai/dedup/mockTestProject/find?distance=0&xpath=file:content";
         stubFor(WireMock.post(url).willReturn(okJson("[\"" + fileDoc.getId() + "\"]")));
 
         OperationContext ctx = new OperationContext(session);

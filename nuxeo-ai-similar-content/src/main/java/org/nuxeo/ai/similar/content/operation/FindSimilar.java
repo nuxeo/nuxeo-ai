@@ -23,13 +23,12 @@ package org.nuxeo.ai.similar.content.operation;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.DEFAULT_CONVERTER;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.base64EncodeBlob;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
+import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -42,7 +41,6 @@ import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.client.API;
 import org.nuxeo.ai.sdk.rest.client.InsightClient;
@@ -149,17 +147,7 @@ public class FindSimilar {
         }
 
         Map<String, TensorInstances.Tensor> props = new HashMap<>();
-        props.put(xpath, TensorInstances.Tensor.image(convertImageBlob(blob)));
+        props.put(xpath, TensorInstances.Tensor.image(resize(blob)));
         return new TensorInstances(id, singletonList(props));
-    }
-
-    protected String convertImageBlob(ManagedBlob blob) {
-        if (blob != null) {
-            // TODO: width and height should be derived from a configuration
-            Blob converted = EnrichmentUtils.convertImageBlob(DEFAULT_CONVERTER, blob, 299, 299, 0, "jpg");
-            return base64EncodeBlob(converted);
-        }
-
-        return null;
     }
 }
