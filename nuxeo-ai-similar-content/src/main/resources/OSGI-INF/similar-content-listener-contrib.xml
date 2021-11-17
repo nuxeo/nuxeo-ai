@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.similar.content.listeners">
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <listener name="dedupListener"
+              async="true"
+              postCommit="true"
+              priority="100"
+              class="org.nuxeo.ai.similar.content.listeners.DedupListener">
+      <event>documentCreated</event>
+      <event>beforeDocumentModification</event>
+      <event>documentRemoved</event>
+    </listener>
+  </extension>
+</component>
