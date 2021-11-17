@@ -36,6 +36,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @Features({ CoreFeature.class })
 @Deploy("org.nuxeo.ai.similar-content")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/dedup-config-test.xml")
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/disable-dedup-listener.xml")
 public class SimilarContentServiceTest {
 
     @Inject
