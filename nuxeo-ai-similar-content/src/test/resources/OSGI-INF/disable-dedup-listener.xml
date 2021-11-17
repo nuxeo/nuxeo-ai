@@ -1,0 +1,8 @@
+<component name="org.nuxeo.ai.similar.content.listener.disable">
+
+  <require>org.nuxeo.ai.similar.content.listeners</require>
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <listener name="dedupListener" enabled="false"/>
+  </extension>
+
+</component>

@@ -43,11 +43,11 @@ import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 
 /**
  * Index document(s) with a given xpath in dedup index on insight.
@@ -92,7 +92,7 @@ public class DedupIndexOperation {
         for (DocumentModel doc : docs) {
             params.put(UID, doc.getId());
             params.put(XPATH_PARAM, xpath);
-            TensorInstances instances = constructTensor(doc, (ManagedBlob) doc.getPropertyValue(xpath));
+            TensorInstances instances = constructTensor(doc, (Blob) doc.getPropertyValue(xpath));
             Boolean result = insightClient.api(API.Dedup.INDEX).call(params, instances);
             if (Boolean.FALSE.equals(result)) {
                 log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
@@ -115,7 +115,7 @@ public class DedupIndexOperation {
         session.saveDocument(doc);
     }
 
-    protected TensorInstances constructTensor(DocumentModel doc, ManagedBlob blob) {
+    protected TensorInstances constructTensor(DocumentModel doc, Blob blob) {
         if (blob == null) {
             return null;
         }

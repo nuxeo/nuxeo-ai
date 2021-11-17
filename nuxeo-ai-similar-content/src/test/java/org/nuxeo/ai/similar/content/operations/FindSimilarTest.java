@@ -59,6 +59,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/cloud-client-test.xml")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/dedup-config-test.xml")
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/disable-dedup-listener.xml")
 public class FindSimilarTest {
 
     @Rule
