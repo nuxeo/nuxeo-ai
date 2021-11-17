@@ -20,6 +20,7 @@
  */
 package org.nuxeo.ai.similar.content.services;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -54,6 +55,13 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         }
 
         return Stream.of(dedupDescriptors.get(config).getFilters()).allMatch(filter -> filter.accept(doc));
+    }
+
+    @Override
+    public boolean anyMatch(DocumentModel doc) {
+        return dedupDescriptors.values()
+                               .stream()
+                               .anyMatch(d -> Arrays.stream(d.getFilters()).allMatch(filter -> filter.accept(doc)));
     }
 
     @Override
