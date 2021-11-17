@@ -61,8 +61,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     public boolean anyMatch(DocumentModel doc) {
         return dedupDescriptors.values()
                                .stream()
-                               .flatMap(d -> Arrays.stream(d.getFilters()))
-                               .anyMatch(filter -> filter.accept(doc));
+                               .anyMatch(d -> Arrays.stream(d.getFilters()).allMatch(filter -> filter.accept(doc)));
     }
 
     @Override
