@@ -34,6 +34,8 @@ public final class PictureUtils {
 
     public static long MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
+    public static long HEADER_OFFSET = 80_000;
+
     private PictureUtils() {
     }
 
@@ -49,9 +51,9 @@ public final class PictureUtils {
                 ImagingService is = Framework.getService(ImagingService.class);
                 ImageInfo info = is.getImageInfo(blob);
 
-                double ratio = max / (1.f * size);
-                int width = (int) (info.getWidth() * ratio);
-                int height = (int) (info.getHeight() * ratio);
+                double sqrtRatio = Math.sqrt((max - HEADER_OFFSET) / (1.f * size));
+                int width = (int) (info.getWidth() * sqrtRatio);
+                int height = (int) (info.getHeight() * sqrtRatio);
                 blob = EnrichmentUtils.convertImageBlob(DEFAULT_CONVERTER, blob, width, height, info.getDepth(),
                         info.getFormat());
             }

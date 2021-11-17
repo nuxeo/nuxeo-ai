@@ -22,6 +22,7 @@
 package org.nuxeo.ai.similar.content.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.nuxeo.ai.similar.content.utils.PictureUtils.HEADER_OFFSET;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,6 +68,6 @@ public class PictureUtilsTest {
         assertThat(resized).isNotBlank();
         byte[] decodedBuf = Base64.decodeBase64(resized);
         Blob decoded = Blobs.createBlob(decodedBuf);
-        assertThat(decoded.getLength()).isLessThanOrEqualTo(maxSize);
+        assertThat(decoded.getLength()).isBetween(maxSize - HEADER_OFFSET, maxSize);
     }
 }
