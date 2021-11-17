@@ -76,9 +76,6 @@ public class FindSimilar {
     @Param(name = "xpath", required = false)
     protected String xpath = FILE_CONTENT;
 
-    @Param(name = "max", required = false)
-    protected long max;
-
     @OperationMethod
     public List<DocumentModel> run(DocumentModel doc) throws OperationException {
         if (!scs.anyMatch(doc)) {

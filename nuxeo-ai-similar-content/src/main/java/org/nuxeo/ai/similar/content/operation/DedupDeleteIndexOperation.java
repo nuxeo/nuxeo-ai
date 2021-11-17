@@ -21,14 +21,11 @@ package org.nuxeo.ai.similar.content.operation;
 
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
-import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-
 import javax.ws.rs.core.Response;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
@@ -71,27 +68,26 @@ public class DedupDeleteIndexOperation {
 
     @OperationMethod
     public Response run(DocumentModelList docs) throws IOException {
-        if(docs == null || docs.isEmpty()){
+        if (docs == null || docs.isEmpty()) {
             log.error("Documents list in input should not be empty - [xpath={}]", xpath);
             return Response.serverError().build();
         }
 
         InsightClient insightClient = client.getClient(session).orElse(null);
-        if (!client.isAvailable(session) || insightClient==null) {
+        if (!client.isAvailable(session) || insightClient == null) {
             log.error("Cannot access Insight Client - [docs={},xpath={}]", docs, xpath);
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         HashMap<String, Serializable> params = new HashMap<>();
-        for(DocumentModel doc: docs){
+        for (DocumentModel doc : docs) {
             params.put(UID, doc.getId());
-            params.put(XPATH_PARAM, xpath);
-            Boolean result = insightClient.api(API.Dedup.DELETE).call(params);
-            if(Boolean.FALSE.equals(result)){
-                log.error("Couldn't trigger dedup index - [docId={}, xpath={}]",doc.getId(), xpath);
-            }else{
-                doc.removeFacet(DEDUPLICATION_FACET);
-                session.saveDocument(doc);
+            if (xpath != null) {
+                params.put(XPATH_PARAM, xpath);
+            }
+            Boolean result = insightClient.api(API.Dedup.DELETE).call(params, "{}");
+            if (Boolean.FALSE.equals(result)) {
+                log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
             }
         }
 
