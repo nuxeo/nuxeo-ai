@@ -42,6 +42,7 @@ public final class PictureUtils {
     }
 
     public static String resize(Blob blob, long max) {
+        assert max > 0;
         if (blob != null) {
             long size = blob.getLength();
             if (size > max) {
