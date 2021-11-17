@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.similar.content.default.config" version="1.0">
+
+  <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="configuration">
+    <!-- Deduplication Configuration by default -->
+    <deduplication name="dedup-default-config">
+      <xpath>file:content</xpath>
+      <filter id="dedup-default-filter">
+        <rule grant="true">
+          <type>File</type>
+        </rule>
+      </filter>
+    </deduplication>
+  </extension>
+
+</component>
