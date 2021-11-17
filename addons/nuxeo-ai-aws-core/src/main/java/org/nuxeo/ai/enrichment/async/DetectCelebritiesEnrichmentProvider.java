@@ -24,6 +24,7 @@ import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENC
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -41,9 +43,12 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
+
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.CelebrityDetail;
 import com.amazonaws.services.rekognition.model.CelebrityRecognition;
+import com.amazonaws.services.rekognition.model.CelebrityRecognitionSortBy;
+import com.amazonaws.services.rekognition.model.GetCelebrityRecognitionRequest;
 import com.amazonaws.services.rekognition.model.GetCelebrityRecognitionResult;
 
 /**
@@ -84,16 +89,32 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
      * Processes the result of the call to AWS
      */
     public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
-            GetCelebrityRecognitionResult result) {
-        List<AIMetadata.Tag> tags = result.getCelebrities()
-                                          .stream()
-                                          .map(c -> newCelebrityTag(c.getCelebrity(), c.getTimestamp()))
-                                          .filter(Objects::nonNull)
-                                          .collect(Collectors.toList());
+            String jobId) {
+        RekognitionService rs = Framework.getService(RekognitionService.class);
+        List<AIMetadata.Tag> tags = new ArrayList<>();
+        List<CelebrityRecognition> nativeCelebrityObjects = new ArrayList<>();
+        GetCelebrityRecognitionResult result = null;
+        do {
+            GetCelebrityRecognitionRequest request = new GetCelebrityRecognitionRequest().withJobId(
+                    jobId).withSortBy(CelebrityRecognitionSortBy.TIMESTAMP);
+
+            if (result != null && result.getNextToken() != null) {
+                request.withNextToken(result.getNextToken());
+            }
+            result = rs.getClient().getCelebrityRecognition(request);
+
+            List<AIMetadata.Tag> currentPageTags = result.getCelebrities()
+                                             .stream()
+                                             .map(c -> newCelebrityTag(c.getCelebrity(), c.getTimestamp()))
+                                             .filter(Objects::nonNull)
+                                             .collect(Collectors.toList());
+
+            tags.addAll(currentPageTags);
+            nativeCelebrityObjects.addAll(result.getCelebrities());
+        } while (result.getNextToken() != null);
 
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("celebrityFaces",
-                    result.getCelebrities().stream().map(CelebrityRecognition::getCelebrity));
+            jg.writeObjectField("celebrityFaces", nativeCelebrityObjects.stream().map(CelebrityRecognition::getCelebrity));
             jg.writeObjectField("unrecognizedFaces", Collections.emptyList());
         });
 
