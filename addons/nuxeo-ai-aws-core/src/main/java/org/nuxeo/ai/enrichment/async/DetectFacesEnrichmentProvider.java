@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -42,10 +43,13 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
+
 import com.amazonaws.services.rekognition.model.Attribute;
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.FaceAttributes;
 import com.amazonaws.services.rekognition.model.FaceDetail;
+import com.amazonaws.services.rekognition.model.FaceDetection;
+import com.amazonaws.services.rekognition.model.GetFaceDetectionRequest;
 import com.amazonaws.services.rekognition.model.GetFaceDetectionResult;
 
 /**
@@ -93,19 +97,36 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
     /**
      * Processes the result of the call to AWS.
      */
-    public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
-            GetFaceDetectionResult result) {
+    public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName, String jobId) {
+
+        RekognitionService rs = Framework.getService(RekognitionService.class);
+        List<AIMetadata.Tag> tags = new ArrayList<>();
+        List<FaceDetection> nativeFaceObjects = new ArrayList<>();
+        GetFaceDetectionResult result = null;
+        do {
+            GetFaceDetectionRequest request = new GetFaceDetectionRequest().withJobId(jobId);
+
+            if (result != null && result.getNextToken() != null) {
+                request.withNextToken(result.getNextToken());
+            }
+            result = rs.getClient().getFaceDetection(request);
+
+            List<AIMetadata.Tag> currentPageTags = result.getFaces()
+                    .stream()
+                    .map(c -> newFaceTag(c.getFace(), c.getTimestamp()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            tags.addAll(currentPageTags);
+            nativeFaceObjects.addAll(result.getFaces());
+        } while (result.getNextToken() != null);
+
+
         List<EnrichmentMetadata> metadata = new ArrayList<>();
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("faceDetails", result.getFaces());
+            jg.writeObjectField("faceDetails", nativeFaceObjects);
         });
         String rawKey = saveJsonAsRawBlob(raw);
-
-        List<AIMetadata.Tag> tags = result.getFaces()
-                                          .stream()
-                                          .map(f -> newFaceTag(f.getFace(), f.getTimestamp()))
-                                          .filter(Objects::nonNull)
-                                          .collect(Collectors.toList());
 
         metadata.add(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
                                                                                 .withRawKey(rawKey)
