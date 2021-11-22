@@ -3,5 +3,6 @@
     <operation class="org.nuxeo.ai.similar.content.operation.DedupIndexOperation"/>
     <operation class="org.nuxeo.ai.similar.content.operation.DedupDeleteIndexOperation"/>
     <operation class="org.nuxeo.ai.similar.content.operation.FindSimilar"/>
+    <operation class="org.nuxeo.ai.similar.content.operation.ProcessDuplicates"/>
   </extension>
 </component>
