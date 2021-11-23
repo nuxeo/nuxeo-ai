@@ -23,6 +23,7 @@ limitations under the License.
 <link rel="import" href="nuxeo-ai-bulk-remove-button.html">
 <link rel="import" href="nuxeo-ai-export-progress.html">
 <link rel="import" href="nuxeo-ai-suggestion-formatters.html">
+<link rel="import" href="nuxeo-ai-dedup-grid.html">
 <link rel="import" href="formatters/nuxeo-document-ai-suggestion-details.html">
 <link rel="import" href="formatters/nuxeo-directory-ai-suggestion-formatter.html">
 <link rel="import" href="formatters/nuxeo-user-group-ai-suggestion-formatter.html">
@@ -242,6 +243,7 @@ limitations under the License.
             },
         };
     })();
+    // Listener for suggestions management
     document.addEventListener('document-layout-changed', (e) => {
         if (e.detail.layout === 'metadata' || e.detail.layout === 'view') {
             return;
@@ -255,5 +257,146 @@ limitations under the License.
             layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
             AISuggestionManager.updateWidgetSuggestions(e.detail.element);
         });
+    });
+
+    AIDeduplicationManager = (() => {
+        let deduplicationWidget = {};
+        let op = null;
+        let _dedupDebouncer = null;
+
+        function _clearSimilars() {
+            if (deduplicationWidget) {
+                deduplicationWidget.similars = [];
+            }
+        }
+
+        function _findSimilarsWithBatch(doc, value) {
+            if (!op) {
+                op = document.createElement('nuxeo-operation');
+                op.op = 'AI.DeduplicationFindSimilar';
+                document.querySelector('nuxeo-app').appendChild(op);
+            }
+            let batchInfo = {};
+            // LTS 2019
+            batchInfo.batchId = doc.properties['file:content']['upload-batch'];
+            batchInfo.fileId = doc.properties['file:content']['upload-fileId'];
+            if (!batchInfo) {
+                if (!value) {
+                    return;
+                }
+                // LTS 2020
+                batchInfo.batchId = value.batchId;
+                batchInfo.fileId = value.fileId;
+            }
+            if (!batchInfo.batchId) {
+                return;
+            }
+            op.input = {};
+            op.headers = {
+                'X-Batch-No-Drop': 'true',
+                'enrichers.document': 'thumbnail, documentURL'
+            };
+            op.params = {
+                batchId: batchInfo.batchId,
+                fileId: batchInfo.fileId,
+            };
+            return op.execute();
+        }
+
+        function _findSimilarsWithProperty(doc, propTarget) {
+            if (!op) {
+                op = document.createElement('nuxeo-operation');
+                op.op = 'AI.DeduplicationFindSimilar';
+                document.querySelector('nuxeo-app').appendChild(op);
+            }
+            op.headers = {'enrichers.document': 'thumbnail, documentURL'};
+            op.input = doc;
+            op.params = {
+                xpath: propTarget,
+            };
+            return op.execute();
+        }
+
+        return {
+            /**
+             * For a given layout:
+             * 1) fetch similars for the blob freshly uploaded
+             * 2) update similars on deduplication widget in create or edit mode
+             */
+            updateCreateEditWidget: (layout, path) => {
+                if (!layout || !layout.document || !path || !path.startsWith('document.properties')) {
+                    return;
+                }
+                const propertyChanged = path.replace('document.properties.', '');
+                if(!deduplicationWidget){
+                    return;
+                }
+                deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
+                if (!deduplicationWidget || propertyChanged !== deduplicationWidget.property) {
+                    return;
+                }
+                _clearSimilars();
+                const batchValue = layout.root.querySelector('nuxeo-dropzone').value;
+                _dedupDebouncer = Polymer.Debouncer.debounce(
+                    _dedupDebouncer, Polymer.Async.timeOut.after(500),
+                    () => {
+                        _findSimilarsWithBatch(layout.document, batchValue).then((response) => {
+                            deduplicationWidget.set('similars', response.entries);
+                        }).catch((error) => {
+                            console.error("error while fetching similars: ", error);
+                        });
+                    });
+            },
+            /**
+             * For a given layout:
+             * 1) fetch similars for the document blob of the given property
+             * 2) update similars on deduplication widget in metadata mode
+             */
+            updateMetadataWidget: (layout) => {
+                if (!layout || !layout.document) {
+                    return;
+                }
+                deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
+                if (!deduplicationWidget){
+                    return;
+                }
+                const propTarget = deduplicationWidget.property;
+                if (!propTarget) {
+                    return;
+                }
+                _clearSimilars();
+                _dedupDebouncer = Polymer.Debouncer.debounce(
+                    _dedupDebouncer, Polymer.Async.timeOut.after(500),
+                    () => {
+                        _findSimilarsWithProperty(layout.document, propTarget).then((response) => {
+                            deduplicationWidget.set('similars', response.entries);
+                        }).catch((error) => {
+                            console.error("error while fetching similars: ", error);
+                        });
+                    });
+            },
+        };
+    })();
+    // Listener for deduplication management
+    document.addEventListener('document-layout-changed', (e) => {
+        const layoutName = e.detail.layout;
+        if (layoutName === 'view' || layoutName === 'import') {
+            return;
+        }
+        const layout = e.detail.element;
+        if (!layout) {
+            return;
+        }
+        if (layoutName === 'metadata') {
+            layout.__aiDocumentChanged = (event) => AIDeduplicationManager.updateMetadataWidget(layout);
+            layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
+            AIDeduplicationManager.updateMetadataWidget(e.detail.element);
+        } else {
+            customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
+                layout.__aiDocumentChanged = (event) => AIDeduplicationManager.updateCreateEditWidget(layout, event.path);
+                layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
+                AIDeduplicationManager.updateCreateEditWidget(e.detail.element);
+            });
+        }
     });
 </script>
