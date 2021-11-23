@@ -1,0 +1,310 @@
+<!--
+@license
+(C) Copyright Nuxeo Corp. (http://nuxeo.com/)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]]/>
+
+-->
+<dom-module id="nuxeo-ai-dedup-grid">
+  <template>
+    <style>
+        :host {
+            outline: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        a {
+            @apply --nuxeo-link;
+        }
+
+        .bubbleBox {
+            display: block;
+            margin: 0 0.4em 0.8em;
+            position: relative;
+            width: 220px;
+            height: 260px;
+            background-color: var(--nuxeo-box);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.04);
+            padding: 0;
+            filter: 0.1s ease-out, filter 0.1s ease-out;
+            -webkit-filter: 0.1s ease-out, filter 0.1s ease-out;
+            border: 2px solid transparent;
+        }
+
+        .bubbleBox:hover,
+        .bubbleBox:focus {
+            z-index: 500;
+            border: 2px solid var(--nuxeo-link-hover-color);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.04);
+        }
+
+        .bubbleBox .title {
+            margin-bottom: 0.4em;
+        }
+
+        .bubbleBox:hover .title {
+            color: var(--nuxeo-link-hover-color);
+        }
+
+        .thumbnailContainer {
+            background-color: rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: 190px;
+            position: relative;
+        }
+
+        .thumbnailContainer img {
+            height: auto;
+            width: auto;
+            max-height: 100%;
+            max-width: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+        }
+
+        .dataContainer {
+            padding: 0.3em 0.8em;
+        }
+
+        .dataContainer p {
+            margin: 0 0 0.4em;
+            font-size: 0.75rem;
+        }
+
+        .bubbleBox .select {
+            display: none;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            border: 2px solid #ddd;
+            background-color: var(--nuxeo-box);
+            z-index: 2;
+            border-radius: 3em;
+        }
+
+        .select paper-icon-button {
+            margin: 0;
+            padding: 0.3em;
+            box-sizing: border-box;
+        }
+
+        .bubbleBox .select,
+        .select paper-icon-button {
+            width: 2.5em;
+            height: 2.5em;
+        }
+
+        .select:hover paper-icon-button {
+            color: #fff;
+        }
+
+        .title {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            display: block;
+        }
+
+        .bubbleBox .actions {
+            display: none;
+            background-color: var(--nuxeo-box);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            min-height: 2.5em;
+        }
+
+        .actions paper-icon-button iron-icon {
+            @apply --nuxeo-action;
+        }
+
+        .actions paper-icon-button:hover iron-icon {
+            @apply --nuxeo-action-hover;
+        }
+
+        .bubbleBox:hover .actions,
+        .bubbleBox:hover .select,
+        .bubbleBox[selection-mode] .select {
+            display: block;
+        }
+
+        .bubbleBox:hover .select:hover {
+            border: 2px solid var(--nuxeo-button-primary);
+            background-color: var(--nuxeo-button-primary);
+        }
+
+        :host([selected]) .bubbleBox .select,
+        :host([selected]) .bubbleBox:hover .select:hover {
+            border: 2px solid var(--nuxeo-grid-selected);
+            background-color: var(--nuxeo-grid-selected);
+            display: block;
+        }
+
+        :host([selected]) .select paper-icon-button {
+            color: #fff;
+        }
+
+        :host([selected]) .bubbleBox {
+            border: 2px solid var(--nuxeo-grid-selected);
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.04);
+        }
+
+        :host(.droptarget-hover) .bubbleBox {
+            border: 2px dashed var(--nuxeo-grid-selected);
+        }
+    </style>
+
+    <nuxeo-operation id="findSimilar" op="Insight.FindSimilar"></nuxeo-operation>
+    <nuxeo-operation id="deleteOp" op="Document.Delete" sync-indexing=""></nuxeo-operation>
+
+    <div>
+      <p>Bandeau: [[duplicates.length]]</p>
+    </div>
+    <template is="dom-if" if="[[_hasDuplicates()]]">
+      <template is="dom-repeat" items="[[duplicates]]">
+        <div class="bubbleBox grid-box" selection-mode$="[[selectionMode]]">
+          <div class="thumbnailContainer" on-tap="_navigate">
+            <img src="[[_thumbnail(item)]]" alt$="[[item.title]]"/>
+          </div>
+          <template is="dom-if" if="[[_hasDocument(item)]]">
+            <a class="title" href$="[[urlFor(item)]]" on-tap="_navigate">
+              <div class="dataContainer">
+                <div class="title" id="title">[[item.title]]</div>
+                <nuxeo-tag>[[formatDocType(item.type)]]</nuxeo-tag>
+                <nuxeo-tooltip for="title">[[item.title]]</nuxeo-tooltip>
+              </div>
+            </a>
+            <div class="actions">
+              <nuxeo-favorites-toggle-button document="[[item]]"></nuxeo-favorites-toggle-button>
+              <nuxeo-download-button document="[[item]]"></nuxeo-download-button>
+              <div class="action" on-click="_delete">
+                <paper-icon-button icon="[[icon]]" noink="" id="deleteButtonDedup"></paper-icon-button>
+                <span class="label" hidden$="[[!showLabel]]">[[_label]]</span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+    </template>
+  </template>
+
+  <script>
+      {
+          class AIDedupGrid extends Polymer.mixinBehaviors([Polymer.IronFormElementBehavior, Nuxeo.FormatBehavior, Nuxeo.FormatBehavior, Nuxeo.RoutingBehavior], Nuxeo.Element) {
+
+              static get is() {
+                  return 'nuxeo-ai-dedup-grid';
+              }
+
+              static get properties() {
+                  return {
+                      doc: {
+                          type: Object,
+                          observer: '_findSimilar',
+                      },
+                      property: {
+                          type: String,
+                          value: 'file:content',
+                      },
+                      duplicates: {
+                          type: Array,
+                          value: [],
+                      }
+                  }
+              }
+
+              connectedCallback() {
+                  super.connectedCallback();
+                  window.addEventListener('document-updated', this._findSimilar(this.doc));
+              }
+
+              disconnectedCallback() {
+                  super.disconnectedCallback();
+                  window.removeEventListener('document-updated', this._findSimilar(this.doc));
+              }
+
+              _thumbnail(doc) {
+                  return doc &&
+                  doc.uid &&
+                  doc.contextParameters &&
+                  doc.contextParameters.thumbnail &&
+                  doc.contextParameters.thumbnail.url
+                      ? doc.contextParameters.thumbnail.url
+                      : '';
+              }
+
+              _findSimilar(document) {
+                  if (document) {
+                      const property = document.properties[this.property];
+                      // if there is no blob on this metadata we don't suggest anything
+                      if (property) {
+                          this.$.findSimilar.input = property;
+                          this.$.findSimilar.params = {
+                              xpath: this.property,
+                          };
+                          this.$.findSimilar.execute().then((response) => {
+                              // check when to reset data if there is no response
+                              this.duplicates = response;
+                          }).catch((e) => {
+                              console.error("An error happened while getting the duplicates", e)
+                          })
+                      }
+                  }
+              }
+
+              _navigate() {
+                  this.fire('navigate', {item: this.doc, index: this.index});
+              }
+
+              _delete() {
+                  if (!confirm(this.i18n('deleteButton.confirm'))) {
+                      return;
+                  }
+                  const op = this.$.deleteOp;
+                  op.execute().then(() => {
+                      this.dispatchEvent(new CustomEvent('document-deleted', {
+                          composed: true,
+                          bubbles: true,
+                          detail: {doc: this.document},
+                      }));
+                  }).catch((error) => {
+                      this.dispatchEvent(new CustomEvent('document-deleted', {
+                          composed: true,
+                          bubbles: true,
+                          detail: {doc: this.document, error},
+                      }));
+                  });
+              }
+
+              _hasDuplicates() {
+                  return this.duplicates.length !== 0;
+              }
+          }
+
+          customElements.define(AIDedupGrid.is, AIDedupGrid);
+          Nuxeo.AIDedupGrid = AIDedupGrid;
+      }
+  </script>
+</dom-module>
