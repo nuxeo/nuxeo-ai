@@ -45,6 +45,8 @@ public interface SimilarContentService {
      */
     boolean anyMatch(DocumentModel doc);
 
+    String getOperationID();
+
     /**
      * Gets a query from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}
      *

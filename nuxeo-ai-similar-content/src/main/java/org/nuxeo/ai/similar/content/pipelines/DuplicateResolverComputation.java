@@ -21,15 +21,22 @@
 package org.nuxeo.ai.similar.content.pipelines;
 
 import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.sdk.objects.deduplication.SimilarTuple;
+import org.nuxeo.ai.similar.content.pojo.SimilarTupleContainer;
+import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DuplicateResolverComputation extends AbstractComputation {
@@ -44,23 +51,35 @@ public class DuplicateResolverComputation extends AbstractComputation {
 
     @Override
     public void processRecord(ComputationContext ctx, String s, Record record) {
-        SimilarTuple tuple;
+        SimilarTupleContainer container;
         try {
-            tuple = LOCAL_OM.readValue(record.getData(), SimilarTuple.class);
+            container = LOCAL_OM.readValue(record.getData(), SimilarTupleContainer.class);
         } catch (IOException e) {
             throw new NuxeoException(e);
         }
 
+        SimilarTuple tuple = container.getTuple();
+
         OperationContext opCtx = new OperationContext();
-        opCtx.setInput(tuple.getDocumentId());
-        opCtx.put("similar", tuple.getSimilarDocumentIds());
+        opCtx.setInput(new IdRef(tuple.getDocumentId()));
+        opCtx.put("similar", tuple.getSimilarDocuments());
         opCtx.put("xpath", tuple.getXpath());
 
-        AutomationService automation = Framework.getService(AutomationService.class);
-        try {
-            automation.run(opCtx, "");
-        } catch (OperationException e) {
-            throw new NuxeoException(e);
+        SimilarContentService scs = Framework.getService(SimilarContentService.class);
+        String oid = scs.getOperationID();
+        if (StringUtils.isEmpty(oid)) {
+            throw new NuxeoException("No Deduplication operation is registered");
         }
+
+        AutomationService automation = Framework.getService(AutomationService.class);
+        CoreSession session = CoreInstance.getCoreSessionSystem(container.getRepository(), container.getUser());
+        opCtx.setCoreSession(session);
+        TransactionHelper.runInNewTransaction(() -> {
+            try {
+                automation.run(opCtx, oid);
+            } catch (OperationException e) {
+                throw new NuxeoException(e);
+            }
+        });
     }
 }

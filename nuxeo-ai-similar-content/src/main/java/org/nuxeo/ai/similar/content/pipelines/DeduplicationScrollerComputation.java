@@ -21,6 +21,7 @@
 package org.nuxeo.ai.similar.content.pipelines;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.sdk.rest.Common.Headers.SCROLL_ID_HEADER;
 
@@ -36,6 +37,7 @@ import org.nuxeo.ai.sdk.objects.deduplication.ScrollableResult;
 import org.nuxeo.ai.sdk.objects.deduplication.SimilarTuple;
 import org.nuxeo.ai.sdk.rest.client.API;
 import org.nuxeo.ai.sdk.rest.client.InsightClient;
+import org.nuxeo.ai.similar.content.pojo.SimilarTupleContainer;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -72,13 +74,13 @@ public class DeduplicationScrollerComputation extends AbstractComputation {
         try {
             ScrollableResult result = null;
             do {
-                String scrollId = result != null ? result.getScrollId() : null;
-                Map<String, Serializable> params = singletonMap(SCROLL_ID_HEADER, scrollId);
+                Map<String, Serializable> params =
+                        result != null ? singletonMap(SCROLL_ID_HEADER, result.getScrollId()) : emptyMap();
                 result = insight.api(API.Dedup.ALL).call(params);
                 if (result != null) {
                     List<SimilarTuple> tuples = result.getResult();
                     for (SimilarTuple tuple : tuples) {
-                        byte[] bytes = LOCAL_OM.writeValueAsBytes(tuple);
+                        byte[] bytes = LOCAL_OM.writeValueAsBytes(SimilarTupleContainer.of(user, repo, tuple));
                         ctx.produceRecord(OUTPUT_1, tuple.getDocumentId(), bytes);
                     }
                     ctx.askForCheckpoint();
@@ -88,5 +90,7 @@ public class DeduplicationScrollerComputation extends AbstractComputation {
             log.error("Could not execute Dedup API call", e);
             throw new NuxeoException(e);
         }
+
+        ctx.askForCheckpoint();
     }
 }

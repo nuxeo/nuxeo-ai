@@ -21,11 +21,20 @@
 
 package org.nuxeo.ai.similar.content.pipelines;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.nuxeo.ai.sdk.rest.Common.Headers.SCROLL_ID_HEADER;
 import static org.nuxeo.ai.similar.content.pipelines.DeduplicationScrollerComputation.SCROLLER_COMPUTATION_NAME;
+import static org.nuxeo.ai.similar.content.pipelines.DuplicateResolverComputation.RESOLVER_COMPUTE_NAME;
 import static org.nuxeo.ai.similar.content.pipelines.DuplicationPipeline.PIPELINE_NAME;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.similar.content.operation.ProcessDuplicates;
@@ -34,10 +43,11 @@ import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
@@ -45,8 +55,11 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-
-import net.sf.ehcache.util.TimeUtil;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.matching.EqualToPattern;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, CoreBulkFeature.class })
@@ -55,8 +68,14 @@ import net.sf.ehcache.util.TimeUtil;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/cloud-client-test.xml")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/dedup-config-test.xml")
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/operations-test-contrib.xml")
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/disable-dedup-listener.xml")
 @RepositoryConfig(cleanup = Granularity.METHOD)
 public class DeduplicationPipelineTest {
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(
+            options().extensions(new ResponseTemplateTransformer(true)).port(5089));
 
     @Inject
     protected AutomationService as;
@@ -69,15 +88,67 @@ public class DeduplicationPipelineTest {
 
     @Test
     public void shouldScrollThroughTuples() throws OperationException, InterruptedException {
+        DocumentModel base = session.createDocumentModel("/", "base_doc", "File");
+        base = session.createDocument(base);
+
+        List<String> ids = new ArrayList<>(5);
+        for (int i = 0; i < 5; i++) {
+            DocumentModel doc = session.createDocumentModel("/", "doc" + i, "File");
+            doc = session.createDocument(doc);
+            ids.add(doc.getId());
+        }
+
+        txf.nextTransaction();
+
+        StringBuilder response = new StringBuilder("{\n" //
+                + "    \"scrollId\": \"testScrollId\",\n"//
+                + "    \"result\": [\n"//
+                + "        {\n" //
+                + "            \"documentId\": \"" + base.getId() + "\",\n"//
+                + "            \"xpath\": \"file:content\",\n" //
+                + "            \"similarDocuments\": [\n");//
+
+        for (String id : ids) {
+            response.append("{\n" //
+                    + "\"").append(id).append("\": \"file:content\"\n" //
+            ).append("},\n");//
+        }
+
+        response.deleteCharAt(response.length() - 2); // remove comma
+        response.append("]\n" //
+                + "        }\n" //
+                + "    ]\n" //
+                + "}");
+
+        stubFor(WireMock.get("/api/v1/ai/dedup/mockTestProject/similars")
+                        .withHeader(SCROLL_ID_HEADER, StringValuePattern.ABSENT)
+                        .willReturn(okJson(response.toString())));
+        // Second stub is intended for mimicking the end of the scroller
+        String emptyResponse = "{\n" //
+                + "    \"scrollId\": \"testScrollId\",\n"//
+                + "    \"result\": [\n"//
+                + "    ]\n" //
+                + "}";
+        stubFor(WireMock.get("/api/v1/ai/dedup/mockTestProject/similars")
+                        .withHeader(SCROLL_ID_HEADER, new EqualToPattern("testScrollId", false))
+                        .willReturn(okJson(emptyResponse)));
+
         OperationContext ctx = new OperationContext(session);
         as.run(ctx, ProcessDuplicates.ID);
 
         txf.nextTransaction();
 
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        awaitPipeline(manager, SCROLLER_COMPUTATION_NAME, Duration.ofSeconds(10));
+        txf.nextTransaction();
+        awaitPipeline(manager, RESOLVER_COMPUTE_NAME, Duration.ofSeconds(10));
 
-        long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5);
-        while (manager.getLag(PIPELINE_NAME, SCROLLER_COMPUTATION_NAME).lag() > 0) {
+        assertThat(ids.stream().noneMatch(id -> session.exists(new IdRef(id)))).isTrue();
+    }
+
+    private void awaitPipeline(LogManager manager, String computation, Duration duration) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + duration.toMillis();
+        while (manager.getLag(PIPELINE_NAME, computation).lag() > 0) {
             if (System.currentTimeMillis() > deadline) {
                 break;
             }

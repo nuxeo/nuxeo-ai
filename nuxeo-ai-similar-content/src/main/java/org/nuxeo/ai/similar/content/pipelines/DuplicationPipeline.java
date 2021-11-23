@@ -43,7 +43,7 @@ public class DuplicationPipeline implements StreamProcessorTopology {
                        .addComputation(() -> new DeduplicationScrollerComputation(SCROLLER_COMPUTATION_NAME),
                                asList(pipeOf(INPUT_1, PIPELINE_NAME), pipeOf(OUTPUT_1, RESOLVER_COMPUTE_NAME)))
                        .addComputation(() -> new DuplicateResolverComputation(RESOLVER_COMPUTE_NAME),
-                               singletonList(pipeOf(INPUT_2, RESOLVER_COMPUTE_NAME)))
+                               singletonList(pipeOf(INPUT_1, RESOLVER_COMPUTE_NAME)))
                        .build();
     }
 }

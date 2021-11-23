@@ -1,0 +1,5 @@
+<component name="org.nuxeo.ai.similar.content.test.operations">
+  <extension target="org.nuxeo.ecm.core.operation.OperationServiceComponent" point="operations">
+    <operation class="org.nuxeo.ai.similar.content.mock.ResolveAsRemoveOp"/>
+  </extension>
+</component>

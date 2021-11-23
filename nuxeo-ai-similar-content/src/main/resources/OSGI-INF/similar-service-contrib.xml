@@ -7,8 +7,19 @@
     <provide interface="org.nuxeo.ai.similar.content.services.SimilarContentService"/>
   </service>
 
-  <extension-point name="configuration">
+  <extension-point name="operation">
+    <deduplication-operation class="org.nuxeo.ai.similar.content.operation.DefaultDeduplicationResolverOperation"/>
 
+    <documentation>
+      Configure deduplication parameters
+      <code>
+        <deduplication-operation class="org.nuxeo.ai.similar.content.operation.DefaultDeduplicationResolverOperation"/>
+      </code>
+    </documentation>
+    <object class="org.nuxeo.ai.similar.content.configuration.OperationDescriptor"/>
+  </extension-point>
+
+  <extension-point name="configuration">
     <!-- Deduplication Configuration by default -->
     <deduplication name="dedup-default-config">
       <xpath>file:content</xpath>
@@ -35,6 +46,7 @@
         </deduplication>
       </code>
     </documentation>
+
     <object class="org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor"/>
   </extension-point>
 
