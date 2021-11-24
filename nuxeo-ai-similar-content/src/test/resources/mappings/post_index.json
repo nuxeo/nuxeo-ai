@@ -1,7 +1,7 @@
 {
   "request" : {
     "method": "POST",
-    "urlPattern": "^[/api/v1/ai/dedup/mockTestProject/index].*[file:content]$"
+    "urlPattern": "^(/api/v1/ai/dedup/mockTestProject/index).*[file:content]$"
   },
   "response": {
     "status": 200

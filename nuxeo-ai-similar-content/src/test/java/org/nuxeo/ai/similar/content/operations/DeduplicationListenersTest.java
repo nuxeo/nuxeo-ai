@@ -21,8 +21,13 @@
 
 package org.nuxeo.ai.similar.content.operations;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 
@@ -71,22 +76,30 @@ public class DeduplicationListenersTest {
         fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
         fileDoc = session.createDocument(fileDoc);
 
+        // Url for indexing
+        String urlIndex = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId() + "/file:content";
+
         // When the doc blob is deleted
-        String url = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId() + "?xpath=" + FILE_CONTENT;
-        stubFor(WireMock.delete(url).willReturn(ok()));
+        String urlUpdateIndex = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId() + "?xpath=" + FILE_CONTENT;
+        stubFor(WireMock.delete(urlUpdateIndex).willReturn(ok()));
 
         // When the doc is deleted
-        url = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId();
-        stubFor(WireMock.delete(url).willReturn(ok()));
+        String urlDeleteDoc = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId();
+        stubFor(WireMock.delete(urlDeleteDoc).willReturn(ok()));
 
         textBlob = Blobs.createBlob("this is another blob");
         fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
         fileDoc = session.saveDocument(fileDoc);
 
+        // Check if the call of index API has been twice (once for the first index, second for this update)
+        verify(2, postRequestedFor(urlEqualTo(urlIndex)));
+
         fileDoc.setPropertyValue(FILE_CONTENT, null);
         fileDoc = session.saveDocument(fileDoc);
+        verify(1, deleteRequestedFor(urlEqualTo(urlUpdateIndex)));
 
         session.removeDocument(new IdRef(fileDoc.getId()));
+        verify(1, deleteRequestedFor(urlEqualTo(urlDeleteDoc)));
     }
 
 }
