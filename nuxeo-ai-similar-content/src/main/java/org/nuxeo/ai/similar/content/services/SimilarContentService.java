@@ -21,6 +21,7 @@
 
 package org.nuxeo.ai.similar.content.services;
 
+import java.io.IOException;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
@@ -46,6 +47,8 @@ public interface SimilarContentService {
     boolean anyMatch(DocumentModel doc);
 
     String getOperationID();
+
+    boolean index(DocumentModel doc, String xpath) throws IOException;
 
     /**
      * Gets a query from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}

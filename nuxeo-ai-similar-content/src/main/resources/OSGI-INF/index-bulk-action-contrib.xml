@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.similar.content.bulk" version="1.0">
+
+  <extension target="org.nuxeo.ecm.core.bulk" point="actions">
+    <action name="dedup_index_action" inputStream="ai/dedup_index_action" bucketSize="100" batchSize="100"/>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="dedup_index_action" class="org.nuxeo.ai.similar.content.pipelines.IndexAction"
+                     defaultConcurrency="1"
+                     defaultPartitions="1">
+      <policy name="ai/dedup_init_index" batchCapacity="200" batchThreshold="5s" maxRetries="0"
+              continueOnFailure="true"/>
+      <policy name="ai/dedup_index" batchThreshold="3s" maxRetries="0"
+              continueOnFailure="true"/>
+
+      <stream name="ai/dedup_init_index" partitions="1"/>
+      <stream name="ai/dedup_index" partitions="4"/>
+    </streamProcessor>
+  </extension>
+</component>
