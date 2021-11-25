@@ -22,13 +22,13 @@
 package org.nuxeo.ai.similar.content.pipelines;
 
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation.updateStatus;
 
 import java.io.IOException;
 import java.time.Instant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.sdk.rest.exception.InvalidParametersException;
 import org.nuxeo.ai.similar.content.pipelines.objects.IndexRecord;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.core.api.CoreInstance;
@@ -59,13 +59,11 @@ public class IndexComputation extends AbstractComputation {
         super(INDEX_COMPUTATION_NAME, 1, 1);
     }
 
-    protected static synchronized void reportStatus(ComputationContext ctx, BulkStatus status, BulkStatus delta,
+    protected static void reportStatus(ComputationContext ctx, BulkStatus status, BulkStatus delta,
             boolean success) {
-        if (success) {
-            delta.setProcessed(status.getProcessed() + 1);
-        } else {
-            delta.setErrorCount(status.getErrorCount() + 1);
-        }
+        delta.setProcessingEndTime(Instant.now());
+        delta.setProcessed(1);
+        delta.setErrorCount(success ? 0 : 1);
         updateStatus(ctx, delta);
     }
 
@@ -92,19 +90,12 @@ public class IndexComputation extends AbstractComputation {
                 delta.setProcessingStartTime(Instant.now());
             }
 
-            boolean success = false;
             try {
-                success = scs.index(document, FILE_CONTENT);
-                if (success) {
-                    delta.setProcessed(status.getProcessed() + 1);
-                } else {
-                    delta.setErrorCount(status.getErrorCount() + 1);
-                }
-            } catch (IOException e) {
+                boolean success = scs.index(document, ir.getXpath());
+                reportStatus(ctx, status, delta, success);
+            } catch (IOException | InvalidParametersException e) {
                 log.error("An error occurred during Insight API for document {}", ir.getDocId(), e);
                 throw new NuxeoException(e);
-            } finally {
-                reportStatus(ctx, status, delta, success);
             }
         });
 

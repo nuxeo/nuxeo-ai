@@ -115,6 +115,12 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         params.put(UID, doc.getId());
         params.put(XPATH_PARAM, xpath);
 
+        Serializable value = doc.getPropertyValue(xpath);
+        if (value == null) {
+            log.warn("Cannot index Document {} with value at xpath {} = null", doc.getId(), xpath);
+            return false;
+        }
+
         TensorInstances instances = constructTensor(doc, xpath);
         Boolean result = client.api(API.Dedup.INDEX).call(params, instances);
         if (Boolean.FALSE.equals(result)) {

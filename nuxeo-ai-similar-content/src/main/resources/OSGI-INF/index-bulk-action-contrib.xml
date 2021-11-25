@@ -11,10 +11,10 @@
                      defaultPartitions="1">
       <policy name="ai/dedup_init_index" batchCapacity="200" batchThreshold="5s" maxRetries="0"
               continueOnFailure="true"/>
-      <policy name="ai/dedup_index" batchThreshold="3s" maxRetries="0"
+      <policy name="ai/dedup_index" maxRetries="2"
               continueOnFailure="true"/>
 
-      <stream name="ai/dedup_init_index" partitions="1"/>
+      <stream name="ai/dedup_init_index" partitions="2"/>
       <stream name="ai/dedup_index" partitions="4"/>
     </streamProcessor>
   </extension>

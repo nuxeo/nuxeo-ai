@@ -25,15 +25,13 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
-import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_STREAM;
+import static org.nuxeo.ai.similar.content.pipelines.IndexAction.XPATH_PARAM;
 
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -43,7 +41,6 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -79,22 +76,27 @@ public class IndexActionTest {
 
     @Test
     public void shouldRunIndexBAF() throws InterruptedException {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 20; i++) {
             DocumentModel doc = session.createDocumentModel("/", "test_file_" + i, "File");
-            doc.setPropertyValue(FILE_CONTENT, (Serializable) Blobs.createBlob("Text blob content #" + i));
+            if (i % 2 == 0) {
+                doc.setPropertyValue(FILE_CONTENT, (Serializable) Blobs.createBlob("Text blob content #" + i));
+            }
             doc = session.createDocument(doc);
         }
 
         txf.nextTransaction();
 
-
-        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, "SELECT * FROM Document WHERE ecm:primaryType = 'File'",
-                session.getPrincipal().getActingUser()).build();
+        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME,
+                "SELECT * FROM Document WHERE ecm:primaryType = 'File'", session.getPrincipal().getActingUser()).param(
+                XPATH_PARAM, FILE_CONTENT).build();
         String bafId = bs.submit(command);
+
+        txf.nextTransaction();
         assertThat(bs.await(bafId, Duration.ofSeconds(30))).isTrue();
 
+        txf.nextTransaction();
         BulkStatus status = bs.getStatus(bafId);
-        assertThat(status.getErrorCount()).isEqualTo(0);
-        assertThat(status.getProcessed()).isEqualTo(5);
+        assertThat(status.getErrorCount()).isEqualTo(10);
+        assertThat(status.getProcessed()).isEqualTo(20);
     }
 }

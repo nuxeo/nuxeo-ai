@@ -22,6 +22,8 @@
 package org.nuxeo.ai.similar.content.pipelines;
 
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.similar.content.pipelines.IndexAction.XPATH_PARAM;
 
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -53,10 +55,11 @@ public class IndexInitComputation extends AbstractBulkComputation {
     }
 
     @Override
-    protected void compute(CoreSession session, List<String> ids, Map<String, Serializable> map) {
+    protected void compute(CoreSession session, List<String> ids, Map<String, Serializable> params) {
         log.info("Received batch to index of size {}", ids.size());
+        String xpath = (String) params.getOrDefault(XPATH_PARAM, FILE_CONTENT);
         ids.stream().filter(id -> session.exists(new IdRef(id))).forEach(id -> {
-            records.add(IndexRecord.of(id, command.getId()));
+            records.add(IndexRecord.of(id, command.getId(), xpath));
         });
     }
 

@@ -40,6 +40,8 @@ public class IndexAction implements StreamProcessorTopology {
 
     public static final String INDEX_ACTION_STREAM = "ai/" + INDEX_ACTION_NAME;
 
+    public static final String XPATH_PARAM = "xpath";
+
     @Override
     public Topology getTopology(Map<String, String> map) {
         return Topology.builder()

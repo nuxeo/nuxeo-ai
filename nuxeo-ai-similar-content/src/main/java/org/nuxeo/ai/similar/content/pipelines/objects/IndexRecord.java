@@ -38,18 +38,22 @@ public class IndexRecord implements Serializable {
 
     protected String commandId;
 
+    protected String xpath;
+
     public IndexRecord() {
     }
 
     @JsonCreator
-    public IndexRecord(@JsonProperty("id") String id, @JsonProperty("doc_id") String docId, @JsonProperty("command_id") String commandId) {
+    public IndexRecord(@JsonProperty("id") String id, @JsonProperty("doc_id") String docId,
+            @JsonProperty("command_id") String commandId, @JsonProperty("xpath") String xpath) {
         this.id = id;
         this.docId = docId;
         this.commandId = commandId;
+        this.xpath = xpath;
     }
 
-    public static IndexRecord of(String docId, String commandId) {
-        return new IndexRecord(docId, docId, commandId);
+    public static IndexRecord of(String docId, String commandId, String xpath) {
+        return new IndexRecord(docId, docId, commandId, xpath);
     }
 
     public String getId() {
@@ -62,5 +66,9 @@ public class IndexRecord implements Serializable {
 
     public String getCommandId() {
         return commandId;
+    }
+
+    public String getXpath() {
+        return xpath;
     }
 }
