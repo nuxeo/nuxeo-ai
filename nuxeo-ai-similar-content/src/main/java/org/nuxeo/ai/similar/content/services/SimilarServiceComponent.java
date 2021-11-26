@@ -24,7 +24,9 @@ import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
+import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
 import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -46,10 +48,18 @@ import org.nuxeo.ai.sdk.rest.client.InsightClient;
 import org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor;
 import org.nuxeo.ai.similar.content.configuration.OperationDescriptor;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.ConcurrentUpdateException;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.bulk.BulkCodecs;
+import org.nuxeo.ecm.core.bulk.BulkService;
+import org.nuxeo.ecm.core.bulk.BulkServiceImpl;
+import org.nuxeo.ecm.core.bulk.message.BulkCommand;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -101,6 +111,28 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     @Override
     public String getOperationID() {
         return operationID;
+    }
+
+    @Override
+    public String index(String query, String user, boolean reindex) {
+        BulkServiceImpl bs = (BulkServiceImpl) Framework.getService(BulkService.class);
+        KeyValueStoreProvider kv = (KeyValueStoreProvider) bs.getKvStore();
+        boolean alreadyRunning = kv.keyStream(STATUS_PREFIX)
+                                   .map(kv::get)
+                                   .map(BulkCodecs.getStatusCodec()::decode)
+                                   .filter(status -> INDEX_ACTION_NAME.equals(status.getAction()))
+                                   .anyMatch(status -> status.getState().equals(BulkStatus.State.RUNNING)
+                                           || status.getState().equals(BulkStatus.State.SCHEDULED));
+        if (alreadyRunning) {
+            throw new ConcurrentUpdateException("Only one deduplication index action is allowed at a time");
+        }
+
+        if (!reindex) {
+            query += " AND ecm:mixinType != " + NXQL.escapeString(DEDUPLICATION_FACET);
+        }
+
+        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query, user).build();
+        return bs.submit(command);
     }
 
     @Override

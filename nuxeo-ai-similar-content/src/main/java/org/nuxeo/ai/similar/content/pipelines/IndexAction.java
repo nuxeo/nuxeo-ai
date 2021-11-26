@@ -23,6 +23,7 @@ package org.nuxeo.ai.similar.content.pipelines;
 
 import static java.util.Arrays.asList;
 import static org.nuxeo.ai.similar.content.pipelines.IndexComputation.INDEX_COMPUTATION_NAME;
+import static org.nuxeo.ai.similar.content.utils.PipelineUtils.pipeOf;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
@@ -46,9 +47,9 @@ public class IndexAction implements StreamProcessorTopology {
     public Topology getTopology(Map<String, String> map) {
         return Topology.builder()
                        .addComputation(IndexInitComputation::new,
-                               asList(INPUT_1 + ":" + INDEX_ACTION_STREAM, OUTPUT_1 + ":" + INDEX_COMPUTATION_NAME))
+                               asList(pipeOf(INPUT_1, INDEX_ACTION_STREAM), pipeOf(OUTPUT_1, INDEX_COMPUTATION_NAME)))
                        .addComputation(IndexComputation::new,
-                               asList(INPUT_1 + ":" + INDEX_COMPUTATION_NAME, OUTPUT_1 + ":" + STATUS_STREAM))
+                               asList(pipeOf(INPUT_1, INDEX_COMPUTATION_NAME), pipeOf(OUTPUT_1, STATUS_STREAM)))
                        .build();
     }
 }
