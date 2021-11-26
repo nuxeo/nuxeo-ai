@@ -39,6 +39,9 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Computation responsible for dealing with duplicates
+ */
 public class DuplicateResolverComputation extends AbstractComputation {
 
     protected static final ObjectMapper LOCAL_OM = new ObjectMapper();

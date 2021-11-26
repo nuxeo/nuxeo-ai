@@ -25,6 +25,9 @@ import org.nuxeo.ai.sdk.objects.deduplication.SimilarTuple;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Container class for passing {@link SimilarTuple} with required meta through Streams
+ */
 public class SimilarTupleContainer implements Serializable {
 
     private static final long serialVersionUID = -6196533782397157763L;
@@ -41,6 +44,9 @@ public class SimilarTupleContainer implements Serializable {
         this.tuple = tuple;
     }
 
+    /**
+     * Factory constructor
+     */
     @JsonCreator
     public static SimilarTupleContainer of(@JsonProperty("user") String user,
             @JsonProperty("repository") String repository, @JsonProperty("tuple") SimilarTuple tuple) {

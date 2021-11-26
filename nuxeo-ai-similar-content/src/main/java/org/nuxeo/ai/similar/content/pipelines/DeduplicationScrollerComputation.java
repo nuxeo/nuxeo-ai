@@ -47,6 +47,9 @@ import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Computation responsible for scrolling through all duplicates available at Insight
+ */
 public class DeduplicationScrollerComputation extends AbstractComputation {
 
     private static final Logger log = LogManager.getLogger(DeduplicationScrollerComputation.class);
@@ -83,7 +86,6 @@ public class DeduplicationScrollerComputation extends AbstractComputation {
                         byte[] bytes = LOCAL_OM.writeValueAsBytes(SimilarTupleContainer.of(user, repo, tuple));
                         ctx.produceRecord(OUTPUT_1, tuple.getDocumentId(), bytes);
                     }
-                    ctx.askForCheckpoint();
                 }
             } while (result != null && !result.getResult().isEmpty());
         } catch (IOException e) {

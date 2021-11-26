@@ -20,6 +20,9 @@
  */
 package org.nuxeo.ai.similar.content.utils;
 
+/**
+ * Helper methods for BAF and Nuxeo stream usage
+ */
 public final class PipelineUtils {
 
     private PipelineUtils() {

@@ -36,7 +36,7 @@ import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
 
-@Operation(id = ProcessDuplicates.ID, label = "Schedules Deduplication using Insight")
+@Operation(id = ProcessDuplicates.ID, label = "Schedules Deduplication using Insight", description = "Operation submits a new deduplication task into Nuxeo Stream")
 public class ProcessDuplicates {
 
     private static final Logger log = LogManager.getLogger(ProcessDuplicates.class);

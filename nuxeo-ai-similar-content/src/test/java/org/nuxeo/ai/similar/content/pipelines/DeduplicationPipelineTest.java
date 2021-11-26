@@ -100,6 +100,9 @@ public class DeduplicationPipelineTest {
 
         txf.nextTransaction();
 
+        // 5 documents were created
+        assertThat(ids.stream().allMatch(id -> session.exists(new IdRef(id)))).isTrue();
+
         StringBuilder response = new StringBuilder("{\n" //
                 + "    \"scrollId\": \"testScrollId\",\n"//
                 + "    \"result\": [\n"//
@@ -143,6 +146,9 @@ public class DeduplicationPipelineTest {
         txf.nextTransaction();
         awaitPipeline(manager, RESOLVER_COMPUTE_NAME, Duration.ofSeconds(10));
 
+        // base document remained
+        assertThat(session.exists(base.getRef())).isTrue();
+        // 5 documents previously created now removed by the dedup pipeline
         assertThat(ids.stream().noneMatch(id -> session.exists(new IdRef(id)))).isTrue();
     }
 

@@ -33,6 +33,9 @@ import java.util.Map;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
 
+/**
+ * Pipeline definition for duplicates processing
+ */
 public class DuplicationPipeline implements StreamProcessorTopology {
 
     public static final String PIPELINE_NAME = "ai/similar-content-resolver";
