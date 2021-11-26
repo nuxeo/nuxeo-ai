@@ -11,3 +11,4 @@ Nuxeo-Component: OSGI-INF/similar-content-operations-contrib.xml,
   OSGI-INF/similar-service-contrib.xml,
   OSGI-INF/similar-content-listener-contrib.xml,
   OSGI-INF/similar-configuration-default.xml
+  OSGI-INF/streams-contrib.xml

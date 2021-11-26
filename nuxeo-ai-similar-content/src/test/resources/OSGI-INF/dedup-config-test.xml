@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.similar.content.services.test" version="1.0">
 
+  <require>org.nuxeo.ai.similar.content.default.config</require>
+  <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="operation">
+    <deduplication-operation class="org.nuxeo.ai.similar.content.mock.ResolveAsRemoveOp"/>
+  </extension>
+
   <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="configuration">
     <deduplication
         name="test"

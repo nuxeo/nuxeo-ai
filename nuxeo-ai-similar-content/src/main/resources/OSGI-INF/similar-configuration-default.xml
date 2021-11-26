@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.similar.content.default.config" version="1.0">
 
+  <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="operation">
+    <deduplication-operation class="org.nuxeo.ai.similar.content.operation.DefaultDeduplicationResolverOperation"/>
+  </extension>
+
   <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="configuration">
     <!-- Deduplication Configuration by default -->
     <deduplication name="dedup-default-config">
