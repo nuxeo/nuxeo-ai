@@ -183,12 +183,21 @@ limitations under the License.
                 }
 
                 const aiModels = layout.document.contextParameters.aiModels;
-                const inputs = aiModels.inputs.map(item => item.name);
-                const allPresent = inputs.map(item => layout.document.properties[item]).filter(item => item).length === inputs.length;
-                if (!allPresent) {
+
+                let atLeastOneFit = false;
+                for (let model of aiModels.inputs) {
+                    // check if the document has all properties required for at least one defined model
+                    const inputs = model.map(item => item.name);
+                    atLeastOneFit = inputs.map(item => layout.document.properties[item]).filter(item => item).length === inputs.length;
+                    if (atLeastOneFit) break;
+                }
+
+                if (!atLeastOneFit) {
                     // not all inputs required for the AI_Model present in the given Document
                     return;
                 }
+
+                let inputs = aiModels.inputs.flatMap(item => item).map(item => item.name)
                 const isModelInput = path && aiModels && inputs.includes(path.replace('document.properties.', ''));
                 const noPropertyChanged = !path || 'document.properties'.startsWith(path);
 
