@@ -28,6 +28,7 @@ import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
@@ -62,7 +63,7 @@ public class DatasetExportUpdaterOperation {
     protected int limit = 8;
 
     @OperationMethod(asyncService = BulkService.class)
-    public List<ExportProgressStatus> run() {
+    public List<BulkProgressStatus> run() {
         String user = session.getPrincipal().getActingUser();
         List<BulkStatus> statuses = global ? getStatuses() : bulkService.getStatuses(user);
 
@@ -70,12 +71,12 @@ public class DatasetExportUpdaterOperation {
                        .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
                        .sorted((o1, o2) -> o2.getSubmitTime().compareTo(o1.getSubmitTime()))
                        .limit(limit)
-                       .map(ExportProgressStatus::new)
+                       .map(BulkProgressStatus::new)
                        .peek(this::updateName)
                        .collect(Collectors.toList());
     }
 
-    protected void updateName(ExportProgressStatus status) {
+    protected void updateName(BulkProgressStatus status) {
         String modelName = getKVS().getString(status.getId());
         if (StringUtils.isNotEmpty(modelName)) {
             status.setName(modelName);

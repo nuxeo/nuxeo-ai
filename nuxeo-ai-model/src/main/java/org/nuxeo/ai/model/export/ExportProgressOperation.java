@@ -22,6 +22,7 @@ package org.nuxeo.ai.model.export;
 import java.util.List;
 import java.util.Optional;
 import org.nuxeo.ai.adapters.DatasetExport;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
@@ -49,7 +50,7 @@ public class ExportProgressOperation {
     protected String modelId;
 
     @OperationMethod(asyncService = BulkService.class)
-    public ExportProgressStatus run() {
+    public BulkProgressStatus run() {
         String user = session.getPrincipal().getActingUser();
 
         DocumentModel exportDoc = exportService.latestDatasetExportForModel(session, modelId);
@@ -60,10 +61,10 @@ public class ExportProgressOperation {
         DatasetExport export = exportDoc.getAdapter(DatasetExport.class);
         List<BulkStatus> statuses = bulkService.getStatuses(user);
 
-        Optional<ExportProgressStatus> status = statuses.stream()
-                                                        .filter(st -> st.getId().equals(export.getJobId()))
-                                                        .map(ExportProgressStatus::new)
-                                                        .findAny();
+        Optional<BulkProgressStatus> status = statuses.stream()
+                                                      .filter(st -> st.getId().equals(export.getJobId()))
+                                                      .map(BulkProgressStatus::new)
+                                                      .findAny();
 
         return status.orElse(null);
     }
