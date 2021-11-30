@@ -5,5 +5,6 @@
     <operation class="org.nuxeo.ai.similar.content.operation.FindSimilar"/>
     <operation class="org.nuxeo.ai.similar.content.operation.ProcessDuplicates"/>
     <operation class="org.nuxeo.ai.similar.content.operation.DefaultDeduplicationResolverOperation"/>
+    <operation class="org.nuxeo.ai.similar.content.operation.RunIndexOperation"/>
   </extension>
 </component>
