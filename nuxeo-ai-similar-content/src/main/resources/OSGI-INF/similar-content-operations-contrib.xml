@@ -6,5 +6,6 @@
     <operation class="org.nuxeo.ai.similar.content.operation.ProcessDuplicates"/>
     <operation class="org.nuxeo.ai.similar.content.operation.DefaultDeduplicationResolverOperation"/>
     <operation class="org.nuxeo.ai.similar.content.operation.RunIndexOperation"/>
+    <operation class="org.nuxeo.ai.similar.content.operation.IndexProgressOperation"/>
   </extension>
 </component>

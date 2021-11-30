@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2006-2020 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2006-2021 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -7,24 +7,25 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  *
  * Contributors:
- *     anechaev
+ *    Andrei Nechaev
+ *
  */
-package org.nuxeo.ai.model.export;
+package org.nuxeo.ai.bulk;
 
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 
 /**
  * POJO for embedding {@link BulkStatus} and extra fields required for UI
  */
-public class ExportProgressStatus {
+public class BulkProgressStatus {
 
     protected String id;
 
@@ -38,10 +39,10 @@ public class ExportProgressStatus {
 
     protected long processed;
 
-    public ExportProgressStatus() {
+    public BulkProgressStatus() {
     }
 
-    public ExportProgressStatus(BulkStatus status) {
+    public BulkProgressStatus(BulkStatus status) {
         this.id = status.getId();
         this.name = status.getId();
         this.state = status.getState().name();

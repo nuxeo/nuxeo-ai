@@ -40,7 +40,7 @@ import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
 import org.nuxeo.ai.model.export.DatasetExportUpdaterOperation;
 import org.nuxeo.ai.model.export.DatasetGetModelOperation;
 import org.nuxeo.ai.model.export.ExportProgressOperation;
-import org.nuxeo.ai.model.export.ExportProgressStatus;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -202,18 +202,18 @@ public class TestDatasetOperation {
 //        params.put("commandId", returned);
 
         @SuppressWarnings("unchecked")
-        List<ExportProgressStatus> result = (List<ExportProgressStatus>) automationService.run(ctx,
+        List<BulkProgressStatus> result = (List<BulkProgressStatus>) automationService.run(ctx,
                 DatasetExportUpdaterOperation.ID, params);
 
         assertThat(result).isNotEmpty().hasSize(1);
-        ExportProgressStatus status = result.get(0);
+        BulkProgressStatus status = result.get(0);
         assertThat(status.getId()).isEqualTo(returned);
         assertThat(status.getName()).isEqualTo("Fake Name");
 
         params.put("global", true);
 
         @SuppressWarnings("unchecked")
-        List<ExportProgressStatus> globalResult = (List<ExportProgressStatus>) automationService.run(ctx,
+        List<BulkProgressStatus> globalResult = (List<BulkProgressStatus>) automationService.run(ctx,
                 DatasetExportUpdaterOperation.ID, params);
 
         assertThat(globalResult).isNotEmpty().hasSize(1);
@@ -225,13 +225,13 @@ public class TestDatasetOperation {
 
         Map<String, Object> statusParams = new HashMap<>();
         statusParams.put("modelId", "e67ee0e8-1bef-4fb7-9966-1d14081221");
-        ExportProgressStatus progressStatus = (ExportProgressStatus) automationService.run(ctx,
+        BulkProgressStatus progressStatus = (BulkProgressStatus) automationService.run(ctx,
                 ExportProgressOperation.ID, statusParams);
         assertNotNull(progressStatus);
         assertThat(progressStatus.getId()).isEqualTo(returned);
 
         statusParams.put("modelId", "non_existing");
-        progressStatus = (ExportProgressStatus) automationService.run(ctx, ExportProgressOperation.ID, statusParams);
+        progressStatus = (BulkProgressStatus) automationService.run(ctx, ExportProgressOperation.ID, statusParams);
         assertNull(progressStatus);
     }
 }

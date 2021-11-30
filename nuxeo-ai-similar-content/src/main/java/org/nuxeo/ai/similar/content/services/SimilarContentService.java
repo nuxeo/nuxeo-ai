@@ -22,6 +22,7 @@
 package org.nuxeo.ai.similar.content.services;
 
 import java.io.IOException;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
@@ -57,10 +58,14 @@ public interface SimilarContentService {
      * @param query   {@link String} NXQL query to use
      * @param user    {@link String} as acting user
      * @param reindex boolean flag, <b>true</b> to reindex the entire repository based on the given query,
-     *               false to exclude already indexed documents
+     *                false to exclude already indexed documents
      * @return {@link String} as BAF ID to track the progress
      */
     String index(String query, String user, boolean reindex);
+
+    BulkProgressStatus getStatus();
+
+    BulkProgressStatus getStatus(String id);
 
     /**
      * Send given {@link DocumentModel} for indexing
