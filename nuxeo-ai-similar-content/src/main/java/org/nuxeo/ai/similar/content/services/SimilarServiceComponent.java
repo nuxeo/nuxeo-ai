@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.client.API;
 import org.nuxeo.ai.sdk.rest.client.InsightClient;
@@ -118,14 +120,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Override
     public String index(String query, String user, boolean reindex) {
-        BulkServiceImpl bs = (BulkServiceImpl) Framework.getService(BulkService.class);
-        KeyValueStoreProvider kv = (KeyValueStoreProvider) bs.getKvStore();
-        boolean alreadyRunning = kv.keyStream(STATUS_PREFIX)
-                                   .map(kv::get)
-                                   .map(BulkCodecs.getStatusCodec()::decode)
-                                   .filter(status -> INDEX_ACTION_NAME.equals(status.getAction()))
-                                   .anyMatch(status -> status.getState().equals(BulkStatus.State.RUNNING)
-                                           || status.getState().equals(BulkStatus.State.SCHEDULED));
+        BulkProgressStatus status = getStatus();
+        boolean alreadyRunning = status != null && isActive(status);
         if (alreadyRunning) {
             throw new ConcurrentUpdateException("Only one deduplication index action is allowed at a time");
         }
@@ -135,7 +131,28 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         }
 
         BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query, user).build();
-        return bs.submit(command);
+        return Framework.getService(BulkService.class).submit(command);
+    }
+
+    @Nullable
+    @Override
+    public BulkProgressStatus getStatus() {
+        return getStatus(null);
+    }
+
+    @Override
+    public BulkProgressStatus getStatus(String id) {
+        BulkServiceImpl bs = (BulkServiceImpl) Framework.getService(BulkService.class);
+        KeyValueStoreProvider kv = (KeyValueStoreProvider) bs.getKvStore();
+        return kv.keyStream(STATUS_PREFIX)
+                 .map(kv::get)
+                 .map(BulkCodecs.getStatusCodec()::decode)
+                 .filter(status -> INDEX_ACTION_NAME.equals(status.getAction()))
+                 .filter(status -> id == null || status.getId().equals(id))
+                 .sorted(Comparator.comparing(BulkStatus::getState))
+                 .map(BulkProgressStatus::new)
+                 .findFirst()
+                 .orElse(null);
     }
 
     @Override
@@ -209,5 +226,11 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     @Override
     public String getXPath(String name) {
         return dedupDescriptors.get(name).getXPath();
+    }
+
+    protected boolean isActive(BulkProgressStatus status) {
+        return status.getState().equals(BulkStatus.State.RUNNING.name()) && status.getState()
+                                                                                    .equals(BulkStatus.State.SCHEDULED.name())
+                && status.getState().equals(BulkStatus.State.SCROLLING_RUNNING.name());
     }
 }
