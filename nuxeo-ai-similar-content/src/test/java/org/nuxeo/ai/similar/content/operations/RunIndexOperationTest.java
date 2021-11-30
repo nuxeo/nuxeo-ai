@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
+import org.nuxeo.ai.similar.content.operation.IndexProgressOperation;
 import org.nuxeo.ai.similar.content.operation.RunIndexOperation;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -35,11 +37,13 @@ import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -65,10 +69,27 @@ public class RunIndexOperationTest {
     @Inject
     protected AutomationService automationService;
 
+    @Inject
+    protected TransactionalFeature txf;
+
     @Test
     public void shouldRunIndexOperation() throws OperationException {
         OperationContext ctx = new OperationContext(session);
         String response = (String) automationService.run(ctx, RunIndexOperation.ID);
         assertThat(response).isNotEmpty();
+
+        BulkProgressStatus status = (BulkProgressStatus) automationService.run(ctx, IndexProgressOperation.ID);
+        assertThat(status).isNotNull();
+        txf.nextTransaction();
+
+        status = (BulkProgressStatus) automationService.run(ctx, IndexProgressOperation.ID);
+        assertThat(status).isNotNull();
+        assertThat(status.getState()).isEqualTo(BulkStatus.State.COMPLETED.name());
+
+        ctx.put("id", response);
+        status = (BulkProgressStatus) automationService.run(ctx, IndexProgressOperation.ID);
+        assertThat(status).isNotNull();
+        assertThat(status.getState()).isEqualTo(BulkStatus.State.COMPLETED.name());
+
     }
 }
