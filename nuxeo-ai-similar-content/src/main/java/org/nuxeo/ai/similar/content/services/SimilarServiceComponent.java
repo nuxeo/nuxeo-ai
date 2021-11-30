@@ -71,6 +71,9 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     public static final String DEDUPLICATION_OPERATION_XP = "operation";
 
+    public static final String DEDUPLICATION_FACET_EXCLUSION_NXQL =
+            " AND ecm:mixinType != " + NXQL.escapeString(DEDUPLICATION_FACET);
+
     protected final Map<String, DeduplicationDescriptor> dedupDescriptors = new HashMap<>();
 
     protected String operationID = null;
@@ -127,8 +130,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             throw new ConcurrentUpdateException("Only one deduplication index action is allowed at a time");
         }
 
-        if (!reindex) {
-            query += " AND ecm:mixinType != " + NXQL.escapeString(DEDUPLICATION_FACET);
+        if (!reindex && !query.contains(DEDUPLICATION_FACET_EXCLUSION_NXQL)) {
+            query += DEDUPLICATION_FACET_EXCLUSION_NXQL;
         }
 
         BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query).user(user).build();
