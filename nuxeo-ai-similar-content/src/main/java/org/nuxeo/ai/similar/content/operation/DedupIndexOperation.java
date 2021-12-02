@@ -19,32 +19,15 @@
 
 package org.nuxeo.ai.similar.content.operation;
 
-import static java.util.Collections.singletonList;
-import static org.nuxeo.ai.sdk.rest.Common.UID;
-import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
-import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
-import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
-
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.sdk.objects.TensorInstances;
-import org.nuxeo.ai.sdk.rest.client.API;
-import org.nuxeo.ai.sdk.rest.client.InsightClient;
+import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
@@ -55,15 +38,12 @@ import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 @Operation(id = DedupIndexOperation.ID, category = "AICore", label = "Dedup Index Operation", description = "Index document(s) with a given xpath in dedup index on insight")
 public class DedupIndexOperation {
 
-    public static final String ID = "AICore.DedupIndexOperation";
-
     private static final Logger log = LogManager.getLogger(DedupIndexOperation.class);
 
-    @Context
-    protected CoreSession session;
+    public static final String ID = "AICore.DedupIndexOperation";
 
     @Context
-    protected CloudClient client;
+    protected SimilarContentService scs;
 
     @Param(name = "xpath")
     protected String xpath;
@@ -82,45 +62,13 @@ public class DedupIndexOperation {
             return Response.serverError().build();
         }
 
-        InsightClient insightClient = client.getClient(session).orElse(null);
-        if (!client.isAvailable(session) || insightClient == null) {
-            log.error("Cannot access Insight Client - [docs={},xpath={}]", docs, xpath);
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        HashMap<String, Serializable> params = new HashMap<>();
-        for (DocumentModel doc : docs) {
-            params.put(UID, doc.getId());
-            params.put(XPATH_PARAM, xpath);
-            TensorInstances instances = constructTensor(doc, (Blob) doc.getPropertyValue(xpath));
-            Boolean result = insightClient.api(API.Dedup.INDEX).call(params, instances);
-            if (Boolean.FALSE.equals(result)) {
-                log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
-            } else {
-                addDeduplicationFacet(doc);
+        return docs.stream().map(doc -> {
+            try {
+                return scs.index(doc, xpath);
+            } catch (IOException e) {
+                log.error(e);
+                return false;
             }
-        }
-        return Response.ok().build();
-    }
-
-    protected void addDeduplicationFacet(DocumentModel doc) {
-        List<Map<String, Object>> history = new ArrayList<>(1);
-        doc.addFacet(DEDUPLICATION_FACET);
-        Map<String, Object> entry = new HashMap<>();
-        entry.put("xpath", xpath);
-        entry.put("index", true);
-        entry.put("date", new GregorianCalendar());
-        history.add(entry);
-        doc.setPropertyValue("dedup:history", (Serializable) history);
-        session.saveDocument(doc);
-    }
-
-    protected TensorInstances constructTensor(DocumentModel doc, Blob blob) {
-        if (blob == null) {
-            return null;
-        }
-        Map<String, TensorInstances.Tensor> props = new HashMap<>();
-        props.put(xpath, TensorInstances.Tensor.image(resize(blob)));
-        return new TensorInstances(doc.getId(), singletonList(props));
+        }).anyMatch(flag -> !flag) ? Response.serverError().build() : Response.ok().build();
     }
 }

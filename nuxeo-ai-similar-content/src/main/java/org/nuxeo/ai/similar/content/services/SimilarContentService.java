@@ -21,6 +21,7 @@
 
 package org.nuxeo.ai.similar.content.services;
 
+import java.io.IOException;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
@@ -45,7 +46,31 @@ public interface SimilarContentService {
      */
     boolean anyMatch(DocumentModel doc);
 
+    /**
+     * @return name of a Nuxeo Operation that shall be used for deduplication resolution
+     */
     String getOperationID();
+
+    /**
+     * Index repository
+     *
+     * @param query   {@link String} NXQL query to use
+     * @param user    {@link String} as acting user
+     * @param reindex boolean flag, <b>true</b> to reindex the entire repository based on the given query,
+     *               false to exclude already indexed documents
+     * @return {@link String} as BAF ID to track the progress
+     */
+    String index(String query, String user, boolean reindex);
+
+    /**
+     * Send given {@link DocumentModel} for indexing
+     *
+     * @param doc   {@link DocumentModel} document to index
+     * @param xpath {@link String} xpath to use for indexing
+     * @return boolean value, true if success, false otherwise
+     * @throws IOException in case of processing issues
+     */
+    boolean index(DocumentModel doc, String xpath) throws IOException;
 
     /**
      * Gets a query from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}
