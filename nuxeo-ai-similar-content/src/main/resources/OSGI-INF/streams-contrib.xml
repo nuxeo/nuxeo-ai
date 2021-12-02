@@ -1,13 +1,13 @@
 <component name="org.nuxeo.ai.similar.content.stream.contrib">
 
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
-    <logConfig name="ai/similar-content-resolver"/>
+    <logConfig name="similar-content-resolver"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
 
     <streamProcessor name="ai-similar-content-resolver"
-                     logConfig="ai/similar-content-resolver"
+                     logConfig="similar-content-resolver"
                      defaultConcurrency="${nuxeo.insight.dedup.concurrency:=2}"
                      defaultPartitions="${nuxeo.insight.dedup.partitions:=2}"
                      defaultCodec="${nuxeo.insight.stream.log.codec:=legacy}"

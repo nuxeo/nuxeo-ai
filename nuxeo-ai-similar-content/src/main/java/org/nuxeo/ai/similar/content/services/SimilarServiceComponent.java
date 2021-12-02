@@ -131,7 +131,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             query += " AND ecm:mixinType != " + NXQL.escapeString(DEDUPLICATION_FACET);
         }
 
-        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query, user).build();
+        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query).user(user).build();
         return bs.submit(command);
     }
 

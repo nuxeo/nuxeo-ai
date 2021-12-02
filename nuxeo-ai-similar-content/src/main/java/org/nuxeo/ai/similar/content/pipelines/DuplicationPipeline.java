@@ -38,7 +38,7 @@ import org.nuxeo.runtime.stream.StreamProcessorTopology;
  */
 public class DuplicationPipeline implements StreamProcessorTopology {
 
-    public static final String PIPELINE_NAME = "ai/similar-content-resolver";
+    public static final String PIPELINE_NAME = "similar-content-resolver";
 
     @Override
     public Topology getTopology(Map<String, String> map) {

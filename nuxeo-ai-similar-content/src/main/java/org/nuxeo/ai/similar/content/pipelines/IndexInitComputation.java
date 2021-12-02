@@ -46,7 +46,7 @@ public class IndexInitComputation extends AbstractBulkComputation {
 
     private static final Logger log = LogManager.getLogger(IndexInitComputation.class);
 
-    public static final String INIT_INDEX_COMPUTATION_NAME = "ai/dedup_init_index";
+    public static final String INIT_INDEX_COMPUTATION_NAME = "dedup_init_index";
 
     protected List<IndexRecord> records = new LinkedList<>();
 

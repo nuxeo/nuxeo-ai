@@ -31,8 +31,8 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.sdk.rest.exception.InvalidParametersException;
 import org.nuxeo.ai.similar.content.pipelines.objects.IndexRecord;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
+import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -53,14 +53,13 @@ public class IndexComputation extends AbstractComputation {
 
     private static final Logger log = LogManager.getLogger(IndexComputation.class);
 
-    public static final String INDEX_COMPUTATION_NAME = "ai/dedup_index";
+    public static final String INDEX_COMPUTATION_NAME = "dedup_index";
 
     public IndexComputation() {
         super(INDEX_COMPUTATION_NAME, 1, 1);
     }
 
-    protected static void reportStatus(ComputationContext ctx, BulkStatus status, BulkStatus delta,
-            boolean success) {
+    protected static void reportStatus(ComputationContext ctx, BulkStatus status, BulkStatus delta, boolean success) {
         delta.setProcessingEndTime(Instant.now());
         delta.setProcessed(1);
         delta.setErrorCount(success ? 0 : 1);
@@ -76,21 +75,21 @@ public class IndexComputation extends AbstractComputation {
         BulkCommand command = service.getCommand(ir.getCommandId());
 
         TransactionHelper.runInTransaction(() -> {
-            CoreSession session = CoreInstance.getCoreSession(command.getRepository(), command.getUsername());
-            IdRef ref = new IdRef(ir.getDocId());
-            if (!session.exists(ref)) {
-                log.error("Cannot index document {}; provided document was removed", ir.getDocId());
-            }
+            try (CloseableCoreSession session = CoreInstance.openCoreSession(command.getRepository(),
+                    command.getUsername())) {
+                IdRef ref = new IdRef(ir.getDocId());
+                if (!session.exists(ref)) {
+                    log.error("Cannot index document {}; provided document was removed", ir.getDocId());
+                }
 
-            DocumentModel document = session.getDocument(ref);
-            SimilarContentService scs = Framework.getService(SimilarContentService.class);
-            BulkStatus status = service.getStatus(ir.getCommandId());
-            BulkStatus delta = BulkStatus.deltaOf(ir.getCommandId());
-            if (status.getProcessingStartTime() == null) {
-                delta.setProcessingStartTime(Instant.now());
-            }
+                DocumentModel document = session.getDocument(ref);
+                SimilarContentService scs = Framework.getService(SimilarContentService.class);
+                BulkStatus status = service.getStatus(ir.getCommandId());
+                BulkStatus delta = BulkStatus.deltaOf(ir.getCommandId());
+                if (status.getProcessingStartTime() == null) {
+                    delta.setProcessingStartTime(Instant.now());
+                }
 
-            try {
                 boolean success = scs.index(document, ir.getXpath());
                 reportStatus(ctx, status, delta, success);
             } catch (IOException | InvalidParametersException e) {

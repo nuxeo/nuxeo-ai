@@ -39,7 +39,7 @@ public class IndexAction implements StreamProcessorTopology {
 
     public static final String INDEX_ACTION_NAME = "dedup_index_action";
 
-    public static final String INDEX_ACTION_STREAM = "ai/" + INDEX_ACTION_NAME;
+    public static final String INDEX_ACTION_STREAM = INDEX_ACTION_NAME;
 
     public static final String XPATH_PARAM = "xpath";
 

@@ -87,8 +87,10 @@ public class IndexActionTest {
         txf.nextTransaction();
 
         BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME,
-                "SELECT * FROM Document WHERE ecm:primaryType = 'File'", session.getPrincipal().getActingUser()).param(
-                XPATH_PARAM, FILE_CONTENT).build();
+                "SELECT * FROM Document WHERE ecm:primaryType = 'File'").user(session.getPrincipal().getActingUser())
+                                                                        .repository(session.getRepositoryName())
+                                                                        .param(XPATH_PARAM, FILE_CONTENT)
+                                                                        .build();
         String bafId = bs.submit(command);
 
         txf.nextTransaction();
