@@ -24,11 +24,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor;
+import org.nuxeo.ai.similar.content.configuration.OperationDescriptor;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -38,13 +40,25 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     public static final String DEDUPLICATION_CONFIG_XP = "configuration";
 
+    public static final String DEDUPLICATION_OPERATION_XP = "operation";
+
     protected final Map<String, DeduplicationDescriptor> dedupDescriptors = new HashMap<>();
+
+    protected String operationID = null;
 
     @Override
     public void registerContribution(Object contribution, String xp, ComponentInstance component) {
         if (DEDUPLICATION_CONFIG_XP.equals(xp)) {
             DeduplicationDescriptor desc = (DeduplicationDescriptor) contribution;
             dedupDescriptors.put(desc.getName(), desc);
+        } else if (DEDUPLICATION_OPERATION_XP.equals(xp)) {
+            OperationDescriptor desc = (OperationDescriptor) contribution;
+            if (StringUtils.isNotEmpty(operationID)) {
+                log.warn("Deduplication operation is already defined {}; There was an attempt to override it with {}",
+                        operationID, desc.getId());
+            }
+
+            operationID = desc.getId();
         }
     }
 
@@ -63,6 +77,11 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         return dedupDescriptors.values()
                                .stream()
                                .anyMatch(d -> Arrays.stream(d.getFilters()).allMatch(filter -> filter.accept(doc)));
+    }
+
+    @Override
+    public String getOperationID() {
+        return operationID;
     }
 
     @Override

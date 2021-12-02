@@ -30,6 +30,9 @@ import org.nuxeo.ecm.platform.picture.api.ImageInfo;
 import org.nuxeo.ecm.platform.picture.api.ImagingService;
 import org.nuxeo.runtime.api.Framework;
 
+/**
+ * Helper methods for picture related work
+ */
 public final class PictureUtils {
 
     public static long MAX_SIZE_BYTES = 5 * 1024 * 1024;
