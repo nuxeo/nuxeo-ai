@@ -64,4 +64,3 @@ insight.log4j2=info
 
 # Deduplication Listener activation flag
 nuxeo.ai.similar.content.listener.enable=true
-nuxeo.ai.similar.content.configuration.id=
