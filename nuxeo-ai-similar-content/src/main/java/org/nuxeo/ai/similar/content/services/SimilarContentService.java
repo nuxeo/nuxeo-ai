@@ -22,7 +22,10 @@
 package org.nuxeo.ai.similar.content.services;
 
 import java.io.IOException;
+import java.util.List;
 import org.nuxeo.ai.bulk.BulkProgressStatus;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
@@ -76,6 +79,20 @@ public interface SimilarContentService {
      * @throws IOException in case of processing issues
      */
     boolean index(DocumentModel doc, String xpath) throws IOException;
+
+    List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath) throws IOException;
+
+    List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath) throws IOException;
+
+    /**
+     * Delete given document from the Insight index
+     *
+     * @param doc   {@link DocumentModel} document to remove
+     * @param xpath {@link String} xpath of the index to remove
+     * @return boolean value, true if success, false otherwise
+     * @throws IOException in case of processing issues
+     */
+    boolean delete(DocumentModel doc, String xpath) throws IOException;
 
     /**
      * Gets a query from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}

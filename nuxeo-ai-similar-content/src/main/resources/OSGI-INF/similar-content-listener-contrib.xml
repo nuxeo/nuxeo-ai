@@ -10,5 +10,12 @@
       <event>beforeDocumentModification</event>
       <event>documentRemoved</event>
     </listener>
+    <listener name="dedupDocumentIndexedListener"
+              async="true"
+              postCommit="true"
+              priority="100"
+              class="org.nuxeo.ai.similar.content.listeners.DocumentIndexedListener">
+      <event>documentIndexed</event>
+    </listener>
   </extension>
 </component>

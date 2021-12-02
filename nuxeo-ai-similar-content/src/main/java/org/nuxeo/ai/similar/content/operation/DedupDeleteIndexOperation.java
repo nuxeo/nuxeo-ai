@@ -19,18 +19,12 @@
 
 package org.nuxeo.ai.similar.content.operation;
 
-import static org.nuxeo.ai.sdk.rest.Common.UID;
-import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
-
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
 import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.sdk.rest.client.API;
-import org.nuxeo.ai.sdk.rest.client.InsightClient;
+import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
@@ -46,9 +40,9 @@ import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 @Operation(id = DedupDeleteIndexOperation.ID, category = "AICore", label = "Delete Dedup Index Operation", description = "Remove document(s) with an optional xpath from dedup index on insight")
 public class DedupDeleteIndexOperation {
 
-    public static final String ID = "AICore.DedupDeleteIndexOperation";
-
     private static final Logger log = LogManager.getLogger(DedupDeleteIndexOperation.class);
+
+    public static final String ID = "AICore.DedupDeleteIndexOperation";
 
     @Context
     protected CoreSession session;
@@ -56,42 +50,34 @@ public class DedupDeleteIndexOperation {
     @Context
     protected CloudClient client;
 
+    @Context
+    protected SimilarContentService scs;
+
     @Param(name = "xpath", required = false)
     protected String xpath;
 
     @OperationMethod
-    public Response run(DocumentModel doc) throws IOException {
+    public Response run(DocumentModel doc) {
         DocumentModelListImpl docs = new DocumentModelListImpl(1);
         docs.add(doc);
         return run(docs);
     }
 
     @OperationMethod
-    public Response run(DocumentModelList docs) throws IOException {
+    public Response run(DocumentModelList docs) {
         if (docs == null || docs.isEmpty()) {
             log.error("Documents list in input should not be empty - [xpath={}]", xpath);
             return Response.serverError().build();
         }
 
-        InsightClient insightClient = client.getClient(session).orElse(null);
-        if (!client.isAvailable(session) || insightClient == null) {
-            log.error("Cannot access Insight Client - [docs={},xpath={}]", docs, xpath);
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        HashMap<String, Serializable> params = new HashMap<>();
-        for (DocumentModel doc : docs) {
-            params.put(UID, doc.getId());
-            if (xpath != null) {
-                params.put(XPATH_PARAM, xpath);
+        return docs.stream().map(doc -> {
+            try {
+                return scs.delete(doc, xpath);
+            } catch (IOException e) {
+                log.error(e);
+                return false;
             }
-            Boolean result = insightClient.api(API.Dedup.DELETE).call(params, "{}");
-            if (Boolean.FALSE.equals(result)) {
-                log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
-            }
-        }
-
-        return Response.ok().build();
+        }).anyMatch(flag -> !flag) ? Response.serverError().build() : Response.ok().build();
     }
 
 }

@@ -15,20 +15,16 @@
  *
  *
  * Contributors:
- *    Nuxeo
+ *    Andrei Nechaev
  *
  */
+package org.nuxeo.ai.similar.content.listeners;
 
-package org.nuxeo.ai.similar.content.operations;
-
-import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 
 import java.io.Serializable;
@@ -36,19 +32,17 @@ import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.similar.content.mock.ResolveDuplicatesListener;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
-import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.IdRef;
-import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
-import org.nuxeo.ecm.core.test.annotations.Granularity;
-import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
+import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -59,8 +53,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/cloud-client-datasource-test.xml")
-@RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
-public class DeduplicationListenersTest {
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/mock-listener-contrib.xml")
+public class DocumentIndexedListenerTest {
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(
@@ -69,37 +63,33 @@ public class DeduplicationListenersTest {
     @Inject
     protected CoreSession session;
 
+    @Inject
+    protected TransactionalFeature txf;
+
+    @Inject
+    protected EventService es;
+
     @Test
-    public void shouldManageIndexFromListener() {
-        Blob textBlob = Blobs.createBlob("this is a blob");
+    public void shouldProvideListOfSimilarDocs() {
         DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
-        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
+        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) Blobs.createBlob("this is a blob"));
         fileDoc = session.createDocument(fileDoc);
 
-        // Url for indexing
-        String urlIndex = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId() + "/file:content";
+        String indexURL = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId() + "?xpath=" + FILE_CONTENT;
+        stubFor(WireMock.post(indexURL).willReturn(ok()));
 
-        // When the doc blob is deleted
-        String urlUpdateIndex = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId() + "?xpath=" + FILE_CONTENT;
-        stubFor(WireMock.delete(urlUpdateIndex).willReturn(ok()));
+        String deleteURL = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId();
+        stubFor(WireMock.delete(deleteURL).willReturn(ok()));
 
-        // When the doc is deleted
-        String urlDeleteDoc = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId();
-        stubFor(WireMock.delete(urlDeleteDoc).willReturn(ok()));
+        String findURL =
+                "/api/v1/ai/dedup/mockTestProject/find/" + fileDoc.getId() + "/" + FILE_CONTENT + "?distance=0";
+        stubFor(WireMock.get(findURL).willReturn(okJson("[\"" + fileDoc.getId() + "\", \"" + fileDoc.getId() + "\"]")));
 
-        textBlob = Blobs.createBlob("this is another blob");
-        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
-        fileDoc = session.saveDocument(fileDoc);
+        txf.nextTransaction();
 
-        // Check if the call of index API has been twice (once for the first index, second for this update)
-        verify(2, postRequestedFor(urlEqualTo(urlIndex)));
+        es.waitForAsyncCompletion();
 
-        fileDoc.setPropertyValue(FILE_CONTENT, null);
-        fileDoc = session.saveDocument(fileDoc);
-        verify(1, deleteRequestedFor(urlEqualTo(urlUpdateIndex)));
-
-        session.removeDocument(new IdRef(fileDoc.getId()));
-        verify(1, deleteRequestedFor(urlEqualTo(urlDeleteDoc)));
+        assertThat(ResolveDuplicatesListener.similarIds).isNotEmpty();
+        assertThat(ResolveDuplicatesListener.docRef.get()).isNotNull();
     }
-
 }
