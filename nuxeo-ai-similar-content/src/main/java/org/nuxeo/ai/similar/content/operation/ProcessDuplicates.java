@@ -32,7 +32,6 @@ import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogAppender;
-import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
 
@@ -49,10 +48,11 @@ public class ProcessDuplicates {
     @OperationMethod
     public void run() {
         byte[] bytes = session.getPrincipal().getActingUser().getBytes(UTF_8);
-        org.nuxeo.lib.stream.log.LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        org.nuxeo.lib.stream.log.LogManager manager = Framework.getService(StreamService.class)
+                                                               .getLogManager(PIPELINE_NAME);
 
         Record record = Record.of(session.getRepositoryName(), bytes);
-        LogAppender<Externalizable> appender = manager.getAppender(Name.ofUrn(PIPELINE_NAME));
+        LogAppender<Externalizable> appender = manager.getAppender(PIPELINE_NAME);
         appender.append(session.getRepositoryName(), record);
     }
 }

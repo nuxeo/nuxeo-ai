@@ -38,13 +38,14 @@ import org.nuxeo.ai.sdk.objects.deduplication.SimilarTuple;
 import org.nuxeo.ai.sdk.rest.client.API;
 import org.nuxeo.ai.sdk.rest.client.InsightClient;
 import org.nuxeo.ai.similar.content.pojo.SimilarTupleContainer;
+import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -69,29 +70,31 @@ public class DeduplicationScrollerComputation extends AbstractComputation {
 
         String repo = record.getKey();
         String user = new String(record.getData(), UTF_8);
-        CoreSession session = CoreInstance.getCoreSessionSystem(repo, user);
-        InsightClient insight = client.getClient(session)
-                                      .orElseThrow(() -> new NuxeoException(
-                                              "Could not obtain Insight Client for user " + session.getPrincipal()
-                                                                                                   .getActingUser()));
-        try {
-            ScrollableResult result = null;
-            do {
-                Map<String, Serializable> params =
-                        result != null ? singletonMap(SCROLL_ID_HEADER, result.getScrollId()) : emptyMap();
-                result = insight.api(API.Dedup.ALL).call(params);
-                if (result != null) {
-                    List<SimilarTuple> tuples = result.getResult();
-                    for (SimilarTuple tuple : tuples) {
-                        byte[] bytes = LOCAL_OM.writeValueAsBytes(SimilarTupleContainer.of(user, repo, tuple));
-                        ctx.produceRecord(OUTPUT_1, tuple.getDocumentId(), bytes);
+
+        TransactionHelper.runInTransaction(() -> {
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(repo, user)) {
+                InsightClient insight = client.getClient(session)
+                                              .orElseThrow(() -> new NuxeoException(
+                                                      "Could not obtain Insight Client for user "
+                                                              + session.getPrincipal().getActingUser()));
+                ScrollableResult result = null;
+                do {
+                    Map<String, Serializable> params =
+                            result != null ? singletonMap(SCROLL_ID_HEADER, result.getScrollId()) : emptyMap();
+                    result = insight.api(API.Dedup.ALL).call(params);
+                    if (result != null) {
+                        List<SimilarTuple> tuples = result.getResult();
+                        for (SimilarTuple tuple : tuples) {
+                            byte[] bytes = LOCAL_OM.writeValueAsBytes(SimilarTupleContainer.of(user, repo, tuple));
+                            ctx.produceRecord(OUTPUT_1, tuple.getDocumentId(), bytes);
+                        }
                     }
-                }
-            } while (result != null && !result.getResult().isEmpty());
-        } catch (IOException e) {
-            log.error("Could not execute Dedup API call", e);
-            throw new NuxeoException(e);
-        }
+                } while (result != null && !result.getResult().isEmpty());
+            } catch (IOException e) {
+                log.error("Could not execute Dedup API call", e);
+                throw new NuxeoException(e);
+            }
+        });
 
         ctx.askForCheckpoint();
     }

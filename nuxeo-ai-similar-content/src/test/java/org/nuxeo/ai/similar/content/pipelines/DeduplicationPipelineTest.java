@@ -141,7 +141,7 @@ public class DeduplicationPipelineTest {
 
         txf.nextTransaction();
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        LogManager manager = Framework.getService(StreamService.class).getLogManager(PIPELINE_NAME);
         awaitPipeline(manager, SCROLLER_COMPUTATION_NAME, Duration.ofSeconds(10));
         txf.nextTransaction();
         awaitPipeline(manager, RESOLVER_COMPUTE_NAME, Duration.ofSeconds(10));

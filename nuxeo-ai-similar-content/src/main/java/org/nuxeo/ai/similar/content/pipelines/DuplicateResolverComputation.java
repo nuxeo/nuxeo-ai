@@ -28,8 +28,8 @@ import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
+import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
-import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
@@ -75,13 +75,17 @@ public class DuplicateResolverComputation extends AbstractComputation {
         }
 
         AutomationService automation = Framework.getService(AutomationService.class);
-        CoreSession session = CoreInstance.getCoreSessionSystem(container.getRepository(), container.getUser());
-        opCtx.setCoreSession(session);
-        TransactionHelper.runInNewTransaction(() -> {
-            try {
-                automation.run(opCtx, oid);
-            } catch (OperationException e) {
-                throw new NuxeoException(e);
+        TransactionHelper.runInTransaction(() -> {
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(container.getRepository(),
+                    container.getUser())) {
+                opCtx.setCoreSession(session);
+                TransactionHelper.runInNewTransaction(() -> {
+                    try {
+                        automation.run(opCtx, oid);
+                    } catch (OperationException e) {
+                        throw new NuxeoException(e);
+                    }
+                });
             }
         });
     }
