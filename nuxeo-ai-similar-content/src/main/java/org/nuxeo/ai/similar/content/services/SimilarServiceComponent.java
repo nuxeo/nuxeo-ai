@@ -20,6 +20,7 @@
  */
 package org.nuxeo.ai.similar.content.services;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
@@ -37,6 +38,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -53,12 +55,16 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.ConcurrentUpdateException;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentRef;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.BulkServiceImpl;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.core.event.EventService;
+import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
@@ -75,6 +81,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     public static final String DEDUPLICATION_FACET_EXCLUSION_NXQL =
             " AND ecm:mixinType != " + NXQL.escapeString(DEDUPLICATION_FACET);
+
+    public static final String DOCUMENT_INDEXED_EVENT = "documentIndexed";
 
     protected final Map<String, DeduplicationDescriptor> dedupDescriptors = new HashMap<>();
 
@@ -157,11 +165,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Override
     public boolean index(DocumentModel doc, String xpath) throws IOException {
-        InsightClient client = getClient(doc.getCoreSession());
-        if (client == null) {
-            throw new NuxeoException(
-                    "Could not obtain Insight Client for user " + doc.getCoreSession().getPrincipal().getActingUser());
-        }
+        CoreSession session = doc.getCoreSession();
+        InsightClient client = getInsightClient(session);
 
         HashMap<String, Serializable> params = new HashMap<>();
         params.put(UID, doc.getId());
@@ -179,12 +184,64 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
             return false;
         } else {
-            addDeduplicationFacet(doc, xpath);
+            addDeduplicationFacet(session, doc, xpath);
+            fireEvent(session, doc);
             return true;
         }
     }
 
-    protected void addDeduplicationFacet(DocumentModel doc, String xpath) {
+    @Override
+    public List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath) throws IOException {
+        InsightClient client = getInsightClient(session);
+        Map<String, Serializable> parameters = new HashMap<>();
+        parameters.put(UID, doc.getId());
+        parameters.put(XPATH_PARAM, xpath);
+
+        List<String> ids = client.api(API.Dedup.FIND).call(parameters, null);
+        if (ids == null || ids.isEmpty()) {
+            log.debug("No similar documents found");
+            return emptyList();
+        }
+
+        List<DocumentRef> refs = ids.stream().map(IdRef::new).filter(session::exists).collect(Collectors.toList());
+        if (refs.size() != ids.size()) {
+            log.warn("Deduplication found some nonexistent document, consider reindexing");
+        }
+
+        return session.getDocuments(refs.toArray(new DocumentRef[] {}));
+    }
+
+    @Override
+    public List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath) throws IOException {
+        InsightClient client = getInsightClient(session);
+        Map<String, Serializable> parameters = new HashMap<>();
+        parameters.put(XPATH_PARAM, xpath);
+        TensorInstances tensor = constructTensor(blob, xpath);
+
+        List<String> ids = client.api(API.Dedup.FIND).call(parameters, tensor);
+        return resolveDocuments(session, ids);
+    }
+
+    @Override
+    public boolean delete(DocumentModel doc, String xpath) throws IOException {
+        InsightClient client = getInsightClient(doc.getCoreSession());
+
+        HashMap<String, Serializable> params = new HashMap<>();
+        params.put(UID, doc.getId());
+        if (StringUtils.isNotEmpty(xpath)) {
+            params.put(XPATH_PARAM, xpath);
+        }
+
+        Boolean result = client.api(API.Dedup.DELETE).call(params, "{}");
+        if (Boolean.FALSE.equals(result)) {
+            log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected void addDeduplicationFacet(CoreSession session, DocumentModel doc, String xpath) {
         List<Map<String, Object>> history = new ArrayList<>(1);
         doc.addFacet(DEDUPLICATION_FACET);
         Map<String, Object> entry = new HashMap<>();
@@ -193,9 +250,51 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         entry.put("date", new GregorianCalendar());
         history.add(entry);
         doc.setPropertyValue("dedup:history", (Serializable) history);
-        doc.getCoreSession().saveDocument(doc);
+        session.saveDocument(doc);
     }
 
+    protected void fireEvent(CoreSession session, DocumentModel doc) {
+        DocumentEventContext ctx = new DocumentEventContext(session, session.getPrincipal(), doc);
+        EventService eventService = Framework.getService(EventService.class);
+        eventService.fireEvent(DOCUMENT_INDEXED_EVENT, ctx);
+    }
+
+    protected InsightClient getInsightClient(CoreSession session) {
+        InsightClient client = getClient(session);
+        if (client == null) {
+            throw new NuxeoException(
+                    "Could not obtain Insight Client for user " + session.getPrincipal().getActingUser());
+        }
+
+        return client;
+    }
+
+    protected List<DocumentModel> resolveDocuments(CoreSession session, List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            log.debug("No similar documents found");
+            return emptyList();
+        }
+
+        List<DocumentRef> refs = ids.stream().map(IdRef::new).filter(session::exists).collect(Collectors.toList());
+        if (refs.size() != ids.size()) {
+            log.warn("Deduplication found some nonexistent document, consider reindexing");
+        }
+
+        return session.getDocuments(refs.toArray(new DocumentRef[] {}));
+    }
+
+    @Nullable
+    protected TensorInstances constructTensor(Blob blob, String xpath) {
+        if (blob == null) {
+            return null;
+        }
+
+        Map<String, TensorInstances.Tensor> props = new HashMap<>();
+        props.put(xpath, TensorInstances.Tensor.image(resize(blob)));
+        return new TensorInstances(null, singletonList(props));
+    }
+
+    @Nullable
     protected TensorInstances constructTensor(DocumentModel doc, String xpath) {
         Blob blob = (Blob) doc.getPropertyValue(xpath);
         if (blob == null) {
