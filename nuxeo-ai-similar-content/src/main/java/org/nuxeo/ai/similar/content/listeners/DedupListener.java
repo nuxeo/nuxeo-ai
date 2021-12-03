@@ -27,17 +27,10 @@ import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.BEFORE_DOC_UPDATE;
 import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.DOCUMENT_CREATED;
 import static org.nuxeo.ecm.core.api.event.DocumentEventTypes.DOCUMENT_REMOVED;
 
-import java.util.HashMap;
-import java.util.Map;
-import javax.ws.rs.core.Response;
+import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.similar.content.operation.DedupDeleteIndexOperation;
-import org.nuxeo.ai.similar.content.operation.DedupIndexOperation;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
-import org.nuxeo.ecm.automation.AutomationService;
-import org.nuxeo.ecm.automation.OperationContext;
-import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.event.Event;
@@ -45,7 +38,6 @@ import org.nuxeo.ecm.core.event.EventContext;
 import org.nuxeo.ecm.core.event.EventListener;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.runtime.api.Framework;
-import com.sun.jersey.core.spi.factory.ResponseImpl;
 
 /**
  * Asynchronous listener to manage Insight deduplication index on repository documents.
@@ -67,57 +59,48 @@ public class DedupListener implements EventListener {
             return;
         }
 
-        String configuration = Framework.getProperty(CONF_DEDUPLICATION_CONFIGURATION, DEFAULT_CONFIGURATION);
         DocumentEventContext docCtx = (DocumentEventContext) ctx;
         DocumentModel doc = docCtx.getSourceDocument();
-
         // Skip the listener if skip update flag has been set
         if (doc.getContextData(SKIP_INDEX_FLAG_UPDATE) != null) {
             return;
         }
 
-        AutomationService automationService = Framework.getService(AutomationService.class);
-        SimilarContentService similarContentService = Framework.getService(SimilarContentService.class);
-        OperationContext opCtx = new OperationContext();
-        opCtx.setCoreSession(docCtx.getCoreSession());
-        opCtx.setInput(doc);
-        ResponseImpl response = null;
-        if (!similarContentService.test(configuration, doc)) {
+        SimilarContentService scs = Framework.getService(SimilarContentService.class);
+        String configuration = Framework.getProperty(CONF_DEDUPLICATION_CONFIGURATION, DEFAULT_CONFIGURATION);
+        if (!scs.test(configuration, doc)) {
+            log.debug("Document {} doesn't pass the test of {} configuration", doc.getId(), configuration);
             return;
         }
 
-        String xpath = similarContentService.getXPath(configuration);
         try {
-            if (event.getName().equals(DOCUMENT_CREATED)) {
-                Map<String, String> params = new HashMap<>();
-                params.put("xpath", xpath);
-                response = (ResponseImpl) automationService.run(opCtx, DedupIndexOperation.ID, params);
-            }
-
-            if (event.getName().equals(BEFORE_DOC_UPDATE)) {
+            String xpath = scs.getXPath(configuration);
+            if (DOCUMENT_CREATED.equals(event.getName())) {
+                if (!scs.index(doc, xpath)) {
+                    log.error("Index for Document {} and xpath {} failed", doc.getId(), xpath);
+                }
+            } else if (BEFORE_DOC_UPDATE.equals(event.getName())) {
                 if (doc.getProperty(xpath).isDirty()) {
                     // skip the next update event when updating the document
                     doc.putContextData(SKIP_INDEX_FLAG_UPDATE, true);
-                    Map<String, String> params = new HashMap<>();
-                    params.put("xpath", xpath);
                     if (doc.getPropertyValue(xpath) == null) {
-                        response = (ResponseImpl) automationService.run(opCtx, DedupDeleteIndexOperation.ID, params);
+                        if (!scs.delete(doc, xpath)) {
+                            log.error("Delete for Document {} and xpath {} failed", doc.getId(), xpath);
+                        }
                     } else {
-                        response = (ResponseImpl) automationService.run(opCtx, DedupIndexOperation.ID, params);
+                        if (!scs.index(doc, xpath)) {
+                            log.error("Index for Document {} and xpath {} failed", doc.getId(), xpath);
+                        }
                     }
                 }
+            } else if (DOCUMENT_REMOVED.equals(event.getName())) {
+                if (!scs.delete(doc, null)) {
+                    log.error("Delete for Document {} and xpath {} failed on event {}", doc.getId(), xpath,
+                            event.getName());
+                }
             }
-
-            if (event.getName().equals(DOCUMENT_REMOVED)) {
-                response = (ResponseImpl) automationService.run(opCtx, DedupDeleteIndexOperation.ID, new HashMap<>());
-            }
-
-        } catch (OperationException e) {
+        } catch (IOException e) {
             throw new NuxeoException(e);
-        }
-
-        if (response == null || response.getStatus() != Response.Status.OK.getStatusCode()) {
-            log.error("Index deletion failed - [response={}]", response);
         }
     }
 

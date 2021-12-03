@@ -32,4 +32,8 @@ public class DedupConstants {
     public static final String CONF_DEDUPLICATION_CONFIGURATION = "nuxeo.ai.similar.content.configuration.id";
 
     public static final String SKIP_INDEX_FLAG_UPDATE = "skip.index.flag.update";
+
+    public static final String SIMILAR_DOCUMENTS_FOUND_EVENT = "similarDocumentsFound";
+
+    public static final String SIMILAR_DOCUMENT_IDS_PARAM = "similarIds";
 }

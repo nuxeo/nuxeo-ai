@@ -22,28 +22,14 @@
 package org.nuxeo.ai.similar.content.operation;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_CONF_VAR;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_BLOB_MAX_SIZE_VALUE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ai.sdk.rest.Common.UID;
-import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
-import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.cloud.CloudClient;
-import org.nuxeo.ai.sdk.objects.TensorInstances;
-import org.nuxeo.ai.sdk.rest.client.API;
-import org.nuxeo.ai.sdk.rest.client.InsightClient;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.core.annotations.Context;
@@ -53,8 +39,6 @@ import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentRef;
-import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.runtime.api.Framework;
 
 @Operation(id = FindSimilar.ID, category = "Insight", label = "Find duplicate documents")
@@ -68,82 +52,28 @@ public class FindSimilar {
     protected CoreSession session;
 
     @Context
-    protected CloudClient client;
-
-    @Context
     protected SimilarContentService scs;
 
     @Param(name = "xpath", required = false)
     protected String xpath = FILE_CONTENT;
 
     @OperationMethod
-    public List<DocumentModel> run(DocumentModel doc) throws OperationException {
+    public List<DocumentModel> run(DocumentModel doc) throws IOException {
         if (!scs.anyMatch(doc)) {
             log.debug("None dedup filters fit document {}", doc.getId());
             return emptyList();
         }
 
-        List<String> ids = findSimilarIds(doc, null);
-        return resolveDocuments(ids);
+        return scs.findSimilar(session, doc, xpath);
     }
 
     @OperationMethod
-    public List<DocumentModel> run(Blob blob) throws OperationException {
+    public List<DocumentModel> run(Blob blob) throws OperationException, IOException {
         if (blob.getLength() >= Long.parseLong(
                 Framework.getProperty(AI_BLOB_MAX_SIZE_CONF_VAR, AI_BLOB_MAX_SIZE_VALUE))) {
             throw new OperationException("Blob is too large; size = " + blob.getLength());
         }
 
-        List<String> ids = findSimilarIds(null, blob);
-        return resolveDocuments(ids);
-    }
-
-    protected List<String> findSimilarIds(@Nullable DocumentModel doc, @Nullable Blob blob) throws OperationException {
-        Optional<InsightClient> client = this.client.getClient(session);
-        if (!client.isPresent()) {
-            throw new OperationException(
-                    "Could not obtain Insight Client for user " + session.getPrincipal().getActingUser());
-        }
-
-        String id = doc == null ? null : doc.getId();
-        TensorInstances tensor = constructTensor(blob, id);
-
-        Map<String, Serializable> parameters = new HashMap<>();
-        parameters.put(UID, id);
-        parameters.put(XPATH_PARAM, xpath);
-
-        try {
-            InsightClient insight = client.get();
-            return insight.api(API.Dedup.FIND).call(parameters, tensor);
-        } catch (IOException e) {
-            throw new OperationException("Could not call Find API", e);
-        }
-    }
-
-    protected List<DocumentModel> resolveDocuments(List<String> ids) {
-        if (ids == null || ids.isEmpty()) {
-            log.debug("No similar documents found");
-            return emptyList();
-        }
-
-        List<DocumentRef> refs = ids.stream()
-                                    .map(IdRef::new)
-                                    .filter(ref -> session.exists(ref))
-                                    .collect(Collectors.toList());
-        if (refs.size() != ids.size()) {
-            log.warn("Deduplication found some nonexistent document, consider reindexing");
-        }
-
-        return session.getDocuments(refs.toArray(new DocumentRef[]{}));
-    }
-
-    protected TensorInstances constructTensor(Blob blob, String id) {
-        if (blob == null) {
-            return null;
-        }
-
-        Map<String, TensorInstances.Tensor> props = new HashMap<>();
-        props.put(xpath, TensorInstances.Tensor.image(resize(blob)));
-        return new TensorInstances(id, singletonList(props));
+        return scs.findSimilar(session, blob, xpath);
     }
 }
