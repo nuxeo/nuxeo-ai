@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.similar.content.mock.listeners">
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <listener name="mockResolveListener"
+              async="false"
+              postCommit="false"
+              priority="1"
+              class="org.nuxeo.ai.similar.content.mock.ResolveDuplicatesListener">
+      <event>similarDocumentsFound</event>
+    </listener>
+  </extension>
+</component>
