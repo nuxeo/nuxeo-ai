@@ -23,6 +23,8 @@ package org.nuxeo.ai.similar.content.listeners;
 
 import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CONFIGURATION;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEFAULT_CONFIGURATION;
+import static org.nuxeo.ai.similar.content.DedupConstants.SIMILAR_DOCUMENTS_FOUND_EVENT;
+import static org.nuxeo.ai.similar.content.DedupConstants.SIMILAR_DOCUMENT_IDS_PARAM;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -51,10 +53,6 @@ import org.nuxeo.runtime.api.Framework;
 public class DocumentIndexedListener implements PostCommitEventListener {
 
     private static final Logger log = LogManager.getLogger(DocumentIndexedListener.class);
-
-    public static final String SIMILAR_DOCUMENTS_FOUND_EVENT = "similarDocumentsFound";
-
-    public static final String SIMILAR_DOCUMENT_IDS_PARAM = "similarIds";
 
     @Override
     public void handleEvent(EventBundle bundle) {

@@ -21,7 +21,7 @@
 
 package org.nuxeo.ai.similar.content.mock;
 
-import static org.nuxeo.ai.similar.content.listeners.DocumentIndexedListener.SIMILAR_DOCUMENT_IDS_PARAM;
+import static org.nuxeo.ai.similar.content.DedupConstants.SIMILAR_DOCUMENT_IDS_PARAM;
 
 import java.util.ArrayList;
 import java.util.Collections;

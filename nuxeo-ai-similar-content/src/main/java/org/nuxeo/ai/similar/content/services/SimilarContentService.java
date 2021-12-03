@@ -66,8 +66,19 @@ public interface SimilarContentService {
      */
     String index(String query, String user, boolean reindex);
 
+    /**
+     * Get the latest status of the index BAF task
+     *
+     * @return {@link BulkProgressStatus} of the task or null
+     */
     BulkProgressStatus getStatus();
 
+    /**
+     * Get status of the index BAF task based on id
+     *
+     * @param id {@link String} ID of BAF task
+     * @return {@link BulkProgressStatus} of the task or null
+     */
     BulkProgressStatus getStatus(String id);
 
     /**
@@ -80,8 +91,26 @@ public interface SimilarContentService {
      */
     boolean index(DocumentModel doc, String xpath) throws IOException;
 
+    /**
+     * Find Similar {@link DocumentModel}[s] for the provided {@link Blob}
+     *
+     * @param session {@link CoreSession} for obtaining user and repository info
+     * @param doc     {@link DocumentModel} based on which similar search will run
+     * @param xpath   {@link String} xpath of the indexed blob in {@link DocumentModel}
+     * @return list of {@link DocumentModel} that are similar to the given {@link DocumentModel}
+     * @throws IOException in case of processing issues
+     */
     List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath) throws IOException;
 
+    /**
+     * Find Similar {@link DocumentModel}[s] for the provided {@link Blob}
+     *
+     * @param session {@link CoreSession} for obtaining user and repository info
+     * @param blob    {@link Blob} based on which similar search will run
+     * @param xpath   {@link String} xpath of the indexed {@link Blob}
+     * @return list of {@link DocumentModel} that are similar to the given {@link Blob}
+     * @throws IOException in case of processing issues
+     */
     List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath) throws IOException;
 
     /**
