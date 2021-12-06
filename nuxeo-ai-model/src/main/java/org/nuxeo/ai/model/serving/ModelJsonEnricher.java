@@ -44,7 +44,8 @@ public class ModelJsonEnricher extends AbstractJsonEnricher<DocumentModel> {
 
     @Override
     public void write(JsonGenerator jGen, DocumentModel documentModel) throws IOException {
-        Set<ModelProperty> inputs = Framework.getService(ModelServingService.class).getInputs(documentModel);
+        Set<Set<ModelProperty>> inputs = Framework.getService(ModelServingService.class)
+                                                  .getGroupedInputs(documentModel);
         if (!inputs.isEmpty()) {
             jGen.writeObjectFieldStart(NAME);
             jGen.writeObjectField("inputs", inputs);

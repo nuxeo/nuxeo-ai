@@ -86,10 +86,6 @@ public class ModelProperty extends PropertyType {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Property{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", type='").append(type).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "Property{" + "name='" + name + '\'' + ", type='" + type + '\'' + '}';
     }
 }

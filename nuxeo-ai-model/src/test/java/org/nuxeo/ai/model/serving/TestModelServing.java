@@ -230,13 +230,18 @@ public class TestModelServing {
         assertEquals(3, models.size());
 
         DocumentModel testDoc = session.createDocumentModel("/", "My Model Doc", "FileRefDoc");
-        Set<ModelProperty> inputs = modelServingService.getInputs(testDoc);
+        Set<Set<ModelProperty>> modelDefs = modelServingService.getGroupedInputs(testDoc);
+        assertEquals(2, modelDefs.size());
+
+        Set<ModelProperty> inputs = modelServingService.getFlatInputs(testDoc);
         assertEquals(4, inputs.size());
 
         testDoc = session.createDocumentModel("/", "My note Doc", "Note");
-        inputs = modelServingService.getInputs(testDoc);
-        assertEquals(1, inputs.size());
+        modelDefs = modelServingService.getGroupedInputs(testDoc);
+        assertEquals(1, modelDefs.size());
 
+        inputs = modelServingService.getFlatInputs(testDoc);
+        assertEquals(1, inputs.size());
     }
 
     @Test
@@ -248,7 +253,7 @@ public class TestModelServing {
         session.saveDocument(testDoc);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         writer.write(testDoc, DocumentModel.class, DocumentModel.class, APPLICATION_JSON_TYPE, baos);
-        String result = new String(baos.toByteArray());
+        String result = baos.toString();
         assertTrue(result.contains("\"aiModels\":{\"inputs\":"));
         assertTrue(result.contains("{\"name\":\"dc:title\",\"type\":\"txt\"}"));
         assertTrue(result.contains("{\"name\":\"file:content\",\"type\":\"img\"}"));

@@ -40,6 +40,7 @@ import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.listeners.InvalidateModelDefinitionsListener;
+import org.nuxeo.ai.model.AIModel;
 import org.nuxeo.ai.model.ModelProperty;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ai.services.AIConfigurationServiceImpl;
@@ -71,10 +72,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
  */
 public class ModelServingServiceImpl extends DefaultComponent implements ModelServingService {
 
-    public static final String AI_DATATYPES = "aidatatypes";
-
-    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
-
     private static final TypeReference<Map<String, Serializable>> RESPONSE_TYPE_REFERENCE = new TypeReference<Map<String, Serializable>>() {
     };
 
@@ -97,6 +94,10 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     private static final String TYPE_KEY = "type";
 
     private static final Logger log = LogManager.getLogger(ModelServingServiceImpl.class);
+
+    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
+
+    public static final String AI_DATATYPES = "aidatatypes";
 
     protected final Map<String, ModelDescriptor> configs = new HashMap<>();
 
@@ -233,7 +234,18 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     }
 
     @Override
-    public Set<ModelProperty> getInputs(DocumentModel document) {
+    public Set<Set<ModelProperty>> getGroupedInputs(DocumentModel document) {
+        return filterPredicates.entrySet()
+                               .stream()
+                               .filter(e -> e.getValue().test(document))
+                               .map(e -> models.get(e.getKey()))
+                               .filter(Objects::nonNull)
+                               .map(AIModel::getInputs)
+                               .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<ModelProperty> getFlatInputs(DocumentModel document) {
         return filterPredicates.entrySet()
                                .stream()
                                .filter(e -> e.getValue().test(document))
