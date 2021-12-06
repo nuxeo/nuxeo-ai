@@ -62,7 +62,7 @@ import io.dropwizard.metrics5.MetricName;
 @RunWith(FeaturesRunner.class)
 @Features({ PipesTestConfigFeature.class, PlatformFeature.class })
 @Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml" })
+        "org.nuxeo.ai.ai-pipes-test:OSGI-INF/stream-pipes-test.xml" })
 public class EventPipesTest {
 
     public static final String TEST_MIME_TYPE = "text/plain";

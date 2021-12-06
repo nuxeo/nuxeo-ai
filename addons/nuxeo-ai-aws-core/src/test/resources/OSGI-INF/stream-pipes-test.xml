@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.core.mock.streams">
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="test.imageLabels" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.enrichment.LabelsEnrichmentProvider" maxSize="10000000">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="maxResults">55</option>
+      <option name="minConfidence">75</option>
+    </enrichment>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="labelsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="0" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
+      <option name="source">test/images</option>
+      <option name="sink">test/enrichment-in</option>
+      <option name="enrichmentProviderName">test.imageLabels</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="saveMetadataProcessor" defaultConcurrency="1" defaultPartitions="1"
+                     class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
+      <option name="source">test/enrichment-in</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+    </streamProcessor>
+  </extension>
+
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
+    <pipe id="pipe.pictures" enabled="true">
+      <supplier>
+        <event name="pictureViewsGenerationDone">
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+            <option name="includedFacets">Picture</option>
+          </filter>
+        </event>
+      </supplier>
+      <consumer>
+        <stream name="test/images"/>
+      </consumer>
+      <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
+        <option name="blobProperties">picture:views/1/content</option>
+        <option name="blobPropertiesType">img</option>
+      </transformer>
+    </pipe>
+  </extension>
+</component>
