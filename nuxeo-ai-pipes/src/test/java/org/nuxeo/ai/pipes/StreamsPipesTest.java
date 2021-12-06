@@ -60,7 +60,7 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 @RunWith(FeaturesRunner.class)
 @Features({ PipesTestConfigFeature.class, PlatformFeature.class })
 @Deploy({ "org.nuxeo.runtime.stream", "org.nuxeo.ai.nuxeo-ai-pipes",
-        "org.nuxeo.ai.nuxeo-ai-pipes:OSGI-INF/stream-pipes-test.xml" })
+        "org.nuxeo.ai.ai-pipes-test:OSGI-INF/stream-pipes-test.xml" })
 public class StreamsPipesTest {
 
     @Inject
@@ -86,7 +86,6 @@ public class StreamsPipesTest {
 
     @Test
     public void testPipes() throws Exception {
-
         Event event = getTestEvent(session);
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
         // First check the event goes from text-> text-pass -> text-out streams

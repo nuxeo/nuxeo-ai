@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -57,11 +57,11 @@ import net.jodah.failsafe.RetryPolicy;
  */
 public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
+    private static final Logger log = LogManager.getLogger(EnrichingStreamProcessor.class);
+
     public static final String ENRICHER_NAME = "enrichmentProviderName";
 
     public static final String USE_CACHE = "cache";
-
-    private static final Log log = LogFactory.getLog(EnrichingStreamProcessor.class);
 
     @Override
     public Topology getTopology(Map<String, String> options) {
@@ -111,11 +111,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         @Override
         public void init(ComputationContext context) {
-            log.debug(String.format("Starting enrichment computation for %s", metadata.name()));
+            log.debug("Starting enrichment computation for {}", metadata.name());
             EnrichmentProvider enrichmentProvider = Framework.getService(AIComponent.class)
                                                              .getEnrichmentProvider(enricherName);
             if (enrichmentProvider == null) {
-                log.error(String.format("Invalid enricher name %s", enricherName));
+                log.error("Invalid enricher name " + enricherName);
                 throw new IllegalArgumentException("Unknown enrichment provider " + enricherName);
             }
             this.provider = enrichmentProvider;
@@ -139,7 +139,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             if (callable != null) {
                 metrics.called();
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Calling %s for doc %s", enricherName, blobTextFromDoc.getId()));
+                    log.debug("Calling {} for doc {}", enricherName, blobTextFromDoc.getId());
                 }
                 Collection<AIMetadata> result = null;
                 try {
@@ -148,8 +148,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     metrics.circuitBreaker();
                     // The circuit break is open, throw NuxeoException so it doesn't continue processing.
                     throw new NuxeoException(
-                            String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
-                                    enricherName));
+                            "Stream circuit breaker for " + enricherName + ".  Stopping processing the stream.");
                 } catch (FatalEnrichmentError fee) {
                     metrics.fatal();
                     // Fatal error so throw it to stop processing
@@ -171,8 +170,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             } else {
                 metrics.unsupported();
                 if (log.isDebugEnabled()) {
-                    log.debug(
-                            String.format("Unsupported call to %s for doc %s", enricherName, blobTextFromDoc.getId()));
+                    log.debug("Unsupported call to {} for doc {}", enricherName, blobTextFromDoc.getId());
                 }
             }
             context.askForCheckpoint();
@@ -205,7 +203,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 }
             }).onFailedAttempt(failure -> {
                 metrics.error();
-                log.warn(String.format("Enrichment error (%s) for record: %s ", enricherName, record), failure);
+                log.warn("Enrichment error ({}) for record: {} ", enricherName, record, failure);
             }).onRetry(c -> {
                 metrics.retry();
                 if (log.isDebugEnabled()) {
@@ -235,8 +233,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                             blob.getLength())) {
                         return () -> getAiMetadata(blobTextFromDoc);
                     } else {
-                        log.info(String.format("%s does not support a blob with these characteristics %s %s",
-                                metadata.name(), blob.getMimeType(), blob.getLength()));
+                        log.info("{} does not support a blob with these characteristics {} {}", metadata.name(),
+                                blob.getMimeType(), blob.getLength());
                         return null;
                     }
                 }
@@ -250,7 +248,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         @Override
         public void destroy() {
-            log.debug(String.format("Destroy computation: %s", metadata.name()));
+            log.debug("Destroy computation: " + metadata.name());
         }
 
         /**

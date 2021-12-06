@@ -125,7 +125,6 @@ public class TestConfiguredStreamProcessors {
 
     @Test
     public void testConfiguredStreamProcessor() throws Exception {
-
         // Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc = session.createDocument(testDoc);

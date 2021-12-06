@@ -8,7 +8,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">gcp.imageLabels</option>
       <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
     </streamProcessor>
@@ -19,7 +19,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">gcp.textDetection</option>
       <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
     </streamProcessor>
@@ -30,7 +30,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">gcp.faceDetection</option>
       <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
     </streamProcessor>
@@ -41,7 +41,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">gcp.logoDetection</option>
       <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
     </streamProcessor>
@@ -52,7 +52,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">ai/enrichment-in</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">gcp.landmarkDetection</option>
       <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
     </streamProcessor>
@@ -63,7 +63,7 @@
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
         <policy name="default" maxRetries="${nuxeo.enrichment.gcp.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
         <option name="source">ai/images</option>
-        <option name="sink">ai/enrichment-in</option>
+        <option name="sink">${nuxeo.enrichment.source.stream}</option>
         <option name="enrichmentProviderName">gcp.objectLocalizer</option>
         <option name="cache">${nuxeo.enrichment.gcp.cache}</option>
       </streamProcessor>

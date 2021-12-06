@@ -111,6 +111,12 @@
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-pipes</artifactId>
+        <type>test-jar</type>
+        <version>${nuxeo.ai.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-core</artifactId>
         <version>${nuxeo.ai.version}</version>
       </dependency>
