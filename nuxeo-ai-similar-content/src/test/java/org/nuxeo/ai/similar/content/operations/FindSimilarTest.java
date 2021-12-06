@@ -38,13 +38,12 @@ import org.nuxeo.ai.similar.content.operation.FindSimilar;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
+import org.nuxeo.ecm.automation.server.jaxrs.batch.BatchManager;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.blob.BlobMetaImpl;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -60,6 +59,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/cloud-client-test.xml")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/dedup-config-test.xml")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/disable-dedup-listener.xml")
+@Deploy("org.nuxeo.ecm.automation.server")
 public class FindSimilarTest {
 
     @Rule
@@ -71,6 +71,9 @@ public class FindSimilarTest {
 
     @Inject
     protected AutomationService automationService;
+
+    @Inject
+    protected BatchManager batchManager;
 
     @Test
     public void shouldRunOperationOnDocument() throws OperationException {
@@ -91,7 +94,7 @@ public class FindSimilarTest {
     }
 
     @Test
-    public void shouldRunOperationOnBlob() throws OperationException, IOException {
+    public void shouldRunOperationOnBlob() throws OperationException {
         Blob textBlob = Blobs.createBlob("this is a blob");
         DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
         fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
@@ -109,7 +112,27 @@ public class FindSimilarTest {
         assertThat(response).isNotEmpty();
     }
 
-    protected ManagedBlob blob(Blob blob, String key) {
-        return new BlobMetaImpl("test", blob.getMimeType(), key, key, blob.getEncoding(), blob.getLength());
+    @Test
+    public void shouldRunOperationOnBlobFromBatchUpload() throws OperationException, IOException {
+        Blob textBlob = Blobs.createBlob("this is a blob");
+        DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
+        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
+        fileDoc = session.createDocument(fileDoc);
+        session.save();
+
+        String url = "/api/v1/ai/dedup/mockTestProject/find?distance=0&xpath=file:content";
+        stubFor(WireMock.post(url).willReturn(okJson("[\"" + fileDoc.getId() + "\"]")));
+
+        String batchId = batchManager.initBatch();
+        batchManager.addBlob(batchId, "0", textBlob, textBlob.getFilename(), textBlob.getEncoding());
+
+        // void input
+        OperationContext ctx = new OperationContext(session);
+        ctx.put("batchId", batchId);
+        ctx.put("fileId", "0");
+        @SuppressWarnings("unchecked")
+        List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
+        assertThat(response).isNotEmpty();
     }
+
 }
