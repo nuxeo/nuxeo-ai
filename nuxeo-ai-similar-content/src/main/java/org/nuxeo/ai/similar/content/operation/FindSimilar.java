@@ -36,6 +36,7 @@ import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
+import org.nuxeo.ecm.automation.server.jaxrs.batch.BatchManager;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -57,6 +58,12 @@ public class FindSimilar {
     @Param(name = "xpath", required = false)
     protected String xpath = FILE_CONTENT;
 
+    @Param(name = "batchId", description = "Batch id required when running this operation without any input", required = false)
+    protected String batchId;
+
+    @Param(name = "fileId", description = "File id required when running this operation without any input (with batchId)", required = false)
+    protected String fileId = "0";
+
     @OperationMethod
     public List<DocumentModel> run(DocumentModel doc) throws IOException {
         if (!scs.anyMatch(doc)) {
@@ -65,6 +72,13 @@ public class FindSimilar {
         }
 
         return scs.findSimilar(session, doc, xpath);
+    }
+
+    @OperationMethod
+    public List<DocumentModel> run() throws OperationException, IOException {
+        BatchManager batchManager = Framework.getService(BatchManager.class);
+        Blob blob = batchManager.getBlob(batchId, fileId);
+        return this.run(blob);
     }
 
     @OperationMethod
