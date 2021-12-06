@@ -65,11 +65,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 @Operation(id = SuggestionOp.ID, category = Constants.CAT_DOCUMENT, label = "Ask for a suggestion.", description = "Calls intelligent services on the provided document and returns suggested metadata.")
 public class SuggestionOp {
 
+    private static final Logger log = LogManager.getLogger(SuggestionOp.class);
+
     public static final String ID = "AI.Suggestion";
 
     public static final String EMPTY_JSON_LIST = "[]";
-
-    private static final Logger log = LogManager.getLogger(SuggestionOp.class);
 
     @Context
     public CoreSession coreSession;
@@ -98,7 +98,7 @@ public class SuggestionOp {
     @OperationMethod
     public Blob run(DocumentModel doc) {
         if (updatedDoc != null) {
-            Set<ModelProperty> inputs = modelServingService.getInputs(doc);
+            Set<ModelProperty> inputs = modelServingService.getFlatInputs(doc);
             for (ModelProperty predicted : inputs) {
                 if (schemaManager.getField(predicted.getName()) == null) {
                     log.debug("Cannot apply field " + predicted.getName());
