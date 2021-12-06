@@ -2,7 +2,6 @@
 <component name="org.nuxeo.ai.Pipeline.defaultConfig">
 
 <extension point="pipes" target="org.nuxeo.ai.Pipeline">
-
   <pipe id="pipe.images" enabled="${nuxeo.ai.images.enabled}">
     <supplier>
       <event name="documentCreated">
@@ -50,7 +49,7 @@
       </event>
     </supplier>
     <consumer>
-      <stream name="images"/>
+      <stream name="ai/images"/>
     </consumer>
     <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
       <option name="blobProperties">picture:views/1/content</option>
