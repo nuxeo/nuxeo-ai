@@ -30,12 +30,12 @@ import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
-@Operation(id = DefaultDeduplicationResolverOperation.ID, label = "Default Deduplication resolver")
+@Operation(id = DefaultDeduplicationResolverOperation.ID, category = "AI", label = "Default Deduplication resolver")
 public class DefaultDeduplicationResolverOperation {
 
     private static final Logger log = LogManager.getLogger(DefaultDeduplicationResolverOperation.class);
 
-    public static final String ID = "Insight.DeduplicationResolverOperation";
+    public static final String ID = "AI.DeduplicationResolverOperation";
 
     @Param(name = "similar")
     protected Set<Pair<String, String>> similar;
