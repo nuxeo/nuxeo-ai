@@ -37,12 +37,12 @@ import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 /**
  * Remove document(s) with an optional xpath from dedup index on insight.
  */
-@Operation(id = DedupDeleteIndexOperation.ID, category = "AICore", label = "Delete Dedup Index Operation", description = "Remove document(s) with an optional xpath from dedup index on insight")
+@Operation(id = DedupDeleteIndexOperation.ID, category = "AI", label = "Delete Dedup Index Operation", description = "Remove document(s) with an optional xpath from dedup index on insight")
 public class DedupDeleteIndexOperation {
 
     private static final Logger log = LogManager.getLogger(DedupDeleteIndexOperation.class);
 
-    public static final String ID = "AICore.DedupDeleteIndexOperation";
+    public static final String ID = "AI.DeduplicationDeleteIndexOperation";
 
     @Context
     protected CoreSession session;

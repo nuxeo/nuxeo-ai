@@ -28,10 +28,10 @@ import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.bulk.BulkService;
 
-@Operation(id = IndexProgressOperation.ID)
+@Operation(id = IndexProgressOperation.ID, category = "AI", label = "Get Indexing progress")
 public class IndexProgressOperation {
 
-    public static final String ID = "AI.IndexProgress";
+    public static final String ID = "AI.DeduplicationIndexProgress";
 
     @Context
     protected SimilarContentService scs;

@@ -41,12 +41,12 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.runtime.api.Framework;
 
-@Operation(id = FindSimilar.ID, category = "Insight", label = "Find duplicate documents")
+@Operation(id = FindSimilar.ID, category = "AI", label = "Find duplicate documents")
 public class FindSimilar {
 
     private static final Logger log = LogManager.getLogger(FindSimilar.class);
 
-    public static final String ID = "Insight.FindSimilar";
+    public static final String ID = "AI.DeduplicationFindSimilar";
 
     @Context
     protected CoreSession session;

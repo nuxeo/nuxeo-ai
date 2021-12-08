@@ -34,12 +34,12 @@ import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.runtime.api.Framework;
 
-@Operation(id = RunIndexOperation.ID, label = "Run Index BAF", description = "Schedules an Index Action on Bulk Action Framework; allowed to be executed only by Administrators")
+@Operation(id = RunIndexOperation.ID, category = "AI", label = "Run Index BAF", description = "Schedules an Index Action on Bulk Action Framework; allowed to be executed only by Administrators")
 public class RunIndexOperation {
 
     private static final Logger log = LogManager.getLogger(RunIndexOperation.class);
 
-    public static final String ID = "Insight.IndexRepository";
+    public static final String ID = "AI.DeduplicationIndexRepository";
 
     @Context
     protected SimilarContentService scs;
