@@ -35,12 +35,12 @@ import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 /**
  * Index document(s) with a given xpath in dedup index on insight.
  */
-@Operation(id = DedupIndexOperation.ID, category = "AICore", label = "Dedup Index Operation", description = "Index document(s) with a given xpath in dedup index on insight")
+@Operation(id = DedupIndexOperation.ID, category = "AI", label = "Dedup Index Operation", description = "Index document(s) with a given xpath in dedup index on insight")
 public class DedupIndexOperation {
 
     private static final Logger log = LogManager.getLogger(DedupIndexOperation.class);
 
-    public static final String ID = "AICore.DedupIndexOperation";
+    public static final String ID = "AI.DeduplicationIndexOperation";
 
     @Context
     protected SimilarContentService scs;
