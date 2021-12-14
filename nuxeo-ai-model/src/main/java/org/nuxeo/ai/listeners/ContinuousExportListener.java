@@ -192,7 +192,7 @@ public class ContinuousExportListener implements PostCommitEventListener {
     protected String modifyQuery(String original, Calendar calendar) {
         SQLQuery query = SQLQueryParser.parse(original);
         String isoTime = DateUtils.formatISODateTime(calendar);
-        Predicate afterDatePred = new Predicate(new Reference(DC_MODIFIED), GT, new DateLiteral(isoTime, true));
+        Predicate afterDatePred = new Predicate(new Reference(DC_MODIFIED), GT, new DateLiteral(isoTime, false));
         Predicate exclusive = new Predicate(NOT_VERSION_PRED, AND, afterDatePred);
 
         Predicate where;

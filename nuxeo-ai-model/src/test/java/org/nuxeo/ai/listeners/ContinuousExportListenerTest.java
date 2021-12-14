@@ -20,17 +20,24 @@
 package org.nuxeo.ai.listeners;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.nuxeo.ai.listeners.ContinuousExportListener.FORCE_EXPORT;
 import static org.nuxeo.ai.listeners.ContinuousExportListener.START_CONTINUOUS_EXPORT;
 
+import java.util.List;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.EventBundle;
+import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventBundleImpl;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.core.event.impl.EventImpl;
@@ -39,6 +46,7 @@ import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -57,14 +65,37 @@ public class ContinuousExportListenerTest {
     @Inject
     protected CoreSession session;
 
+    @Inject
+    protected EventService es;
+
+    @Inject
+    protected DatasetExportService des;
+
+    @Inject
+    protected TransactionalFeature txf;
+
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void shouldLunchExportWithNoExceptions() {
+        for (int i = 0; i < 15; i++) {
+            DocumentModel file = session.createDocumentModel("/", "TestDocument" + i, "File");
+            file.setPropertyValue("dc:title", "Test Doc " + 1);
+            session.createDocument(file);
+        }
+        txf.nextTransaction();
+
         EventBundle bundle = new EventBundleImpl();
         EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
+        ctx.setProperty(FORCE_EXPORT, true);
         bundle.push(new EventImpl(START_CONTINUOUS_EXPORT, ctx));
+        es.fireEventBundle(bundle);
+        es.waitForAsyncCompletion();
 
-        ContinuousExportListener listener = new ContinuousExportListener();
-        listener.handleEvent(bundle);
+        txf.nextTransaction();
+
+        List<BulkStatus> statuses = des.getStatuses();
+        // Two models were returned -> produced 2 exports;
+        // look at nuxeo-ai-model/src/test/resources/mappings/nuxeo_get_ai_models.json
+        assertThat(statuses).hasSize(2);
     }
 }

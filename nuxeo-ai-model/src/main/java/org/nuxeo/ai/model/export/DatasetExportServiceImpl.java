@@ -28,6 +28,8 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.BULK_KV_STORE_NAME;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
@@ -57,8 +60,10 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
+import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.TypeConstants;
@@ -78,6 +83,9 @@ import org.nuxeo.elasticsearch.api.ElasticSearchService;
 import org.nuxeo.elasticsearch.api.EsResult;
 import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueService;
+import org.nuxeo.runtime.kv.KeyValueStore;
+import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.DefaultComponent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -85,6 +93,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * Exports data
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
+
+    protected static final String BASE_QUERY =
+            "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
+                    + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
+
+    protected static final Properties TERM_PROPS;
+
+    protected static final Properties EMPTY_PROPS = new Properties();
 
     public static final String DEFAULT_NUM_TERMS = "200";
 
@@ -100,22 +120,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String STATS_COUNT = "count";
 
-    protected static final String BASE_QUERY =
-            "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
-                    + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
-
     public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
 
     public static final String QUERY_FOR_BATCH =
             BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
-
-    protected static final Properties TERM_PROPS;
-
-    protected static final Properties EMPTY_PROPS = new Properties();
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
 
     static {
         TERM_PROPS = new Properties();
@@ -162,20 +170,11 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         String notNullNXQL = notNullNxql(nxql, featuresWithType);
         String username = session.getPrincipal().getName();
-        List<Map<String, String>> inputAsParameter = inputs.stream().map(p -> new HashMap<String, String>() {
-            {
-                put("name", p.getName());
-                put("type", p.getType());
-            }
-        }).collect(Collectors.toList());
-        List<Map<String, String>> outputAsParameter = outputs.stream().map(p -> new HashMap<String, String>() {
-            {
-                put("name", p.getName());
-                put("type", p.getType());
-            }
-        }).collect(Collectors.toList());
+        List<Map<String, String>> inputAsParameter = inputs.stream().map(toMap()).collect(Collectors.toList());
+        List<Map<String, String>> outputAsParameter = outputs.stream().map(toMap()).collect(Collectors.toList());
+
         BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL, username).repository(
-                session.getRepositoryName())
+                                                                                                            session.getRepositoryName())
                                                                                                     .param(QUERY_PARAM,
                                                                                                             nxql)
                                                                                                     .param(INPUT_PARAMETERS,
@@ -197,6 +196,26 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             throw new NuxeoException("AI Client is not available; interrupting export " + bulkCommand.getId());
         }
         return Framework.getService(BulkService.class).submit(bulkCommand);
+    }
+
+    protected Function<PropertyType, Map<String, String>> toMap() {
+        return p -> {
+            Map<String, String> map = new HashMap<>();
+            map.put("name", p.getName());
+            map.put("type", p.getType());
+            return map;
+        };
+    }
+
+    @Override
+    public List<BulkStatus> getStatuses() {
+        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(BULK_KV_STORE_NAME);
+        KeyValueStoreProvider kv = (KeyValueStoreProvider) kvs;
+        return kv.keyStream(STATUS_PREFIX)
+                 .map(kv::get)
+                 .map(BulkCodecs.getStatusCodec()::decode)
+                 .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
+                 .collect(Collectors.toList());
     }
 
     @Override

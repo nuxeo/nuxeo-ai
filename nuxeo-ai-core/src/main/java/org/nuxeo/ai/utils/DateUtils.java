@@ -64,7 +64,7 @@ public class DateUtils {
     }
 
     public static String formatISODateTime(ZonedDateTime zdt) {
-        return formatISODateTime(zdt, true);
+        return formatISODateTime(zdt, false);
     }
 
     public static String formatISODateTime(ZonedDateTime zdt, boolean dateOnly) {
