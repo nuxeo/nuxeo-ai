@@ -70,6 +70,14 @@ public interface DatasetExportService {
     List<BulkStatus> getStatuses();
 
     /**
+     * Export Documents for provided Models; used by continuous export
+     *
+     * @param session {@link CoreSession} user's session
+     * @param uids    list of {@link String} representing Model ids
+     */
+    void export(CoreSession session, Set<String> uids);
+
+    /**
      * Get the Corpus document by id or return null
      */
     DocumentModelList getDatasetExports(CoreSession session, String id);

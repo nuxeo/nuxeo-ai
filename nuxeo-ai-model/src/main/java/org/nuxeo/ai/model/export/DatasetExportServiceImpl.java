@@ -25,27 +25,38 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_BATCH_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.bulk.ExportInitComputation.DEFAULT_SPLIT;
+import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.BULK_KV_STORE_NAME;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
+import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
+import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,16 +66,25 @@ import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.Statistic;
+import org.nuxeo.ai.utils.DateUtils;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
+import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.query.sql.SQLQueryParser;
+import org.nuxeo.ecm.core.query.sql.model.DateLiteral;
+import org.nuxeo.ecm.core.query.sql.model.IntegerLiteral;
+import org.nuxeo.ecm.core.query.sql.model.Predicate;
+import org.nuxeo.ecm.core.query.sql.model.Reference;
+import org.nuxeo.ecm.core.query.sql.model.SQLQuery;
+import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.core.schema.types.Field;
@@ -97,6 +117,15 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
+
+    private static final String IS_VERSION_PROP = "ecm:isVersion";
+
+    private static final long TWO_DAYS_IN_SEC = TimeUnit.DAYS.toSeconds(2);
+
+    private static final String AI_RUNNING_EXPORTS_KVS = "aiRunningExports";
+
+    private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ,
+            new IntegerLiteral(0));
 
     protected static final String BASE_QUERY =
             "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
@@ -156,7 +185,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
             int split, Map<String, Serializable> modelParams) {
-
         List<String> inputNames = inputs.stream().map(PropertyType::getName).collect(Collectors.toList());
         List<String> outputNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toList());
         validateParams(nxql, inputNames, outputNames);
@@ -208,6 +236,63 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
+    public void export(CoreSession session, Set<String> uids) {
+        CloudClient client = Framework.getService(CloudClient.class);
+        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(AI_RUNNING_EXPORTS_KVS);
+        Set<String> statuses = getStatuses().stream()
+                                            .filter(this::isRunning)
+                                            .map(BulkStatus::getId)
+                                            .collect(Collectors.toSet());
+        for (String uid : uids) {
+            log.info("Preparing export for model " + uid);
+            String exportId = kvs.getString(uid);
+            if (statuses.contains(exportId)) {
+                log.info("Export {} for model {} is already running; skipping", exportId, uid);
+                continue;
+            }
+
+            CorpusDelta delta = getCorpusDelta(session, client, uid);
+            if (delta == null || delta.isEmpty()) {
+                log.info("Delta is empty for model " + uid);
+                continue;
+            }
+
+            String original = delta.getQuery();
+            String modified = modifyQuery(original, delta.getEnd());
+            if (checkMinimum(session, modified, delta.getMinSize())) {
+                Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, delta.getCorporaId());
+                String jobId = export(session, modified, delta.getInputs(), delta.getOutputs(), DEFAULT_SPLIT, params);
+                log.info("Initiating continues export for Model " + uid + " with job id " + jobId);
+                kvs.put(uid, jobId, TWO_DAYS_IN_SEC);
+            } else {
+                log.info("Not enough documents to export; skipping");
+            }
+        }
+    }
+
+    protected boolean isRunning(BulkStatus status) {
+        return status.getState() == BulkStatus.State.RUNNING || status.getState() == BulkStatus.State.SCROLLING_RUNNING
+                || status.getState() == BulkStatus.State.SCHEDULED;
+    }
+
+    @Nullable
+    protected CorpusDelta getCorpusDelta(CoreSession session, CloudClient client, String uid) {
+        JSONBlob json;
+        try {
+            json = client.getCorpusDelta(session, uid);
+            if (json == null) {
+                log.debug("No corpus delta for Model" + uid);
+                return null;
+            }
+
+            return MAPPER.readValue(json.getStream(), CorpusDelta.class);
+        } catch (IOException e) {
+            log.error("Could not get corpus delta for model id " + uid, e);
+            return null;
+        }
+    }
+
+    @Override
     public List<BulkStatus> getStatuses() {
         KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(BULK_KV_STORE_NAME);
         KeyValueStoreProvider kv = (KeyValueStoreProvider) kvs;
@@ -216,6 +301,33 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                  .map(BulkCodecs.getStatusCodec()::decode)
                  .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
                  .collect(Collectors.toList());
+    }
+
+    /**
+     * @param original NXQL Query used for exporting documents
+     * @param calendar {@link Calendar} instance to exclude all models modified before the given date
+     * @return A modified query
+     */
+    protected String modifyQuery(String original, Calendar calendar) {
+        SQLQuery query = SQLQueryParser.parse(original);
+        String isoTime = DateUtils.formatISODateTime(calendar);
+        Predicate afterDatePred = new Predicate(new Reference(DC_MODIFIED), GT, new DateLiteral(isoTime, true));
+        Predicate exclusive = new Predicate(NOT_VERSION_PRED, AND, afterDatePred);
+
+        Predicate where;
+        if (query.where != null && query.where.predicate != null) {
+            where = new Predicate(query.where.predicate, AND, exclusive);
+        } else {
+            where = exclusive;
+        }
+
+        return new SQLQuery(query.select, query.from, new WhereClause(where), query.groupBy, query.having,
+                query.orderBy, query.limit, query.offset).toString();
+    }
+
+    protected boolean checkMinimum(CoreSession session, String query, int min) {
+        DocumentModelList list = session.query(query, min);
+        return list.size() == min;
     }
 
     @Override
