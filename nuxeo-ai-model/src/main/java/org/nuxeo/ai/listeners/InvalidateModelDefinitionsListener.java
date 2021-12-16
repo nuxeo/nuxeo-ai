@@ -20,7 +20,6 @@
 package org.nuxeo.ai.listeners;
 
 import static org.nuxeo.ai.listeners.ContinuousExportListener.ENTRIES_KEY;
-import static org.nuxeo.ai.listeners.ContinuousExportListener.getRepositoryName;
 import static org.nuxeo.ai.model.serving.ModelServingService.INVALIDATOR_TOPIC;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
@@ -43,6 +42,7 @@ import org.nuxeo.ecm.core.api.CloseableCoreSession;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.api.repository.RepositoryManager;
 import org.nuxeo.ecm.core.event.EventBundle;
 import org.nuxeo.ecm.core.event.PostCommitEventListener;
 import org.nuxeo.runtime.api.Framework;
@@ -52,10 +52,6 @@ import org.nuxeo.runtime.pubsub.PubSubService;
  * Invalidate and Update currently running models
  */
 public class InvalidateModelDefinitionsListener implements PostCommitEventListener {
-
-    public static final String EVENT_NAME = "invalidateModelDefinitions";
-
-    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
 
     private static final Logger log = LogManager.getLogger(InvalidateModelDefinitionsListener.class);
 
@@ -75,6 +71,10 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
 
     private static final String TYPE_KEY = "type";
 
+    protected static final Serializable EMPTY_SET = (Serializable) Collections.emptyList();
+
+    public static final String EVENT_NAME = "invalidateModelDefinitions";
+
     @Override
     public void handleEvent(EventBundle bundle) {
         ModelServingService mss = Framework.getService(ModelServingService.class);
@@ -87,7 +87,7 @@ public class InvalidateModelDefinitionsListener implements PostCommitEventListen
 
         Map<String, ModelDescriptor> all;
         CloudClient cc = Framework.getService(CloudClient.class);
-        String repository = getRepositoryName(bundle);
+        String repository = Framework.getService(RepositoryManager.class).getDefaultRepositoryName();
         try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(repository)) {
             JSONBlob models = cc.getPublishedModels(session);
             @SuppressWarnings("unchecked")

@@ -54,6 +54,9 @@ public class DatasetExportUpdaterOperation {
     protected KeyValueService kvsService;
 
     @Context
+    protected DatasetExportService exportService;
+
+    @Context
     protected CoreSession session;
 
     @Param(name = "global", required = false)
@@ -65,10 +68,9 @@ public class DatasetExportUpdaterOperation {
     @OperationMethod(asyncService = BulkService.class)
     public List<BulkProgressStatus> run() {
         String user = session.getPrincipal().getActingUser();
-        List<BulkStatus> statuses = global ? getStatuses() : bulkService.getStatuses(user);
+        List<BulkStatus> statuses = global ? exportService.getStatuses() : bulkService.getStatuses(user);
 
         return statuses.stream()
-                       .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
                        .sorted((o1, o2) -> o2.getSubmitTime().compareTo(o1.getSubmitTime()))
                        .limit(limit)
                        .map(BulkProgressStatus::new)
@@ -85,15 +87,6 @@ public class DatasetExportUpdaterOperation {
 
     protected KeyValueStore getKVS() {
         return kvsService.getKeyValueStore(EXPORT_KVS_STORE);
-    }
-
-    List<BulkStatus> getStatuses() {
-        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(BULK_KV_STORE_NAME);
-        KeyValueStoreProvider kv = (KeyValueStoreProvider) kvs;
-        return kv.keyStream(STATUS_PREFIX)
-                 .map(kv::get)
-                 .map(BulkCodecs.getStatusCodec()::decode)
-                 .collect(Collectors.toList());
     }
 
 }
