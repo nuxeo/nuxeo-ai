@@ -33,8 +33,8 @@ git checkout master-2021
 git rebase -Xours --onto master ref-masterFor2021 master-2021
 version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -N)
 echo $version
-if [[ ! $version =~ "2021-SNAPSHOT" ]]; then
-    version=${version/SNAPSHOT/2021-SNAPSHOT}
+if [[ ! $version =~ "-SNAPSHOT" ]]; then
+    version=${version/SNAPSHOT/-SNAPSHOT}
 fi
 mvn -Pinternal versions:set versions:update-child-modules versions:set-property -Dproperty=nuxeo.ai.version -DnewVersion="$version" -DprocessDependencies=false -DgenerateBackupPoms=false
 git commit -m"rebase: fix version $version" -a --no-edit ||true
