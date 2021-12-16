@@ -19,6 +19,7 @@
 package org.nuxeo.ai.model.export;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
@@ -27,6 +28,7 @@ import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentModelList;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 
 /**
  * For a given dataset provides exporting capabilities.
@@ -61,6 +63,19 @@ public interface DatasetExportService {
      */
     String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
             Set<PropertyType> outputProperties, int split, @Nullable Map<String, Serializable> modelParams);
+
+    /**
+     * @return list of {@link BulkStatus} of Export actions
+     */
+    List<BulkStatus> getStatuses();
+
+    /**
+     * Export Documents for provided Models; used by continuous export
+     *
+     * @param session {@link CoreSession} user's session
+     * @param uids    list of {@link String} representing Model ids
+     */
+    void export(CoreSession session, Set<String> uids);
 
     /**
      * Get the Corpus document by id or return null
