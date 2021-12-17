@@ -26,13 +26,15 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.util.Calendar;
 import java.util.Date;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * Java 8 time utilities. Forked from 11.1.
  */
 public class DateUtils {
 
-    public static final String ISODATETIME_GENERIC_PATTERN = "yyyy[-MM][-dd['T'HH[:mm[:ss[.SSS]]]]][XXX]";
+    public static final String ISODATETIME_GENERIC_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
 
     public static final DateTimeFormatter ISO_ROBUST_DATE_TIME = robustOfPattern(ISODATETIME_GENERIC_PATTERN);
 
@@ -47,6 +49,10 @@ public class DateUtils {
 
     public static String formatISODateTime(Calendar calendar) {
         return formatISODateTime(toZonedDateTime(calendar));
+    }
+
+    public static DateTime fromCalendar(Calendar calendar) {
+        return new DateTime(calendar.getTimeInMillis(), DateTimeZone.UTC);
     }
 
     public static String formatISODateTime(Date date) {

@@ -61,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.search.aggregations.Aggregation;
+import org.joda.time.DateTime;
 import org.nuxeo.ai.bulk.ExportHelper;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
@@ -309,8 +310,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      */
     protected String modifyQuery(String original, Calendar calendar) {
         SQLQuery query = SQLQueryParser.parse(original);
-        String isoTime = DateUtils.formatISODateTime(calendar);
-        Predicate afterDatePred = new Predicate(new Reference(DC_MODIFIED), GT, new DateLiteral(isoTime, true));
+        DateTime time = DateUtils.fromCalendar(calendar);
+        Predicate afterDatePred = new Predicate(new Reference(DC_MODIFIED), GT, new DateLiteral(time));
         Predicate exclusive = new Predicate(NOT_VERSION_PRED, AND, afterDatePred);
 
         Predicate where;
