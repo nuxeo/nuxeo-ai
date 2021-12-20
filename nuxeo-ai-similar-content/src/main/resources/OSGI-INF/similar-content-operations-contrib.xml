@@ -7,5 +7,6 @@
     <operation class="org.nuxeo.ai.similar.content.operation.DefaultDeduplicationResolverOperation"/>
     <operation class="org.nuxeo.ai.similar.content.operation.RunIndexOperation"/>
     <operation class="org.nuxeo.ai.similar.content.operation.IndexProgressOperation"/>
+    <operation class="org.nuxeo.ai.similar.content.operation.GetAssetCounts"/>
   </extension>
 </component>
