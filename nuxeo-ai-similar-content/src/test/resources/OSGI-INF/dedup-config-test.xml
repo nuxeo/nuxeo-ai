@@ -55,6 +55,17 @@
         </rule>
       </filter>
     </deduplication>
+
+    <deduplication
+        name="test_config_dedup_counts"
+        query="SELECT * FROM Document">
+      <xpath>file:content</xpath>
+      <filter id="testType">
+        <rule grant="true">
+          <type>File</type>
+        </rule>
+      </filter>
+    </deduplication>
   </extension>
 
 </component>
