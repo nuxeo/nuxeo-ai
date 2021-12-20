@@ -42,6 +42,8 @@ import com.sun.jersey.core.spi.factory.ResponseImpl;
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, RuntimeFeature.class, AuditFeature.class })
 @Deploy({ "org.nuxeo.ai.ai-internal" })
+@Deploy({ "org.nuxeo.ecm.platform.picture.core" })
+@Deploy({ "org.nuxeo.ecm.platform.tag" })
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
 public class TestOperations {
 
@@ -73,6 +75,6 @@ public class TestOperations {
     public void iCanInitDocumentsForDatalake() throws OperationException {
         OperationContext ctx = new OperationContext(session);
         String[] uids = (String[]) automationService.run(ctx, InitDatasetDocuments.ID);
-        assertThat(uids).hasSize(20);
+        assertThat(uids).hasSize(30);
     }
 }
