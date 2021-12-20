@@ -14,7 +14,9 @@ import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import javax.ws.rs.core.Response;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
@@ -70,17 +72,20 @@ public class InitDatasetDocuments {
                     "Folder");
             userSession.createDocument(folder);
             // Creating dataset document samples
-            Blob file = new FileBlob(this.getClass().getResourceAsStream("/pink.jpg"), "image/jpeg");
+            Blob image = new FileBlob(this.getClass().getResourceAsStream("/pink.jpg"), "image/jpeg");
+            Blob pdf = new FileBlob(this.getClass().getResourceAsStream("/nxp.pdf"), "application/pdf");
+            Blob psd = new FileBlob(this.getClass().getResourceAsStream("/text.psd"), "application/photoshop");
+            List<Blob> blobs = Arrays.asList(pdf, image, psd);
             // Filling metadata here according to the outputs we will get for missions
-            String[] uids = new String[20];
-            for (int i = 0; i < 20; i++) {
+            String[] uids = new String[30];
+            for (int i = 0; i < 30; i++) {
                 DocumentModel document = userSession.createDocumentModel(folder.getPathAsString(), "Example " + i,
-                        "ExtraFile");
+                        i % 3 == 2 ? "ExtraPicture" : "ExtraFile");
                 document.setPropertyValue("dc:title", "Example " + i);
                 document.setPropertyValue("dc:description", "Description " + i);
                 document.setPropertyValue("dc:contributors", new String[] { "system", "Administrator" });
                 document.setPropertyValue("dc:subjects", new String[] { "art/architecture", "art/danse" });
-                document.setPropertyValue("file:content", (Serializable) file);
+                document.setPropertyValue("file:content", (Serializable) blobs.get(i % 3));
                 document.setPropertyValue("extrafile:docprop", folder.getId());
                 uids[i] = userSession.createDocument(document).getId();
             }
