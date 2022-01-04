@@ -26,6 +26,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nuxeo.ai.sdk.rest.Common.Headers.SCROLL_ID_HEADER;
+import static org.nuxeo.ai.similar.content.DedupConstants.CONF_LISTENER_ENABLE;
 import static org.nuxeo.ai.similar.content.pipelines.DeduplicationScrollerComputation.SCROLLER_COMPUTATION_NAME;
 import static org.nuxeo.ai.similar.content.pipelines.DuplicateResolverComputation.RESOLVER_COMPUTE_NAME;
 import static org.nuxeo.ai.similar.content.pipelines.DuplicationPipeline.PIPELINE_NAME;
@@ -34,6 +35,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,6 +72,7 @@ import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/dedup-config-test.xml")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/operations-test-contrib.xml")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/disable-dedup-listener.xml")
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/activate-dedup-stream.xml")
 @RepositoryConfig(cleanup = Granularity.METHOD)
 public class DeduplicationPipelineTest {
 
@@ -85,6 +88,11 @@ public class DeduplicationPipelineTest {
 
     @Inject
     protected TransactionalFeature txf;
+
+    @Before
+    public void init() {
+        Framework.getProperties().put(CONF_LISTENER_ENABLE, "true");
+    }
 
     @Test
     public void shouldScrollThroughTuples() throws OperationException, InterruptedException {
