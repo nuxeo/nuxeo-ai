@@ -60,6 +60,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/cloud-client-datasource-test.xml")
+@Deploy("org.nuxeo.ai.similar-content-test:OSGI-INF/override-dedup-default-config.xml")
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
 public class DeduplicationListenersTest {
 

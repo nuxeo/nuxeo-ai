@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.similar.content.default.config.test.override" version="1.0">
+
+  <requires>org.nuxeo.ai.similar.content.default.config</requires>
+
+  <extension target="org.nuxeo.ai.similar.content.services.SimilarServiceComponent" point="configuration">
+    <!-- Deduplication Configuration by default to override for testing purposes -->
+    <deduplication name="dedup-default-config"
+                   query="SELECT * FROM File">
+      <xpath>file:content</xpath>
+      <filter id="dedup-default-filter">
+        <rule grant="true">
+          <type>File</type>
+        </rule>
+      </filter>
+    </deduplication>
+  </extension>
+
+</component>
