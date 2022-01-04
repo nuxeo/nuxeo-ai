@@ -62,5 +62,8 @@ nuxeo.ai.model.serving.cron.update.interval=0/1 0 * ? * * *
 # Enable log4j2 (info or debug - set to other value to disable)
 insight.log4j2=info
 
+# Deduplication feature activation flags
+nuxeo.insight.dedup.enabled=false
+
 # Deduplication Listener activation flag
-nuxeo.ai.similar.content.listener.enable=true
+nuxeo.ai.similar.content.listener.enable=false

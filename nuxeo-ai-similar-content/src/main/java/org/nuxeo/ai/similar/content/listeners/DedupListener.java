@@ -49,7 +49,7 @@ public class DedupListener implements EventListener {
     @Override
     public void handleEvent(Event event) {
         // Check if the listener is activated
-        boolean enable = Boolean.parseBoolean(Framework.getProperty(CONF_LISTENER_ENABLE, "true"));
+        boolean enable = Boolean.parseBoolean(Framework.getProperty(CONF_LISTENER_ENABLE, "false"));
         if (!enable) {
             return;
         }
