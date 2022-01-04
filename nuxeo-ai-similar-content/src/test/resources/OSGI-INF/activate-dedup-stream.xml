@@ -1,18 +1,18 @@
-<component name="org.nuxeo.ai.similar.content.stream.contrib">
+<component name="org.nuxeo.ai.similar.content.stream.contrib.test">
 
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
-    <logConfig name="similar-content-resolver"/>
+    <logConfig name="ai/similar-content-resolver"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
 
     <streamProcessor name="ai-similar-content-resolver"
-                     logConfig="similar-content-resolver"
+                     logConfig="ai/similar-content-resolver"
                      defaultConcurrency="${nuxeo.insight.dedup.concurrency:=2}"
                      defaultPartitions="${nuxeo.insight.dedup.partitions:=2}"
                      defaultCodec="${nuxeo.insight.stream.log.codec:=legacy}"
                      class="org.nuxeo.ai.similar.content.pipelines.DuplicationPipeline"
-                     enabled="${nuxeo.insight.dedup.enabled:=false}">
+                     enabled="true">
       <computation name="ai/dedup-scroller" concurrency="${nuxeo.ai.dedup.scroller.concurrency:=1}" />
       <computation name="ai/dedup-resolver" concurrency="${nuxeo.ai.dedup.resolver.concurrency:=2}" />
       <policy name="ai/dedup-scroller"

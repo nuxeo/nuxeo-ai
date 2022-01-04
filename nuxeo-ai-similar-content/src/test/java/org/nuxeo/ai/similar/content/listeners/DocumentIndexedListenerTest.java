@@ -26,9 +26,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.similar.content.DedupConstants.CONF_LISTENER_ENABLE;
 
 import java.io.Serializable;
 import javax.inject.Inject;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +41,7 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -68,6 +71,11 @@ public class DocumentIndexedListenerTest {
 
     @Inject
     protected EventService es;
+
+    @Before
+    public void init(){
+        Framework.getProperties().put(CONF_LISTENER_ENABLE, "true");
+    }
 
     @Test
     public void shouldProvideListOfSimilarDocs() {
