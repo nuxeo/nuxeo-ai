@@ -75,7 +75,7 @@ public class IndexComputation extends AbstractComputation {
         BulkCommand command = service.getCommand(ir.getCommandId());
 
         TransactionHelper.runInTransaction(() -> {
-            try (CloseableCoreSession session = CoreInstance.openCoreSession(command.getRepository(),
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(command.getRepository(),
                     command.getUsername())) {
                 IdRef ref = new IdRef(ir.getDocId());
                 if (!session.exists(ref)) {
