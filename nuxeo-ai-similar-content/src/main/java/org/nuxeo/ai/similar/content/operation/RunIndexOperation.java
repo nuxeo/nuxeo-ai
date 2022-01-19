@@ -24,6 +24,7 @@ package org.nuxeo.ai.similar.content.operation;
 import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CONFIGURATION;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEFAULT_CONFIGURATION;
 
+import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
@@ -51,7 +52,7 @@ public class RunIndexOperation {
     protected boolean reindex = false;
 
     @OperationMethod
-    public String run() {
+    public String run() throws IOException {
         if (!session.getPrincipal().isAdministrator()) {
             log.warn("User {} is not authorised to run the {} operation.", session.getPrincipal().getActingUser(), ID);
             return null;
@@ -59,6 +60,6 @@ public class RunIndexOperation {
 
         String configuration = Framework.getProperty(CONF_DEDUPLICATION_CONFIGURATION, DEFAULT_CONFIGURATION);
         String query = scs.getQuery(configuration);
-        return scs.index(query, session.getPrincipal().getActingUser(), reindex);
+        return scs.index(session, query, reindex);
     }
 }

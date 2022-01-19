@@ -25,6 +25,7 @@ import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
+import static org.nuxeo.ai.similar.content.DedupConstants.NOT_DUPLICATE_TAG;
 import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
 import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
@@ -44,8 +45,8 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.bulk.BulkProgressStatus;
+import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.client.API;
 import org.nuxeo.ai.sdk.rest.client.InsightClient;
@@ -127,7 +128,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     }
 
     @Override
-    public String index(String query, String user, boolean reindex) {
+    public String index(CoreSession session, String query, boolean reindex) throws IOException {
         BulkProgressStatus status = getStatus();
         boolean alreadyRunning = status != null && isActive(status);
         if (alreadyRunning) {
@@ -138,7 +139,16 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             query += DEDUPLICATION_FACET_EXCLUSION_NXQL;
         }
 
-        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query, user).build();
+        if (reindex) {
+            log.info("Dropping Index at Insight");
+            if (!drop(session)) {
+                throw new NuxeoException("Could not drop the index; aborting Index BAF");
+            }
+            log.debug("Index has been dropped");
+        }
+
+        BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query,
+                session.getPrincipal().getActingUser()).build();
         return Framework.getService(BulkService.class).submit(command);
     }
 
@@ -241,6 +251,12 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         return true;
     }
 
+    @Override
+    public boolean drop(CoreSession session) throws IOException {
+        InsightClient client = getInsightClient(session);
+        return Boolean.TRUE.equals(client.api(API.Dedup.DROP).call());
+    }
+
     protected void addDeduplicationFacet(CoreSession session, DocumentModel doc, String xpath) {
         List<Map<String, Object>> history = new ArrayList<>(1);
         doc.addFacet(DEDUPLICATION_FACET);
@@ -280,7 +296,26 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             log.warn("Deduplication found some nonexistent document, consider reindexing");
         }
 
-        return session.getDocuments(refs.toArray(new DocumentRef[] {}));
+        return session.getDocuments(refs.toArray(new DocumentRef[] {}))
+                      .stream()
+                      .filter(this::tagNotDuplicateEmpty)
+                      .collect(Collectors.toList());
+    }
+
+    protected boolean tagNotDuplicateEmpty(DocumentModel doc) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Serializable>> tags = (List<Map<String, Serializable>>) doc.getPropertyValue("nxtag:tags");
+        if (tags == null || tags.isEmpty()) {
+            return true;
+        }
+
+        for (Map<String, Serializable> tag : tags) {
+            if (tag.containsKey("label") && tag.get("label").equals(NOT_DUPLICATE_TAG)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Nullable
@@ -329,7 +364,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     protected boolean isActive(BulkProgressStatus status) {
         return status.getState().equals(BulkStatus.State.RUNNING.name()) && status.getState()
-                                                                                    .equals(BulkStatus.State.SCHEDULED.name())
+                                                                                  .equals(BulkStatus.State.SCHEDULED.name())
                 && status.getState().equals(BulkStatus.State.SCROLLING_RUNNING.name());
     }
 }
