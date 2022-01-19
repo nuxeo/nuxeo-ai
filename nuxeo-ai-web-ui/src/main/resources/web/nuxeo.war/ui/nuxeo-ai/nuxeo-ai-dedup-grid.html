@@ -179,7 +179,7 @@ Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]]/>
     <nuxeo-operation id="deleteOp" op="Document.Delete" sync-indexing=""></nuxeo-operation>
 
     <nuxeo-card heading="[[_getSimilarsLength(similars)]] [[i18n('ai.insight.dedup.label')]]" collapsible opened>
-      <template is="dom-repeat" items="[[_getSimilars(similars)]]">
+      <template is="dom-repeat" items="[[similars]]">
         <div class="thumbnailContainer" on-tap="_navigate">
           <img src="[[_thumbnail(item)]]" alt$="[[item.title]]"/>
         </div>
@@ -261,10 +261,6 @@ Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]]/>
 
               _getSimilarsLength(similars) {
                   return similars.length;
-              }
-
-              _getSimilars(similars) {
-                  return similars;
               }
           }
 
