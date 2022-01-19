@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -103,7 +104,7 @@ public class SimilarContentServiceTest {
     }
 
     @Test
-    public void shouldIndexDocuments() throws InterruptedException {
+    public void shouldIndexDocuments() throws InterruptedException, IOException {
         List<String> docIds = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             DocumentModel doc = session.createDocumentModel("/", "test_file_" + i, "File");
@@ -115,7 +116,7 @@ public class SimilarContentServiceTest {
         txf.nextTransaction();
 
         String query = "SELECT * FROM Document WHERE ecm:primaryType = 'File'";
-        String id = scs.index(query, session.getPrincipal().getActingUser(), true);
+        String id = scs.index(session, query, true);
         assertThat(bs.await(id, Duration.ofSeconds(30))).isTrue();
         BulkStatus status = bs.getStatus(id);
         assertThat(status.getErrorCount()).isEqualTo(0);
@@ -125,8 +126,9 @@ public class SimilarContentServiceTest {
 
         List<String> allHaveFacet = docIds.stream()
                                           .filter(docId -> session.getDocument(new IdRef(docId))
-                                                    .getFacets()
-                                                    .contains(DEDUPLICATION_FACET)).collect(Collectors.toList());
+                                                                  .getFacets()
+                                                                  .contains(DEDUPLICATION_FACET))
+                                          .collect(Collectors.toList());
         assertThat(allHaveFacet).hasSize(20);
 
         for (int i = 20; i < 40; i++) {
@@ -138,7 +140,7 @@ public class SimilarContentServiceTest {
 
         txf.nextTransaction();
 
-        id = scs.index(query, session.getPrincipal().getActingUser(), false);
+        id = scs.index(session, query, false);
         assertThat(bs.await(id, Duration.ofSeconds(30))).isTrue();
         status = bs.getStatus(id);
         assertThat(status.getErrorCount()).isEqualTo(0);
@@ -150,7 +152,8 @@ public class SimilarContentServiceTest {
         allHaveFacet = docIds.stream()
                              .filter(docId -> session.getDocument(new IdRef(docId))
                                                      .getFacets()
-                                                     .contains(DEDUPLICATION_FACET)).collect(Collectors.toList());
+                                                     .contains(DEDUPLICATION_FACET))
+                             .collect(Collectors.toList());
         assertThat(allHaveFacet).hasSize(40);
     }
 }
