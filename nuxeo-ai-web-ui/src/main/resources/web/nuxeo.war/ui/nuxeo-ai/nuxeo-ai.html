@@ -260,17 +260,16 @@ limitations under the License.
     });
 
     AIDeduplicationManager = (() => {
-        let deduplicationWidget = {};
         let op = null;
         let _dedupDebouncer = null;
 
-        function _clearSimilars() {
+        function _clearSimilars(deduplicationWidget) {
             if (deduplicationWidget) {
                 deduplicationWidget.similars = [];
             }
         }
 
-        function _findSimilarsWithBatch(doc, value) {
+        function _findSimilarsWithBatch(doc, value, propTarget) {
             if (!op) {
                 op = document.createElement('nuxeo-operation');
                 op.op = 'AI.DeduplicationFindSimilar';
@@ -278,17 +277,14 @@ limitations under the License.
             }
             let batchInfo = {};
             // LTS 2019
-            batchInfo.batchId = doc.properties['file:content']['upload-batch'];
-            batchInfo.fileId = doc.properties['file:content']['upload-fileId'];
-            if (!batchInfo) {
-                if (!value) {
-                    return;
-                }
+            batchInfo.batchId = doc.properties[propTarget]['upload-batch'];
+            batchInfo.fileId = doc.properties[propTarget]['upload-fileId'];
+            if (!batchInfo.batchId) {
                 // LTS 2020
                 batchInfo.batchId = value.batchId;
                 batchInfo.fileId = value.fileId;
             }
-            if (!batchInfo.batchId) {
+            if(!batchInfo.batchId){
                 return;
             }
             op.input = {};
@@ -323,25 +319,29 @@ limitations under the License.
              * 1) fetch similars for the blob freshly uploaded
              * 2) update similars on deduplication widget in create or edit mode
              */
-            updateCreateEditWidget: (layout, path) => {
-                if (!layout || !layout.document || !path || !path.startsWith('document.properties')) {
+            updateCreateEditWidget: (layout) => {
+                if (!layout || !layout.document) {
                     return;
                 }
-                const propertyChanged = path.replace('document.properties.', '');
-                if(!deduplicationWidget){
+                const deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
+                if (!deduplicationWidget) {
                     return;
                 }
-                deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
-                if (!deduplicationWidget || propertyChanged !== deduplicationWidget.property) {
+                const propTarget = deduplicationWidget.property;
+                if (!propTarget) {
                     return;
                 }
-                _clearSimilars();
+                _clearSimilars(deduplicationWidget);
                 const batchValue = layout.root.querySelector('nuxeo-dropzone').value;
+                if (!layout.document.properties[propTarget] && !batchValue) {
+                    return;
+                }
                 _dedupDebouncer = Polymer.Debouncer.debounce(
                     _dedupDebouncer, Polymer.Async.timeOut.after(500),
                     () => {
-                        _findSimilarsWithBatch(layout.document, batchValue).then((response) => {
-                            deduplicationWidget.set('similars', response.entries);
+                        _findSimilarsWithBatch(layout.document, batchValue, propTarget).then((response) => {
+                            const entries = response.entries || [];
+                            deduplicationWidget.set('similars', entries);
                         }).catch((error) => {
                             console.error("error while fetching similars: ", error);
                         });
@@ -356,24 +356,21 @@ limitations under the License.
                 if (!layout || !layout.document) {
                     return;
                 }
-                deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
-                if (!deduplicationWidget){
+                const deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
+                if (!deduplicationWidget) {
                     return;
                 }
                 const propTarget = deduplicationWidget.property;
                 if (!propTarget) {
                     return;
                 }
-                _clearSimilars();
-                _dedupDebouncer = Polymer.Debouncer.debounce(
-                    _dedupDebouncer, Polymer.Async.timeOut.after(500),
-                    () => {
-                        _findSimilarsWithProperty(layout.document, propTarget).then((response) => {
-                            deduplicationWidget.set('similars', response.entries);
-                        }).catch((error) => {
-                            console.error("error while fetching similars: ", error);
-                        });
-                    });
+                _clearSimilars(deduplicationWidget);
+                _findSimilarsWithProperty(layout.document, propTarget).then((response) => {
+                    const entries = response.entries || [];
+                    deduplicationWidget.set('similars', entries);
+                }).catch((error) => {
+                    console.error("error while fetching similars: ", error);
+                });
             },
         };
     })();
@@ -388,13 +385,15 @@ limitations under the License.
             return;
         }
         if (layoutName === 'metadata') {
-            layout.__aiDocumentChanged = (event) => AIDeduplicationManager.updateMetadataWidget(layout);
-            layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
-            AIDeduplicationManager.updateMetadataWidget(e.detail.element);
+            customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
+                layout.__aiDocumentChangedDedupMetadata = () => AIDeduplicationManager.updateMetadataWidget(layout);
+                layout.constructor.createMethodObserver('__aiDocumentChangedDedupMetadata(document.*)', true);
+                AIDeduplicationManager.updateMetadataWidget(e.detail.element);
+            });
         } else {
             customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
-                layout.__aiDocumentChanged = (event) => AIDeduplicationManager.updateCreateEditWidget(layout, event.path);
-                layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
+                layout.__aiDocumentChangedDedup = () => AIDeduplicationManager.updateCreateEditWidget(layout);
+                layout.constructor.createMethodObserver('__aiDocumentChangedDedup(document.*)', true);
                 AIDeduplicationManager.updateCreateEditWidget(e.detail.element);
             });
         }
