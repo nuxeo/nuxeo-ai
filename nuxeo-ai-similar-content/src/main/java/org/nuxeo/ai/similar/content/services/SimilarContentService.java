@@ -58,13 +58,13 @@ public interface SimilarContentService {
     /**
      * Index repository
      *
+     * @param session {@link CoreSession} as user's Session
      * @param query   {@link String} NXQL query to use
-     * @param user    {@link String} as acting user
      * @param reindex boolean flag, <b>true</b> to reindex the entire repository based on the given query,
      *                false to exclude already indexed documents
      * @return {@link String} as BAF ID to track the progress
      */
-    String index(String query, String user, boolean reindex);
+    String index(CoreSession session, String query, boolean reindex) throws IOException;
 
     /**
      * Get the latest status of the index BAF task
@@ -122,6 +122,8 @@ public interface SimilarContentService {
      * @throws IOException in case of processing issues
      */
     boolean delete(DocumentModel doc, String xpath) throws IOException;
+
+    boolean drop(CoreSession session) throws IOException;
 
     /**
      * Gets a query from the specified configuration; see {@link org.nuxeo.ai.similar.content.configuration.DeduplicationDescriptor}

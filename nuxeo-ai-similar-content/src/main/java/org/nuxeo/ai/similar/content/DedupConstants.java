@@ -25,6 +25,8 @@ public class DedupConstants {
 
     public static final String DEDUPLICATION_FACET = "Deduplicable";
 
+    public static final String NOT_DUPLICATE_TAG = "not_duplicate";
+
     public static final String CONF_LISTENER_ENABLE = "nuxeo.ai.similar.content.listener.enable";
 
     public static final String DEFAULT_CONFIGURATION = "dedup-default-config";
