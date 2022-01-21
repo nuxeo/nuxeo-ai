@@ -69,15 +69,15 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ecm.automation.server")
 public class CountsOperationTest {
 
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(
+            options().extensions(new ResponseTemplateTransformer(true)).port(5089));
+
     @Inject
     protected TransactionalFeature txf;
 
     @Inject
     protected EventService es;
-
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(
-            options().extensions(new ResponseTemplateTransformer(true)).port(5089));
 
     @Inject
     protected CoreSession session;
@@ -93,9 +93,9 @@ public class CountsOperationTest {
         Response responseCounts = (Response) automationService.run(ctx, GetAssetCounts.ID);
         JsonNode jsonTree = MAPPER.readTree(String.valueOf(responseCounts.getEntity()));
         assertThat(jsonTree.isObject()).isTrue();
-        assertThat(jsonTree.get("totalAssetsCount").asLong()).isEqualTo(4);
-        assertThat(jsonTree.get("indexedAssetsCount").asLong()).isEqualTo(4);
-        assertThat(jsonTree.get("nonIndexedAssetsCount").asLong()).isEqualTo(0);
+        long initialTotal = jsonTree.get("totalAssetsCount").asLong();
+        long initialIndexed = jsonTree.get("indexedAssetsCount").asLong();
+        long initialNotIndexed = jsonTree.get("nonIndexedAssetsCount").asLong();
 
         for (int i = 0; i < 200; i++) {
             indexDocument();
@@ -107,8 +107,8 @@ public class CountsOperationTest {
         responseCounts = (Response) automationService.run(ctx, GetAssetCounts.ID);
         jsonTree = MAPPER.readTree(String.valueOf(responseCounts.getEntity()));
         assertThat(jsonTree.isObject()).isTrue();
-        assertThat(jsonTree.get("totalAssetsCount").asLong()).isEqualTo(204);
-        assertThat(jsonTree.get("indexedAssetsCount").asLong()).isEqualTo(204);
+        assertThat(jsonTree.get("totalAssetsCount").asLong()).isEqualTo(initialTotal + 200);
+        assertThat(jsonTree.get("indexedAssetsCount").asLong()).isEqualTo(initialIndexed + 200);
         assertThat(jsonTree.get("nonIndexedAssetsCount").asLong()).isEqualTo(0);
     }
 
