@@ -16,6 +16,14 @@ limitations under the License.
 
 Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]]/>
 
+or
+
+<nuxeo-ai-dedup-grid property="file:content" doc=[[document]]>
+  <slot name="dedup-content">
+    custom template for each similar document accessible via [[item]]
+  </slot>
+</nuxeo-ai-dedup-grid>
+
 -->
 <dom-module id="nuxeo-ai-dedup-grid">
   <template>
@@ -180,92 +188,94 @@ Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]]/>
 
     <nuxeo-card heading="[[_getSimilarsLength(similars)]] [[i18n('ai.insight.dedup.label')]]" collapsible opened>
       <template is="dom-repeat" items="[[similars]]">
-        <div class="thumbnailContainer" on-tap="_navigate">
-          <img src="[[_thumbnail(item)]]" alt$="[[item.title]]"/>
-        </div>
-        <a class="title" href$="[[item.contextParameters.documentURL]]" on-tap="_navigate">
-          <div class="dataContainer">
-            <div class="title" id="title">[[item.title]]</div>
-            <nuxeo-tag>[[formatDocType(item.type)]]</nuxeo-tag>
-            <nuxeo-tooltip for="title">[[item.title]]</nuxeo-tooltip>
+        <slot name="dedup-grid-content">
+          <div class="thumbnailContainer" on-tap="_navigate">
+            <img src="[[_thumbnail(item)]]" alt$="[[item.title]]"/>
           </div>
-        </a>
-        <div class="actions">
-          <div on-click="_delete" style="float:left">
-            <paper-icon-button icon="delete" noink=""></paper-icon-button>
-            <span class="label" hidden$="[[!showLabel]]">[[_label]]</span>
+          <a class="title" href$="[[item.contextParameters.documentURL]]" on-tap="_navigate">
+            <div class="dataContainer">
+              <div class="title" id="title">[[item.title]]</div>
+              <nuxeo-tag>[[formatDocType(item.type)]]</nuxeo-tag>
+              <nuxeo-tooltip for="title">[[item.title]]</nuxeo-tooltip>
+            </div>
+          </a>
+          <div class="actions">
+            <div on-click="_delete" style="float:left">
+              <paper-icon-button icon="delete" noink=""></paper-icon-button>
+              <span class="label" hidden$="[[!showLabel]]">[[_label]]</span>
+            </div>
+            <nuxeo-favorites-toggle-button document="[[item]]"></nuxeo-favorites-toggle-button>
+            <nuxeo-download-button document="[[item]]"></nuxeo-download-button>
           </div>
-          <nuxeo-favorites-toggle-button document="[[item]]"></nuxeo-favorites-toggle-button>
-          <nuxeo-download-button document="[[item]]"></nuxeo-download-button>
-        </div>
+        </slot>
       </template>
     </nuxeo-card>
   </template>
 
   <script>
-      {
-          class AIDedupGrid extends Polymer.mixinBehaviors([Polymer.IronFormElementBehavior, Nuxeo.FormatBehavior, Nuxeo.RoutingBehavior], Nuxeo.Element) {
+    {
+      class AIDedupGrid extends Polymer.mixinBehaviors([Polymer.IronFormElementBehavior, Nuxeo.FormatBehavior, Nuxeo.RoutingBehavior], Nuxeo.Element) {
 
-              static get is() {
-                  return 'nuxeo-ai-dedup-grid';
-              }
+        static get is() {
+          return 'nuxeo-ai-dedup-grid';
+        }
 
-              static get properties() {
-                  return {
-                      doc: {
-                          type: Object,
-                      },
-                      property: {
-                          type: String,
-                          value: 'file:content',
-                      },
-                      similars: {
-                          type: Array,
-                          value: [],
-                      }
-                  }
-              }
-
-              _thumbnail(doc) {
-                  return doc &&
-                  doc.uid &&
-                  doc.contextParameters &&
-                  doc.contextParameters.thumbnail &&
-                  doc.contextParameters.thumbnail.url
-                      ? doc.contextParameters.thumbnail.url
-                      : '';
-              }
-
-              _navigate() {
-                  this.fire('navigate', {item: this.doc, index: this.index});
-              }
-
-              _delete(item) {
-                  if (!confirm(this.i18n('deleteButton.confirm'))) {
-                      return;
-                  }
-                  this.$.deleteOp.execute().then(() => {
-                      this.dispatchEvent(new CustomEvent('document-deleted', {
-                          composed: true,
-                          bubbles: true,
-                          detail: {doc: item},
-                      }));
-                  }).catch((error) => {
-                      this.dispatchEvent(new CustomEvent('document-deleted', {
-                          composed: true,
-                          bubbles: true,
-                          detail: {doc: item, error},
-                      }));
-                  });
-              }
-
-              _getSimilarsLength(similars) {
-                  return similars.length;
-              }
+        static get properties() {
+          return {
+            doc: {
+              type: Object,
+            },
+            property: {
+              type: String,
+              value: 'file:content',
+            },
+            similars: {
+              type: Array,
+              value: [],
+            }
           }
+        }
 
-          customElements.define(AIDedupGrid.is, AIDedupGrid);
-          Nuxeo.AIDedupGrid = AIDedupGrid;
+        _thumbnail(doc) {
+          return doc &&
+          doc.uid &&
+          doc.contextParameters &&
+          doc.contextParameters.thumbnail &&
+          doc.contextParameters.thumbnail.url
+            ? doc.contextParameters.thumbnail.url
+            : '';
+        }
+
+        _navigate() {
+          this.fire('navigate', {item: this.doc, index: this.index});
+        }
+
+        _delete(item) {
+          if (!confirm(this.i18n('deleteButton.confirm'))) {
+            return;
+          }
+          this.$.deleteOp.execute().then(() => {
+            this.dispatchEvent(new CustomEvent('document-deleted', {
+              composed: true,
+              bubbles: true,
+              detail: {doc: item},
+            }));
+          }).catch((error) => {
+            this.dispatchEvent(new CustomEvent('document-deleted', {
+              composed: true,
+              bubbles: true,
+              detail: {doc: item, error},
+            }));
+          });
+        }
+
+        _getSimilarsLength(similars) {
+          return similars.length;
+        }
       }
+
+      customElements.define(AIDedupGrid.is, AIDedupGrid);
+      Nuxeo.AIDedupGrid = AIDedupGrid;
+    }
   </script>
 </dom-module>
