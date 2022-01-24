@@ -276,16 +276,17 @@ limitations under the License.
                 document.querySelector('nuxeo-app').appendChild(op);
             }
             let batchInfo = {};
-            // LTS 2019
-            batchInfo.batchId = doc.properties[propTarget]['upload-batch'];
-            batchInfo.fileId = doc.properties[propTarget]['upload-fileId'];
-            if (!batchInfo.batchId) {
-                // LTS 2020
-                batchInfo.batchId = value.batchId;
-                batchInfo.fileId = value.fileId;
+            if (!value) {
+              // LTS 2019
+              batchInfo.batchId = doc.properties[propTarget]['upload-batch'];
+              batchInfo.fileId = doc.properties[propTarget]['upload-fileId'];
+            } else {
+              // LTS 2020
+              batchInfo.batchId = value.batchId;
+              batchInfo.fileId = value.fileId;
             }
-            if(!batchInfo.batchId){
-                return;
+            if (!batchInfo.batchId) {
+              return;
             }
             op.input = {};
             op.headers = {
@@ -333,8 +334,10 @@ limitations under the License.
                 }
                 _clearSimilars(deduplicationWidget);
                 const batchValue = layout.root.querySelector('nuxeo-dropzone').value;
-                if (!layout.document.properties[propTarget] && !batchValue) {
-                    return;
+                if ((!layout.document.properties[propTarget]
+                  || !layout.document.properties[propTarget]['upload-batch'])
+                  && !batchValue) {
+                  return;
                 }
                 _dedupDebouncer = Polymer.Debouncer.debounce(
                     _dedupDebouncer, Polymer.Async.timeOut.after(500),
