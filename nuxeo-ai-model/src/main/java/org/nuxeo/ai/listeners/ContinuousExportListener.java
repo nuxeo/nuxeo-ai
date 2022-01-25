@@ -52,6 +52,9 @@ public class ContinuousExportListener implements PostCommitEventListener {
 
     private static final Logger log = LogManager.getLogger(ContinuousExportListener.class);
 
+    private static final TypeReference<List<Model>> LIST_OF_MODELS_REF = new TypeReference<List<Model>>() {
+    };
+
     public static final String ENTRIES_KEY = "entries";
 
     public static final String START_CONTINUOUS_EXPORT = "startContinuousExport";
@@ -98,14 +101,8 @@ public class ContinuousExportListener implements PostCommitEventListener {
             JsonNode jsonNode = MAPPER.readTree(models.getStream());
 
             if (jsonNode.has(ENTRIES_KEY)) {
-                TypeReference<List<Model>> typeReference = new TypeReference<List<Model>>() {
-                };
-
-                List<Model> modelList = MAPPER.readValue(jsonNode.get(ENTRIES_KEY).toString(), typeReference);
+                List<Model> modelList = MAPPER.readValue(jsonNode.get(ENTRIES_KEY).toString(), LIST_OF_MODELS_REF);
                 return modelList.stream().distinct().map(Model::getUid).collect(Collectors.toSet());
-                //                @SuppressWarnings("unchecked")
-                //                List<Map<String, Serializable>> entries = (List<Map<String, Serializable>>) resp.get(ENTRIES_KEY);
-                //                return entries.stream().map(entry -> (String) entry.get("uid")).collect(Collectors.toSet());
             } else {
                 log.debug("Could not find any entries in " + models.getString());
             }
