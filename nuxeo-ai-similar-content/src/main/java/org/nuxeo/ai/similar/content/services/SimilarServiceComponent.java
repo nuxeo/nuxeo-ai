@@ -25,7 +25,6 @@ import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
-import static org.nuxeo.ai.similar.content.DedupConstants.NOT_DUPLICATE_TAG;
 import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
 import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
@@ -39,7 +38,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -208,17 +206,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         parameters.put(XPATH_PARAM, xpath);
 
         List<String> ids = client.api(API.Dedup.FIND).call(parameters, null);
-        if (ids == null || ids.isEmpty()) {
-            log.debug("No similar documents found");
-            return emptyList();
-        }
-
-        List<DocumentRef> refs = ids.stream().map(IdRef::new).filter(session::exists).collect(Collectors.toList());
-        if (refs.size() != ids.size()) {
-            log.warn("Deduplication found some nonexistent document, consider reindexing");
-        }
-
-        return session.getDocuments(refs.toArray(new DocumentRef[] {}));
+        return resolveDocuments(session, ids);
     }
 
     @Override
@@ -291,31 +279,11 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             return emptyList();
         }
 
-        List<DocumentRef> refs = ids.stream().map(IdRef::new).filter(session::exists).collect(Collectors.toList());
-        if (refs.size() != ids.size()) {
+        DocumentRef[] refs = ids.stream().map(IdRef::new).filter(session::exists).toArray(DocumentRef[]::new);
+        if (refs.length != ids.size()) {
             log.warn("Deduplication found some nonexistent document, consider reindexing");
         }
-
-        return session.getDocuments(refs.toArray(new DocumentRef[] {}))
-                      .stream()
-                      .filter(this::tagNotDuplicateEmpty)
-                      .collect(Collectors.toList());
-    }
-
-    protected boolean tagNotDuplicateEmpty(DocumentModel doc) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, Serializable>> tags = (List<Map<String, Serializable>>) doc.getPropertyValue("nxtag:tags");
-        if (tags == null || tags.isEmpty()) {
-            return true;
-        }
-
-        for (Map<String, Serializable> tag : tags) {
-            if (tag.containsKey("label") && tag.get("label").equals(NOT_DUPLICATE_TAG)) {
-                return false;
-            }
-        }
-
-        return true;
+        return session.getDocuments(refs);
     }
 
     @Nullable

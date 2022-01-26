@@ -26,14 +26,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ai.similar.content.DedupConstants.NOT_DUPLICATE_TAG;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
@@ -115,32 +111,6 @@ public class FindSimilarTest {
         @SuppressWarnings("unchecked")
         List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
         assertThat(response).isNotEmpty();
-    }
-
-    @Test
-    public void shouldRunOperationOnTaggedWithBlob() throws OperationException {
-        Blob textBlob = Blobs.createBlob("this is a blob");
-        DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
-        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
-
-        Map<String, Serializable> tag = new HashMap<>();
-        tag.put("label", NOT_DUPLICATE_TAG);
-        tag.put("username", "test");
-        List<Map<String, Serializable>> tags = Collections.singletonList(tag);
-        fileDoc.setPropertyValue("nxtag:tags", (Serializable) tags);
-
-        fileDoc = session.createDocument(fileDoc);
-        session.save();
-
-        String url = "/api/v1/ai/dedup/mockTestProject/find?distance=0&xpath=file:content";
-        stubFor(WireMock.post(url).willReturn(okJson("[\"" + fileDoc.getId() + "\"]")));
-
-        OperationContext ctx = new OperationContext(session);
-        ctx.setInput(textBlob);
-        ctx.put("xpath", FILE_CONTENT);
-        @SuppressWarnings("unchecked")
-        List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
-        assertThat(response).isEmpty();
     }
 
     @Test
