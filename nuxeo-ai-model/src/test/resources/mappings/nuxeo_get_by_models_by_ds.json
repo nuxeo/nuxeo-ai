@@ -11,83 +11,601 @@
         {
           "entity-type": "document",
           "repository": "default",
-          "uid": "6b93bace-4ed3-408f-8efe-79a8dd287199",
-          "path": "/Nuxeo Jira/models/Components._1559257870909_.trashed",
+          "uid": "541957eb-7be5-42ea-b4ee-c92b8c6b2c62",
+          "path": "/jira/models/model-test12",
           "type": "AI_Model",
-          "state": "start",
-          "parentRef": "2c276419-0ee8-4a1b-b8b4-1c7051d41f0a",
+          "state": "updating",
+          "parentRef": "8e88c355-1872-4375-bd4e-4e1b9395a146",
           "isCheckedOut": true,
+          "isRecord": false,
+          "retainUntil": null,
+          "hasLegalHold": false,
+          "isUnderRetentionOrLegalHold": false,
           "isVersion": false,
           "isProxy": false,
-          "changeToken": "34-0",
-          "isTrashed": true,
-          "title": "Components",
-          "lastModified": "2019-05-30T20:11:00.132Z",
+          "changeToken": "22-0",
+          "isTrashed": false,
+          "title": "Fashion",
+          "lastModified": "2022-01-24T15:28:07.813Z",
           "properties": {
-            "ai_model:corpus": [
-              "a3660985-5ece-41fd-9dfc-4f5e6e43975a"
-            ],
-            "ai_model:main_result": null,
-            "ai_model:training_information": {
-              "jobId": "Nx-Opt-20190530-1936-05-481",
-              "comments": "error",
-              "start": "2019-05-30T19:36:05.981Z",
-              "end": "2019-05-30T20:10:36.108Z",
-              "training": false,
-              "error": "No training job succeeded after 5 attempts. Please take a look at the training job failures to get more details.",
-              "logs": null,
-              "optimization_job": null
-            },
-            "ai_model:labels": [
-              "dev"
-            ],
+            "ai_model:optimization_process": false,
+            "ai_model:training_algorithm_document": "828f2771-0405-49f6-8d86-909930690428",
+            "ai_model:documents_count": 0,
+            "ai_model:model_type": "enrichment",
+            "ai_model:doc_type": "Clothing",
             "ai_model:outputs": [
               {
                 "output_name": null,
                 "categories_transformation": null,
-                "name": "tc:components",
+                "name": "style:gender",
                 "multi_class": false,
-                "language": null,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Women", "Men", "Boys", "Unisex", "Girls"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:masterCategory",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Accessories", "Apparel", "Personal Care", "Footwear", "Free Items"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:subCategory",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
                 "categories": [
-                  "Core", "Security / Rights", "Web Common"
+                  "Jewellery", "Scarves", "Lips", "Nails", "Makeup", "Skin Care", "Flip Flops", "Watches", "Shoes",
+                  "Socks Accessories", "Accessories", "Wallets", "Bottomwear", "Mufflers", "Gloves", "Bags", "Headwear",
+                  "Cufflinks", "Saree", "Fragrance", "Eyewear", "Free Gifts", "Hair", "Eyes", "Sandal", "Topwear",
+                  "Ties", "Dress", "Apparel Set", "Loungewear and Nightwear", "Stoles", "Belts", "Skin",
+                  "Bath and Body", "Shoe Accessories", "Innerwear"
                 ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:article",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Nightdress", "Flip Flops", "Face Moisturisers", "Lounge Pants", "Lipstick", "Formal Shoes",
+                  "Camisoles", "Gloves", "Shorts", "Dupatta", "Caps", "Earrings", "Hair Colour", "Tshirts", "Ties",
+                  "Waistcoat", "Boxers", "Sunglasses", "Kajal and Eyeliner", "Mask and Peel", "Shoe Accessories",
+                  "Backpacks", "Jeggings", "Trunk", "Scarves", "Innerwear Vests", "Suspenders", "Salwar",
+                  "Salwar and Dupatta", "Heels", "Swimwear", "Briefs", "Accessory Gift Set", "Skirts", "Free Gifts",
+                  "Necklace and Chains", "Deodorant", "Headband", "Trousers", "Messenger Bag", "Dresses",
+                  "Perfume and Body Mist", "Stoles", "Ring", "Tunics", "Nail Polish", "Concealer", "Belts", "Sweaters",
+                  "Sweatshirts", "Handbags", "Lip Liner", "Wallets", "Body Lotion", "Night suits", "Bracelet",
+                  "Cufflinks", "Patiala", "Rain Jacket", "Sarees", "Highlighter and Blush", "Eyeshadow",
+                  "Lounge Shorts", "Track Pants", "Fragrance Gift Set", "Travel Accessory", "Sports Sandals",
+                  "Tracksuits", "Leggings", "Watches", "Casual Shoes", "Capris", "Socks", "Sports Shoes", "Kurta Sets",
+                  "Shirts", "Mufflers", "Stockings", "Kurtis", "Compact", "Kurtas", "Lip Gloss", "Bath Robe", "Jeans",
+                  "Jumpsuit", "Sandals", "Mobile Pouch", "Bra", "Pendant", "Foundation and Primer", "Jewellery Set",
+                  "Flats", "Lip Care", "Laptop Bag", "Duffel Bag", "Tops", "Churidar", "Bangle",
+                  "Face Wash and Cleanser", "Clutches", "Jackets"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:baseColour",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Tan", "Brown", "Peach", "Cream", "Rose", "Black", "Orange", "Sea Green", "Turquoise Blue",
+                  "Grey Melange", "Lavender", "Beige", "Mauve", "Teal", "Copper", "Grey", "Off White", "Bronze", "Gold",
+                  "Maroon", "Rust", "Mushroom Brown", "Blue", "Burgundy", "Magenta", "Multi", "Steel", "Navy Blue",
+                  "Coffee Brown", "Taupe", "Olive", "Red", "Silver", "Khaki", "Pink", "White", "Metallic", "Yellow",
+                  "Purple", "Skin", "Mustard", "Green", "Charcoal"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:season",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Winter", "Summer", "Fall", "Spring"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:year",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["2009", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:usage",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Travel", "Party", "Smart Casual", "Casual", "Formal", "Ethnic", "Sports"],
                 "type": "cat"
               }
             ],
+            "ai_model:version_label": null,
+            "ai_model:corpora": "31fc5321-a9d6-4de5-bad5-b0309f973799",
             "ai_model:deployment_information": {
               "endpoint": null,
-              "publishing_state": "published",
+              "publishing_state": "never_published",
               "modified": null,
               "deployment_error": null,
-              "deployer": ""
+              "deployer": null
             },
+            "ai_model:query_filter_params": "style:article is not null",
+            "ai_model:corpus": [],
+            "ai_model:main_result": 0.7758949398994446,
+            "ai_model:unlabeled_corpora": null,
+            "ai_model:labels": [],
+            "ai_model:datasource": "dev",
+            "ai_model:training_algorithm_document_title": "Image Focus Algorithm",
             "ai_model:inputs": [
               {
-                "name": "dc:title",
+                "name": "file:content",
                 "multi_class": false,
                 "language": "en",
-                "categories": [
-                ],
-                "type": "txt"
-              }, {
-                "name": "tc:description",
-                "multi_class": false,
-                "language": "en",
-                "categories": [
-                ],
-                "type": "txt"
+                "categories": [],
+                "type": "img"
               }
             ],
-            "ai_model:name": "Components"
+            "ai_model:name": "Fashion"
           },
           "facets": [
-            "Versionable", "NXTag", "Publishable", "Commentable", "HasRelatedText", "Downloadable"
+            "Versionable", "NXTag", "Publishable", "AiEvaluable", "Commentable", "AiJobSagemaker", "AiTrainable",
+            "HasRelatedText", "Downloadable"
+          ],
+          "schemas": [
+            {
+              "name": "uid",
+              "prefix": "uid"
+            }, {
+              "name": "ai_model",
+              "prefix": "ai_model"
+            }, {
+              "name": "file",
+              "prefix": "file"
+            }, {
+              "name": "common",
+              "prefix": "common"
+            }, {
+              "name": "ai_algorithm",
+              "prefix": "ai_algorithm"
+            }, {
+              "name": "ai_model_schema",
+              "prefix": "ai_model_schema"
+            }, {
+              "name": "files",
+              "prefix": "files"
+            }, {
+              "name": "dublincore",
+              "prefix": "dc"
+            }, {
+              "name": "job_sagemaker",
+              "prefix": "job_sagemaker"
+            }, {
+              "name": "relatedtext",
+              "prefix": "relatedtext"
+            }, {
+              "name": "facetedTag",
+              "prefix": "nxtag"
+            }, {
+              "name": "ai_evaluation",
+              "prefix": "ai_evaluation"
+            }
           ]
         }, {
           "entity-type": "document",
           "repository": "default",
+          "uid": "e920a6a1-35e0-4a9e-b695-f6ce4727cd91",
+          "path": "/jira/models/model-test12",
+          "type": "AI_Model",
+          "state": "trained",
+          "parentRef": "8e88c355-1872-4375-bd4e-4e1b9395a146",
+          "isCheckedOut": false,
+          "isRecord": false,
+          "retainUntil": null,
+          "hasLegalHold": false,
+          "isUnderRetentionOrLegalHold": false,
+          "isVersion": true,
+          "isProxy": false,
+          "versionableId": "541957eb-7be5-42ea-b4ee-c92b8c6b2c62",
+          "changeToken": "12-0",
+          "isTrashed": false,
+          "title": "Fashion",
+          "lastModified": "2022-01-24T13:06:01.867Z",
+          "properties": {
+            "ai_model:optimization_process": null,
+            "ai_model:training_algorithm_document": "828f2771-0405-49f6-8d86-909930690428",
+            "ai_model:documents_count": 0,
+            "ai_model:model_type": "enrichment",
+            "ai_model:doc_type": "Clothing",
+            "ai_model:outputs": [
+              {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:gender",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Women", "Men", "Boys", "Unisex", "Girls"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:masterCategory",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Accessories", "Apparel", "Personal Care", "Footwear", "Free Items"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:subCategory",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Jewellery", "Scarves", "Lips", "Nails", "Skin Care", "Makeup", "Flip Flops", "Watches", "Shoes",
+                  "Socks Accessories", "Accessories", "Wallets", "Bottomwear", "Mufflers", "Bags", "Headwear",
+                  "Cufflinks", "Saree", "Eyewear", "Fragrance", "Hair", "Free Gifts", "Eyes", "Sandal", "Topwear",
+                  "Dress", "Ties", "Apparel Set", "Loungewear and Nightwear", "Stoles", "Belts", "Skin",
+                  "Shoe Accessories", "Innerwear"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:article",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Nightdress", "Flip Flops", "Face Moisturisers", "Lounge Pants", "Lipstick", "Formal Shoes",
+                  "Camisoles", "Shorts", "Dupatta", "Caps", "Earrings", "Hair Colour", "Tshirts", "Ties", "Boxers",
+                  "Sunglasses", "Kajal and Eyeliner", "Backpacks", "Trunk", "Scarves", "Innerwear Vests", "Suspenders",
+                  "Salwar and Dupatta", "Heels", "Swimwear", "Briefs", "Skirts", "Accessory Gift Set", "Free Gifts",
+                  "Necklace and Chains", "Deodorant", "Trousers", "Messenger Bag", "Dresses", "Perfume and Body Mist",
+                  "Stoles", "Tunics", "Nail Polish", "Belts", "Sweaters", "Sweatshirts", "Handbags", "Lip Liner",
+                  "Wallets", "Bracelet", "Night suits", "Cufflinks", "Patiala", "Rain Jacket", "Sarees",
+                  "Highlighter and Blush", "Eyeshadow", "Lounge Shorts", "Track Pants", "Fragrance Gift Set",
+                  "Travel Accessory", "Sports Sandals", "Tracksuits", "Leggings", "Watches", "Casual Shoes", "Socks",
+                  "Capris", "Sports Shoes", "Kurta Sets", "Shirts", "Mufflers", "Kurtis", "Compact", "Kurtas",
+                  "Lip Gloss", "Bath Robe", "Jeans", "Jumpsuit", "Sandals", "Mobile Pouch", "Bra", "Pendant",
+                  "Jewellery Set", "Foundation and Primer", "Flats", "Laptop Bag", "Lip Care", "Duffel Bag", "Tops",
+                  "Bangle", "Face Wash and Cleanser", "Clutches", "Jackets"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:baseColour",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Tan", "Brown", "Peach", "Cream", "Rose", "Black", "Orange", "Sea Green", "Turquoise Blue",
+                  "Grey Melange", "Lavender", "Beige", "Mauve", "Teal", "Copper", "Grey", "Off White", "Bronze",
+                  "Maroon", "Gold", "Rust", "Blue", "Burgundy", "Magenta", "Multi", "Steel", "Navy Blue",
+                  "Coffee Brown", "Olive", "Red", "Silver", "Khaki", "Pink", "White", "Metallic", "Yellow", "Purple",
+                  "Skin", "Mustard", "Green", "Charcoal"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:season",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Winter", "Summer", "Fall", "Spring"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:year",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:usage",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Party", "Smart Casual", "Casual", "Formal", "Ethnic", "Sports"],
+                "type": "cat"
+              }
+            ],
+            "ai_model:version_label": null,
+            "ai_model:corpora": "31fc5321-a9d6-4de5-bad5-b0309f973799",
+            "ai_model:deployment_information": {
+              "endpoint": null,
+              "publishing_state": "never_published",
+              "modified": null,
+              "deployment_error": null,
+              "deployer": null
+            },
+            "ai_model:query_filter_params": "style:article is not null",
+            "ai_model:corpus": [],
+            "ai_model:main_result": 0.7775821685791016,
+            "ai_model:unlabeled_corpora": null,
+            "ai_model:labels": [],
+            "ai_model:datasource": "dev",
+            "ai_model:training_algorithm_document_title": "Image Focus Algorithm",
+            "ai_model:inputs": [
+              {
+                "name": "file:content",
+                "multi_class": false,
+                "language": "en",
+                "categories": [],
+                "type": "img"
+              }
+            ],
+            "ai_model:name": "Fashion"
+          },
+          "facets": [
+            "Immutable", "Versionable", "NXTag", "Publishable", "AiEvaluable", "Commentable", "AiJobSagemaker",
+            "AiTrainable", "HasRelatedText", "Downloadable"
+          ],
+          "schemas": [
+            {
+              "name": "uid",
+              "prefix": "uid"
+            }, {
+              "name": "ai_model",
+              "prefix": "ai_model"
+            }, {
+              "name": "file",
+              "prefix": "file"
+            }, {
+              "name": "common",
+              "prefix": "common"
+            }, {
+              "name": "ai_algorithm",
+              "prefix": "ai_algorithm"
+            }, {
+              "name": "ai_model_schema",
+              "prefix": "ai_model_schema"
+            }, {
+              "name": "files",
+              "prefix": "files"
+            }, {
+              "name": "dublincore",
+              "prefix": "dc"
+            }, {
+              "name": "job_sagemaker",
+              "prefix": "job_sagemaker"
+            }, {
+              "name": "relatedtext",
+              "prefix": "relatedtext"
+            }, {
+              "name": "facetedTag",
+              "prefix": "nxtag"
+            }, {
+              "name": "ai_evaluation",
+              "prefix": "ai_evaluation"
+            }
+          ]
+        }, {
+          "entity-type": "document",
+          "repository": "default",
+          "uid": "36756d11-12d2-47e7-b76d-ce235635092f",
+          "path": "/jira/models/model-test12",
+          "type": "AI_Model",
+          "state": "trained",
+          "parentRef": "8e88c355-1872-4375-bd4e-4e1b9395a146",
+          "isCheckedOut": false,
+          "isRecord": false,
+          "retainUntil": null,
+          "hasLegalHold": false,
+          "isUnderRetentionOrLegalHold": false,
+          "isVersion": true,
+          "isProxy": false,
+          "versionableId": "541957eb-7be5-42ea-b4ee-c92b8c6b2c62",
+          "changeToken": "25-1",
+          "isTrashed": false,
+          "title": "Fashion",
+          "lastModified": "2022-01-24T14:29:01.908Z",
+          "properties": {
+            "ai_model:optimization_process": null,
+            "ai_model:training_algorithm_document": "828f2771-0405-49f6-8d86-909930690428",
+            "ai_model:documents_count": 0,
+            "ai_model:model_type": "enrichment",
+            "ai_model:doc_type": "Clothing",
+            "ai_model:outputs": [
+              {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:gender",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Women", "Men", "Boys", "Unisex", "Girls"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:masterCategory",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Accessories", "Apparel", "Personal Care", "Footwear", "Free Items"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:subCategory",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Jewellery", "Scarves", "Lips", "Nails", "Skin Care", "Makeup", "Flip Flops", "Watches", "Shoes",
+                  "Socks Accessories", "Accessories", "Wallets", "Bottomwear", "Mufflers", "Bags", "Headwear",
+                  "Cufflinks", "Saree", "Eyewear", "Fragrance", "Hair", "Free Gifts", "Eyes", "Sandal", "Topwear",
+                  "Dress", "Ties", "Apparel Set", "Loungewear and Nightwear", "Stoles", "Belts", "Skin",
+                  "Shoe Accessories", "Innerwear"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:article",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Nightdress", "Flip Flops", "Face Moisturisers", "Lounge Pants", "Lipstick", "Formal Shoes",
+                  "Camisoles", "Shorts", "Dupatta", "Caps", "Earrings", "Hair Colour", "Tshirts", "Ties", "Boxers",
+                  "Sunglasses", "Kajal and Eyeliner", "Backpacks", "Trunk", "Scarves", "Innerwear Vests", "Suspenders",
+                  "Salwar and Dupatta", "Heels", "Swimwear", "Briefs", "Skirts", "Accessory Gift Set", "Free Gifts",
+                  "Necklace and Chains", "Deodorant", "Trousers", "Messenger Bag", "Dresses", "Perfume and Body Mist",
+                  "Stoles", "Tunics", "Nail Polish", "Belts", "Sweaters", "Sweatshirts", "Handbags", "Lip Liner",
+                  "Wallets", "Bracelet", "Night suits", "Cufflinks", "Patiala", "Rain Jacket", "Sarees",
+                  "Highlighter and Blush", "Eyeshadow", "Lounge Shorts", "Track Pants", "Fragrance Gift Set",
+                  "Travel Accessory", "Sports Sandals", "Tracksuits", "Leggings", "Watches", "Casual Shoes", "Socks",
+                  "Capris", "Sports Shoes", "Kurta Sets", "Shirts", "Mufflers", "Kurtis", "Compact", "Kurtas",
+                  "Lip Gloss", "Bath Robe", "Jeans", "Jumpsuit", "Sandals", "Mobile Pouch", "Bra", "Pendant",
+                  "Jewellery Set", "Foundation and Primer", "Flats", "Laptop Bag", "Lip Care", "Duffel Bag", "Tops",
+                  "Bangle", "Face Wash and Cleanser", "Clutches", "Jackets"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:baseColour",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": [
+                  "Tan", "Brown", "Peach", "Cream", "Rose", "Black", "Orange", "Sea Green", "Turquoise Blue",
+                  "Grey Melange", "Lavender", "Beige", "Mauve", "Teal", "Copper", "Grey", "Off White", "Bronze",
+                  "Maroon", "Gold", "Rust", "Blue", "Burgundy", "Magenta", "Multi", "Steel", "Navy Blue",
+                  "Coffee Brown", "Olive", "Red", "Silver", "Khaki", "Pink", "White", "Metallic", "Yellow", "Purple",
+                  "Skin", "Mustard", "Green", "Charcoal"
+                ],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:season",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Winter", "Summer", "Fall", "Spring"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:year",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010"],
+                "type": "cat"
+              }, {
+                "output_name": null,
+                "categories_transformation": null,
+                "name": "style:usage",
+                "multi_class": false,
+                "language": "en",
+                "override_cat": false,
+                "categories": ["Party", "Smart Casual", "Casual", "Formal", "Ethnic", "Sports"],
+                "type": "cat"
+              }
+            ],
+            "ai_model:version_label": null,
+            "ai_model:corpora": "31fc5321-a9d6-4de5-bad5-b0309f973799",
+            "ai_model:deployment_information": {
+              "endpoint": "itests-ebc5e03-1--jira-1-5-2-1-0-3-cpu",
+              "publishing_state": "published",
+              "modified": "2022-01-24T14:36:00.499Z",
+              "deployment_error": null,
+              "deployer": null
+            },
+            "ai_model:query_filter_params": "style:article is not null",
+            "ai_model:corpus": [],
+            "ai_model:main_result": 0.7758949398994446,
+            "ai_model:unlabeled_corpora": null,
+            "ai_model:labels": ["dev"],
+            "ai_model:datasource": "dev",
+            "ai_model:training_algorithm_document_title": "Image Focus Algorithm",
+            "ai_model:inputs": [
+              {
+                "name": "file:content",
+                "multi_class": false,
+                "language": "en",
+                "categories": [],
+                "type": "img"
+              }
+            ],
+            "ai_model:name": "Fashion"
+          },
+          "facets": [
+            "Immutable", "Versionable", "NXTag", "Publishable", "AiEvaluable", "Commentable", "AiJobSagemaker",
+            "AiTrainable", "HasRelatedText", "Downloadable"
+          ],
+          "schemas": [
+            {
+              "name": "uid",
+              "prefix": "uid"
+            }, {
+              "name": "ai_model",
+              "prefix": "ai_model"
+            }, {
+              "name": "file",
+              "prefix": "file"
+            }, {
+              "name": "common",
+              "prefix": "common"
+            }, {
+              "name": "ai_algorithm",
+              "prefix": "ai_algorithm"
+            }, {
+              "name": "ai_model_schema",
+              "prefix": "ai_model_schema"
+            }, {
+              "name": "files",
+              "prefix": "files"
+            }, {
+              "name": "dublincore",
+              "prefix": "dc"
+            }, {
+              "name": "job_sagemaker",
+              "prefix": "job_sagemaker"
+            }, {
+              "name": "relatedtext",
+              "prefix": "relatedtext"
+            }, {
+              "name": "facetedTag",
+              "prefix": "nxtag"
+            }, {
+              "name": "ai_evaluation",
+              "prefix": "ai_evaluation"
+            }
+          ]
+        },
+        {
+          "entity-type": "document",
+          "repository": "default",
           "uid": "c0d8d37f-1df0-47f6-b7d5-758d770e3e19",
-          "path": "/Nuxeo Jira/models/tags from components._1559253366125_.trashed",
+          "path": "/Nuxeo Jira/models/tags from components",
           "type": "AI_Model",
           "state": "start",
           "parentRef": "2c276419-0ee8-4a1b-b8b4-1c7051d41f0a",
@@ -95,7 +613,7 @@
           "isVersion": false,
           "isProxy": false,
           "changeToken": "14-0",
-          "isTrashed": true,
+          "isTrashed": false,
           "title": "tags from components",
           "lastModified": "2019-05-23T19:09:12.110Z",
           "properties": {

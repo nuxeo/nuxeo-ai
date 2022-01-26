@@ -89,7 +89,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Features({ PlatformFeature.class, AutomationFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model" })
-@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml" })
 public class CloudClientTest {
 
     private static final ObjectMapper LOCAL_OM = new ObjectMapper();
