@@ -1,8 +1,0 @@
-<component name="org.nuxeo.ecm.ai.listeners.disable">
-
-  <require>org.nuxeo.ecm.ai.listeners</require>
-  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
-    <listener name="invalidateModelDefinitionsListener" enabled="false"/>
-  </extension>
-
-</component>

@@ -56,6 +56,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml" })
 public class ContinuousExportListenerTest {
 
     @Rule
@@ -84,6 +85,9 @@ public class ContinuousExportListenerTest {
         }
         txf.nextTransaction();
 
+        List<BulkStatus> statuses = des.getStatuses();
+        assertThat(statuses).hasSize(0);
+
         EventBundle bundle = new EventBundleImpl();
         EventContextImpl ctx = new EventContextImpl(session, session.getPrincipal());
         ctx.setProperty(FORCE_EXPORT, true);
@@ -93,8 +97,8 @@ public class ContinuousExportListenerTest {
 
         txf.nextTransaction();
 
-        List<BulkStatus> statuses = des.getStatuses();
-        // Two models were returned -> produced 2 exports;
+        statuses = des.getStatuses();
+        // 4 models were returned where 3 documents represent 1 live and 2 versions of it -> produced 2 exports;
         // look at nuxeo-ai-model/src/test/resources/mappings/nuxeo_get_ai_models.json
         assertThat(statuses).hasSize(2);
     }
