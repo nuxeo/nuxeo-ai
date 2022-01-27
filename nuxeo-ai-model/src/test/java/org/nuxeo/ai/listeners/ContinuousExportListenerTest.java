@@ -56,7 +56,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
-@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-invalidation-listener-test.xml" })
+@Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
 public class ContinuousExportListenerTest {
 
     @Rule
