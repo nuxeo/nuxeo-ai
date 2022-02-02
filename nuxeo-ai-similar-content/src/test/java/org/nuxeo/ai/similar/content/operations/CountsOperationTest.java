@@ -124,6 +124,7 @@ public class CountsOperationTest {
         OperationContext ctx = new OperationContext(session);
         ctx.setInput(fileDoc);
         ctx.put("xpath", FILE_CONTENT);
+        ctx.put("distance", 0);
         @SuppressWarnings("unchecked")
         List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
         assertThat(response).isNotEmpty();

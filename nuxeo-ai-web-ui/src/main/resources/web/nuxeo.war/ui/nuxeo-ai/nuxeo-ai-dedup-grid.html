@@ -14,11 +14,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]]/>
+Example: <nuxeo-ai-dedup-grid property="file:content" doc=[[document]] threshold="1"/>
 
 or
 
-<nuxeo-ai-dedup-grid property="file:content" doc=[[document]]>
+<nuxeo-ai-dedup-grid property="file:content" doc=[[document]] threshold="1">
   <slot name="dedup-content">
     custom template for each similar document accessible via [[item]]
   </slot>
@@ -228,6 +228,10 @@ or
             property: {
               type: String,
               value: 'file:content',
+            },
+            threshold: {
+              type: Number,
+              value: 0,
             },
             similars: {
               type: Array,
