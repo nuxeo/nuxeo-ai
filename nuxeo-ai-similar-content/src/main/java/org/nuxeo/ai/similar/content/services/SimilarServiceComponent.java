@@ -22,6 +22,7 @@ package org.nuxeo.ai.similar.content.services;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.nuxeo.ai.sdk.rest.Common.DISTANCE_PARAM;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
@@ -205,7 +206,30 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         parameters.put(UID, doc.getId());
         parameters.put(XPATH_PARAM, xpath);
 
+        return findSimilar(session, doc, xpath, 0);
+    }
+
+    @Override
+    public List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath, int distance) throws IOException {
+        InsightClient client = getInsightClient(session);
+        Map<String, Serializable> parameters = new HashMap<>();
+        parameters.put(UID, doc.getId());
+        parameters.put(XPATH_PARAM, xpath);
+        parameters.put(DISTANCE_PARAM, distance);
+
         List<String> ids = client.api(API.Dedup.FIND).call(parameters, null);
+        return resolveDocuments(session, ids);
+    }
+
+    @Override
+    public List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath, int distance) throws IOException {
+        InsightClient client = getInsightClient(session);
+        Map<String, Serializable> parameters = new HashMap<>();
+        parameters.put(XPATH_PARAM, xpath);
+        parameters.put(DISTANCE_PARAM, distance);
+        TensorInstances tensor = constructTensor(blob, xpath);
+
+        List<String> ids = client.api(API.Dedup.FIND).call(parameters, tensor);
         return resolveDocuments(session, ids);
     }
 
@@ -216,8 +240,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         parameters.put(XPATH_PARAM, xpath);
         TensorInstances tensor = constructTensor(blob, xpath);
 
-        List<String> ids = client.api(API.Dedup.FIND).call(parameters, tensor);
-        return resolveDocuments(session, ids);
+        return findSimilar(session, blob, xpath, 0);
     }
 
     @Override

@@ -58,6 +58,9 @@ public class FindSimilar {
     @Param(name = "xpath", required = false)
     protected String xpath = FILE_CONTENT;
 
+    @Param(name = "distance", required = false)
+    protected int distance = 0;
+
     @Param(name = "batchId", description = "Batch id required when running this operation without any input", required = false)
     protected String batchId;
 
@@ -71,7 +74,7 @@ public class FindSimilar {
             return emptyList();
         }
 
-        return scs.findSimilar(session, doc, xpath);
+        return scs.findSimilar(session, doc, xpath, distance);
     }
 
     @OperationMethod
@@ -88,6 +91,6 @@ public class FindSimilar {
             throw new OperationException("Blob is too large; size = " + blob.getLength());
         }
 
-        return scs.findSimilar(session, blob, xpath);
+        return scs.findSimilar(session, blob, xpath, distance);
     }
 }
