@@ -269,7 +269,7 @@ limitations under the License.
             }
         }
 
-        function _findSimilarsWithBatch(doc, value, propTarget) {
+        function _findSimilarsWithBatch(doc, value, propTarget, threshold) {
             if (!op) {
                 op = document.createElement('nuxeo-operation');
                 op.op = 'AI.DeduplicationFindSimilar';
@@ -296,11 +296,12 @@ limitations under the License.
             op.params = {
                 batchId: batchInfo.batchId,
                 fileId: batchInfo.fileId,
+                distance: threshold,
             };
             return op.execute();
         }
 
-        function _findSimilarsWithProperty(doc, propTarget) {
+        function _findSimilarsWithProperty(doc, propTarget, threshold) {
             if (!op) {
                 op = document.createElement('nuxeo-operation');
                 op.op = 'AI.DeduplicationFindSimilar';
@@ -310,6 +311,7 @@ limitations under the License.
             op.input = doc;
             op.params = {
                 xpath: propTarget,
+                distance: threshold,
             };
             return op.execute();
         }
@@ -332,6 +334,7 @@ limitations under the License.
                 if (!propTarget) {
                     return;
                 }
+                const threshold = deduplicationWidget.threshold;
                 _clearSimilars(deduplicationWidget);
                 const batchValue = layout.root.querySelector('nuxeo-dropzone').value;
                 if ((!layout.document.properties[propTarget]
@@ -342,7 +345,7 @@ limitations under the License.
                 _dedupDebouncer = Polymer.Debouncer.debounce(
                     _dedupDebouncer, Polymer.Async.timeOut.after(500),
                     () => {
-                        _findSimilarsWithBatch(layout.document, batchValue, propTarget).then((response) => {
+                        _findSimilarsWithBatch(layout.document, batchValue, propTarget, threshold).then((response) => {
                             const entries = response.entries || [];
                             deduplicationWidget.set('similars', entries);
                         }).catch((error) => {
@@ -352,7 +355,7 @@ limitations under the License.
             },
             /**
              * For a given layout:
-             * 1) fetch similars for the document blob of the given property
+             * 1) fetch similars for the document blob of the given property and threshold
              * 2) update similars on deduplication widget in metadata mode
              */
             updateMetadataWidget: (layout) => {
@@ -367,8 +370,9 @@ limitations under the License.
                 if (!propTarget) {
                     return;
                 }
+                const threshold = deduplicationWidget.threshold;
                 _clearSimilars(deduplicationWidget);
-                _findSimilarsWithProperty(layout.document, propTarget).then((response) => {
+                _findSimilarsWithProperty(layout.document, propTarget, threshold).then((response) => {
                     const entries = response.entries || [];
                     deduplicationWidget.set('similars', entries);
                 }).catch((error) => {
