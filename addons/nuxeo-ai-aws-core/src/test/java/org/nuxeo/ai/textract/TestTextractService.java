@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.textract;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -77,12 +78,16 @@ public class TestTextractService {
         AWS.assumeCredentials();
         BlobTextFromDocument blobTextFromDoc = setupBlobForStream(manager, "/files/harddrive.jpg", "image/jpeg", "img");
 
-        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.documentText");
-        assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
-        assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        EnrichmentProvider provider = aiComponent.getEnrichmentProvider("aws.documentText");
+        assertNotNull(provider);
+        List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) provider.enrich(blobTextFromDoc);
+        assertThat(metadataCollection).hasSize(1);
+        EnrichmentMetadata metadata = metadataCollection.get(0);
         assertNotNull(metadata);
+
+        String normalized = JacksonUtil.MAPPER.writeValueAsString(metadata);
+        assertThat(normalized).containsIgnoringCase("Barracuda");
+
         List<Block> blocks = AWSHelper.getInstance().getTextractBlocks(metadata);
         assertNotNull(blocks);
         assertTrue(blocks.size() > 75);
@@ -95,10 +100,13 @@ public class TestTextractService {
 
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.documentAnalyze");
         assertNotNull(service);
-        Collection<EnrichmentMetadata> metadataCollection = service.enrich(blobTextFromDoc);
-        assertEquals(1, metadataCollection.size());
-        EnrichmentMetadata metadata = metadataCollection.iterator().next();
-        assertNotNull(metadata);
+        List<EnrichmentMetadata> metadataCollection = (List<EnrichmentMetadata>) service.enrich(blobTextFromDoc);
+        assertThat(metadataCollection).hasSize(1);
+
+        EnrichmentMetadata metadata = metadataCollection.get(0);
+        String normalized = JacksonUtil.MAPPER.writeValueAsString(metadata);
+        assertThat(normalized).containsIgnoringCase("getting started");
+
         List<Block> blocks = AWSHelper.getInstance().getTextractBlocks(metadata);
         assertNotNull(blocks);
         assertTrue(blocks.size() > 100);
