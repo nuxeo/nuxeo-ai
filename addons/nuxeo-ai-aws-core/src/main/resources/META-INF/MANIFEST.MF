@@ -17,4 +17,5 @@ Nuxeo-Component: OSGI-INF/aws-service-config.xml,
  OSGI-INF/listener-contrib.xml,
  OSGI-INF/transcribe-service.xml,
  OSGI-INF/worker-queues-contrib.xml,
- OSGI-INF/metric-service.xml
+ OSGI-INF/metric-service.xml,
+ OSGI-INF/textract-contrib.xml
