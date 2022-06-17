@@ -142,6 +142,10 @@ public class SuggestionOp {
         try {
             List<SuggestionListAsJson> suggestionList = new ArrayList<>();
             for (LabelSuggestion labelSuggestion : metadata.getLabels()) {
+                if (!canApplyProperty(input, labelSuggestion.getProperty())) {
+                    continue;
+                }
+
                 Property property = input.getProperty(labelSuggestion.getProperty());
                 List<SuggestionAsJson> suggestionValues = new ArrayList<>();
                 for (AIMetadata.Label label : labelSuggestion.getValues()) {
@@ -161,6 +165,23 @@ public class SuggestionOp {
             log.error("Failed to write property. ", e);
         }
         return null;
+    }
+
+    protected boolean canApplyProperty(DocumentModel input, String property) {
+        String prefix = schemaManager.getField(property).getName().getPrefix();
+        Schema schema = schemaManager.getSchemaFromPrefix(prefix);
+        if (schema != null && input.hasSchema(schema.getName())) {
+            return true;
+        }
+
+        if (log.isDebugEnabled() && schema != null) {
+            log.debug("Document {} of type {} does not contain schema {}", input.getId(), input.getType(),
+                    schema.getSchemaName());
+        } else {
+            log.error("No such schema from prefix {}", prefix);
+        }
+
+        return false;
     }
 
     /**

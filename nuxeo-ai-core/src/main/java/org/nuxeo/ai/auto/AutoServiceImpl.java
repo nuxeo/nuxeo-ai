@@ -42,6 +42,8 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
+import org.nuxeo.ecm.core.schema.SchemaManager;
+import org.nuxeo.ecm.core.schema.types.Schema;
 import org.nuxeo.runtime.api.Framework;
 
 /**
@@ -50,6 +52,8 @@ import org.nuxeo.runtime.api.Framework;
 public class AutoServiceImpl implements AutoService {
 
     private static final Logger log = LogManager.getLogger(AutoServiceImpl.class);
+
+    protected SchemaManager schemaManager = null;
 
     @Override
     public void calculateProperties(DocumentModel doc) {
@@ -74,6 +78,31 @@ public class AutoServiceImpl implements AutoService {
         }
     }
 
+    protected boolean canApplyProperty(DocumentModel input, String property) {
+        String prefix = getSchemaManager().getField(property).getName().getPrefix();
+        Schema schema = getSchemaManager().getSchemaFromPrefix(prefix);
+        if (schema != null && input.hasSchema(schema.getName())) {
+            return true;
+        }
+
+        if (log.isDebugEnabled() && schema != null) {
+            log.debug("Document {} of type {} does not contain schema {}", input.getId(), input.getType(),
+                    schema.getSchemaName());
+        } else {
+            log.error("No such schema from prefix {}", prefix);
+        }
+
+        return false;
+    }
+
+    protected SchemaManager getSchemaManager() {
+        if (schemaManager == null) {
+            schemaManager = Framework.getService(SchemaManager.class);
+        }
+
+        return schemaManager;
+    }
+
     protected void calculateAutoFill(SuggestionMetadataWrapper docMetadata, String xpath) {
         if (xpath.startsWith(UNSET)) {
             // Nothing to do, no property specified
@@ -86,6 +115,10 @@ public class AutoServiceImpl implements AutoService {
             return;
         }
         DocumentModel doc = docMetadata.getDoc();
+        if (!canApplyProperty(doc, xpath)) {
+            return;
+        }
+
         boolean alreadyAutofilled = docMetadata.isAutoFilled(xpath);
         if (!alreadyAutofilled && docMetadata.hasValue(xpath)) {
             log.debug("Unable to autofill property {} for doc {} because it has a value.", xpath,
@@ -172,6 +205,10 @@ public class AutoServiceImpl implements AutoService {
 
         DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
         DocumentModel doc = metadata.getDoc();
+        if (!canApplyProperty(doc, xpath)) {
+            return;
+        }
+
         Property property;
         boolean alreadyAutoCorrected = metadata.isAutoCorrected(xpath);
         try {
