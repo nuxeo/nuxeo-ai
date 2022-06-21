@@ -79,12 +79,18 @@ public class AutoServiceImpl implements AutoService {
     }
 
     protected boolean canApplyProperty(DocumentModel input, String property) {
+        if (getSchemaManager().getField(property) == null) {
+            if (input != null) {
+                log.debug("Document {} of type {} does not contain property {}", input.getId(), input.getType(),
+                        property);
+            }
+            return false;
+        }
         String prefix = getSchemaManager().getField(property).getName().getPrefix();
         Schema schema = getSchemaManager().getSchemaFromPrefix(prefix);
         if (schema != null && input.hasSchema(schema.getName())) {
             return true;
         }
-
         if (log.isDebugEnabled() && schema != null) {
             log.debug("Document {} of type {} does not contain schema {}", input.getId(), input.getType(),
                     schema.getSchemaName());
