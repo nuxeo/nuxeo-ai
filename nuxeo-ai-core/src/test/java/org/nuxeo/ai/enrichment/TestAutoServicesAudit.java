@@ -210,6 +210,7 @@ public class TestAutoServicesAudit {
         assertThat(mus).isNotNull();
 
         String filledUsage = mus.usage(session, AIConstants.AUTO.FILLED, "stest");
+        assertThat(filledUsage).isNotNull();
         ObjectMapper om = new ObjectMapper();
         @SuppressWarnings("unchecked")
         Map<String, Serializable> map = om.readValue(filledUsage, Map.class);
