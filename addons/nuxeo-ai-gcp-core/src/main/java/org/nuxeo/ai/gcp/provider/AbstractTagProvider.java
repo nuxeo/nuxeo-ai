@@ -16,6 +16,7 @@
  *
  * Contributors:
  *     anechaev
+ *     Thibaud Arguillere
  */
 package org.nuxeo.ai.gcp.provider;
 
@@ -147,6 +148,9 @@ public abstract class AbstractTagProvider<T extends MessageOrBuilder> extends Ab
         case LOGO_DETECTION:
             gcpMetrics.getLogoCalls().inc();
             break;
+        case SAFE_SEARCH_DETECTION:
+        	gcpMetrics.getSafeSearchCalls().inc();
+        	break;
         default:
             log.warn("This type " + getType() + " is not tracked as a metric");
             break;

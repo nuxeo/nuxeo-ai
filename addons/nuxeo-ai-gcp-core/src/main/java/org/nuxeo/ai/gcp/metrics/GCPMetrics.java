@@ -50,6 +50,8 @@ public class GCPMetrics extends DefaultComponent {
     protected Counter objectLocalizationCalls;
 
     protected Counter textCalls;
+    
+    protected Counter safeSearchCalls;
 
     @Override
     public void start(ComponentContext context) {
@@ -83,6 +85,7 @@ public class GCPMetrics extends DefaultComponent {
         objectLocalizationCalls = registry.counter(MetricRegistry.name(visionName, "objectLocalizationCalls"));
         textCalls = registry.counter(MetricRegistry.name(visionName, "textCalls"));
         cropHintsCalls = registry.counter(MetricRegistry.name(visionName, "cropHintsCalls"));
+        safeSearchCalls = registry.counter(MetricRegistry.name(visionName, "safeSearchCalls"));
     }
 
     /**
@@ -107,6 +110,10 @@ public class GCPMetrics extends DefaultComponent {
 
     public Counter getCropHintsCalls() {
         return cropHintsCalls;
+    }
+
+    public Counter getSafeSearchCalls() {
+        return safeSearchCalls;
     }
 
     public Counter getVisionGlobalCalls() {

@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -314,6 +315,68 @@ public class TestService {
         AIMetadata.Tag tag = metadata.getTags().get(0).getValues().get(0);
         assertThat(tag.box.width > 0);
         assertThat(tag.box.height > 0);
+    }
+    
+    @Test
+    public void shouldCallGCPImageSafeSearchProvider() throws IOException {
+    	EnrichmentProvider ep = aic.getEnrichmentProvider("gcp.unsafeImages");
+        assertThat(ep).isNotNull();
+        
+        BlobTextFromDocument btd = setupBlobTextFromDocument("sacre_coeur.jpg");
+        Collection<EnrichmentMetadata> metadataCollection = ep.enrich(btd);
+        assertEquals(1, metadataCollection.size());
+        
+        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        assertNotNull(metadata);
+        assertEquals(btd.getRepositoryName(), metadata.context.repositoryName);
+        assertEquals(btd.getId(), metadata.context.documentRef);
+        assertEquals(1, metadata.context.digests.size());
+        assertEquals(btd.getBlobs().entrySet().iterator().next().getValue().getDigest(),
+                metadata.context.digests.iterator().next());
+        
+        assertThat(metadata.getTags()).isNotEmpty();
+        assertThat(!metadata.getTags().get(0).getValues().isEmpty());
+        
+        AIMetadata.Tag tag = metadata.getTags().get(0).getValues().get(0);
+        // Check we have the 5 features.
+        assertThat(tag.features.size() >= 5);
+        
+        ArrayList<String> safeSearchNames = new ArrayList<String>(
+        	    Arrays.asList("adult", "medical", "racy", "spoof", "violence"));
+        for(String name : safeSearchNames) {
+        	boolean isThere = tag.features.stream()
+        			                      .anyMatch(label -> label.getName().equals(name));
+        	assertThat(isThere).isTrue();
+        }
+
+        // For this image, all the confidences should be 0, it's 100% safe
+        boolean allSafe = tag.features.stream()
+        		                      .allMatch(label -> label.getConfidence() == 0.0f);
+        assertThat(allSafe).isTrue();
+    	
+    }
+    
+    @Test
+    public void shouldDetectMedicalContent() throws IOException {
+    	EnrichmentProvider ep = aic.getEnrichmentProvider("gcp.unsafeImages");
+        assertThat(ep).isNotNull();
+        
+        BlobTextFromDocument btd = setupBlobTextFromDocument("hand-surgery.jpg");
+        Collection<EnrichmentMetadata> metadataCollection = ep.enrich(btd);
+        assertEquals(1, metadataCollection.size());
+        
+        EnrichmentMetadata metadata = metadataCollection.iterator().next();
+        assertNotNull(metadata);
+        
+        assertThat(metadata.getTags()).isNotEmpty();
+        assertThat(!metadata.getTags().get(0).getValues().isEmpty());
+        
+        AIMetadata.Tag tag = metadata.getTags().get(0).getValues().get(0);
+        boolean hasMedicalContent = tag.features.stream()
+        		                      .filter(label -> label.getName().equals("medical"))
+        		                      .anyMatch(label -> label.getConfidence() >= 0.5);
+        assertThat(hasMedicalContent).isTrue();
+    	
     }
 
     protected ManagedBlob blob(Blob blob, String key) {
