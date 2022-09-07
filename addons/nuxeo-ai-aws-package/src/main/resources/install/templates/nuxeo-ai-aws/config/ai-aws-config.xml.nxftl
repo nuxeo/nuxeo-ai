@@ -172,16 +172,27 @@
     </streamProcessor>
   </extension>
 
-    <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-      <streamProcessor name="videoCelebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
-                       class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
-        <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-        <option name="source">ai/videos</option>
-        <option name="sink">${nuxeo.enrichment.source.stream}</option>
-        <option name="enrichmentProviderName">aws.videoCelebrityDetection</option>
-        <option name="cache">${nuxeo.enrichment.aws.cache}</option>
-      </streamProcessor>
-    </extension>
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="videoCelebrityProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+      <option name="source">ai/videos</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="enrichmentProviderName">aws.videoCelebrityDetection</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="videoSegmentProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+      <option name="source">ai/videos</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="enrichmentProviderName">aws.videoSegmentDetection</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
 
   <extension target="org.nuxeo.ai.sns.NotificationService" point="topics">
       <topic topicArn="${nuxeo.enrichment.aws.sns.topic.arn}"

@@ -38,6 +38,15 @@
       <event>asyncRekognitionCelebritiesFailure</event>
     </listener>
 
+    <listener name="rekognitionSegmentResultListener"
+              async="true"
+              postCommit="true"
+              priority="999"
+              class="org.nuxeo.ai.rekognition.listeners.AsyncSegmentResultListener">
+      <event>asyncRekognitionSegmentSuccess</event>
+      <event>asyncRekognitionSegmentFailure</event>
+    </listener>
+
     <listener name="documentTranscribeDone"
               async="true"
               postCommit="true"

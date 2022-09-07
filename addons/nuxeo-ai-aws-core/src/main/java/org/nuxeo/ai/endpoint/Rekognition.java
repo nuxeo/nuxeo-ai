@@ -41,11 +41,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider;
 import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.DetectSegmentEnrichmentProvider;
 import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider;
 import org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider;
 import org.nuxeo.ai.rekognition.listeners.AsyncCelebritiesResultListener;
 import org.nuxeo.ai.rekognition.listeners.AsyncFaceResultListener;
 import org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener;
+import org.nuxeo.ai.rekognition.listeners.AsyncSegmentResultListener;
 import org.nuxeo.ai.rekognition.listeners.AsyncUnsafeResultListener;
 import org.nuxeo.ai.sns.Notification;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -122,6 +124,9 @@ public class Rekognition {
             break;
         case DetectUnsafeImagesEnrichmentProvider.ASYNC_ACTION_NAME:
             event = succeeded ? AsyncUnsafeResultListener.SUCCESS_EVENT : AsyncUnsafeResultListener.FAILURE_EVENT;
+            break;
+        case DetectSegmentEnrichmentProvider.ASYNC_ACTION_NAME:
+            event = succeeded ? AsyncSegmentResultListener.SUCCESS_EVENT : AsyncSegmentResultListener.FAILURE_EVENT;
             break;
         default:
             throw new NuxeoException("Unknown API used: " + message.getApi());
