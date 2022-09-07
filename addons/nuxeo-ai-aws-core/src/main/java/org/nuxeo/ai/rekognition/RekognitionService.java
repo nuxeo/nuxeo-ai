@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.rekognition;
 
+import com.amazonaws.services.rekognition.model.SegmentType;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.model.Attribute;
@@ -43,7 +44,7 @@ public interface RekognitionService {
     /**
      * Starts async detect of labels for the provided blob
      *
-     * @param blob          a blob reference to a video
+     * @param blob a blob reference to a video
      * @param minConfidence min confidence to accept
      * @return JobId
      */
@@ -89,6 +90,11 @@ public interface RekognitionService {
      * @param blob reference to a video
      */
     String startDetectCelebrityFaces(ManagedBlob blob);
+
+    /**
+     * @since 3.5.2
+     */
+    String startDetectVideoSegments(ManagedBlob blob, SegmentType... segmentTypes);
 
     /**
      * @return AWS Rekognition client

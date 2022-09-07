@@ -21,6 +21,10 @@ package org.nuxeo.ai.rekognition;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+
+import com.amazonaws.services.rekognition.model.SegmentType;
+import com.amazonaws.services.rekognition.model.StartSegmentDetectionRequest;
+import com.amazonaws.services.rekognition.model.StartSegmentDetectionResult;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -173,6 +177,20 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
                 StartContentModerationResult result = getClient().startContentModeration(request);
                 return result.getJobId();
             }, awsMetrics.rekognitionVideoUnsafeDetectionCall());
+        });
+    }
+
+    @Override
+    public String startDetectVideoSegments(ManagedBlob blob, SegmentType... segmentTypes) {
+        NotificationChannel nc = getChannel();
+        return startDetectWith(blob, (cl, video) -> {
+            StartSegmentDetectionRequest request = new StartSegmentDetectionRequest().withNotificationChannel(nc)
+                                                                                     .withSegmentTypes(segmentTypes)
+                                                                                     .withVideo(video);
+            return this.executeRekognitionVideoCallWithMetrics(() -> {
+                StartSegmentDetectionResult result = getClient().startSegmentDetection(request);
+                return result.getJobId();
+            }, awsMetrics.rekognitionVideoSegmentDetectionCall());
         });
     }
 

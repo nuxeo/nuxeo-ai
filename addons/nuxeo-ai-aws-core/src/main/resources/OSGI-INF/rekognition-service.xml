@@ -108,6 +108,17 @@
         <mimeType name="video/quicktime" normalized="true"/>
       </mimeTypes>
     </enrichment>
+
+    <enrichment name="aws.videoSegmentDetection" kind="/tagging/segment"
+                class="org.nuxeo.ai.enrichment.async.DetectSegmentEnrichmentProvider"
+                maxSize="8589934592">
+      <mimeTypes>
+        <mimeType name="video/mp4" normalized="true"/>
+        <mimeType name="video/mov" normalized="true"/>
+        <mimeType name="video/quicktime" normalized="true"/>
+      </mimeTypes>
+    </enrichment>
+
   </extension>
 
 </component>

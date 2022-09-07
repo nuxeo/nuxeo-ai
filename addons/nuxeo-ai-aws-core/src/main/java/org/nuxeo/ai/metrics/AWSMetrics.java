@@ -49,6 +49,8 @@ public class AWSMetrics extends DefaultComponent {
 
     private Timer rekognitionVideoUnsafeDetectionCall;
 
+    private Timer rekognitionVideoSegmentDetectionCall;
+
     protected Counter rekognitionImgCalls;
 
     protected Counter rekognitionImgLabelDetectionCounter;
@@ -121,6 +123,8 @@ public class AWSMetrics extends DefaultComponent {
                 MetricRegistry.name(rekognitionName, "rekognitionVideoCelebritiesDetectionCall"));
         rekognitionVideoUnsafeDetectionCall = registry.timer(
                 MetricRegistry.name(rekognitionName, "rekognitionVideoUnsafeDetectionCall"));
+        rekognitionVideoSegmentDetectionCall = registry.timer(
+                MetricRegistry.name(rekognitionName, "rekognitionVideoSegmentDetectionCall"));
 
         // Comprehend
         comprehendTotalUnits = registry.histogram(MetricRegistry.name(comprehendName, "comprehendTotalUnits"));
@@ -200,6 +204,10 @@ public class AWSMetrics extends DefaultComponent {
 
     public long getRekognitionVideoCelebritiesDetectionCall() {
         return rekognitionVideoCelebritiesDetectionCall.getCount();
+    }
+
+    public long getRekognitionVideoSegmentDetectionCall() {
+        return rekognitionVideoSegmentDetectionCall.getCount();
     }
 
     public Counter getTranscribeGlobalCalls() {
@@ -284,6 +292,10 @@ public class AWSMetrics extends DefaultComponent {
 
     public Timer rekognitionVideoCelebritiesDetectionCall() {
         return rekognitionVideoCelebritiesDetectionCall;
+    }
+
+    public Timer rekognitionVideoSegmentDetectionCall() {
+        return rekognitionVideoSegmentDetectionCall;
     }
 
     public Counter rekognitionImgUnsafeDetectionCounter() {
