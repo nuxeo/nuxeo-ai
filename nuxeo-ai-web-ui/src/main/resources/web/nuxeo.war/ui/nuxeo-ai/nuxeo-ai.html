@@ -76,333 +76,343 @@ limitations under the License.
 </nuxeo-slot-content>
 <nuxeo-slot-content name="enrichmentRemoveAction" slot="RESULTS_ACTIONS" order="-90">
   <template>
-    <nuxeo-ai-bulk-remove-button provider="[[nxProvider]]"></nuxeo-ai-bulk-remove-button>
+    <nuxeo-filter user="[[user]]"
+                  expression="user.isAdministrator || user.properties.groups.indexOf('insight-managers') >= 0">
+      <template>
+        <nuxeo-ai-bulk-remove-button provider="[[nxProvider]]"></nuxeo-ai-bulk-remove-button>
+      </template>
+    </nuxeo-filter>
   </template>
 </nuxeo-slot-content>
 <nuxeo-slot-content name="enrichmentAddAction" slot="RESULTS_ACTIONS" order="-95">
   <template>
-    <nuxeo-ai-bulk-add-button provider="[[nxProvider]]"></nuxeo-ai-bulk-add-button>
+    <nuxeo-filter user="[[user]]"
+                  expression="user.isAdministrator || user.properties.groups.indexOf('insight-managers') >= 0">
+      <template>
+        <nuxeo-ai-bulk-add-button provider="[[nxProvider]]"></nuxeo-ai-bulk-add-button>
+      </template>
+    </nuxeo-filter>
   </template>
 </nuxeo-slot-content>
 <script>
-    Nuxeo.AISuggestionFormatters.register(Nuxeo.DocumentAISuggestionFormatter.is, {type: 'document'});
-    Nuxeo.AISuggestionFormatters.register(Nuxeo.DirectoryAISuggestionFormatter.is, {type: 'directoryEntry'});
-    Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, {type: 'user'});
-    Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, {type: 'group'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.DocumentAISuggestionFormatter.is, {type: 'document'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.DirectoryAISuggestionFormatter.is, {type: 'directoryEntry'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, {type: 'user'});
+  Nuxeo.AISuggestionFormatters.register(Nuxeo.UserGroupAISuggestionFormatter.is, {type: 'group'});
 
-    AISuggestionManager = (() => {
-        const _map = new WeakMap(); // store field elements and suggestion widgets without preventing gc
-        let _updateDebouncer = null;
-        let op = null;
+  AISuggestionManager = (() => {
+    const _map = new WeakMap(); // store field elements and suggestion widgets without preventing gc
+    let _updateDebouncer = null;
+    let op = null;
 
-        function _clearSuggestions(model) {
-            Object.values(model).forEach((element) => {
-                const suggestionWidget = _getSuggestionWidget(element, false);
-                if (suggestionWidget) {
-                    suggestionWidget.suggestions = [];
+    function _clearSuggestions(model) {
+      Object.values(model).forEach((element) => {
+        const suggestionWidget = _getSuggestionWidget(element, false);
+        if (suggestionWidget) {
+          suggestionWidget.suggestions = [];
+        }
+      });
+    }
+
+    function _getBoundElements(element, property) {
+      const model = {};
+      for (let i = 0; i < element.__templateInfo.nodeInfoList.length; i++) {
+        const nodeInfo = element.__templateInfo.nodeInfoList[i];
+        const node = element.__templateInfo.nodeList[i];
+        // Checking if the node is introspectable
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // In case we're having other node use cases
+          if (typeof node.hasAttribute === 'undefined') {
+            console.error('An error occurs during the nodes introspection with node:');
+            console.dirxml(node);
+            break;
+          }
+
+          if (!nodeInfo.bindings) {
+            continue;
+          }
+
+          const field = node.hasAttribute('field') && node.getAttribute('field');
+          if (field && field.startsWith(property)) {
+            model[field] = model[part.source] || [];
+            model[field] = node;
+          }
+
+          nodeInfo.bindings.forEach((binding) => {
+            if (binding.kind === 'property') {
+              binding.parts.forEach((part) => {
+                if (part.mode === '{' && !part.signature && part.source.startsWith(property)) {
+                  model[part.source] = model[part.source] || [];
+                  model[part.source] = node;
                 }
-            });
+              });
+            }
+          });
+        }
+      }
+      return model;
+    }
+
+    function _getSuggestionWidget(element, createIfNotExists = true) {
+      if (!_map.has(element) && createIfNotExists) {
+        const suggestionWidget = document.createElement('nuxeo-ai-suggestions');
+        ;
+        suggestionWidget.style.marginBottom = '8px';
+        element.parentNode.insertBefore(suggestionWidget, element.nextElementSibling);
+        _map.set(element, suggestionWidget);
+        return suggestionWidget;
+      }
+      return _map.get(element);
+    }
+
+    function _getSuggestions(doc) {
+      if (!op) {
+        op = document.createElement('nuxeo-operation');
+        op.op = 'AI.Suggestion';
+        op.headers = {'X-Batch-No-Drop': 'true'};
+        document.querySelector('nuxeo-app').appendChild(op);
+      }
+      op.input = doc;
+      op.params = {
+        references: true,
+        updatedDocument: doc,
+      };
+      return op.execute();
+    }
+
+    return {
+      /**
+       * For a given layout:
+       * 1) fetch suggestions for its document
+       * 2) add a suggestion widget to each field that has suggestions (if no widget was added yet)
+       * 3) update suggestions on suggestion widgets
+       */
+      updateWidgetSuggestions: (layout, path) => {
+        if (!layout || !layout.document
+          || !(layout.document.contextParameters && layout.document.contextParameters.aiModels)) { // don't call suggestions if there is no ai model provided
+          return;
         }
 
-        function _getBoundElements(element, property) {
-            const model = {};
-            for (let i = 0; i < element.__templateInfo.nodeInfoList.length; i++) {
-                const nodeInfo = element.__templateInfo.nodeInfoList[i];
-                const node = element.__templateInfo.nodeList[i];
-                // Checking if the node is introspectable
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    // In case we're having other node use cases
-                    if (typeof node.hasAttribute === 'undefined') {
-                        console.error('An error occurs during the nodes introspection with node:');
-                        console.dirxml(node);
-                        break;
+        const aiModels = layout.document.contextParameters.aiModels;
+
+        let atLeastOneFit = false;
+        for (let model of aiModels.inputs) {
+          // check if the document has all properties required for at least one defined model
+          const inputs = model.map(item => item.name);
+          atLeastOneFit = inputs.map(item => layout.document.properties[item]).filter(item => item).length === inputs.length;
+          if (atLeastOneFit) break;
+        }
+
+        if (!atLeastOneFit) {
+          // not all inputs required for the AI_Model present in the given Document
+          return;
+        }
+
+        let inputs = aiModels.inputs.flatMap(item => item).map(item => item.name)
+        const isModelInput = path && aiModels && inputs.includes(path.replace('document.properties.', ''));
+        const noPropertyChanged = !path || 'document.properties'.startsWith(path);
+
+        const model = _getBoundElements(layout, 'document.properties');
+        const widget = _getSuggestionWidget(path && model[path], false);
+        if (widget && Array.isArray(widget.suggestions) && widget.suggestions.length > 0) {
+          widget._matchInput();
+        }
+        if (noPropertyChanged || isModelInput) {
+          _updateDebouncer = Polymer.Debouncer.debounce(
+            _updateDebouncer, Polymer.Async.timeOut.after(500),
+            () => {
+              _getSuggestions(layout.document).then((response) => {
+                _clearSuggestions(model);
+                response.forEach((service) => {
+                  service.suggestions.forEach((suggestion) => {
+                    const element = model[`document.properties.${suggestion.property}`];
+                    if (element) {
+                      const suggestionWidget = _getSuggestionWidget(element);
+                      if (!suggestionWidget.property) {
+                        // convert path to xpath
+                        suggestionWidget.property = suggestion.property;
+                      }
+                      suggestionWidget.suggestions = suggestion.values;
+                      suggestionWidget.document = layout.document;
+                      // set up binding
+                      if (!suggestionWidget._notifyDocumentChanges) {
+                        suggestionWidget._notifyDocumentChanges = (evt) => {
+                          if ('path' in evt.detail && 'value' in evt.detail) {
+                            layout.notifyPath(evt.detail.path);
+                          }
+                        };
+                        suggestionWidget.addEventListener('document-changed', suggestionWidget._notifyDocumentChanges);
+                      }
                     }
-
-                    if (!nodeInfo.bindings) {
-                        continue;
-                    }
-
-                    const field = node.hasAttribute('field') && node.getAttribute('field');
-                    if (field && field.startsWith(property)) {
-                        model[field] = model[part.source] || [];
-                        model[field] = node;
-                    }
-
-                    nodeInfo.bindings.forEach((binding) => {
-                        if (binding.kind === 'property') {
-                            binding.parts.forEach((part) => {
-                                if (part.mode === '{' && !part.signature && part.source.startsWith(property)) {
-                                    model[part.source] = model[part.source] || [];
-                                    model[part.source] = node;
-                                }
-                            });
-                        }
-                    });
-                }
-            }
-            return model;
-        }
-
-        function _getSuggestionWidget(element, createIfNotExists = true) {
-            if (!_map.has(element) && createIfNotExists) {
-                const suggestionWidget = document.createElement('nuxeo-ai-suggestions');
-                ;
-                suggestionWidget.style.marginBottom = '8px';
-                element.parentNode.insertBefore(suggestionWidget, element.nextElementSibling);
-                _map.set(element, suggestionWidget);
-                return suggestionWidget;
-            }
-            return _map.get(element);
-        }
-
-        function _getSuggestions(doc) {
-            if (!op) {
-                op = document.createElement('nuxeo-operation');
-                op.op = 'AI.Suggestion';
-                op.headers = {'X-Batch-No-Drop': 'true'};
-                document.querySelector('nuxeo-app').appendChild(op);
-            }
-            op.input = doc;
-            op.params = {
-                references: true,
-                updatedDocument: doc,
-            };
-            return op.execute();
-        }
-
-        return {
-            /**
-             * For a given layout:
-             * 1) fetch suggestions for its document
-             * 2) add a suggestion widget to each field that has suggestions (if no widget was added yet)
-             * 3) update suggestions on suggestion widgets
-             */
-            updateWidgetSuggestions: (layout, path) => {
-                if (!layout || !layout.document
-                    || !(layout.document.contextParameters && layout.document.contextParameters.aiModels)) { // don't call suggestions if there is no ai model provided
-                    return;
-                }
-
-                const aiModels = layout.document.contextParameters.aiModels;
-
-                let atLeastOneFit = false;
-                for (let model of aiModels.inputs) {
-                    // check if the document has all properties required for at least one defined model
-                    const inputs = model.map(item => item.name);
-                    atLeastOneFit = inputs.map(item => layout.document.properties[item]).filter(item => item).length === inputs.length;
-                    if (atLeastOneFit) break;
-                }
-
-                if (!atLeastOneFit) {
-                    // not all inputs required for the AI_Model present in the given Document
-                    return;
-                }
-
-                let inputs = aiModels.inputs.flatMap(item => item).map(item => item.name)
-                const isModelInput = path && aiModels && inputs.includes(path.replace('document.properties.', ''));
-                const noPropertyChanged = !path || 'document.properties'.startsWith(path);
-
-                const model = _getBoundElements(layout, 'document.properties');
-                const widget = _getSuggestionWidget(path && model[path], false);
-                if (widget && Array.isArray(widget.suggestions) && widget.suggestions.length > 0) {
-                    widget._matchInput();
-                }
-                if (noPropertyChanged || isModelInput) {
-                    _updateDebouncer = Polymer.Debouncer.debounce(
-                        _updateDebouncer, Polymer.Async.timeOut.after(500),
-                        () => {
-                            _getSuggestions(layout.document).then((response) => {
-                                _clearSuggestions(model);
-                                response.forEach((service) => {
-                                    service.suggestions.forEach((suggestion) => {
-                                        const element = model[`document.properties.${suggestion.property}`];
-                                        if (element) {
-                                            const suggestionWidget = _getSuggestionWidget(element);
-                                            if (!suggestionWidget.property) {
-                                                // convert path to xpath
-                                                suggestionWidget.property = suggestion.property;
-                                            }
-                                            suggestionWidget.suggestions = suggestion.values;
-                                            suggestionWidget.document = layout.document;
-                                            // set up binding
-                                            if (!suggestionWidget._notifyDocumentChanges) {
-                                                suggestionWidget._notifyDocumentChanges = (evt) => {
-                                                    if ('path' in evt.detail && 'value' in evt.detail) {
-                                                        layout.notifyPath(evt.detail.path);
-                                                    }
-                                                };
-                                                suggestionWidget.addEventListener('document-changed', suggestionWidget._notifyDocumentChanges);
-                                            }
-                                        }
-                                    });
-                                });
-                            });
-                        },
-                    );
-                }
-            },
-        };
-    })();
-    // Listener for suggestions management
-    document.addEventListener('document-layout-changed', (e) => {
-        if (e.detail.layout === 'metadata' || e.detail.layout === 'view') {
-            return;
-        }
-        const layout = e.detail.element;
-        if (!layout) {
-            return;
-        }
-        customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
-            layout.__aiDocumentChanged = (event) => AISuggestionManager.updateWidgetSuggestions(layout, event.path);
-            layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
-            AISuggestionManager.updateWidgetSuggestions(e.detail.element);
-        });
-    });
-
-    AIDeduplicationManager = (() => {
-        let op = null;
-        let _dedupDebouncer = null;
-
-        function _clearSimilars(deduplicationWidget) {
-            if (deduplicationWidget) {
-                deduplicationWidget.similars = [];
-            }
-        }
-
-        function _findSimilarsWithBatch(doc, value, propTarget, threshold) {
-            if (!op) {
-                op = document.createElement('nuxeo-operation');
-                op.op = 'AI.DeduplicationFindSimilar';
-                document.querySelector('nuxeo-app').appendChild(op);
-            }
-            let batchInfo = {};
-            if (!value) {
-              // LTS 2019
-              batchInfo.batchId = doc.properties[propTarget]['upload-batch'];
-              batchInfo.fileId = doc.properties[propTarget]['upload-fileId'];
-            } else {
-              // LTS 2020
-              batchInfo.batchId = value.batchId;
-              batchInfo.fileId = value.fileId;
-            }
-            if (!batchInfo.batchId) {
-              return;
-            }
-            op.input = {};
-            op.headers = {
-                'X-Batch-No-Drop': 'true',
-                'enrichers.document': 'thumbnail, documentURL'
-            };
-            op.params = {
-                batchId: batchInfo.batchId,
-                fileId: batchInfo.fileId,
-                distance: threshold,
-            };
-            return op.execute();
-        }
-
-        function _findSimilarsWithProperty(doc, propTarget, threshold) {
-            if (!op) {
-                op = document.createElement('nuxeo-operation');
-                op.op = 'AI.DeduplicationFindSimilar';
-                document.querySelector('nuxeo-app').appendChild(op);
-            }
-            op.headers = {'enrichers.document': 'thumbnail, documentURL'};
-            op.input = doc;
-            op.params = {
-                xpath: propTarget,
-                distance: threshold,
-            };
-            return op.execute();
-        }
-
-        return {
-            /**
-             * For a given layout:
-             * 1) fetch similars for the blob freshly uploaded
-             * 2) update similars on deduplication widget in create or edit mode
-             */
-            updateCreateEditWidget: (layout) => {
-                if (!layout || !layout.document) {
-                    return;
-                }
-                const deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
-                if (!deduplicationWidget) {
-                    return;
-                }
-                const propTarget = deduplicationWidget.property;
-                if (!propTarget) {
-                    return;
-                }
-                const threshold = deduplicationWidget.threshold;
-                _clearSimilars(deduplicationWidget);
-                const batchValue = layout.root.querySelector('nuxeo-dropzone').value;
-                if ((!layout.document.properties[propTarget]
-                  || !layout.document.properties[propTarget]['upload-batch'])
-                  && !batchValue) {
-                  return;
-                }
-                _dedupDebouncer = Polymer.Debouncer.debounce(
-                    _dedupDebouncer, Polymer.Async.timeOut.after(500),
-                    () => {
-                        _findSimilarsWithBatch(layout.document, batchValue, propTarget, threshold).then((response) => {
-                            const entries = response.entries || [];
-                            deduplicationWidget.set('similars', entries);
-                        }).catch((error) => {
-                            console.error("error while fetching similars: ", error);
-                        });
-                    });
-            },
-            /**
-             * For a given layout:
-             * 1) fetch similars for the document blob of the given property and threshold
-             * 2) update similars on deduplication widget in metadata mode
-             */
-            updateMetadataWidget: (layout) => {
-                if (!layout || !layout.document) {
-                    return;
-                }
-                const deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
-                if (!deduplicationWidget) {
-                    return;
-                }
-                const propTarget = deduplicationWidget.property;
-                if (!propTarget) {
-                    return;
-                }
-                const threshold = deduplicationWidget.threshold;
-                _clearSimilars(deduplicationWidget);
-                _findSimilarsWithProperty(layout.document, propTarget, threshold).then((response) => {
-                    const entries = response.entries || [];
-                    deduplicationWidget.set('similars', entries);
-                }).catch((error) => {
-                    console.error("error while fetching similars: ", error);
+                  });
                 });
+              });
             },
-        };
-    })();
-    // Listener for deduplication management
-    document.addEventListener('document-layout-changed', (e) => {
-        const layoutName = e.detail.layout;
-        if (layoutName === 'view' || layoutName === 'import') {
-            return;
+          );
         }
-        const layout = e.detail.element;
-        if (!layout) {
-            return;
-        }
-        if (layoutName === 'metadata') {
-            customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
-                layout.__aiDocumentChangedDedupMetadata = () => AIDeduplicationManager.updateMetadataWidget(layout);
-                layout.constructor.createMethodObserver('__aiDocumentChangedDedupMetadata(document.*)', true);
-                AIDeduplicationManager.updateMetadataWidget(e.detail.element);
-            });
-        } else {
-            customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
-                layout.__aiDocumentChangedDedup = () => AIDeduplicationManager.updateCreateEditWidget(layout);
-                layout.constructor.createMethodObserver('__aiDocumentChangedDedup(document.*)', true);
-                AIDeduplicationManager.updateCreateEditWidget(e.detail.element);
-            });
-        }
+      },
+    };
+  })();
+  // Listener for suggestions management
+  document.addEventListener('document-layout-changed', (e) => {
+    if (e.detail.layout === 'metadata' || e.detail.layout === 'view') {
+      return;
+    }
+    const layout = e.detail.element;
+    if (!layout) {
+      return;
+    }
+    customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
+      layout.__aiDocumentChanged = (event) => AISuggestionManager.updateWidgetSuggestions(layout, event.path);
+      layout.constructor.createMethodObserver('__aiDocumentChanged(document.*)', true);
+      AISuggestionManager.updateWidgetSuggestions(e.detail.element);
     });
+  });
+
+  AIDeduplicationManager = (() => {
+    let op = null;
+    let _dedupDebouncer = null;
+
+    function _clearSimilars(deduplicationWidget) {
+      if (deduplicationWidget) {
+        deduplicationWidget.similars = [];
+      }
+    }
+
+    function _findSimilarsWithBatch(doc, value, propTarget, threshold) {
+      if (!op) {
+        op = document.createElement('nuxeo-operation');
+        op.op = 'AI.DeduplicationFindSimilar';
+        document.querySelector('nuxeo-app').appendChild(op);
+      }
+      let batchInfo = {};
+      if (!value) {
+        // LTS 2019
+        batchInfo.batchId = doc.properties[propTarget]['upload-batch'];
+        batchInfo.fileId = doc.properties[propTarget]['upload-fileId'];
+      } else {
+        // LTS 2020
+        batchInfo.batchId = value.batchId;
+        batchInfo.fileId = value.fileId;
+      }
+      if (!batchInfo.batchId) {
+        return;
+      }
+      op.input = {};
+      op.headers = {
+        'X-Batch-No-Drop': 'true',
+        'enrichers.document': 'thumbnail, documentURL'
+      };
+      op.params = {
+        batchId: batchInfo.batchId,
+        fileId: batchInfo.fileId,
+        distance: threshold,
+      };
+      return op.execute();
+    }
+
+    function _findSimilarsWithProperty(doc, propTarget, threshold) {
+      if (!op) {
+        op = document.createElement('nuxeo-operation');
+        op.op = 'AI.DeduplicationFindSimilar';
+        document.querySelector('nuxeo-app').appendChild(op);
+      }
+      op.headers = {'enrichers.document': 'thumbnail, documentURL'};
+      op.input = doc;
+      op.params = {
+        xpath: propTarget,
+        distance: threshold,
+      };
+      return op.execute();
+    }
+
+    return {
+      /**
+       * For a given layout:
+       * 1) fetch similars for the blob freshly uploaded
+       * 2) update similars on deduplication widget in create or edit mode
+       */
+      updateCreateEditWidget: (layout) => {
+        if (!layout || !layout.document) {
+          return;
+        }
+        const deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
+        if (!deduplicationWidget) {
+          return;
+        }
+        const propTarget = deduplicationWidget.property;
+        if (!propTarget) {
+          return;
+        }
+        const threshold = deduplicationWidget.threshold;
+        _clearSimilars(deduplicationWidget);
+        const batchValue = layout.root.querySelector('nuxeo-dropzone').value;
+        if ((!layout.document.properties[propTarget]
+            || !layout.document.properties[propTarget]['upload-batch'])
+          && !batchValue) {
+          return;
+        }
+        _dedupDebouncer = Polymer.Debouncer.debounce(
+          _dedupDebouncer, Polymer.Async.timeOut.after(500),
+          () => {
+            _findSimilarsWithBatch(layout.document, batchValue, propTarget, threshold).then((response) => {
+              const entries = response.entries || [];
+              deduplicationWidget.set('similars', entries);
+            }).catch((error) => {
+              console.error("error while fetching similars: ", error);
+            });
+          });
+      },
+      /**
+       * For a given layout:
+       * 1) fetch similars for the document blob of the given property and threshold
+       * 2) update similars on deduplication widget in metadata mode
+       */
+      updateMetadataWidget: (layout) => {
+        if (!layout || !layout.document) {
+          return;
+        }
+        const deduplicationWidget = layout.root.querySelector('nuxeo-ai-dedup-grid');
+        if (!deduplicationWidget) {
+          return;
+        }
+        const propTarget = deduplicationWidget.property;
+        if (!propTarget) {
+          return;
+        }
+        const threshold = deduplicationWidget.threshold;
+        _clearSimilars(deduplicationWidget);
+        _findSimilarsWithProperty(layout.document, propTarget, threshold).then((response) => {
+          const entries = response.entries || [];
+          deduplicationWidget.set('similars', entries);
+        }).catch((error) => {
+          console.error("error while fetching similars: ", error);
+        });
+      },
+    };
+  })();
+  // Listener for deduplication management
+  document.addEventListener('document-layout-changed', (e) => {
+    const layoutName = e.detail.layout;
+    if (layoutName === 'view' || layoutName === 'import') {
+      return;
+    }
+    const layout = e.detail.element;
+    if (!layout) {
+      return;
+    }
+    if (layoutName === 'metadata') {
+      customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
+        layout.__aiDocumentChangedDedupMetadata = () => AIDeduplicationManager.updateMetadataWidget(layout);
+        layout.constructor.createMethodObserver('__aiDocumentChangedDedupMetadata(document.*)', true);
+        AIDeduplicationManager.updateMetadataWidget(e.detail.element);
+      });
+    } else {
+      customElements.whenDefined(layout.tagName.toLowerCase()).then(() => {
+        layout.__aiDocumentChangedDedup = () => AIDeduplicationManager.updateCreateEditWidget(layout);
+        layout.constructor.createMethodObserver('__aiDocumentChangedDedup(document.*)', true);
+        AIDeduplicationManager.updateCreateEditWidget(e.detail.element);
+      });
+    }
+  });
 </script>
