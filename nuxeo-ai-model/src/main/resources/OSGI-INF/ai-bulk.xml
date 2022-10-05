@@ -3,8 +3,8 @@
 
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
     <action name="bulkDatasetExport" bucketSize="100" batchSize="100"/>
-    <action name="bulkEnrich" bucketSize="100" batchSize="50"/>
-    <action name="bulkEnrichRemove" bucketSize="100" batchSize="50"/>
+    <action name="bulkEnrich" bucketSize="100" batchSize="50" httpEnabled="true"/>
+    <action name="bulkEnrichRemove" bucketSize="100" batchSize="50" httpEnabled="true"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
