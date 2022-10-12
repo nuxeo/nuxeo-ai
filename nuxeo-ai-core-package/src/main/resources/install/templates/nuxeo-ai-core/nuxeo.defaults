@@ -70,3 +70,6 @@ nuxeo.insight.dedup.enabled=false
 
 # Deduplication Listener activation flag
 nuxeo.ai.similar.content.listener.enable=false
+
+# KV Store storage timeout (default 48 hours)
+nuxeo.ai.timeout.kv.store=172800

@@ -81,7 +81,14 @@ public class DatasetUpdateComputation extends AbstractComputation {
             errors.computeIfPresent(export.getId(), (s, val) -> 1L + val);
         }
 
-        if (isEndOfBatch(export)) {
+        boolean endOfBatch = false;
+        try {
+            endOfBatch = isEndOfBatch(export);
+        } catch (NuxeoException e) {
+            ctx.askForCheckpoint();
+        }
+
+        if (endOfBatch) {
             BulkCommand command = service.getCommand(commandId);
             if (command == null) {
                 log.warn("The bulk command {} is missing. Unable to save blobs info.", commandId);
@@ -122,6 +129,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
         }
 
         updateDelta(export.getId());
+
     }
 
     private void updateDatasetDocument(BulkCommand cmd, Blob blob, boolean isTraining, ExportRecord export) {
@@ -153,8 +161,12 @@ public class DatasetUpdateComputation extends AbstractComputation {
     }
 
     protected boolean isEndOfBatch(ExportRecord rec) {
-        long processed = counters.computeIfAbsent(rec.getId(), (key) -> 1L);
-        long total = getKVS().getLong(rec.getId());
+        Long processed = counters.computeIfAbsent(rec.getId(), (key) -> 1L);
+        Long total = getKVS().getLong(rec.getId());
+
+        if (total == null) {
+            throw new NuxeoException("Entries total is not existing anymore in the KVS");
+        }
 
         return processed >= total;
     }

@@ -98,6 +98,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     public static final long TIMEOUT_48_HOURS_IN_SEC = 48 * 60 * 60;
 
+    private static final String TIMEOUT_KV_STORE = "nuxeo.ai.timeout.kv.store";
+
     public static final int DEFAULT_SPLIT = 75;
 
     public static final PathRef PARENT_PATH = new PathRef("/" + DATASET_EXPORT_TYPE);
@@ -176,8 +178,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
             }
         }
 
-        KeyValueStore kvStore = getKVS();
-        kvStore.put(batchId, (long) docs.size(), TIMEOUT_48_HOURS_IN_SEC);
+        getKVS().put(batchId, (long) docs.size(),
+                Long.parseLong(Framework.getProperty(TIMEOUT_KV_STORE, String.valueOf(TIMEOUT_48_HOURS_IN_SEC))));
         createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
         bindCorporaToModel(session, client, modelParams);
     }
