@@ -37,6 +37,7 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_CONVERSION_STRICT_MODE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.NAME_PROP;
@@ -99,6 +100,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.RandomBug;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -212,8 +214,10 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     @SuppressWarnings("unchecked")
     public void testBulkExport() throws Exception {
+        Framework.getProperties().put(AI_CONVERSION_STRICT_MODE, "false");
         DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
 
         Set<PropertyType> input = Sets.newHashSet(new PropertyType("dc:title", TEXT_TYPE),
@@ -268,6 +272,32 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void testBulkExportStrict() throws Exception {
+        Framework.getProperties().put(AI_CONVERSION_STRICT_MODE, "true");
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
+
+        Set<PropertyType> input = Sets.newHashSet(new PropertyType("dc:title", TEXT_TYPE),
+                new PropertyType("file:content", IMAGE_TYPE));
+        Set<PropertyType> output = Sets.newHashSet(new PropertyType("dc:description", CATEGORY_TYPE));
+
+        String nxql = "SELECT * from Document where ecm:parentId = " + NXQL.escapeString(testRoot.getId());
+        String commandId = des.export(session, nxql, input, output, 60, null);
+
+        assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
+
+        BulkStatus status = service.getStatus(commandId);
+        assertNotNull(status);
+        assertNotNull(status.getProcessingStartTime());
+        assertNotNull(status.getProcessingEndTime());
+        assertEquals(COMPLETED, status.getState());
+        // 50 null records have been discarded, so we are left with 450 entries, split roughly 60 to 40 %
+        assertEquals(450, status.getProcessed());
+        assertEquals(450, status.getErrorCount());
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    @RandomBug.Repeat(issue = "AICORE-412")
     public void shouldCallWithParameters() throws InterruptedException {
         Map<String, Serializable> params = new HashMap<>();
 
