@@ -20,7 +20,6 @@ package org.nuxeo.ai.bulk;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static org.nuxeo.ai.bulk.BulkDatasetExportAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 
 import java.io.IOException;
@@ -29,7 +28,6 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.ExportRecord;
-import org.nuxeo.ai.pipes.types.ExportStatus;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.lib.stream.codec.Codec;
@@ -50,7 +48,6 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
     @Override
     public void batchProcess(ComputationContext context, String inputStream, List<Record> records) {
-        log.error("Got batch of " + records.size());
         RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(metadata.name());
         if (writer == null) {
             throw new NuxeoException("Unknown record write specified: " + metadata.name());
@@ -61,10 +58,6 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
                                                          .map(r -> codec.decode(r.getData()))
                                                          .collect(groupingBy(ExportRecord::getId, toList()));
 
-        boolean training = isTraining();
-        ExportStatus eb = new ExportStatus();
-        eb.setTraining(training);
-
         for (Map.Entry<String, List<ExportRecord>> entry : grouped.entrySet()) {
             List<ExportRecord> recs = entry.getValue();
             try {
@@ -73,7 +66,6 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
             } catch (IOException e) {
                 throw new NuxeoException("Failed to write batch " + metadata.name(), e);
             } finally {
-                log.error("output: " + recs.size());
                 recs.forEach(rec -> {
                     byte[] encoded = codec.encode(rec);
                     context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);
@@ -91,9 +83,4 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
         log.warn("Batch failure \"{}\" batch of {} records with command {}.", metadata.name(), records.size(),
                 commandId);
     }
-
-    protected boolean isTraining() {
-        return TRAINING_COMPUTATION.equals(metadata.name());
-    }
-
 }
