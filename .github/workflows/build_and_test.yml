@@ -1,0 +1,99 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Java CI with Maven
+
+on:
+  workflow_call:
+    inputs:
+      aws-account:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: us-east-1
+      should-push:
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      aws-access-key-id:
+        required: true
+      aws-secret-access-key:
+        required: true
+      packages-auth-user:
+        required: true
+      packages-auth-token:
+        required: true
+      connect-auth-user:
+        required: true
+      connect-auth-token:
+        required: true
+
+jobs:
+  build:
+    name: 'Build'
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: "-Xms1g -Xmx1536m"
+    outputs:
+      version: ${{ steps.project.outputs.version }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v3
+      with:
+        java-version: '8'
+        distribution: 'zulu'
+        cache: maven
+    - name: 'Install dependencies'
+      run: |
+        sudo apt-get -y update && sudo apt-get install -y --no-install-recommends \
+          perl \
+          locales \
+          pwgen \
+          imagemagick \
+          poppler-utils \
+          libwpd-tools \
+          exiftool \
+          ghostscript \
+          ffmpeg \
+          x264
+    - name: 'Update settings.xml with server configuration'
+      run: |
+        echo '<settings>
+            <servers>
+              <server>
+                <id>maven-internal</id>
+                <username>${{ secrets.packages-auth-user }}</username>
+                <password>${{ secrets.packages-auth-token }}</password>
+              </server>
+              <server>
+                <id>maven-private</id>
+                <username>${{ secrets.packages-auth-user }}</username>
+                <password>${{ secrets.packages-auth-token }}</password>
+              </server>
+              <server>
+                <id>nuxeo-studio</id>
+                <username>${{ secrets.connect-auth-user }}</username>
+                <password>${{ secrets.connect-auth-token }}</password>
+              </server>
+            </servers>
+            </settings>' > ~/.m2/settings.xml
+    #    - name: Configure AWS Credentials
+    #      uses: aws-actions/configure-aws-credentials@v1
+    #      with:
+    #        aws-access-key-id: ${{ secrets.aws-access-key-id }}
+    #        aws-secret-access-key: ${{ secrets.aws-secret-access-key  }}
+    #        aws-region: ${{ inputs.aws-region }}
+    #        role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/ai-ci-role"
+    #        role-skip-session-tagging: true
+    #        mask-aws-account-id: false
+    - name: Build with Maven
+      run: mvn install -fae -B -DskipTests
+    - name: Run Tests with Maven (Skip AWS)
+      run: mvn install -fae -B
+    - name: Publish Test Report
+      if: ${{ always() }}
+      uses: scacap/action-surefire-report@v1
