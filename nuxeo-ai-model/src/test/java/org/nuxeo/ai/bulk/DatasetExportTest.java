@@ -234,7 +234,7 @@ public class DatasetExportTest {
         assertNotNull(status.getProcessingStartTime());
         assertNotNull(status.getProcessingEndTime());
         assertEquals(COMPLETED, status.getState());
-        // 50 null records have been discarded so we are left with 450 entries, split roughly 60 to 40 %
+        // 50 null records have been discarded, so we are left with 450 entries, split roughly 60 to 40 %
         assertEquals(450, status.getProcessed());
         DocumentModelList docs = des.getDatasetExports(session, "nonsense");
         assertThat(docs).isEmpty();

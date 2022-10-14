@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -83,6 +84,8 @@ public class PropertyUtils {
     public static final String AI_BLOB_RENDITION = "nuxeo.ai.conversion.rendition";
 
     public static final String AI_BLOB_RENDITION_DEFAULT_VALUE = "Small";
+
+    public static final String AI_CONVERSION_STRICT_MODE = "nuxeo.ai.conversion.strict";
 
     private static final Logger log = LogManager.getLogger(PropertyUtils.class);
 
@@ -199,18 +202,28 @@ public class PropertyUtils {
         return getPropertyValue(doc, propertyName) != null;
     }
 
+    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList) {
+        return docSerialize(doc, propertiesList, false);
+    }
+
     /**
      * Convert a document to BlobTextFromDocument with only a sub-set of the properties.
      */
-    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList) {
+    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList, boolean strict) {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
         Map<String, String> properties = blobTextFromDoc.getProperties();
         propertiesList.forEach(propName -> {
             Serializable propVal = getPropertyValue(doc, propName.getName());
             if (propVal instanceof ManagedBlob) {
                 if (IMAGE_TYPE.equals(propName.getType())) {
-                    blobTextFromDoc.addBlob(propName.getName(), propName.getType(),
-                            getPictureConversion(doc, (ManagedBlob) propVal));
+                    ManagedBlob managedBlob = (ManagedBlob) propVal;
+                    ManagedBlob pictureConversion = getPictureConversion(doc, managedBlob);
+                    if (strict && Objects.equals(managedBlob.getDigest(), pictureConversion.getDigest())) {
+                        log.error("No picture conversion found");
+                        blobTextFromDoc.addBlob(propName.getName(), propName.getType(), null);
+                    } else {
+                        blobTextFromDoc.addBlob(propName.getName(), propName.getType(), pictureConversion);
+                    }
                 } else {
                     blobTextFromDoc.addBlob(propName.getName(), propName.getType(), (ManagedBlob) propVal);
                 }
@@ -233,7 +246,7 @@ public class PropertyUtils {
     }
 
     /**
-     * Get the best conversion of the original blob if exist. If not return the original blob.
+     * Get the best conversion of the original blob if exists. If not return the original blob.
      */
     public static ManagedBlob getPictureConversion(DocumentModel doc, ManagedBlob originalContent) {
         MultiviewPicture managedConversion = doc.getAdapter(MultiviewPicture.class);
@@ -244,7 +257,7 @@ public class PropertyUtils {
         String renditionName = Framework.getProperty(AI_BLOB_RENDITION, AI_BLOB_RENDITION_DEFAULT_VALUE);
         Optional<PictureView> pictureView = Arrays.stream(managedConversion.getViews())
                                                   .filter(view -> renditionName.equals(view.getTitle()))
-                                                  .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
+//                                                  .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
                                                   .filter(view -> !view.getFilename().startsWith("empty_picture"))
                                                   .min(Comparator.comparingInt(PictureView::getWidth));
         // Check we have a proper picture view

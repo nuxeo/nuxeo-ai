@@ -60,6 +60,18 @@ You can set these in your `nuxeo.conf`.
 <td colspan="1"><code>100</code></td>
 <td colspan="1">Since 2.1</td>
 </tr>
+<tr>
+<td colspan="1"><code>nuxeo.ai.conversion.rendition</code></td>
+<td colspan="1">Rendition title for multi-picture views to return for predictions/exports</td>
+<td colspan="1"><code>Small</code></td>
+<td colspan="1">Since 2.3</td>
+</tr>
+<tr>
+<td colspan="1"><code>nuxeo.ai.conversion.strict</code></td>
+<td colspan="1">Use Nuxeo renditions only during export</td>
+<td colspan="1"><code>true</code></td>
+<td colspan="1">Since 2.5</td>
+</tr>
 </tbody>
 </table>
 </div>
