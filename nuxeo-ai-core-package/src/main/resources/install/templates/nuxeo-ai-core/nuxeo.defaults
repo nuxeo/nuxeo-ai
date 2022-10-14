@@ -24,6 +24,9 @@ nuxeo.ai.export.tensorflow=true
 # Max size of blobs for conversion during predictions/exports (500MB by default)
 nuxeo.ai.conversion.maxSize=500000000
 
+# Use Nuxeo conversion
+nuxeo.ai.conversion.strict=true
+
 # Rendition title for multipicture views to return for predictions/exports  (choices among Small, Medium, OriginalJpeg or custom one)
 nuxeo.ai.conversion.rendition=Small
 
