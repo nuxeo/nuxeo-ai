@@ -93,7 +93,7 @@ jobs:
     - name: Build with Maven
       run: mvn install -fae -B -DskipTests
     - name: Run Tests with Maven (Skip AWS)
-      run: mvn install -fae -B
+      run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
