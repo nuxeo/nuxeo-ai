@@ -27,11 +27,10 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
 import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
-import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
 import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
 import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
-import static org.nuxeo.elasticsearch.test.ESTestClientFactory.ADDRESS_LIST_PROPERTY;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,6 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
@@ -199,10 +197,7 @@ public class TestAutoServicesAudit {
     @Deploy("org.nuxeo.elasticsearch.audit.test:elasticsearch-audit-index-test-contrib.xml")
     @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/core-types-test.xml")
     @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
-    public void testModelUsageService() throws JsonProcessingException {
-        // Required for external ES
-        Framework.getProperties().put(ES_BASE_URL_PROPERTY, System.getProperty(ADDRESS_LIST_PROPERTY));
-
+    public void testModelUsageService() throws IOException {
         testAutofill();
         txFeature.nextTransaction();
 

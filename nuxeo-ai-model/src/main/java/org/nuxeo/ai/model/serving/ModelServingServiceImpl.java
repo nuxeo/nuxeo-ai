@@ -72,7 +72,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
  */
 public class ModelServingServiceImpl extends DefaultComponent implements ModelServingService {
 
-    private static final TypeReference<Map<String, Serializable>> RESPONSE_TYPE_REFERENCE = new TypeReference<Map<String, Serializable>>() {
+    private static final TypeReference<Map<String, Object>> RESPONSE_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() {
     };
 
     private static final String MODELS_AP = "models";
