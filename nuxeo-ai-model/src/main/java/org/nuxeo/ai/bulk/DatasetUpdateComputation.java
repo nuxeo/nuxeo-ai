@@ -81,11 +81,13 @@ public class DatasetUpdateComputation extends AbstractComputation {
             errors.computeIfPresent(export.getId(), (s, val) -> 1L + val);
         }
 
-        boolean endOfBatch = false;
+        boolean endOfBatch;
         try {
             endOfBatch = isEndOfBatch(export);
         } catch (NuxeoException e) {
-            ctx.askForCheckpoint();
+            log.error("Likely the KVS record was removed by TTL expired event; interrupting {} pipeline", commandId);
+            ctx.askForTermination();
+            return;
         }
 
         if (endOfBatch) {
@@ -129,7 +131,6 @@ public class DatasetUpdateComputation extends AbstractComputation {
         }
 
         updateDelta(export.getId());
-
     }
 
     private void updateDatasetDocument(BulkCommand cmd, Blob blob, boolean isTraining, ExportRecord export) {
