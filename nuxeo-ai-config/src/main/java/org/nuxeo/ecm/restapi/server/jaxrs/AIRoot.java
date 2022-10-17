@@ -45,7 +45,6 @@ import org.nuxeo.ecm.webengine.model.Resource;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
 import org.nuxeo.runtime.api.Framework;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -76,7 +75,7 @@ public class AIRoot extends DefaultObject {
     @Path("config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setNuxeoConfVars(String conf) throws JsonProcessingException {
+    public Response setNuxeoConfVars(String conf) throws IOException {
         Map<String, String> confMap = MAPPER.readValue(conf, NUXEO_CONF_REF);
         if (!(isManager() || isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -112,7 +111,7 @@ public class AIRoot extends DefaultObject {
     @Path("extension/threshold")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setThresholdsFromJSON(String thresholdsJSON) throws JsonProcessingException {
+    public Response setThresholdsFromJSON(String thresholdsJSON) throws IOException {
         ThresholdConfiguratorDescriptor thresholds = MAPPER.readValue(thresholdsJSON,
                 ThresholdConfiguratorDescriptor.class);
         if (!(isManager() || isAdministrator())) {

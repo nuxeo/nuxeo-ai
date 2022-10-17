@@ -5,7 +5,7 @@
     <groupId>org.nuxeo.ecm.distribution</groupId>
     <artifactId>nuxeo-distribution</artifactId>
     <!-- greater or equal to runtime HF required version -->
-    <version>10.10-HF44</version>
+    <version>10.10-HF58</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
