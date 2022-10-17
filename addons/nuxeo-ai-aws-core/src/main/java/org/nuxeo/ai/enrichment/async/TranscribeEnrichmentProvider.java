@@ -59,7 +59,6 @@ import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
 import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
 import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
 import com.amazonaws.services.transcribe.model.TranscriptionJob;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
@@ -142,7 +141,7 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
         AudioTranscription transcription;
         try {
             transcription = OBJECT_MAPPER.readValue(json, AudioTranscription.class);
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             log.error("Could not process JSON response {}", json, e);
             throw new NuxeoException("Could not read `AudioTranscription` for Document Id: " + docId);
         }
