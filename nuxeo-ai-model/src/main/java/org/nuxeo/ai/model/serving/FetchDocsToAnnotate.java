@@ -22,7 +22,6 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -175,9 +174,8 @@ public class FetchDocsToAnnotate {
             DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('" + uids.stream()
                                                                                                            .map(String::valueOf)
                                                                                                            .collect(
-                                                                                                                   Collectors
-                                                                                                                           .joining(
-                                                                                                                                   "','"))
+                                                                                                                   Collectors.joining(
+                                                                                                                           "','"))
                     + "')");
             if (docs.isEmpty()) {
                 return Blobs.createJSONBlob(MAPPER.writeValueAsString(EMPTY_JSON_LIST));
@@ -231,7 +229,7 @@ public class FetchDocsToAnnotate {
             return;
         }
         Type type = field.getType();
-        Serializable propertyValue = documentModel.getPropertyValue(propertyName);
+        Object propertyValue = documentModel.getPropertyValue(propertyName);
         Property property = documentModel.getProperty(propertyName);
         ObjectResolver objectResolver = getObjectResolver(type);
         if (propertyValue != null) {
@@ -261,7 +259,7 @@ public class FetchDocsToAnnotate {
                     outWriter.reset();
                     writer.write(property, jg);
                 }
-                propertyValue = (Serializable) MAPPER.readTree(outWriter.toString());
+                propertyValue = MAPPER.readTree(outWriter.toString());
             } catch (IOException e) {
                 throw new NuxeoException(e);
             }
