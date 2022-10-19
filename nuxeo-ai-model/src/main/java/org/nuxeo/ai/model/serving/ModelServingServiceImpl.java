@@ -273,7 +273,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
                 CloudClient cc = Framework.getService(CloudClient.class);
                 JSONBlob published = cc.getPublishedModels(session);
 
-                Map<String, Serializable> resp = MAPPER.readValue(published.getStream(), RESPONSE_TYPE_REFERENCE);
+                Map<String, Object> resp = MAPPER.readValue(published.getStream(), RESPONSE_TYPE_REFERENCE);
                 if (resp.containsKey(ENTRIES_KEY)) {
                     clearAll();
 

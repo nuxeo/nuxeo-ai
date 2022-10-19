@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>2021.8</version>
+    <version>2021.27</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
@@ -66,6 +66,17 @@
     <repository>
       <id>maven-internal</id>
       <url>https://packages.nuxeo.com/repository/maven-internal</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>maven-team-platform-private</id>
+      <url>https://packages.nuxeo.com/repository/maven-team-platform-private</url>
       <releases>
         <enabled>true</enabled>
       </releases>
