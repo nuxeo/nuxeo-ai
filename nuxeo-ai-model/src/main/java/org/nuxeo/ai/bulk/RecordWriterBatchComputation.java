@@ -82,5 +82,14 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
         String commandId = records.isEmpty() ? "" : records.get(0).getKey();
         log.warn("Batch failure \"{}\" batch of {} records with command {}.", metadata.name(), records.size(),
                 commandId);
+        Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
+        log.warn("Mark as failed {} Export Records for command ID {}", records.size(), commandId);
+        records.forEach(rec -> {
+            ExportRecord decoded = codec.decode(rec.getData());
+            decoded.setFailed(true);
+            byte[] encoded = codec.encode(decoded);
+            context.produceRecord(OUTPUT_1, decoded.getCommandId(), encoded);
+        });
+        context.askForCheckpoint();
     }
 }

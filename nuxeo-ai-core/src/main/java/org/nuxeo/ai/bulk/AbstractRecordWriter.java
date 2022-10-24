@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.streams.Initializable;
@@ -119,7 +120,15 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
         KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(RECORD_STREAM_KV);
         String key = makeKey(id, name);
         String existing = kvStore.getString(key);
-        if (existing == null) {
+        if (StringUtils.isNotEmpty(existing) && new File(existing).exists()) {
+            log.warn("Using existing {}", existing);
+            return new File(existing);
+        } else {
+            if (StringUtils.isNotEmpty(existing) && !new File(existing).exists()) {
+                log.warn(
+                        "{} was found in KVS but the file does not exist; creating a new file, this may result wrong content of TFRecord",
+                        existing);
+            }
             try {
                 File tempFile = Framework.createTempFile(id, name);
                 Framework.trackFile(tempFile, this);
@@ -131,10 +140,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
             } catch (IOException e) {
                 throw new NuxeoException("Unable to create a temp file. ", e);
             }
-        } else {
-            return new File(existing);
         }
-
     }
 
 }
