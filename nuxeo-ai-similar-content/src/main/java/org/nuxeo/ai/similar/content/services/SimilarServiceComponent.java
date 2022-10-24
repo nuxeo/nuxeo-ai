@@ -22,6 +22,9 @@ package org.nuxeo.ai.similar.content.services;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getConversionMode;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureView;
 import static org.nuxeo.ai.sdk.rest.Common.DISTANCE_PARAM;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
@@ -39,6 +42,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -66,6 +70,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.platform.picture.api.PictureView;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.ComponentInstance;
@@ -210,7 +215,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     }
 
     @Override
-    public List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath, int distance) throws IOException {
+    public List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath, int distance)
+            throws IOException {
         InsightClient client = getInsightClient(session);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(UID, doc.getId());
@@ -222,7 +228,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     }
 
     @Override
-    public List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath, int distance) throws IOException {
+    public List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath, int distance)
+            throws IOException {
         InsightClient client = getInsightClient(session);
         Map<String, Serializable> parameters = new HashMap<>();
         parameters.put(XPATH_PARAM, xpath);
@@ -322,9 +329,20 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Nullable
     protected TensorInstances constructTensor(DocumentModel doc, String xpath) {
-        Blob blob = (Blob) doc.getPropertyValue(xpath);
+        boolean strict = getConversionMode();
+        Blob blob = null;
+        if (strict && FILE_CONTENT.equals(xpath)) {
+            Optional<PictureView> pv = getPictureView(doc);
+            if (pv.isPresent()) {
+                blob = pv.get().getBlob();
+            }
+        }
+
         if (blob == null) {
-            return null;
+            blob = (Blob) doc.getPropertyValue(xpath);
+            if (blob == null) {
+                return null;
+            }
         }
 
         Map<String, TensorInstances.Tensor> props = new HashMap<>();

@@ -36,7 +36,6 @@ import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.INPUT_PARAMETER
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.MODEL_PARAMETERS;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.OUTPUT_PARAMETERS;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.QUERY_PARAM;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_CONVERSION_STRICT_MODE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
@@ -87,7 +86,6 @@ import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.kv.KeyValueStore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -423,7 +421,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     protected boolean getConversionMode() {
         if (strictMode == null) {
-            strictMode = Boolean.parseBoolean(Framework.getProperty(AI_CONVERSION_STRICT_MODE, "false"));
+            strictMode = PropertyUtils.getConversionMode();
         }
 
         return strictMode;

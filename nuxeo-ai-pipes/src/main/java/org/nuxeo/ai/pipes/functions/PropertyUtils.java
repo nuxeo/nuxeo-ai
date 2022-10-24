@@ -202,6 +202,10 @@ public class PropertyUtils {
         return getPropertyValue(doc, propertyName) != null;
     }
 
+    public static boolean getConversionMode() {
+        return Boolean.parseBoolean(Framework.getProperty(AI_CONVERSION_STRICT_MODE, "false"));
+    }
+
     public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList) {
         return docSerialize(doc, propertiesList, false);
     }
@@ -219,7 +223,7 @@ public class PropertyUtils {
                     ManagedBlob managedBlob = (ManagedBlob) propVal;
                     ManagedBlob pictureConversion = getPictureConversion(doc, managedBlob);
                     if (strict && Objects.equals(managedBlob.getDigest(), pictureConversion.getDigest())) {
-                        log.error("No picture conversion found");
+                        log.warn("No picture conversion found");
                         blobTextFromDoc.addBlob(propName.getName(), propName.getType(), null);
                     } else {
                         blobTextFromDoc.addBlob(propName.getName(), propName.getType(), pictureConversion);
@@ -249,22 +253,28 @@ public class PropertyUtils {
      * Get the best conversion of the original blob if exists. If not return the original blob.
      */
     public static ManagedBlob getPictureConversion(DocumentModel doc, ManagedBlob originalContent) {
-        MultiviewPicture managedConversion = doc.getAdapter(MultiviewPicture.class);
-        // Check if multiview picture adapter can be accessible
-        if (managedConversion == null) {
-            return originalContent;
-        }
-        String renditionName = Framework.getProperty(AI_BLOB_RENDITION, AI_BLOB_RENDITION_DEFAULT_VALUE);
-        Optional<PictureView> pictureView = Arrays.stream(managedConversion.getViews())
-                                                  .filter(view -> renditionName.equals(view.getTitle()))
-//                                                  .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
-                                                  .filter(view -> !view.getFilename().startsWith("empty_picture"))
-                                                  .min(Comparator.comparingInt(PictureView::getWidth));
+        Optional<PictureView> pictureView = getPictureView(doc);
         // Check we have a proper picture view
         if (!pictureView.isPresent()) {
             return originalContent;
         }
+
         return (ManagedBlob) pictureView.get().getBlob();
+    }
+
+    public static Optional<PictureView> getPictureView(DocumentModel doc) {
+        MultiviewPicture managedConversion = doc.getAdapter(MultiviewPicture.class);
+        // Check if multiview picture adapter can be accessible
+        if (managedConversion == null) {
+            return Optional.empty();
+        }
+
+        String renditionName = Framework.getProperty(AI_BLOB_RENDITION, AI_BLOB_RENDITION_DEFAULT_VALUE);
+        return Arrays.stream(managedConversion.getViews())
+                                                  .filter(view -> renditionName.equals(view.getTitle()))
+                                                  //                                                  .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
+                                                  .filter(view -> !view.getFilename().startsWith("empty_picture"))
+                                                  .min(Comparator.comparingInt(PictureView::getWidth));
     }
 
     /**
