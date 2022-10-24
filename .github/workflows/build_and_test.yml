@@ -96,6 +96,7 @@ jobs:
         role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/@Infrastructure"
         role-skip-session-tagging: true
         mask-aws-account-id: false
+        role-duration-seconds: 1800
     - name: Run Tests with Maven
       run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
     - name: Publish Test Report
@@ -165,6 +166,7 @@ jobs:
         role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/@Infrastructure"
         role-skip-session-tagging: true
         mask-aws-account-id: false
+        role-duration-seconds: 1800
     - name: Run Tests with Maven
       run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
     - name: Publish Test Report
