@@ -98,9 +98,10 @@ jobs:
         aws-access-key-id: ${{ secrets.aws-access-key-id }}
         aws-secret-access-key: ${{ secrets.aws-secret-access-key  }}
         aws-region: ${{ inputs.aws-region }}
-        role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/ai-ci-role"
+        role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/@Infrastructure"
         role-skip-session-tagging: true
         mask-aws-account-id: false
+        role-duration-seconds: 1800
     - name: Run Tests with Maven
       run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
     - name: Publish Test Report
@@ -172,11 +173,15 @@ jobs:
         aws-access-key-id: ${{ secrets.aws-access-key-id }}
         aws-secret-access-key: ${{ secrets.aws-secret-access-key  }}
         aws-region: ${{ inputs.aws-region }}
-        role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/ai-ci-role"
+        role-to-assume: "arn:aws:iam::${{ inputs.aws-account }}:role/@Infrastructure"
         role-skip-session-tagging: true
         mask-aws-account-id: false
+        role-duration-seconds: 1800
     - name: Run Tests with Maven
       run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.aws-secret-access-key  }}
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1

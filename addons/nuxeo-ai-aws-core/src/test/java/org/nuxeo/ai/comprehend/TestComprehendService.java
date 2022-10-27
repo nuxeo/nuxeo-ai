@@ -26,6 +26,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -33,6 +35,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.enrichment.SentimentEnrichmentProvider;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -123,7 +126,14 @@ public class TestComprehendService {
         Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
         assertEquals(1, metadataCollection.size());
         EnrichmentMetadata result = metadataCollection.iterator().next();
-        assertEquals("London", result.getLabels().get(0).getValues().get(0).getName());
+        List<String> entities = result.getLabels()
+                                      .get(0)
+                                      .getValues()
+                                      .stream()
+                                      .map(AIMetadata.Label::getName)
+                                      .collect(Collectors.toList());
+        assertThat(entities).contains("London");
+        assertThat(entities).contains("New York");
         textStream.addProperty("dc:title", "Nuxeo is a young and promising company");
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
