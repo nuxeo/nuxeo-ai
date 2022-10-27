@@ -55,6 +55,7 @@ import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.test.CoreFeature;
+import org.nuxeo.ecm.platform.picture.core.ImagingFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -62,7 +63,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 @RunWith(FeaturesRunner.class)
-@Features({ PlatformFeature.class })
+@Features({ PlatformFeature.class, ImagingFeature.class })
 @Deploy("org.nuxeo.ecm.platform.commandline.executor")
 @Deploy("org.nuxeo.ecm.actions")
 @Deploy("org.nuxeo.ecm.platform.picture.core")
