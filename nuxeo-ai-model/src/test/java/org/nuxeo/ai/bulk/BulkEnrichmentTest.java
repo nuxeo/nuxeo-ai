@@ -63,6 +63,7 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.platform.audit.AuditFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -79,10 +80,11 @@ import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class,
-        RepositoryElasticSearchFeature.class })
+        RepositoryElasticSearchFeature.class, AuditFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
+//@Deploy("org.nuxeo.ecm.platform.audit.api")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
