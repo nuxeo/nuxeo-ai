@@ -89,7 +89,7 @@ public class EnrichmentPipelineTest {
 
     @Test
     public void shouldRunEnrichmentsOnConversionDone() throws IOException, InterruptedException {
-        //        AWS.assumeCredentials();
+        AWS.assumeCredentials();
         File pic = FileUtils.getResourceFileFromContext("files/creative_commons3.jpg");
         Blob blob = Blobs.createBlob(pic);
 
@@ -102,7 +102,7 @@ public class EnrichmentPipelineTest {
 
         LogManager manager = ss.getLogManager();
         TestConfiguredStreamProcessors.waitForNoLag(manager, TEST_IMAGES_OUT, TEST_IMAGES_SAVE_GROUP,
-                Duration.ofSeconds(10));
+                Duration.ofSeconds(30));
 
         LogLag lag = manager.getLag(TEST_IMAGES, TEST_IMAGES_GROUP);
         assertThat(lag.lag()).isZero();
