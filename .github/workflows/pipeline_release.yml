@@ -13,7 +13,9 @@ on:
       jdk:
         type: string
         description: JDK Version
-        default: '8'
+        options:
+        - '8'
+        - '11'
 
 
 jobs:
@@ -58,29 +60,32 @@ jobs:
       run: echo "CURRENT_VERSION=\"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)\"" >> $GITHUB_ENV
     - name: Tag and check if compiling
       run: |
-        currentVersionSnap=$CURRENT_VERSION
-        currentVersion=${currentVersionSnap%-*}
-        find ./ -type f -exec sed -i '' -e "s/${currentVersionSnap}/${currentVersion}/" {} \;
+        currentVersion=$CURRENT_VERSION
+        releasedVersion=${currentVersion%-*}
+        echo "RELEASED_VERSION=\"${releasedVersion}\"" >> $GITHUB_ENV
+        find ./ -type f -exec sed -i '' -e "s/${currentVersion}/${releasedVersion}/" {} \;
+        git clean -f -d
         git config user.name github-actions
         git config user.email github-actions@github.com
-        git checkout -b release-v${currentVersion}
-        git tag -a v${currentVersion} -m "Release ${currentVersion}"
+        git checkout -b release-v${releasedVersion}
+        git add .
+        git tag -a v${releasedVersion} -m "Release ${releasedVersion}"
         mvn -ntp install -DskipInstall
-        git push origin v${currentVersion}
-        git push origin release-v${currentVersion}
+        git push origin v${releasedVersion}
+        git push origin release-v${releasedVersion}
 
     - name: Archive packages
       uses: actions/upload-artifact@v2
       with:
         name: packages
         path: |
-          nuxeo-ai-core-package/target/nuxeo-ai-core-${{ github.event.inputs.version }}.zip
+          nuxeo-ai-core-package/target/nuxeo-ai-core-$RELEASED_VERSION.zip
 
     - name: Publish Nuxeo packages
       env:
         CONNECT_PREPROD_URL: https://nos-preprod-connect.nuxeocloud.com/nuxeo
       run: |
-        PACKAGE="nuxeo-ai-core-package/target/nuxeo-ai-core-${{ github.event.inputs.version }}.zip"
+        PACKAGE="nuxeo-ai-core-package/target/nuxeo-ai-core-$RELEASED_VERSION.zip"
         STATUS_CODE=`curl -i --silent --output publish-req.output -w "%{http_code}" -u "${{ secrets.CONNECT_PREPROD_AUTH }}" -F package=@$PACKAGE "$CONNECT_PREPROD_URL/site/marketplace/upload?batch=true"`
         cat publish-req.output
         if [[ "$STATUS_CODE" != "200" ]]
@@ -97,11 +102,11 @@ jobs:
         current-version: ${{ github.event.inputs.version }}
         version-fragment: ${{ github.event.inputs.increment }}
 
-    - name: Post Release
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/master-10.10'
+    - name: Post Release (in master or master-10.10)
       run: |
-        git checkout ${{ github.ref }}
-        find ./ -type f -exec sed -i '' -e "s/${{ github.event.inputs.version }}-SNAPSHOT/${{ steps.bump_version.outputs.next-version }}-SNAPSHOT/" {} \;
+        git checkout ${{ github.base_ref }}
+        find ./ -type f -exec sed -i '' -e "s/$CURRENT_VERSION/${{ steps.bump_version.outputs.next-version }}/" {} \;
+        git clean -f -d
         git add .
-        git commit -m "Post Release ${{ github.event.inputs.version }}"
-        git push ${{ github.ref }}
+        git commit -m "Post Release $CURRENT_VERSION"
+        git push origin ${{ github.base_ref }}
