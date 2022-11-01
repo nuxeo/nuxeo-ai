@@ -1,17 +1,20 @@
 name: Release Publish
 
 on:
-  workflow_dispatch:
+  pull_request:
+    branches: [master, master-10.10]
     inputs:
       increment:
-        type: version
+        type: choice
         description: Bug is for patch and feature for minor
+        default: 'bug'
         options:
-        - bug
-        - feature
-        - major
+        - 'bug'
+        - 'feature'
+        - 'major'
       jdk:
-        type: string
+        type: choice
+        default: '11'
         description: JDK Version
         options:
         - '8'
@@ -30,7 +33,7 @@ jobs:
 
       uses: actions/setup-java@v3
       with:
-        java-version: ${{ github.event.inputs.jdk }}
+        java-version: '11'
         distribution: 'zulu'
         cache: maven
 
@@ -44,7 +47,17 @@ jobs:
                 <password>${{ secrets.packages-auth-token }}</password>
               </server>
               <server>
+                <id>maven-team-platform-private</id>
+                <username>${{ secrets.packages-auth-user }}</username>
+                <password>${{ secrets.packages-auth-token }}</password>
+              </server>
+              <server>
                 <id>maven-private</id>
+                <username>${{ secrets.packages-auth-user }}</username>
+                <password>${{ secrets.packages-auth-token }}</password>
+              </server>
+              <server>
+                <id>maven-public-releases</id>
                 <username>${{ secrets.packages-auth-user }}</username>
                 <password>${{ secrets.packages-auth-token }}</password>
               </server>
@@ -55,22 +68,22 @@ jobs:
               </server>
             </servers>
             </settings>' > ~/.m2/settings.xml
-
     - name: Set env
-      run: echo "CURRENT_VERSION=\"$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)\"" >> $GITHUB_ENV
+      run: echo "CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Tag and check if compiling
       run: |
         currentVersion=$CURRENT_VERSION
         releasedVersion=${currentVersion%-*}
-        echo "RELEASED_VERSION=\"${releasedVersion}\"" >> $GITHUB_ENV
+        echo "RELEASED_VERSION=${releasedVersion}" >> $GITHUB_ENV
         find ./ -type f -exec sed -i '' -e "s/${currentVersion}/${releasedVersion}/" {} \;
         git clean -f -d
         git config user.name github-actions
         git config user.email github-actions@github.com
         git checkout -b release-v${releasedVersion}
         git add .
+        git status
         git tag -a v${releasedVersion} -m "Release ${releasedVersion}"
-        mvn -ntp install -DskipInstall
+        mvn -ntp install -DskipTests
         git push origin v${releasedVersion}
         git push origin release-v${releasedVersion}
 
@@ -99,8 +112,8 @@ jobs:
       id: bump_version
       uses: christian-draeger/increment-semantic-version@1.0.2
       with:
-        current-version: ${{ github.event.inputs.version }}
-        version-fragment: ${{ github.event.inputs.increment }}
+        current-version: $CURRENT_VERSION
+        version-fragment: 'bug'
 
     - name: Post Release (in master or master-10.10)
       run: |

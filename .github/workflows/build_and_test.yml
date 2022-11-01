@@ -96,6 +96,9 @@ jobs:
             </settings>' > ~/.m2/settings.xml
     - name: Run Tests with Maven
       run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.aws-secret-access-key  }}
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
