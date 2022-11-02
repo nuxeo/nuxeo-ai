@@ -135,6 +135,10 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
         blobTypes.put(name, type);
     }
 
+    public String getProperty(String name) {
+        return properties.get(name);
+    }
+
     public Map<String, String> getProperties() {
         return properties;
     }
