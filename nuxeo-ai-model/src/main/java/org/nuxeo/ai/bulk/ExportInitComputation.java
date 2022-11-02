@@ -20,6 +20,7 @@
 package org.nuxeo.ai.bulk;
 
 import static java.util.Collections.shuffle;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.EXPORT_SPLIT_PARAM;
@@ -40,6 +41,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_CONVERSION_STRICT_MO
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPropertyValue;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.query.sql.NXQL.escapeString;
 import static org.nuxeo.ecm.core.schema.FacetNames.HIDDEN_IN_NAVIGATION;
 
 import java.io.IOException;
@@ -56,6 +58,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -82,7 +85,6 @@ import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.runtime.api.Framework;
@@ -97,6 +99,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
     public static final String UUID_QUERY_INIT = "SELECT * FROM Document WHERE ecm:uuid IN ";
 
     public static final long TIMEOUT_48_HOURS_IN_SEC = 48 * 60 * 60;
+
+    public static final String COMMA_DELIMITER = ",";
 
     private static final String TIMEOUT_KV_STORE = "nuxeo.ai.timeout.kv.store";
 
@@ -164,13 +168,10 @@ public class ExportInitComputation extends AbstractBulkComputation {
             modelParams = new HashMap<>();
         }
 
-        Set<PropertyType> featuresList = new HashSet<>(inputs);
-        featuresList.addAll(outputs);
-
-        // Id to track the batch
+        // ID to track the batch
         String batchId = UUID.randomUUID().toString();
         for (DocumentModel doc : docs) {
-            ExportRecord record = createRecordFromDoc(batchId, featuresList, doc);
+            ExportRecord record = createRecordFromDoc(batchId, inputs, outputs, doc);
             if (record.isFailed()) {
                 failed.add(record);
             } else {
@@ -343,23 +344,17 @@ public class ExportInitComputation extends AbstractBulkComputation {
         return stats;
     }
 
-    protected String buildQueryFrom(DocumentModelList documents) {
-        StringBuilder sb = new StringBuilder(UUID_QUERY_INIT);
-        sb.append(" (");
-
-        for (DocumentModel doc : documents) {
-            sb.append(NXQL.escapeString(doc.getId()));
-            sb.append(",");
-        }
-        sb.deleteCharAt(sb.length() - 1);
-        sb.append(")");
-        return sb.toString();
+    protected String buildQueryFrom(DocumentModelList docs) {
+        return UUID_QUERY_INIT + " (" + docs.stream()
+                                            .map(doc -> escapeString(doc.getId()))
+                                            .collect(joining(COMMA_DELIMITER)) + ")";
     }
 
-    protected ExportRecord createRecordFromDoc(String id, Set<PropertyType> props, DocumentModel doc) {
-        Map<String, String> nameTypePair = props.stream()
-                                                .filter(prop -> Objects.nonNull(prop.getType()))
-                                                .collect(toMap(PropertyType::getName, PropertyType::getType));
+    protected ExportRecord createRecordFromDoc(String id, Set<PropertyType> inputs, Set<PropertyType> outputs,
+            DocumentModel doc) {
+        Map<String, String> nameTypePair = Stream.concat(inputs.stream(), outputs.stream())
+                                                 .filter(prop -> Objects.nonNull(prop.getType()))
+                                                 .collect(toMap(PropertyType::getName, PropertyType::getType));
 
         if (doc.hasFacet(ENRICHMENT_FACET)) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
@@ -369,21 +364,37 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
         BlobTextFromDocument subDoc = null;
         if (!nameTypePair.isEmpty()) {
+            Set<String> outNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toSet());
             Set<PropertyType> properties = nameTypePair.entrySet()
                                                        .stream()
                                                        .map(p -> new PropertyType(p.getKey(), p.getValue()))
                                                        .collect(Collectors.toSet());
+            boolean outputPresent = false;
             subDoc = PropertyUtils.docSerialize(doc, properties, getConversionMode());
-            for (PropertyType propName : properties) {
-                Serializable propVal = getPropertyValue(doc, propName.getName());
-                if ((propVal instanceof ManagedBlob) && IMAGE_TYPE.equals(propName.getType())) {
-                    if (subDoc.getBlobs().get(propName.getName()) == null) {
+            for (PropertyType pType : properties) {
+                Serializable propVal = getPropertyValue(doc, pType.getName());
+                if ((propVal instanceof ManagedBlob) && IMAGE_TYPE.equals(pType.getType())) {
+                    if (subDoc.getBlobs().get(pType.getName()) == null) {
                         subDoc = null;
                         log.warn("An empty blob encountered in Document {} for property {}", doc.getId(),
-                                propName.getName());
+                                pType.getName());
                         break;
                     }
                 }
+
+                if (outNames.contains(pType.getName())) {
+                    String property = subDoc.getProperty(pType.getName());
+                    if (StringUtils.isNotEmpty(property)) {
+                        outputPresent = true;
+                    } else {
+                        log.warn("Document {} has no value for {}", subDoc.getId(), pType.getName());
+                    }
+                }
+            }
+
+            if (subDoc != null && !outputPresent) {
+                log.warn("Document {} has no output properties values: {}", subDoc.getId(), outNames);
+                subDoc = null;
             }
         }
 

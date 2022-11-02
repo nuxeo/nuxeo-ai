@@ -31,6 +31,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -209,7 +211,8 @@ public class PropertyUtils {
     /**
      * Convert a document to BlobTextFromDocument with only a sub-set of the properties.
      */
-    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList, boolean strict) {
+    public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList,
+            boolean strict) {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument(doc);
         Map<String, String> properties = blobTextFromDoc.getProperties();
         propertiesList.forEach(propName -> {
@@ -271,16 +274,10 @@ public class PropertyUtils {
      * Turn an array into a list.
      */
     protected static String serializeArray(Serializable propVal) {
-        StringBuilder valueBuilder = new StringBuilder();
         int length = Array.getLength(propVal);
-        for (int i = 0; i < length; i++) {
-            String val = String.valueOf(Array.get(propVal, i));
-            valueBuilder.append(sanitize(val));
-            if (i != length - 1) {
-                valueBuilder.append(LIST_DELIMITER);
-            }
-        }
-        return valueBuilder.toString();
+        return IntStream.range(0, length)
+                        .mapToObj(i -> String.valueOf(Array.get(propVal, i)))
+                        .collect(Collectors.joining(LIST_DELIMITER));
     }
 
     /**
