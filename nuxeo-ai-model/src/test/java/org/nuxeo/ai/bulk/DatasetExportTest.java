@@ -51,16 +51,21 @@ import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
 import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +84,8 @@ import org.nuxeo.ai.model.export.DatasetStatsOperation;
 import org.nuxeo.ai.sdk.objects.FieldStatistics;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.Statistic;
+import org.nuxeo.ai.tensorflow.TFRecord;
+import org.nuxeo.ai.tensorflow.ext.TFRecordReader;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
@@ -103,6 +110,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RandomBug;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+import org.tensorflow.example.Feature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
@@ -297,6 +305,77 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
+    public void testBulkExportMultiValue() throws Exception {
+        Framework.getProperties().put(AI_CONVERSION_STRICT_MODE, "false");
+
+        DocumentModel testRoot = session.getDocument(new PathRef(TEST_DIR_PATH));
+        Set<PropertyType> input = Sets.newHashSet(new PropertyType("dc:title", TEXT_TYPE),
+                new PropertyType("file:content", IMAGE_TYPE));
+        Set<PropertyType> output = Sets.newHashSet(new PropertyType("dc:subjects", CATEGORY_TYPE));
+
+        String nxql = "SELECT * from Document where ecm:parentId = " + NXQL.escapeString(testRoot.getId());
+        //                + " AND dc:subjects/* is not null";
+        String commandId = des.export(session, nxql, input, output, 60, null);
+
+        assertTrue("Bulk action didn't finish", service.await(commandId, Duration.ofSeconds(30)));
+
+        BulkStatus status = service.getStatus(commandId);
+        assertNotNull(status);
+        assertNotNull(status.getProcessingStartTime());
+        assertNotNull(status.getProcessingEndTime());
+        assertEquals(COMPLETED, status.getState());
+        assertEquals(450, status.getProcessed());
+        assertEquals(250, status.getErrorCount()); // total with dc:subjects = 200
+        DocumentModelList docs = des.getDatasetExports(session, "nonsense");
+        assertThat(docs).isEmpty();
+
+        docs = des.getDatasetExports(session, commandId);
+        assertNotNull(docs);
+        assertThat(docs).isNotEmpty().hasSize(5);
+
+        int trainingCount = checkTFRecords(docs, DATASET_EXPORT_TRAINING_DATA);
+        int validationCount = checkTFRecords(docs, DATASET_EXPORT_EVALUATION_DATA);
+        assertThat(trainingCount + validationCount).isEqualTo(200);
+    }
+
+    private static int checkTFRecords(DocumentModelList docs, String property) throws IOException {
+        List<Blob> blobs = docs.stream()
+                               .map(doc -> (Blob) doc.getProperty(property).getValue())
+                               .filter(Objects::nonNull)
+                               .filter(blob -> blob.getLength() > 0)
+                               .collect(Collectors.toList());
+        assertThat(blobs).isNotEmpty();
+
+        int count = 0;
+        Set<String> allCats = new HashSet<>();
+        for (Blob blob : blobs) {
+            DataInput dataInput = new DataInputStream(Files.newInputStream(blob.getFile().toPath()));
+            TFRecordReader reader = new TFRecordReader(dataInput, true);
+            byte[] exampleData;
+            while ((exampleData = reader.read()) != null) {
+                TFRecord tfRecord = TFRecord.from(exampleData);
+                assertEquals(3, tfRecord.getFeatures().getFeatureCount());
+                assertThat(tfRecord.getDocId()).isNotBlank();
+                Feature feature = tfRecord.getFeatures().getFeatureOrDefault("dc:subjects", null);
+                assertThat(feature).isNotNull();
+                List<String> cats = feature.getBytesList()
+                                           .getValueList()
+                                           .stream()
+                                           .map(value -> new String(value.toByteArray()))
+                                           .collect(Collectors.toList());
+                assertThat(cats).isNotEmpty();
+                assertThat(cats.contains("sciences") || cats.contains("art/cinema")).isTrue();
+                allCats.addAll(cats);
+                count += 1;
+            }
+        }
+
+        assertThat(allCats).containsExactlyInAnyOrder("sciences", "art/cinema");
+        return count;
+    }
+
+    @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     @RandomBug.Repeat(issue = "AICORE-412")
     public void shouldCallWithParameters() throws InterruptedException {
         Map<String, Serializable> params = new HashMap<>();
@@ -381,7 +460,12 @@ public class DatasetExportTest {
             doc.setPropertyValue("dc:description", "desc" + i % 4);
             if (i % 2 == 0) {
                 doc.setPropertyValue("dc:language", "en" + i);
-                doc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
+                if (i % 3 == 0) {
+                    doc.setPropertyValue("dc:subjects", new String[] { "art/cinema" });
+                } else {
+                    doc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
+                }
+
             }
             if (i % 10 != 0) {
                 // 50 bad blobs, 400 good ones
@@ -416,6 +500,7 @@ public class DatasetExportTest {
         assertEquals(COMPLETED, status.getState());
         // All 500 records are processed, even the 50 records that have null subjects
         assertEquals(500, status.getProcessed());
+        assertEquals(250, status.getErrorCount());
 
         DocumentModelList docs = des.getDatasetExports(session, "nonsense");
         assertThat(docs).isEmpty();
@@ -431,7 +516,8 @@ public class DatasetExportTest {
         }
 
         assertThat(trainingCount).isGreaterThan(validationCount);
-        assertEquals(500, trainingCount + validationCount);
+        // 250 were skipped due to being empty
+        assertEquals(250, trainingCount + validationCount);
     }
 
     @Test
