@@ -30,6 +30,8 @@ on:
         required: true
       connect-auth-token:
         required: true
+      google-creds:
+        required: true
 
 jobs:
   build:
@@ -157,11 +159,15 @@ jobs:
               </server>
             </servers>
             </settings>' > ~/.m2/settings.xml
+    - name: Setup gcp creds
+      run: |
+        echo '${{ secrets.google-creds }}' > gcp-creds.json
     - name: Run Tests with Maven
       run: mvn install -fae -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.aws-access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.aws-secret-access-key  }}
+        GOOGLE_CREDENTIALS_PATH: "/home/runner/work/nuxeo-ai/nuxeo-ai/gcp-creds.json"
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1

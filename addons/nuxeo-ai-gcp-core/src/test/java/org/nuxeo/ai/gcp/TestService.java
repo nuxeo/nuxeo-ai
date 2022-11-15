@@ -157,7 +157,7 @@ public class TestService {
         boolean thereIsCat = metadata.getTags()
                                      .stream()
                                      .flatMap(tag -> tag.getValues().stream())
-                                     .anyMatch(tag -> tag.name.equals("Wake up human!\n"));
+                                     .anyMatch(tag -> tag.name.equals("Wake up human!"));
         assertThat(thereIsCat).isTrue();
     }
 
