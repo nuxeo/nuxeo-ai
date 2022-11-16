@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>nuxeo-ai-addons</artifactId>
-    <version>3.5.3-SNAPSHOT</version>
+    <version>3.5.3</version>
   </parent>
   <artifactId>nuxeo-ai-gcp-core</artifactId>
   <name>Nuxeo AI GCP Core</name>
