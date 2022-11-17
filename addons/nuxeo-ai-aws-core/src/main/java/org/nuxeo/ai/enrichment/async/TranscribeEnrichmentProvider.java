@@ -114,7 +114,6 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
             throw new NuxeoException("WAV is not ready; doc id = " + blobDoc.getId());
         }
 
-        @SuppressWarnings("unchecked")
         TranscribeService ts = Framework.getService(TranscribeService.class);
         StartTranscriptionJobResult result = ts.requestTranscription(blob, languages);
         TranscriptionJob job = result.getTranscriptionJob();

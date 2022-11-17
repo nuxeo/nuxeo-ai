@@ -73,20 +73,22 @@ public class DatasetUploadComputation extends AbstractComputation {
 
             CloudClient client = Framework.getService(CloudClient.class);
             if (document != null) {
-
                 if (client.isAvailable(session)) {
                     log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId,
                             document.getId());
 
                     // TODO: Attach corpus to corpora
-                    client.uploadedDataset(document);
+                    if (client.uploadedDataset(document) == null) {
+                        log.warn("Document wasn't uploaded {}", document.getId());
+                    }
                 } else {
                     log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}",
                             commandId, document.getId(), client.isAvailable(session));
                 }
             } else {
-                log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}", commandId,
-                        document.getId(), client.isAvailable(session));
+                log.error(
+                        "Upload to cloud not possible for export command {}, export {} and client {}; document is null",
+                        commandId, export.getId(), client.isAvailable(session));
             }
         }
     }

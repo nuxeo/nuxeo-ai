@@ -23,8 +23,10 @@ import static java.util.stream.Collectors.toList;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.ExportRecord;
@@ -41,6 +43,8 @@ import org.nuxeo.runtime.api.Framework;
  */
 public class RecordWriterBatchComputation extends AbstractBatchComputation {
     private static final Logger log = LogManager.getLogger(RecordWriterBatchComputation.class);
+
+    protected Set<String> exportedIds = new HashSet<>();
 
     public RecordWriterBatchComputation(String name) {
         super(name, 1, 1);
@@ -63,17 +67,18 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
             try {
                 long errored = writer.write(recs);
                 log.debug("Attempted to write {} records; Errors {}", recs.size(), errored);
-            } catch (IOException e) {
-                throw new NuxeoException("Failed to write batch " + metadata.name(), e);
-            } finally {
                 recs.forEach(rec -> {
+                    exportedIds.add(rec.getId());
                     byte[] encoded = codec.encode(rec);
                     context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);
                 });
-                context.askForCheckpoint();
+            } catch (IOException e) {
+                log.error("Failed to write batch {}; exception {}", metadata.name(), e);
+                throw new NuxeoException("Failed to write batch " + metadata.name(), e);
             }
         }
 
+        exportedIds.clear();
         context.askForCheckpoint();
     }
 
@@ -86,10 +91,14 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
         log.warn("Mark as failed {} Export Records for command ID {}", records.size(), commandId);
         records.forEach(rec -> {
             ExportRecord decoded = codec.decode(rec.getData());
-            decoded.setFailed(true);
-            byte[] encoded = codec.encode(decoded);
-            context.produceRecord(OUTPUT_1, decoded.getCommandId(), encoded);
+            if (!exportedIds.contains(decoded.getId())) {
+                decoded.setFailed(true);
+                byte[] encoded = codec.encode(decoded);
+                context.produceRecord(OUTPUT_1, decoded.getCommandId(), encoded);
+            }
         });
+
+        exportedIds.clear();
         context.askForCheckpoint();
     }
 }
