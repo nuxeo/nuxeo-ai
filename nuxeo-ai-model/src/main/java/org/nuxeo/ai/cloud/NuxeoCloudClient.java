@@ -316,13 +316,14 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
         if ((trainingData == null || trainingData.getLength() == 0) && (evalData == null
                 || evalData.getLength() == 0)) {
-            log.error("Job/Command: {} has no training and/or evaluation data. Document {}", jobId, dataset.getId());
+            log.warn("Job/Command: {} has no training and/or evaluation data. Document {}", jobId, dataset.getId());
         } else if (statsData == null || statsData.getLength() == 0) {
-            log.error("Job/Command: {} has no statistics data.", jobId);
+            log.warn("Job/Command: {} has no statistics data.", jobId);
         } else {
             CoreSession session = dataset.getCoreSession();
             InsightClient client = getClient(session).orElse(null);
             if (client == null) {
+                log.warn("Insight Client is unavailable during job: {}; dataset {}", jobId, dataset.getId());
                 return null;
             }
 
