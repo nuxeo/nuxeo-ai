@@ -122,7 +122,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
             ExportStatus eb = ExportStatus.of(commandId, export.getId(), processed, errored);
             eb.setTraining(export.isTraining());
 
-            ctx.produceRecord(OUTPUT_1, commandId, getAvroCodec(ExportStatus.class).encode(eb));
+            ctx.produceRecord(OUTPUT_1, export.getId(), getAvroCodec(ExportStatus.class).encode(eb));
 
             // Clear counter
             counters.remove(export.getId());

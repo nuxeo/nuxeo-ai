@@ -94,7 +94,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
             if (!exportedIds.contains(decoded.getId())) {
                 decoded.setFailed(true);
                 byte[] encoded = codec.encode(decoded);
-                context.produceRecord(OUTPUT_1, decoded.getCommandId(), encoded);
+                context.produceRecord(OUTPUT_1, decoded.getId(), encoded);
             }
         });
 
