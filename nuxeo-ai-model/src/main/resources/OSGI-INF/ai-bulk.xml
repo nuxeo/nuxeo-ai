@@ -19,7 +19,7 @@
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
-          <option name="storeTTL">4h</option>
+          <option name="storeTTL">24h</option>
         </filter>
       </stream>
 
@@ -28,7 +28,7 @@
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
-          <option name="storeTTL">4h</option>
+          <option name="storeTTL">24h</option>
         </filter>
       </stream>
 
@@ -37,7 +37,7 @@
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
-          <option name="storeTTL">4h</option>
+          <option name="storeTTL">24h</option>
         </filter>
       </stream>
     </streamProcessor>
