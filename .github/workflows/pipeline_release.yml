@@ -84,8 +84,11 @@ jobs:
         git status
         git tag -a v${releasedVersion} -m "Release ${releasedVersion}"
         mvn -ntp install -DskipTests
-        git push origin v${releasedVersion}
-        git push origin release-v${releasedVersion}
+
+#    - name: Push Release branches
+#      run: |
+#        git push origin v${releasedVersion}
+#        git push origin release-v${releasedVersion}
 
     - name: Archive packages
       uses: actions/upload-artifact@v3
@@ -98,29 +101,21 @@ jobs:
     - name: Publish Nuxeo packages
       env:
         CONNECT_PREPROD_URL: https://nos-preprod-connect.nuxeocloud.com/nuxeo
+        PACKAGE: nuxeo-ai-core-package/target/nuxeo-ai-core-${{env.RELEASED_VERSION}}.zip
       run: |
-        PACKAGE="nuxeo-ai-core-package/target/nuxeo-ai-core-$RELEASED_VERSION.zip"
-        STATUS_CODE=`curl -i --silent --output publish-req.output -w "%{http_code}" -u "${{ secrets.CONNECT_PREPROD_AUTH }}" -F package=@$PACKAGE "$CONNECT_PREPROD_URL/site/marketplace/upload?batch=true"`
-        cat publish-req.output
-        if [[ "$STATUS_CODE" != "200" ]]
-        then
-          exit 1
-        else
-          exit 0
-        fi
+        curl -i -u "${{ secrets.CONNECT_PREPROD_AUTH_USER }}:${{secrets.CONNECT_PREPROD_AUTH_TOKEN}}" -F package=@${{env.PACKAGE}} "${{env.CONNECT_PREPROD_URL}}/site/marketplace/upload?batch=true"
 
     - name: Bump release version
       id: bump_version
       uses: christian-draeger/increment-semantic-version@1.0.2
       with:
-        current-version: $CURRENT_VERSION
-        version-fragment: 'bug'
+        current-version: ${{ env.RELEASED_VERSION }}
+        version-fragment: ${{ inputs.increment }}
 
     - name: Post Release (in master or master-10.10)
       run: |
-        git checkout ${{ github.base_ref }}
-        find ./ -type f -exec sed -i '' -e "s/$CURRENT_VERSION/${{ steps.bump_version.outputs.next-version }}/" {} \;
+        find ./ -type f -exec sed -i '' -e "s/${{ steps.project.outputs.version }}/${{ steps.bump_version.outputs.next-version }}/" {} \;
         git clean -f -d
         git add .
-        git commit -m "Post Release $CURRENT_VERSION"
+        git commit -m "Post Release ${{ env.RELEASED_VERSION }}"
         git push origin ${{ github.base_ref }}
