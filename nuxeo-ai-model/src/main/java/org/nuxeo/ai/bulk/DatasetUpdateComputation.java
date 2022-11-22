@@ -113,7 +113,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
                         throw new NuxeoException("Unable to complete action " + commandId, e);
                     }
                 } else {
-                    log.debug("No writer file exists for {} {}", commandId, name);
+                    log.warn("No writer file exists for command {} name {} blob ID {}", commandId, name, blobId);
                 }
             }
 
@@ -122,7 +122,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
             ExportStatus eb = ExportStatus.of(commandId, export.getId(), processed, errored);
             eb.setTraining(export.isTraining());
 
-            ctx.produceRecord(OUTPUT_1, commandId, getAvroCodec(ExportStatus.class).encode(eb));
+            ctx.produceRecord(OUTPUT_1, export.getId(), getAvroCodec(ExportStatus.class).encode(eb));
 
             // Clear counter
             counters.remove(export.getId());
@@ -138,15 +138,15 @@ public class DatasetUpdateComputation extends AbstractComputation {
             try (CloseableCoreSession session = openCoreSessionSystem(cmd.getRepository(), cmd.getUsername())) {
                 DocumentModel document = Framework.getService(DatasetExportService.class)
                                                   .getCorpusOfBatch(session, export.getCommandId(), export.getId());
-
                 if (document != null) {
+                    log.debug("Updating document {} with blob {}", document.getId(), blob.getDigest());
                     document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, getCount(export.getId()));
 
                     String prop = isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA;
                     document.setPropertyValue(prop, (Serializable) blob);
                     session.saveDocument(document);
                 } else {
-                    log.warn("Unable to save blob {} for command {}.", blob.getDigest(), export.getCommandId());
+                    log.error("Unable to save blob {} for command {}.", blob.getDigest(), export.getCommandId());
                     throw new NuxeoException("Unable to find DatasetExport with command " + export.getCommandId());
                 }
             }

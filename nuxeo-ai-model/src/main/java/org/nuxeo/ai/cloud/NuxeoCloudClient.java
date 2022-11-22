@@ -292,6 +292,21 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         }
     }
 
+    protected boolean createBatch(BatchUpload batchUpload, String name, String index, Blob blob) {
+        if (blob == null) {
+            return false;
+        }
+
+        FileBlob fileBlob = new FileBlob(blob.getFile(), blob.getDigest(), TFRECORD_MIME_TYPE);
+
+        // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
+        // test that truncates the batch id after a first call
+        log.info("Uploading {} Dataset of size {} MB", name, fileBlob.getFile().length() / (1024 * 1024));
+        batchUpload.upload(index, fileBlob);
+
+        return true;
+    }
+
     @Override
     public String uploadedDataset(@NotNull DocumentModel dataset) {
         String jobId = (String) dataset.getPropertyValue(DATASET_EXPORT_JOB_ID);
@@ -299,49 +314,33 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
         Blob statsData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_STATS);
 
-        if (trainingData == null || trainingData.getLength() == 0) {
-            log.error("Job/Command: {} has no training data.", jobId);
-        } else if (evalData == null || evalData.getLength() == 0) {
-            log.error("Job/Command: {} has no evaluation data.", jobId);
+        if ((trainingData == null || trainingData.getLength() == 0) && (evalData == null
+                || evalData.getLength() == 0)) {
+            log.warn("Job/Command: {} has no training and/or evaluation data. Document {}", jobId, dataset.getId());
         } else if (statsData == null || statsData.getLength() == 0) {
-            log.error("Job/Command: {} has no statistics data.", jobId);
+            log.warn("Job/Command: {} has no statistics data.", jobId);
         } else {
             CoreSession session = dataset.getCoreSession();
             InsightClient client = getClient(session).orElse(null);
             if (client == null) {
+                log.warn("Insight Client is unavailable during job: {}; dataset {}", jobId, dataset.getId());
                 return null;
             }
 
             try {
                 DateTime start = DateTime.now();
-                BatchUpload batchUpload = client.getBatchUpload(1024 * 1024 * 100);
+                BatchUpload batchUpload = client.getBatchUpload(CHUNK_100_MB);
 
                 String batch1 = batchUpload.getBatchId();
-
-                FileBlob trainingDataBlob = new FileBlob(trainingData.getFile(), trainingData.getDigest(),
-                        TFRECORD_MIME_TYPE);
-                FileBlob evalDataBlob = new FileBlob(evalData.getFile(), evalData.getDigest(), TFRECORD_MIME_TYPE);
-                FileBlob statsDataBlob = new FileBlob(statsData.getFile(), statsData.getDigest(), TFRECORD_MIME_TYPE);
-
-                // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
-                // test that truncates the batch id after a first call
-                log.info("Uploading Training Dataset of size {} MB",
-                        trainingDataBlob.getFile().length() / (1024 * 1024));
-                batchUpload.upload("0", trainingDataBlob);
+                batch1 = createBatch(batchUpload, "training", "0", trainingData) ? batch1 : null;
 
                 batchUpload = client.getBatchUpload(CHUNK_100_MB);
-
                 String batch2 = batchUpload.getBatchId();
-
-                log.info("Uploading Evaluation Dataset of size {} MB", evalDataBlob.getFile().length() / (1024 * 1024));
-                batchUpload.upload("1", evalDataBlob);
+                batch2 = createBatch(batchUpload, "evaluation", "1", evalData) ? batch2 : null;
 
                 batchUpload = client.getBatchUpload(CHUNK_100_MB);
-
                 String batch3 = batchUpload.getBatchId();
-
-                log.info("Uploading Stats Dataset of size {} MB", statsDataBlob.getFile().length() / (1024 * 1024));
-                batchUpload.upload("2", statsDataBlob);
+                batch3 = createBatch(batchUpload, "statistics", "2", statsData) ? batch3 : null;
 
                 DateTime end = DateTime.now();
 

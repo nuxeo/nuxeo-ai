@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.bulk.services.small.test" version="1.0">
+
+  <require>org.nuxeo.ai.bulk.services</require>
+  <extension target="org.nuxeo.ecm.core.bulk" point="actions">
+    <action name="bulkDatasetExport" bucketSize="3" batchSize="20"/>
+  </extension>
+
+</component>
