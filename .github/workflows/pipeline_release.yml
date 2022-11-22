@@ -20,7 +20,6 @@ on:
         - '8'
         - '11'
 
-
 jobs:
   release-publish:
     name: 'Release & Publish'
@@ -43,36 +42,37 @@ jobs:
             <servers>
               <server>
                 <id>maven-internal</id>
-                <username>${{ secrets.packages-auth-user }}</username>
-                <password>${{ secrets.packages-auth-token }}</password>
+                <username>${{secrets.PACKAGES_AUTH_USER}}</username>
+                <password>${{secrets.PACKAGES_AUTH_TOKEN}}</password>
               </server>
               <server>
                 <id>maven-team-platform-private</id>
-                <username>${{ secrets.packages-auth-user }}</username>
-                <password>${{ secrets.packages-auth-token }}</password>
+                <username>${{secrets.PACKAGES_AUTH_USER}}</username>
+                <password>${{secrets.PACKAGES_AUTH_TOKEN}}</password>
               </server>
               <server>
                 <id>maven-private</id>
-                <username>${{ secrets.packages-auth-user }}</username>
-                <password>${{ secrets.packages-auth-token }}</password>
+                <username>${{secrets.PACKAGES_AUTH_USER}}</username>
+                <password>${{secrets.PACKAGES_AUTH_TOKEN}}</password>
               </server>
               <server>
                 <id>maven-public-releases</id>
-                <username>${{ secrets.packages-auth-user }}</username>
-                <password>${{ secrets.packages-auth-token }}</password>
+                <username>${{secrets.PACKAGES_AUTH_USER}}</username>
+                <password>${{secrets.PACKAGES_AUTH_TOKEN}}</password>
               </server>
               <server>
                 <id>nuxeo-studio</id>
-                <username>${{ secrets.connect-auth-user }}</username>
-                <password>${{ secrets.connect-auth-token }}</password>
+                <username>${{secrets.CONNECT_AUTH_USER}}</username>
+                <password>${{secrets.CONNECT_AUTH_TOKEN}}</password>
               </server>
             </servers>
             </settings>' > ~/.m2/settings.xml
     - name: Set env
-      run: echo "CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
+      run: echo "version=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)" >> $GITHUB_OUTPUT
+      id: project
     - name: Tag and check if compiling
       run: |
-        currentVersion=$CURRENT_VERSION
+        currentVersion=${{ steps.project.outputs.version }}
         releasedVersion=${currentVersion%-*}
         echo "RELEASED_VERSION=${releasedVersion}" >> $GITHUB_ENV
         find ./ -type f -exec sed -i '' -e "s/${currentVersion}/${releasedVersion}/" {} \;
@@ -88,11 +88,12 @@ jobs:
         git push origin release-v${releasedVersion}
 
     - name: Archive packages
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: packages
         path: |
-          nuxeo-ai-core-package/target/nuxeo-ai-core-$RELEASED_VERSION.zip
+          nuxeo-ai-core-package/target/nuxeo-ai-*.zip
+          addons/nuxeo-ai-*-package/target/nuxeo-ai-*.zip
 
     - name: Publish Nuxeo packages
       env:
