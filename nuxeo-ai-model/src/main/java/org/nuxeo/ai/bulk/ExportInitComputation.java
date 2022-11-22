@@ -196,10 +196,10 @@ public class ExportInitComputation extends AbstractBulkComputation {
             int nextInt = random.nextInt(100);
             if (nextInt < split) {
                 training += 1;
-                context.produceRecord(OUTPUT_1, command.getId(), codec.encode(record));
+                context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
             } else {
                 validation += 1;
-                context.produceRecord(OUTPUT_2, command.getId(), codec.encode(record));
+                context.produceRecord(OUTPUT_2, record.getId(), codec.encode(record));
             }
         }
 
@@ -207,9 +207,9 @@ public class ExportInitComputation extends AbstractBulkComputation {
             int nextInt = random.nextInt(100);
             // Distribute the rest between two evenly
             if (nextInt % 2 == 0) {
-                context.produceRecord(OUTPUT_1, command.getId(), codec.encode(record));
+                context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
             } else {
-                context.produceRecord(OUTPUT_2, command.getId(), codec.encode(record));
+                context.produceRecord(OUTPUT_2, record.getId(), codec.encode(record));
             }
         }
 

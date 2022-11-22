@@ -83,7 +83,6 @@ public class EnrichmentOp {
 
     @OperationMethod
     public DocumentModel run(DocumentModel doc) {
-
         if (doc == null) {
             return null;
         }

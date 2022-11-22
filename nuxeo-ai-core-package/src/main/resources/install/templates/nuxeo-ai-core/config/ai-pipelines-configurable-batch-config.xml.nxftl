@@ -26,21 +26,21 @@
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
-              <option name="storeTTL">4h</option>
+              <option name="storeTTL">24h</option>
             </filter>
           </stream>
           <stream name="ai/validation" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
-              <option name="storeTTL">4h</option>
+              <option name="storeTTL">24h</option>
             </filter>
           </stream>
           <stream name="ai/dataset-update" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
-              <option name="storeTTL">4h</option>
+              <option name="storeTTL">24h</option>
             </filter>
           </stream>
         </#if>
