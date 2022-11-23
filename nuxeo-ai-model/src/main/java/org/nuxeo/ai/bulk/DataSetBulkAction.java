@@ -41,27 +41,17 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
     private static final Logger log = LogManager.getLogger(DataSetBulkAction.class);
 
-    public static final String TRAINING_STREAM = "exp-training";
-
     public static final String TRAINING_COMPUTATION = "training";
-
-    public static final String VALIDATION_STREAM = "exp-validation";
 
     public static final String VALIDATION_COMPUTATION = "validation";
 
-    public static final String DATASET_UPDATE_STREAM = "exp-dataset-update";
-
     public static final String DATASET_UPDATE_COMPUTATION = "dataset-update";
 
-    public static final String EXPORT_STATUS_STREAM = "exp-status";
+    public static final String EXPORT_STATUS_COMPUTATION = "export-status";
 
-    public static final String EXPORT_STATUS_COMPUTATION = "exp-status-comp";
+    public static final String EXPORT_UPLOAD_COMPUTATION = "export-upload";
 
-    public static final String EXPORT_UPLOAD_COMPUTATION = "upload-comp";
-
-    public static final String EXPORT_UPLOAD_STREAM = "exp-upload-comp";
-
-    public static final String EXPORT_DONE_COMPUTATION = "done-comp";
+    public static final String EXPORT_DONE_COMPUTATION = "export-done";
 
     /**
      * Create a topology with ExportingComputation writing to either a training RecordWriterBatchComputation or a
@@ -73,28 +63,28 @@ public class DataSetBulkAction implements StreamProcessorTopology {
                        .addComputation(() -> new ExportInitComputation(EXPORT_ACTION_NAME),
                                asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
                                        //                                OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
-                                       OUTPUT_1 + ":" + TRAINING_STREAM, //
-                                       OUTPUT_2 + ":" + VALIDATION_STREAM))
+                                       OUTPUT_1 + ":" + TRAINING_COMPUTATION, //
+                                       OUTPUT_2 + ":" + VALIDATION_COMPUTATION))
 
                        .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION),
-                               asList(INPUT_1 + ":" + TRAINING_STREAM, //
-                                       OUTPUT_1 + ":" + DATASET_UPDATE_STREAM))
+                               asList(INPUT_1 + ":" + TRAINING_COMPUTATION, //
+                                       OUTPUT_1 + ":" + DATASET_UPDATE_COMPUTATION))
 
                        .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION),
-                               asList(INPUT_1 + ":" + VALIDATION_STREAM, //
-                                       OUTPUT_1 + ":" + DATASET_UPDATE_STREAM))
+                               asList(INPUT_1 + ":" + VALIDATION_COMPUTATION, //
+                                       OUTPUT_1 + ":" + DATASET_UPDATE_COMPUTATION))
 
                        .addComputation(() -> new DatasetUpdateComputation(DATASET_UPDATE_COMPUTATION,
                                        Sets.newHashSet(TRAINING_COMPUTATION, VALIDATION_COMPUTATION)),
-                               asList(INPUT_1 + ":" + DATASET_UPDATE_STREAM, //
-                                       OUTPUT_1 + ":" + EXPORT_UPLOAD_STREAM))
+                               asList(INPUT_1 + ":" + DATASET_UPDATE_COMPUTATION, //
+                                       OUTPUT_1 + ":" + EXPORT_UPLOAD_COMPUTATION))
 
                        .addComputation(() -> new DatasetUploadComputation(EXPORT_UPLOAD_COMPUTATION),
-                               asList(INPUT_1 + ":" + EXPORT_UPLOAD_STREAM,//
-                                       OUTPUT_1 + ":" + EXPORT_STATUS_STREAM))
+                               asList(INPUT_1 + ":" + EXPORT_UPLOAD_COMPUTATION,//
+                                       OUTPUT_1 + ":" + EXPORT_STATUS_COMPUTATION))
 
                        .addComputation(() -> new DatasetExportStatusComputation(EXPORT_STATUS_COMPUTATION),
-                               asList(INPUT_1 + ":" + EXPORT_STATUS_STREAM, //
+                               asList(INPUT_1 + ":" + EXPORT_STATUS_COMPUTATION, //
                                        OUTPUT_1 + ":" + STATUS_STREAM))
 
                        .addComputation(() -> new ExportDoneComputation(EXPORT_DONE_COMPUTATION),
