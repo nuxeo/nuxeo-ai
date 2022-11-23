@@ -204,6 +204,10 @@ public class PropertyUtils {
         return getPropertyValue(doc, propertyName) != null;
     }
 
+    public static boolean getConversionMode() {
+        return Boolean.parseBoolean(Framework.getProperty(AI_CONVERSION_STRICT_MODE, "false"));
+    }
+
     public static BlobTextFromDocument docSerialize(DocumentModel doc, Set<PropertyType> propertiesList) {
         return docSerialize(doc, propertiesList, false);
     }
