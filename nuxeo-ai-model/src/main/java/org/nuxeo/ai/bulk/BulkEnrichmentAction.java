@@ -85,13 +85,15 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         @Override
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> options) {
             ModelServingService modelServingService = Framework.getService(ModelServingService.class);
+            boolean conversionMode = PropertyUtils.getConversionMode();
             for (DocumentModel doc : loadDocuments(coreSession, ids)) {
                 Set<ModelProperty> inputs = modelServingService.getFlatInputs(doc);
                 if (!inputs.isEmpty()) {
                     Set<PropertyType> inputPairs = inputs.stream()
                                                          .map(p -> PropertyType.of(p.getName(), p.getType()))
                                                          .collect(Collectors.toSet());
-                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs);
+                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs,
+                            conversionMode);
                     outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));
                 }
             }
