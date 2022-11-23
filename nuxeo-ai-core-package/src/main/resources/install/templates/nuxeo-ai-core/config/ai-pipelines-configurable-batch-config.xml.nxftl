@@ -22,21 +22,21 @@
         </#if>
 
         <#if "${nuxeo.ai.export.threshold}" != "">
-        <stream name="exp-training" partitions="1">
+        <stream name="training" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
               <option name="storeTTL">24h</option>
             </filter>
           </stream>
-          <stream name="exp-validation" partitions="1">
+          <stream name="validation" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
               <option name="storeTTL">24h</option>
             </filter>
           </stream>
-          <stream name="exp-dataset-update" partitions="1">
+          <stream name="dataset-update" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>

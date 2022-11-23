@@ -89,7 +89,8 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
                     Set<PropertyType> inputPairs = inputs.stream()
                                                          .map(p -> PropertyType.of(p.getName(), p.getType()))
                                                          .collect(Collectors.toSet());
-                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs, conversionMode);
+                    BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs,
+                            conversionMode);
                     outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));
                 }
             }
