@@ -35,7 +35,7 @@ jobs:
   build:
     name: 'Build 10.10'
     runs-on: ubuntu-latest
-    if: ${{ github.base_ref == 'master-10.10' }}
+    if: ${{ github.base_ref == 'master-10.10' || github.ref == 'master-10.10' }}
     env:
       MAVEN_OPTS: "-Xms1g -Xmx1536m"
     outputs:
@@ -100,10 +100,13 @@ jobs:
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+    - name: Publish package
+      if: ${{ inputs.should-push }}
+      run: mvn --batch-mode deploy -nsu -DskipTests
   build-master:
     name: 'Build Master LTS'
     runs-on: ubuntu-latest
-    if: ${{ github.base_ref == 'master' }}
+    if: ${{ github.base_ref == 'master' || github.ref == 'master' }}
     env:
       MAVEN_OPTS: "-Xms1g -Xmx1536m"
     outputs:
@@ -154,6 +157,11 @@ jobs:
                 <password>${{ secrets.packages-auth-token }}</password>
               </server>
               <server>
+                <id>maven-public-snapshots</id>
+                <username>${{ secrets.packages-auth-user }}</username>
+                <password>${{ secrets.packages-auth-token }}</password>
+              </server>
+              <server>
                 <id>nuxeo-studio</id>
                 <username>${{ secrets.connect-auth-user }}</username>
                 <password>${{ secrets.connect-auth-token }}</password>
@@ -168,3 +176,6 @@ jobs:
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+    - name: Publish package
+      if: ${{ inputs.should-push }}
+      run: mvn --batch-mode deploy -nsu -DskipTests
