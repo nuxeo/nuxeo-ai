@@ -2,6 +2,8 @@ name: CI for PR
 on:
   pull_request:
     branches: [master, master-10.10]
+  push:
+    branches: [master, master-10.10]
 
 jobs:
   build-and-test:
@@ -9,6 +11,7 @@ jobs:
     with:
       aws-account: 407995386968
       aws-region: us-east-1
+      should-push: ${{ github.event_name == 'push' }}
     secrets:
       aws-access-key-id: ${{secrets.AI_CI_ROLE_AWS_ACCESS_KEY_ID}}
       aws-secret-access-key: ${{secrets.AI_CI_ROLE_AWS_ACCESS_KEY_SECRET}}
