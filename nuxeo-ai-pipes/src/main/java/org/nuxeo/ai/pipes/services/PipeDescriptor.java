@@ -134,7 +134,8 @@ public class PipeDescriptor {
                 ((PreFilterFunction) func).setFilter(getEventFilter(event));
             }
             return func;
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException | InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException |
+                 InvocationTargetException e) {
             throw new NuxeoException(
                     String.format("PipeDescriptor %s must define a valid transformer function", this.id), e);
         }

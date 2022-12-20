@@ -22,17 +22,18 @@ package org.nuxeo.ai.bulk;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.bulk.DataSetBulkAction.TRAINING_COMPUTATION;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
+import static org.nuxeo.ai.bulk.RecordWriterBatchComputation.TRAINING_WRITER;
+import static org.nuxeo.ai.bulk.RecordWriterBatchComputation.VALIDATION_WRITER;
 import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.model.export.DatasetExportService;
@@ -58,24 +59,17 @@ public class DatasetUpdateComputation extends AbstractComputation {
 
     private static final Logger log = LogManager.getLogger(DatasetUpdateComputation.class);
 
-    protected final Set<String> writerNames;
-
     protected Map<String, Long> counters = Collections.synchronizedMap(new HashMap<>());
 
     protected Map<String, Long> errors = Collections.synchronizedMap(new HashMap<>());
 
-    public DatasetUpdateComputation(String name, Set<String> writerNames) {
+    public DatasetUpdateComputation(String name) {
         super(name, 1, 1);
-        this.writerNames = writerNames;
     }
 
     @Override
     public void processRecord(ComputationContext ctx, String input, Record record) {
         ExportRecord export = getAvroCodec(ExportRecord.class).decode(record.getData());
-
-        BulkService service = Framework.getService(BulkService.class);
-        String commandId = export.getCommandId();
-
         if (export.isFailed()) {
             errors.putIfAbsent(export.getId(), 0L);
             errors.computeIfPresent(export.getId(), (s, val) -> 1L + val);
@@ -85,28 +79,33 @@ public class DatasetUpdateComputation extends AbstractComputation {
         try {
             endOfBatch = isEndOfBatch(export);
         } catch (NuxeoException e) {
-            log.error("Likely the KVS record was removed by TTL expired event; interrupting {} pipeline", commandId);
+            log.error("Likely the KVS record was removed by TTL expired event; interrupting {} pipeline",
+                    export.getCommandId());
             ctx.askForTermination();
             return;
         }
 
         if (endOfBatch) {
+            BulkService service = Framework.getService(BulkService.class);
+            String commandId = export.getCommandId();
             BulkCommand command = service.getCommand(commandId);
             if (command == null) {
                 log.warn("The bulk command {} is missing. Unable to save blobs info.", commandId);
             }
             log.debug("Ending batch for {}", commandId);
-            for (String name : writerNames) {
+
+            for (String name : Arrays.asList(TRAINING_WRITER, VALIDATION_WRITER)) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
                 if (writer == null) {
                     throw new NuxeoException("Unable to find record writer: " + name);
                 }
+
                 String blobId = export.getId();
                 if (writer.exists(blobId)) {
                     try {
                         writer.complete(blobId).ifPresent(blob -> {
                             if (command != null) {
-                                updateDatasetDocument(command, blob, TRAINING_COMPUTATION.equals(name), export);
+                                updateDatasetDocument(command, blob, TRAINING_WRITER.equals(name), export);
                             }
                         });
                     } catch (IOException e) {
@@ -123,10 +122,8 @@ public class DatasetUpdateComputation extends AbstractComputation {
             eb.setTraining(export.isTraining());
 
             ctx.produceRecord(OUTPUT_1, export.getId(), getAvroCodec(ExportStatus.class).encode(eb));
-
             // Clear counter
             counters.remove(export.getId());
-
             ctx.askForCheckpoint();
         }
 

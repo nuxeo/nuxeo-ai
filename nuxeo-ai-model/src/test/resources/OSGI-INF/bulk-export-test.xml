@@ -8,8 +8,7 @@
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
                      defaultConcurrency="2" defaultPartitions="2">
-      <policy name="training" batchCapacity="10" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
-      <policy name="validation" batchCapacity="5" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+      <policy name="writing" batchCapacity="10" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
     </streamProcessor>
   </extension>
 

@@ -111,16 +111,14 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     private static final Logger log = LogManager.getLogger(ExportInitComputation.class);
 
-    protected List<ExportRecord> suitable = new LinkedList<>();
-
-    protected List<ExportRecord> failed = new LinkedList<>();
+    protected List<ExportRecord> records = new LinkedList<>();
 
     protected int split = DEFAULT_SPLIT;
 
     private Boolean strictMode = null;
 
     public ExportInitComputation(String name) {
-        super(name, 2);
+        super(name, 1);
 
     }
 
@@ -169,59 +167,38 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
         // ID to track the batch
         String batchId = UUID.randomUUID().toString();
-        for (DocumentModel doc : docs) {
-            ExportRecord record = createRecordFromDoc(batchId, inputs, outputs, doc);
-            if (record.isFailed()) {
-                failed.add(record);
-            } else {
-                suitable.add(record);
-            }
-        }
+        docs.stream().map(doc -> createRecordFromDoc(batchId, inputs, outputs, doc)).forEach(rec -> records.add(rec));
 
         getKVS().put(batchId, (long) docs.size(),
                 Long.parseLong(Framework.getProperty(TIMEOUT_KV_STORE, String.valueOf(TIMEOUT_48_HOURS_IN_SEC))));
-        createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
-        bindCorporaToModel(session, client, modelParams);
+        if (!records.isEmpty()) {
+            createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
+            bindCorporaToModel(session, client, modelParams);
+        } else {
+            log.warn("No suitable documents found in batch {}", batchId);
+        }
     }
 
     @Override
     public void endBucket(ComputationContext context, BulkStatus ignored) {
-        int training = 0;
-        int validation = 0;
-        Random random = new Random(42);
-
         Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
-        for (ExportRecord record : suitable) {
-            int nextInt = random.nextInt(100);
-            if (nextInt < split) {
-                training += 1;
-                context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
-            } else {
-                validation += 1;
-                context.produceRecord(OUTPUT_2, record.getId(), codec.encode(record));
+        Random random = new Random(42);
+        for (ExportRecord record : records) {
+            if (random.nextInt(100) < split) {
+                record.setTraining(true);
             }
+            context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
         }
 
-        for (ExportRecord record : failed) {
-            int nextInt = random.nextInt(100);
-            // Distribute the rest between two evenly
-            if (nextInt % 2 == 0) {
-                context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
-            } else {
-                context.produceRecord(OUTPUT_2, record.getId(), codec.encode(record));
-            }
-        }
-
-        log.warn("Training dataset size: {}; Validation dataset size: {}; Empty records {}; Command {}", training,
-                validation, failed.size(), command.getId());
-        suitable.clear();
-        failed.clear();
+        log.warn("Initialized Batch of {}; Command {}", records.size(), command.getId());
+        records.clear();
         context.askForCheckpoint();
     }
 
     @Override
     public void processFailure(ComputationContext context, Throwable failure) {
         super.processFailure(context, failure);
+        records.clear();
         context.askForTermination();
     }
 

@@ -171,14 +171,12 @@ public class TFRecordWriter extends AbstractRecordWriter {
     @Override
     public boolean write(ExportRecord record) throws IOException {
         File file = getFile(record.getId());
-
         try (FileOutputStream fos = new FileOutputStream(file, true);
                 BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
                 DataOutputStream dos = new DataOutputStream(bos)) {
 
             TensorflowWriter writer = new TensorflowWriter(dos);
             if (write(writer, record)) {
-                log.warn("Record for {} was written", name);
                 return true;
             }
         }

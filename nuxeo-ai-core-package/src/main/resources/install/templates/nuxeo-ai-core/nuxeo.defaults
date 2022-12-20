@@ -34,7 +34,6 @@ nuxeo.ai.conversion.rendition=Small
 nuxeo.ai.export.batch.size=
 nuxeo.ai.export.bucket.size=
 nuxeo.ai.export.training.batch.size=
-nuxeo.ai.export.validation.batch.size=
 
 # Blob store cache setup - 24h instead of 1h by default
 nuxeo.s3storage.cacheminage=86400
