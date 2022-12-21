@@ -111,7 +111,9 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     private static final Logger log = LogManager.getLogger(ExportInitComputation.class);
 
-    protected List<ExportRecord> records = new LinkedList<>();
+    protected List<ExportRecord> suitable = new LinkedList<>();
+
+    protected List<ExportRecord> failed = new LinkedList<>();
 
     protected int split = DEFAULT_SPLIT;
 
@@ -130,34 +132,12 @@ public class ExportInitComputation extends AbstractBulkComputation {
             return;
         }
 
-        DocumentModelList docs = loadDocuments(session, ids);
-        shuffle(docs);
-
         split = (int) properties.getOrDefault(EXPORT_SPLIT_PARAM, DEFAULT_SPLIT);
-        String original = (String) properties.get(QUERY_PARAM);
-
-        @SuppressWarnings("unchecked")
         // re-create the properties for input and output
-        Set<PropertyType> outputs = ((List<Map<String, Serializable>>) properties.get(OUTPUT_PARAMETERS)).stream()
-                                                                                                         .map(p -> new PropertyType(
-                                                                                                                 (String) p.get(
-                                                                                                                         "name"),
-                                                                                                                 (String) p.get(
-                                                                                                                         "type")))
-                                                                                                         .collect(
-                                                                                                                 Collectors.toSet());
-        @SuppressWarnings("unchecked")
-        Set<PropertyType> inputs = ((List<Map<String, Serializable>>) properties.get(INPUT_PARAMETERS)).stream()
-                                                                                                       .map(p -> new PropertyType(
-                                                                                                               (String) p.get(
-                                                                                                                       "name"),
-                                                                                                               (String) p.get(
-                                                                                                                       "type")))
-                                                                                                       .collect(
-                                                                                                               Collectors.toSet());
+        Set<PropertyType> outputs = toPropertyTypeSet(properties, OUTPUT_PARAMETERS);
+        Set<PropertyType> inputs = toPropertyTypeSet(properties, INPUT_PARAMETERS);
 
-        String nxql = buildQueryFrom(docs);
-        Blob stats = getStatisticsBlob(session, nxql, inputs, outputs);
+        DocumentModelList docs = loadDocuments(session, ids);
 
         @SuppressWarnings("unchecked")
         Map<String, Serializable> modelParams = (Map<String, Serializable>) properties.get(MODEL_PARAMETERS);
@@ -167,38 +147,70 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
         // ID to track the batch
         String batchId = UUID.randomUUID().toString();
-        docs.stream().map(doc -> createRecordFromDoc(batchId, inputs, outputs, doc)).forEach(rec -> records.add(rec));
+        docs.stream().map(doc -> createRecordFromDoc(batchId, inputs, outputs, doc)).forEach(rec -> {
+            if (rec.isFailed()) {
+                failed.add(rec);
+            } else {
+                suitable.add(rec);
+            }
+        });
 
         getKVS().put(batchId, (long) docs.size(),
                 Long.parseLong(Framework.getProperty(TIMEOUT_KV_STORE, String.valueOf(TIMEOUT_48_HOURS_IN_SEC))));
-        if (!records.isEmpty()) {
-            createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
-            bindCorporaToModel(session, client, modelParams);
-        } else {
-            log.warn("No suitable documents found in batch {}", batchId);
+        if (suitable.isEmpty()) {
+            log.warn("No suitable documents found in batch {}; failed size {}", batchId, failed);
         }
+
+        String nxql = buildQueryFrom(docs);
+        String original = (String) properties.get(QUERY_PARAM);
+        Blob stats = getStatisticsBlob(session, nxql, inputs, outputs);
+        createDataset(session, original, modelParams, inputs, outputs, stats, batchId, split);
+        bindCorporaToModel(session, client, modelParams);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Set<PropertyType> toPropertyTypeSet(Map<String, Serializable> properties, String outputParameters) {
+        return ((List<Map<String, Serializable>>) properties.get(outputParameters)).stream()
+                                                                                   .map(p -> new PropertyType(
+                                                                                           (String) p.get("name"),
+                                                                                           (String) p.get("type")))
+                                                                                   .collect(Collectors.toSet());
     }
 
     @Override
     public void endBucket(ComputationContext context, BulkStatus ignored) {
         Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
         Random random = new Random(42);
-        for (ExportRecord record : records) {
+        shuffle(suitable);
+        for (ExportRecord record : suitable) {
             if (random.nextInt(100) < split) {
                 record.setTraining(true);
             }
             context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
         }
 
-        log.warn("Initialized Batch of {}; Command {}", records.size(), command.getId());
-        records.clear();
+        // Distribute the failed records evenly
+        for (int i = 0; i < failed.size(); i++) {
+            ExportRecord rec = failed.get(i);
+            if (i % 2 == 0) {
+                rec.setTraining(true);
+            }
+
+            context.produceRecord(OUTPUT_1, rec.getId(), codec.encode(rec));
+        }
+
+        log.warn("Initialized Batch of {} suitable records; Failed {}; Command {}", suitable.size(), failed.size(),
+                command.getId());
+        failed.clear();
+        suitable.clear();
         context.askForCheckpoint();
     }
 
     @Override
     public void processFailure(ComputationContext context, Throwable failure) {
         super.processFailure(context, failure);
-        records.clear();
+        suitable.clear();
+        failed.clear();
         context.askForTermination();
     }
 
@@ -218,16 +230,13 @@ public class ExportInitComputation extends AbstractBulkComputation {
         return ExportHelper.runInTransaction(() -> {
             try (CloseableCoreSession sess = CoreInstance.openCoreSessionSystem(session.getRepositoryName(),
                     session.getPrincipal().getName())) {
-
                 setCorporaId(sess, original, outputs, inputs, modelParams);
                 DatasetExport dataset = createDataset(sess, original, inputs, outputs, split, stats, batchId);
                 dataset.setJobId(command.getId());
                 dataset.setBatchId(batchId);
 
                 DocumentModel document = dataset.getDocument();
-
                 propagateParameters(document, modelParams);
-
                 sess.createDocument(document);
                 return dataset;
             }

@@ -92,7 +92,7 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
                 writer = getValidationWriter();
             }
 
-            if (!writer.write(rec)) {
+            if (rec.isFailed() || !writer.write(rec)) {
                 rec.setFailed(true);
                 errored += 1;
             }
