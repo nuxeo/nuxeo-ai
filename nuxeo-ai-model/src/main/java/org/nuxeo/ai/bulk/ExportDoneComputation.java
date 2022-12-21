@@ -58,6 +58,11 @@ public class ExportDoneComputation extends AbstractComputation {
         BulkStatus status = BulkCodecs.getStatusCodec().decode(record.getData());
         if (EXPORT_ACTION_NAME.equals(status.getAction()) && COMPLETED.equals(status.getState())) {
             BulkCommand cmd = Framework.getService(BulkService.class).getCommand(status.getId());
+            if (cmd == null) {
+                log.error("No Bulk Command found for {}", status.getId());
+                return;
+            }
+
             Message message = log.getMessageFactory()
                                  .newMessage(EXPORT_ACTION_NAME
                                                  + " for commandId {} has completed.\nProcessed {} records with {} errors",
@@ -65,18 +70,20 @@ public class ExportDoneComputation extends AbstractComputation {
             log.warn(message.getFormattedMessage());
 
             AuditLogger logger = Framework.getService(AuditLogger.class);
-            LogEntry entry = logger.newLogEntry();
-            entry.setCategory(EXPORT_ACTION_NAME);
-            entry.setComment(message.getFormattedMessage());
-            entry.setEventId(EXPORT_DONE_EVENT);
+            if (logger != null) {
+                LogEntry entry = logger.newLogEntry();
+                entry.setCategory(EXPORT_ACTION_NAME);
+                entry.setComment(message.getFormattedMessage());
+                entry.setEventId(EXPORT_DONE_EVENT);
 
-            Instant endTime = status.getProcessingEndTime();
-            if (endTime != null) {
-                long endMs = endTime.toEpochMilli();
-                entry.setEventDate(new Date(endMs));
+                Instant endTime = status.getProcessingEndTime();
+                if (endTime != null) {
+                    long endMs = endTime.toEpochMilli();
+                    entry.setEventDate(new Date(endMs));
+                }
+
+                logger.addLogEntries(Collections.singletonList(entry));
             }
-
-            logger.addLogEntries(Collections.singletonList(entry));
 
             CloudClient cc = Framework.getService(CloudClient.class);
 

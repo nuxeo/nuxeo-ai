@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
@@ -61,7 +61,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
     public static final String USE_CACHE = "cache";
 
-    private static final Log log = LogFactory.getLog(EnrichingStreamProcessor.class);
+    private static final Logger log = LogManager.getLogger(EnrichingStreamProcessor.class);
 
     @Override
     public Topology getTopology(Map<String, String> options) {
@@ -129,10 +129,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         @Override
-        public void processRecord(ComputationContext context, String inputStreamName, Record record) {
+        public void processRecord(ComputationContext context, String input, Record record) {
             if (log.isDebugEnabled()) {
                 log.debug("Processing record " + record);
             }
+
             BlobTextFromDocument blobTextFromDoc = fromRecord(record, BlobTextFromDocument.class);
             Callable<Collection<AIMetadata>> callable = getProvider(blobTextFromDoc);
 
@@ -144,12 +145,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 Collection<AIMetadata> result = null;
                 try {
                     result = callProvider(record, callable);
-                } catch (CircuitBreakerOpenException cboe) {
+                } catch (CircuitBreakerOpenException e) {
                     metrics.circuitBreaker();
-                    // The circuit break is open, throw NuxeoException so it doesn't continue processing.
+                    // The circuit break is open, throw NuxeoException, so it doesn't continue processing.
                     throw new NuxeoException(
-                            String.format("Stream circuit breaker for %s.  Stopping processing the stream.",
-                                    enricherName));
+                            "Stream circuit breaker for " + enricherName + ". Stopping processing the stream.");
                 } catch (FatalEnrichmentError fee) {
                     metrics.fatal();
                     // Fatal error so throw it to stop processing
@@ -157,6 +157,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 } catch (RuntimeException e) {
                     // The error is logged by onFailedAttempt so just move on to the next record.
                 }
+
                 if (result != null) {
                     if (useCache && provider instanceof EnrichmentCachable) {
                         EnrichmentCachable cachable = (EnrichmentCachable) provider;
@@ -166,15 +167,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                                  .map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
                     writeToStreams(context, results);
-
                 }
             } else {
                 metrics.unsupported();
-                if (log.isDebugEnabled()) {
-                    log.debug(
-                            String.format("Unsupported call to %s for doc %s", enricherName, blobTextFromDoc.getId()));
-                }
+                log.error("Unsupported call to {} for doc {}", enricherName, blobTextFromDoc.getId());
             }
+
             context.askForCheckpoint();
         }
 
@@ -235,8 +233,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                             blob.getLength())) {
                         return () -> getAiMetadata(blobTextFromDoc);
                     } else {
-                        log.info(String.format("%s does not support a blob with these characteristics %s %s",
-                                metadata.name(), blob.getMimeType(), blob.getLength()));
+                        log.info("{} does not support a blob with these characteristics {} {}", metadata.name(),
+                                blob.getMimeType(), blob.getLength());
                         return null;
                     }
                 }

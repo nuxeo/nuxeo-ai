@@ -25,14 +25,12 @@ import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.DONE_STREAM;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
-import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_2;
 
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.lib.stream.computation.Topology;
 import org.nuxeo.runtime.stream.StreamProcessorTopology;
-import com.google.common.collect.Sets;
 
 /**
  * Bulk export data from Nuxeo to TFRecord Split the dataset in training and validation sets.
@@ -41,9 +39,7 @@ public class DataSetBulkAction implements StreamProcessorTopology {
 
     private static final Logger log = LogManager.getLogger(DataSetBulkAction.class);
 
-    public static final String TRAINING_COMPUTATION = "training";
-
-    public static final String VALIDATION_COMPUTATION = "validation";
+    public static final String WRITING_COMPUTATION = "writing";
 
     public static final String DATASET_UPDATE_COMPUTATION = "dataset-update";
 
@@ -62,20 +58,13 @@ public class DataSetBulkAction implements StreamProcessorTopology {
         return Topology.builder()
                        .addComputation(() -> new ExportInitComputation(EXPORT_ACTION_NAME),
                                asList(INPUT_1 + ":" + EXPORT_ACTION_NAME, //
-                                       //                                OUTPUT_1 + ":" + EXPORT_STATUS_STREAM, //
-                                       OUTPUT_1 + ":" + TRAINING_COMPUTATION, //
-                                       OUTPUT_2 + ":" + VALIDATION_COMPUTATION))
+                                       OUTPUT_1 + ":" + WRITING_COMPUTATION))
 
-                       .addComputation(() -> new RecordWriterBatchComputation(TRAINING_COMPUTATION),
-                               asList(INPUT_1 + ":" + TRAINING_COMPUTATION, //
+                       .addComputation(() -> new RecordWriterBatchComputation(WRITING_COMPUTATION),
+                               asList(INPUT_1 + ":" + WRITING_COMPUTATION, //
                                        OUTPUT_1 + ":" + DATASET_UPDATE_COMPUTATION))
 
-                       .addComputation(() -> new RecordWriterBatchComputation(VALIDATION_COMPUTATION),
-                               asList(INPUT_1 + ":" + VALIDATION_COMPUTATION, //
-                                       OUTPUT_1 + ":" + DATASET_UPDATE_COMPUTATION))
-
-                       .addComputation(() -> new DatasetUpdateComputation(DATASET_UPDATE_COMPUTATION,
-                                       Sets.newHashSet(TRAINING_COMPUTATION, VALIDATION_COMPUTATION)),
+                       .addComputation(() -> new DatasetUpdateComputation(DATASET_UPDATE_COMPUTATION),
                                asList(INPUT_1 + ":" + DATASET_UPDATE_COMPUTATION, //
                                        OUTPUT_1 + ":" + EXPORT_UPLOAD_COMPUTATION))
 

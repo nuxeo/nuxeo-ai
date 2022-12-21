@@ -274,10 +274,10 @@ public class PropertyUtils {
 
         String renditionName = Framework.getProperty(AI_BLOB_RENDITION, AI_BLOB_RENDITION_DEFAULT_VALUE);
         return Arrays.stream(managedConversion.getViews())
-                                                  .filter(view -> renditionName.equals(view.getTitle()))
-                                                  //                                                  .filter(view -> view.getWidth() >= 299 && view.getHeight() >= 299)
-                                                  .filter(view -> !view.getFilename().startsWith("empty_picture"))
-                                                  .min(Comparator.comparingInt(PictureView::getWidth));
+                     .filter(view -> renditionName.equals(view.getTitle()))
+                     .filter(view -> view.getWidth() >= 299 || view.getHeight() >= 299)
+                     .filter(view -> !view.getFilename().startsWith("empty_picture"))
+                     .min(Comparator.comparingInt(PictureView::getWidth));
     }
 
     /**

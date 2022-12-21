@@ -55,12 +55,6 @@ You can set these in your `nuxeo.conf`.
 <td colspan="1">Since 2.1</td>
 </tr>
 <tr>
-<td colspan="1"><code>nuxeo.ai.export.validation.batch.size</code></td>
-<td colspan="1">Sets how many records are getting into the validation writer</td>
-<td colspan="1"><code>100</code></td>
-<td colspan="1">Since 2.1</td>
-</tr>
-<tr>
 <td colspan="1"><code>nuxeo.ai.conversion.rendition</code></td>
 <td colspan="1">Rendition title for multi-picture views to return for predictions/exports</td>
 <td colspan="1"><code>Small</code></td>
@@ -564,8 +558,7 @@ has more useful stream commands. Some further examples are:
 
 ```
 ./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l bulkDatasetExport
-./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l exp-training
-./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l exp-validation
+./bin/stream.sh lag --chronicle /var/lib/nuxeo/data/stream/bulk -l writing
 ./bin/stream.sh tail -n 8 --chronicle /var/lib/nuxeo/data/stream/bulk -l done --codec avro --schema-store /var/lib/nuxeo/data/avro/ --data-size 3000
 ./bin/stream.sh tail -n 8 --chronicle /var/lib/nuxeo/data/stream/bulk -l command --codec avro --schema-store /var/lib/nuxeo/data/avro/ --data-size 3000
 ```
