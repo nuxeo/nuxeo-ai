@@ -11,7 +11,7 @@
     </extension>
 
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <#if "${nuxeo.ai.export.training.batch.size}" != "" || "${nuxeo.ai.export.validation.batch.size}" != "">
+    <#if "${nuxeo.ai.export.training.batch.size}" != "">
       <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
                        defaultConcurrency="1" defaultPartitions="1">
         <#if "${nuxeo.ai.export.training.batch.size}" != "">
