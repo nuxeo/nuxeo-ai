@@ -129,10 +129,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         }
 
         @Override
-        public void processRecord(ComputationContext context, String inputStreamName, Record record) {
+        public void processRecord(ComputationContext context, String input, Record record) {
             if (log.isDebugEnabled()) {
                 log.debug("Processing record " + record);
             }
+
             BlobTextFromDocument blobTextFromDoc = fromRecord(record, BlobTextFromDocument.class);
             Callable<Collection<AIMetadata>> callable = getProvider(blobTextFromDoc);
 
@@ -144,11 +145,11 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 Collection<AIMetadata> result = null;
                 try {
                     result = callProvider(record, callable);
-                } catch (CircuitBreakerOpenException cboe) {
+                } catch (CircuitBreakerOpenException e) {
                     metrics.circuitBreaker();
-                    // The circuit break is open, throw NuxeoException so it doesn't continue processing.
+                    // The circuit break is open, throw NuxeoException, so it doesn't continue processing.
                     throw new NuxeoException(
-                            "Stream circuit breaker for " + enricherName + ".  Stopping processing the stream.");
+                            "Stream circuit breaker for " + enricherName + ". Stopping processing the stream.");
                 } catch (FatalEnrichmentError fee) {
                     metrics.fatal();
                     // Fatal error so throw it to stop processing
@@ -156,6 +157,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 } catch (RuntimeException e) {
                     // The error is logged by onFailedAttempt so just move on to the next record.
                 }
+
                 if (result != null) {
                     if (useCache && provider instanceof EnrichmentCachable) {
                         EnrichmentCachable cachable = (EnrichmentCachable) provider;
@@ -165,14 +167,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                                  .map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
                     writeToStreams(context, results);
-
                 }
             } else {
                 metrics.unsupported();
-                if (log.isDebugEnabled()) {
-                    log.debug("Unsupported call to {} for doc {}", enricherName, blobTextFromDoc.getId());
-                }
+                log.error("Unsupported call to {} for doc {}", enricherName, blobTextFromDoc.getId());
             }
+
             context.askForCheckpoint();
         }
 

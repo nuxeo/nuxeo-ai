@@ -1,9 +1,9 @@
 name: CI for PR
 on:
   pull_request:
-    branches: [master, master-10.10]
+    branches: [master, master-10.10, release-*]
   push:
-    branches: [master, master-10.10]
+    branches: [master, master-10.10, release-*]
 
 jobs:
   build-and-test:

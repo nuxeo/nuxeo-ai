@@ -44,7 +44,15 @@ import org.nuxeo.runtime.api.Framework;
 public class RecordWriterBatchComputation extends AbstractBatchComputation {
     private static final Logger log = LogManager.getLogger(RecordWriterBatchComputation.class);
 
+    public static final String TRAINING_WRITER = "ai/training";
+
+    public static final String VALIDATION_WRITER = "ai/validation";
+
     protected Set<String> exportedIds = new HashSet<>();
+
+    protected RecordWriter trainingWriter;
+
+    protected RecordWriter validationWriter;
 
     public RecordWriterBatchComputation(String name) {
         super(name, 1, 1);
@@ -52,34 +60,48 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
     @Override
     public void batchProcess(ComputationContext context, String inputStream, List<Record> records) {
-        RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(metadata.name());
-        if (writer == null) {
-            throw new NuxeoException("Unknown record write specified: " + metadata.name());
-        }
-
         Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
         Map<String, List<ExportRecord>> grouped = records.stream()
                                                          .map(r -> codec.decode(r.getData()))
                                                          .collect(groupingBy(ExportRecord::getId, toList()));
-
         for (Map.Entry<String, List<ExportRecord>> entry : grouped.entrySet()) {
             List<ExportRecord> recs = entry.getValue();
+            long errored;
             try {
-                long errored = writer.write(recs);
-                log.debug("Attempted to write {} records; Errors {}", recs.size(), errored);
-                recs.forEach(rec -> {
-                    exportedIds.add(rec.getId());
-                    byte[] encoded = codec.encode(rec);
-                    context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);
-                });
+                errored = write(context, codec, recs);
             } catch (IOException e) {
                 log.error("Failed to write batch {}; exception {}", metadata.name(), e);
                 throw new NuxeoException("Failed to write batch " + metadata.name(), e);
             }
+
+            log.debug("Attempted to write {} records; Errors {}", recs.size(), errored);
         }
 
         exportedIds.clear();
         context.askForCheckpoint();
+    }
+
+    private long write(ComputationContext context, Codec<ExportRecord> codec, List<ExportRecord> recs)
+            throws IOException {
+        long errored = 0;
+        for (ExportRecord rec : recs) {
+            RecordWriter writer;
+            if (rec.isTraining()) {
+                writer = getTrainingWriter();
+            } else {
+                writer = getValidationWriter();
+            }
+
+            if (rec.isFailed() || !writer.write(rec)) {
+                rec.setFailed(true);
+                errored += 1;
+            }
+            exportedIds.add(rec.getId());
+            byte[] encoded = codec.encode(rec);
+            context.produceRecord(OUTPUT_1, rec.getCommandId(), encoded);
+        }
+
+        return errored;
     }
 
     @Override
@@ -100,5 +122,27 @@ public class RecordWriterBatchComputation extends AbstractBatchComputation {
 
         exportedIds.clear();
         context.askForCheckpoint();
+    }
+
+    protected RecordWriter getTrainingWriter() {
+        if (trainingWriter == null) {
+            trainingWriter = Framework.getService(AIComponent.class).getRecordWriter(TRAINING_WRITER);
+            if (trainingWriter == null) {
+                throw new NuxeoException("Unknown record write specified: " + TRAINING_WRITER);
+            }
+        }
+
+        return trainingWriter;
+    }
+
+    protected RecordWriter getValidationWriter() {
+        if (validationWriter == null) {
+            validationWriter = Framework.getService(AIComponent.class).getRecordWriter(VALIDATION_WRITER);
+            if (validationWriter == null) {
+                throw new NuxeoException("Unknown record write specified: " + VALIDATION_WRITER);
+            }
+        }
+
+        return validationWriter;
     }
 }

@@ -4,26 +4,16 @@
   <extension target="org.nuxeo.ecm.core.bulk" point="actions">
     <action name="bulkDatasetExport" inputStream="ai/bulkDatasetExport" bucketSize="100" batchSize="100"/>
     <action name="bulkEnrich" inputStream="ai/bulkEnrich" bucketSize="100" batchSize="50" httpEnabled="true"/>
-    <action name="bulkEnrichRemove" inputStream="ai/bulkEnrichRemove" bucketSize="100" batchSize="50" httpEnabled="true"/>
+    <action name="bulkEnrichRemove" inputStream="ai/bulkEnrichRemove" bucketSize="100" batchSize="50"
+            httpEnabled="true"/>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="bulkDatasetExport" class="org.nuxeo.ai.bulk.BulkDatasetExportAction" defaultConcurrency="1"
                      defaultPartitions="1">
-      <policy name="ai/training" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
-      <policy name="ai/validation" batchCapacity="100" batchThreshold="3s" maxRetries="0"
-              continueOnFailure="true"/>
+      <policy name="writing" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
       <!--   1048576 = 1MB   -->
-      <stream name="ai/training" partitions="1">
-        <filter name="overflow"
-                class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
-          <option name="storeName">default</option>
-          <option name="thresholdSize">1048576</option>
-          <option name="storeTTL">24h</option>
-        </filter>
-      </stream>
-
-      <stream name="ai/validation" partitions="1">
+      <stream name="ai/writing" partitions="1">
         <filter name="overflow"
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
