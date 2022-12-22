@@ -80,8 +80,9 @@ public class DatasetUploadComputation extends AbstractComputation {
                     log.warn("Document wasn't uploaded {}", document.getId());
                 }
             } else {
-                log.error("Upload to cloud not possible for export command {}, dataset doc {} and client {}", commandId,
-                        document.getId(), client.isAvailable(session));
+                log.warn(
+                        "Upload to cloud not possible for export command {}, export {} and client {}; document is null",
+                        commandId, export.getId(), client.isAvailable(session));
             }
         } else {
             log.error("Unable to find DatasetExport with job id " + commandId);

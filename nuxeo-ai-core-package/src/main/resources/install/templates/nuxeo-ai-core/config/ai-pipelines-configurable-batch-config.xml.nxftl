@@ -11,25 +11,19 @@
     </extension>
 
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
-    <#if "${nuxeo.ai.export.training.batch.size}" != "" || "${nuxeo.ai.export.validation.batch.size}" != "">
+    <#if "${nuxeo.ai.export.training.batch.size}" != "">
       <streamProcessor name="bulkDatasetExport" class="org.nuxeo.ai.bulk.BulkDatasetExportAction"
                        defaultConcurrency="1" defaultPartitions="1">
         <#if "${nuxeo.ai.export.training.batch.size}" != "">
-        <policy name="ai/training" batchCapacity="${nuxeo.ai.export.training.batch.size}" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
-        </#if>
-        <#if "${nuxeo.ai.export.validation.batch.size}" != "">
-        <policy name="ai/validation" batchCapacity="${nuxeo.ai.export.validation.batch.size}" batchThreshold="3s" maxRetries="0" continueOnFailure="true"/>
+        <policy name="ai/writing"
+                batchCapacity="${nuxeo.ai.export.training.batch.size}"
+                batchThreshold="5s"
+                maxRetries="0"
+                continueOnFailure="true"/>
         </#if>
 
         <#if "${nuxeo.ai.export.threshold}" != "">
-        <stream name="ai/training" partitions="1">
-            <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
-              <option name="storeName">default</option>
-              <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
-              <option name="storeTTL">24h</option>
-            </filter>
-          </stream>
-          <stream name="ai/validation" partitions="1">
+        <stream name="ai/writing" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>

@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
@@ -59,22 +60,28 @@ public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer implements 
     @Override
     public void accept(EnrichmentMetadata metadata) {
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
-            EventContextImpl eCtx;
-            try {
-                DocumentModel input = session.getDocument(new IdRef(metadata.context.documentRef));
-                eCtx = new DocumentEventContext(session, session.getPrincipal(), input);
-            } catch (DocumentNotFoundException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Document Not Found: " + metadata.context.documentRef);
-                }
-                eCtx = new EventContextImpl();
-            }
-            eCtx.setProperty(CoreEventConstants.REPOSITORY_NAME, metadata.context.repositoryName);
-            eCtx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
-            eCtx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
-            eCtx.setProperty(ENRICHMENT_METADATA, metadata);
-            Event event = eCtx.newEvent(eventName);
+            EventContextImpl ctx = getEventContext(metadata, session);
+            ctx.setProperty(CoreEventConstants.REPOSITORY_NAME, metadata.context.repositoryName);
+            ctx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
+            ctx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
+            ctx.setProperty(ENRICHMENT_METADATA, metadata);
+            Event event = ctx.newEvent(eventName);
             Framework.getService(EventProducer.class).fireEvent(event);
         }));
+    }
+
+    private static EventContextImpl getEventContext(EnrichmentMetadata metadata, CoreSession session) {
+        EventContextImpl ctx;
+        try {
+            DocumentModel input = session.getDocument(new IdRef(metadata.context.documentRef));
+            ctx = new DocumentEventContext(session, session.getPrincipal(), input);
+        } catch (DocumentNotFoundException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Document Not Found: " + metadata.context.documentRef);
+            }
+            ctx = new EventContextImpl();
+        }
+
+        return ctx;
     }
 }
