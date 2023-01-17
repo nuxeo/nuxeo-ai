@@ -31,6 +31,7 @@ import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
 import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
+import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.SCHEDULED;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.SCROLLING_RUNNING;
@@ -184,7 +185,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     public BulkProgressStatus getStatus() {
         KeyValueStore kvs = getKVS();
         byte[] bytes = kvs.get(CURRENT_INDEX_BULK_ID);
-        if (bytes == null) {
+        if (bytes == null || bytes.length == 0) {
             return null;
         }
 
@@ -197,7 +198,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     public BulkProgressStatus getStatus(String id) {
         BulkServiceImpl bs = (BulkServiceImpl) Framework.getService(BulkService.class);
         KeyValueStoreProvider kv = (KeyValueStoreProvider) bs.getKvStore();
-        byte[] bytes = kv.get(id);
+
+        byte[] bytes = kv.get(STATUS_PREFIX + id);
         if (bytes == null || bytes.length == 0) {
             return null;
         }
