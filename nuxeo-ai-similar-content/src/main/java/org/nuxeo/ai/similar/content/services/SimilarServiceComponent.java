@@ -31,20 +31,25 @@ import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
 import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
-import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_PREFIX;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.SCHEDULED;
+import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.SCROLLING_RUNNING;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.apache.avro.message.MissingSchemaException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,13 +77,25 @@ import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.platform.picture.api.PictureView;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.kv.KeyValueService;
+import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
+import com.google.common.collect.Sets;
 
 public class SimilarServiceComponent extends DefaultComponent implements SimilarContentService {
 
     private static final Logger log = LogManager.getLogger(SimilarServiceComponent.class);
+
+    protected static final Set<String> ACTIVE_STATUSES = Sets.newHashSet(RUNNING.name(), SCHEDULED.name(),
+            SCROLLING_RUNNING.name());
+
+    public static final String INDEX_KVS_STORE = "aiIndexStore";
+
+    public static final String CURRENT_INDEX_BULK_ID = "CURRENT_INDEX_BULK_ID";
+
+    public static final long TWO_DAYS_IN_SEC = TimeUnit.DAYS.toSeconds(2);
 
     public static final String DEDUPLICATION_CONFIG_XP = "configuration";
 
@@ -153,28 +170,45 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
         BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME, query).user(
                 session.getPrincipal().getActingUser()).repository(session.getRepositoryName()).build();
+        KeyValueStore kvs = getKVS();
+        kvs.put(CURRENT_INDEX_BULK_ID, command.getId(), TWO_DAYS_IN_SEC);
         return Framework.getService(BulkService.class).submit(command);
+    }
+
+    protected KeyValueStore getKVS() {
+        return Framework.getService(KeyValueService.class).getKeyValueStore(INDEX_KVS_STORE);
     }
 
     @Nullable
     @Override
     public BulkProgressStatus getStatus() {
-        return getStatus(null);
+        KeyValueStore kvs = getKVS();
+        byte[] bytes = kvs.get(CURRENT_INDEX_BULK_ID);
+        if (bytes == null) {
+            return null;
+        }
+
+        String bulkId = new String(bytes, StandardCharsets.UTF_8);
+        return getStatus(bulkId);
     }
 
+    @Nullable
     @Override
     public BulkProgressStatus getStatus(String id) {
         BulkServiceImpl bs = (BulkServiceImpl) Framework.getService(BulkService.class);
         KeyValueStoreProvider kv = (KeyValueStoreProvider) bs.getKvStore();
-        return kv.keyStream(STATUS_PREFIX)
-                 .map(kv::get)
-                 .map(BulkCodecs.getStatusCodec()::decode)
-                 .filter(status -> INDEX_ACTION_NAME.equals(status.getAction()))
-                 .filter(status -> id == null || status.getId().equals(id))
-                 .sorted(Comparator.comparing(BulkStatus::getState))
-                 .map(BulkProgressStatus::new)
-                 .findFirst()
-                 .orElse(null);
+        byte[] bytes = kv.get(id);
+        if (bytes == null || bytes.length == 0) {
+            return null;
+        }
+
+        try {
+            BulkStatus status = BulkCodecs.getStatusCodec().decode(bytes);
+            return new BulkProgressStatus(status);
+        } catch (MissingSchemaException e) {
+            log.warn("Could not decode BulkStatus for bulkId: {}; Exception: {}", id, e.getMessage());
+            return null;
+        }
     }
 
     @Override
@@ -206,11 +240,6 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Override
     public List<DocumentModel> findSimilar(CoreSession session, DocumentModel doc, String xpath) throws IOException {
-        InsightClient client = getInsightClient(session);
-        Map<String, Serializable> parameters = new HashMap<>();
-        parameters.put(UID, doc.getId());
-        parameters.put(XPATH_PARAM, xpath);
-
         return findSimilar(session, doc, xpath, 0);
     }
 
@@ -242,11 +271,6 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Override
     public List<DocumentModel> findSimilar(CoreSession session, Blob blob, String xpath) throws IOException {
-        InsightClient client = getInsightClient(session);
-        Map<String, Serializable> parameters = new HashMap<>();
-        parameters.put(XPATH_PARAM, xpath);
-        TensorInstances tensor = constructTensor(blob, xpath);
-
         return findSimilar(session, blob, xpath, 0);
     }
 
@@ -372,8 +396,6 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     }
 
     protected boolean isActive(BulkProgressStatus status) {
-        return status.getState().equals(BulkStatus.State.RUNNING.name()) && status.getState()
-                                                                                  .equals(BulkStatus.State.SCHEDULED.name())
-                && status.getState().equals(BulkStatus.State.SCROLLING_RUNNING.name());
+        return ACTIVE_STATUSES.contains(status.getState());
     }
 }
