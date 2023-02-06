@@ -211,7 +211,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
         super.processFailure(context, failure);
         suitable.clear();
         failed.clear();
-        context.askForTermination();
+        throw new NuxeoException(failure);
     }
 
     protected void bindCorporaToModel(CoreSession session, CloudClient client, Map<String, Serializable> modelParams) {

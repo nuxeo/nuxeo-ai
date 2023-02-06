@@ -10,14 +10,21 @@
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="bulkExport" class="org.nuxeo.ai.bulk.DataSetBulkAction" logConfig="bulk"
                      defaultConcurrency="1" defaultPartitions="1">
-      <policy name="writing" batchCapacity="200" batchThreshold="5s" maxRetries="0" continueOnFailure="true"/>
+      <policy name="writing"
+              batchCapacity="200"
+              batchThreshold="5s"
+              maxRetries="0"
+              continueOnFailure="true"/>
+      <policy name="dataset-update"
+              maxRetries="1"
+              continueOnFailure="true"/>
       <!--   1048576 = 1MB   -->
       <stream name="writing" partitions="1">
         <filter name="overflow"
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
-          <option name="storeTTL">24h</option>
+          <option name="storeTTL">124h</option>
         </filter>
       </stream>
 
@@ -26,7 +33,7 @@
                 class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
           <option name="storeName">default</option>
           <option name="thresholdSize">1048576</option>
-          <option name="storeTTL">24h</option>
+          <option name="storeTTL">124h</option>
         </filter>
       </stream>
     </streamProcessor>

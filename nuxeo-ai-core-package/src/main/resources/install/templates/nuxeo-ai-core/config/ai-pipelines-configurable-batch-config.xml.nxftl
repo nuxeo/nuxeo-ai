@@ -22,19 +22,23 @@
                 continueOnFailure="true"/>
         </#if>
 
+        <policy name="dataset-update"
+            maxRetries="1"
+            continueOnFailure="true"/>
+
         <#if "${nuxeo.ai.export.threshold}" != "">
         <stream name="writing" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
-              <option name="storeTTL">24h</option>
+              <option name="storeTTL">124h</option>
             </filter>
           </stream>
           <stream name="dataset-update" partitions="1">
             <filter name="overflow" class="org.nuxeo.ecm.core.transientstore.computation.TransientStoreOverflowRecordFilter">
               <option name="storeName">default</option>
               <option name="thresholdSize">${nuxeo.ai.export.threshold}</option>
-              <option name="storeTTL">24h</option>
+              <option name="storeTTL">124h</option>
             </filter>
           </stream>
         </#if>
