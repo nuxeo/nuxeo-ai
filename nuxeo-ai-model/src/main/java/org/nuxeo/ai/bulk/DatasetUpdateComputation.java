@@ -75,16 +75,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
             errors.computeIfPresent(export.getId(), (s, val) -> 1L + val);
         }
 
-        boolean endOfBatch;
-        try {
-            endOfBatch = isEndOfBatch(export);
-        } catch (NuxeoException e) {
-            log.error("Likely the KVS record was removed by TTL expired event; interrupting {} pipeline",
-                    export.getCommandId());
-            ctx.askForTermination();
-            return;
-        }
-
+        boolean endOfBatch = isEndOfBatch(export);
         if (endOfBatch) {
             BulkService service = Framework.getService(BulkService.class);
             String commandId = export.getCommandId();
@@ -165,6 +156,9 @@ public class DatasetUpdateComputation extends AbstractComputation {
         Long total = getKVS().getLong(rec.getId());
 
         if (total == null) {
+            log.error(
+                    "Likely the KVS record for batch ID {} was removed by TTL expired event; interrupting {} pipeline",
+                    rec.getId(), rec.getCommandId());
             throw new NuxeoException("Entries total is not existing anymore in the KVS");
         }
 
