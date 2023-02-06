@@ -24,9 +24,9 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
-import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
 import static org.nuxeo.ai.bulk.RecordWriterBatchComputation.TRAINING_WRITER;
 import static org.nuxeo.ai.bulk.RecordWriterBatchComputation.VALIDATION_WRITER;
+import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -75,16 +75,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
             errors.computeIfPresent(export.getId(), (s, val) -> 1L + val);
         }
 
-        boolean endOfBatch = false;
-        try {
-            endOfBatch = isEndOfBatch(export);
-        } catch (NuxeoException e) {
-            log.error("Likely the KVS record was removed by TTL expired event; interrupting {} pipeline",
-                    export.getCommandId());
-            ctx.askForTermination();
-            return;
-        }
-
+        boolean endOfBatch = isEndOfBatch(export);
         if (endOfBatch) {
             BulkService service = Framework.getService(BulkService.class);
             String commandId = export.getCommandId();
@@ -166,6 +157,9 @@ public class DatasetUpdateComputation extends AbstractComputation {
         Long total = getKVS().getLong(rec.getId());
 
         if (total == null) {
+            log.error(
+                    "Likely the KVS record for batch ID {} was removed by TTL expired event; interrupting {} pipeline",
+                    rec.getId(), rec.getCommandId());
             throw new NuxeoException("Entries total is not existing anymore in the KVS");
         }
 
