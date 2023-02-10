@@ -21,8 +21,8 @@ package org.nuxeo.ai.adapters;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -131,22 +131,22 @@ public class DatasetExport implements AIAdapter {
         return (int) doc.getPropertyValue(DATASET_EXPORT_SPLIT);
     }
 
-    public void setInputs(List<IOParam> inputs) {
+    public void setInputs(List<Map<String, String>> inputs) {
         doc.setPropertyValue(DATASET_EXPORT_INPUTS, (Serializable) inputs);
     }
 
     @SuppressWarnings("unchecked")
-    public List<IOParam> getInputs() {
-        return (List<IOParam>) doc.getPropertyValue(DATASET_EXPORT_INPUTS);
+    public List<Map<String, String>> getInputs() {
+        return (List<Map<String, String>>) doc.getPropertyValue(DATASET_EXPORT_INPUTS);
     }
 
-    public void setOutputs(List<IOParam> outputs) {
+    public void setOutputs(List<Map<String, String>> outputs) {
         doc.setPropertyValue(DATASET_EXPORT_OUTPUTS, (Serializable) outputs);
     }
 
     @SuppressWarnings("unchecked")
-    public List<IOParam> getOutputs() {
-        return (List<IOParam>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
+    public List<Map<String, String>> getOutputs() {
+        return (List<Map<String, String>>) doc.getPropertyValue(DATASET_EXPORT_OUTPUTS);
     }
 
     public void setStatistics(Blob blob) {
@@ -171,8 +171,5 @@ public class DatasetExport implements AIAdapter {
 
     public String getBatchId() {
         return (String) doc.getPropertyValue(DATASET_EXPORT_BATCH_ID);
-    }
-
-    public static class IOParam extends HashMap<String, String> {
     }
 }

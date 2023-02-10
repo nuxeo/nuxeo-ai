@@ -65,8 +65,8 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
         this.name = name;
     }
 
-    public static String makeKey(String commandId, String name) {
-        return commandId + "_" + name;
+    public static String makeKey(String id, String name) {
+        return id + "_" + name;
     }
 
     @Override
@@ -140,5 +140,4 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
     protected String sanitize(String name) {
         return name.replace("/", "-");
     }
-
 }

@@ -28,13 +28,14 @@ import static org.nuxeo.ecm.core.bulk.BulkCodecs.DEFAULT_CODEC;
 import static org.nuxeo.ecm.core.schema.TypeConstants.isContentType;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.query.sql.NXQL;
@@ -102,7 +103,7 @@ public abstract class ExportHelper {
     /**
      * For a given Collection of property names, return a list of features with the property name and type.
      */
-    public static List<DatasetExport.IOParam> propsToTypedList(Collection<String> properties) {
+    public static List<Map<String, String>> propsToTypedList(Collection<String> properties) {
         return properties.stream()
                          .map(ExportHelper::getPropertyWithType)
                          .filter(Objects::nonNull)
@@ -111,18 +112,19 @@ public abstract class ExportHelper {
 
     public static PropertyType addTypeIfNull(PropertyType prop) {
         if (prop.getType() == null) {
-            DatasetExport.IOParam propType = getPropertyWithType(prop.getName());
+            Map<String, String> propType = getPropertyWithType(prop.getName());
             return new PropertyType(prop.getName(), propType.get(TYPE_PROP));
         }
+
         return prop;
     }
 
     /**
      * For the given property, find out if it exists and determine if its text or content
      */
-    public static DatasetExport.IOParam getPropertyWithType(String prop) {
+    public static Map<String, String> getPropertyWithType(String prop) {
         Field field = Framework.getService(SchemaManager.class).getField(prop);
-        DatasetExport.IOParam feature = new DatasetExport.IOParam();
+        Map<String, String> feature = new HashMap<>();
 
         feature.put(NAME_PROP, prop);
         if (field == null) {
@@ -133,6 +135,7 @@ public abstract class ExportHelper {
                 log.warn(prop + " does not exist as a type, defaulting to txt type.");
                 feature.put(TYPE_PROP, TEXT_TYPE);
             }
+
             return feature;
         }
         String type = isContentType(field.getType()) ? IMAGE_TYPE : TEXT_TYPE;
