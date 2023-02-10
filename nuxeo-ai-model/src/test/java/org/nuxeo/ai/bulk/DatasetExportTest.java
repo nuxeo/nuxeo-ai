@@ -101,6 +101,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.work.api.WorkManager;
 import org.nuxeo.ecm.platform.audit.AuditFeature;
+import org.nuxeo.ecm.platform.audit.api.AuditLogger;
 import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.api.Framework;
@@ -145,6 +146,9 @@ public class DatasetExportTest {
 
     @Inject
     protected AutomationService automationService;
+
+    @Inject
+    AuditLogger audit;
 
     @Inject
     protected WorkManager workManager;

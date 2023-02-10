@@ -50,43 +50,43 @@ public class DatasetUploadComputation extends AbstractComputation {
     @Override
     public void processRecord(ComputationContext ctx, String inputStreamName, Record record) {
         ExportStatus export = getAvroCodec(ExportStatus.class).decode(record.getData());
-        String commandId = export.getCommandId();
-        BulkCommand command = Framework.getService(BulkService.class).getCommand(commandId);
+        BulkCommand command = Framework.getService(BulkService.class).getCommand(export.getCommandId());
         if (command != null) {
             runInTransaction(() -> {
-                uploadDataset(export, commandId, command);
+                uploadDataset(export, command);
                 return null;
             });
         } else {
-            log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", commandId);
+            log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", export.getCommandId());
         }
 
         ctx.produceRecord(OUTPUT_1, record);
         ctx.askForCheckpoint();
     }
 
-    protected void uploadDataset(ExportStatus export, String commandId, BulkCommand command) {
+    protected void uploadDataset(ExportStatus status, BulkCommand command) {
+        String commandId = command.getId();
         CoreSession session = CoreInstance.getCoreSessionSystem(command.getRepository(), command.getUsername());
         DocumentModel document = Framework.getService(DatasetExportService.class)
-                                          .getCorpusOfBatch(session, commandId, export.getId());
+                                          .getCorpusOfBatch(session, commandId, status.getId());
 
-        if (document != null) {
+        if (status.getProcessed() - status.getErrored() <= 0) {
+            log.warn("{} documents were processed with {} errors for command {}, dataset doc {}; skipping upload",
+                    status.getProcessed(), status.getErrored(), commandId, document.getId());
+        } else if (document != null) {
             CloudClient client = Framework.getService(CloudClient.class);
             if (client.isAvailable(session)) {
                 log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId, document.getId());
-
-                // TODO: Attach corpus to corpora
                 if (client.uploadedDataset(document) == null) {
                     log.warn("Document wasn't uploaded {}", document.getId());
                 }
             } else {
                 log.warn(
                         "Upload to cloud not possible for export command {}, export {} and client {}; document is null",
-                        commandId, export.getId(), client.isAvailable(session));
+                        commandId, status.getId(), client.isAvailable(session));
             }
         } else {
             log.error("Unable to find DatasetExport with job id " + commandId);
         }
     }
-
 }

@@ -83,7 +83,9 @@ public class DatasetUpdateComputation extends AbstractComputation {
             if (command == null) {
                 log.warn("The bulk command {} is missing. Unable to save blobs info.", commandId);
             }
-            log.debug("Ending batch for {}", commandId);
+
+            String batchId = export.getId();
+            log.debug("Ending batch {} for {}", batchId, commandId);
 
             for (String name : Arrays.asList(TRAINING_WRITER, VALIDATION_WRITER)) {
                 RecordWriter writer = Framework.getService(AIComponent.class).getRecordWriter(name);
@@ -91,10 +93,9 @@ public class DatasetUpdateComputation extends AbstractComputation {
                     throw new NuxeoException("Unable to find record writer: " + name);
                 }
 
-                String blobId = export.getId();
-                if (writer.exists(blobId)) {
+                if (writer.exists(batchId)) {
                     try {
-                        writer.complete(blobId).ifPresent(blob -> {
+                        writer.complete(batchId).ifPresent(blob -> {
                             if (command != null) {
                                 updateDatasetDocument(command, blob, TRAINING_WRITER.equals(name), export);
                             }
@@ -103,23 +104,22 @@ public class DatasetUpdateComputation extends AbstractComputation {
                         throw new NuxeoException("Unable to complete action " + commandId, e);
                     }
                 } else {
-                    log.warn("No writer file exists for command {} name {} blob ID {}", commandId, name, blobId);
+                    log.warn("No writer file exists for command {} name {} blob ID {}", commandId, name, batchId);
                 }
             }
 
-            long processed = counters.get(export.getId());
-            long errored = errors.computeIfAbsent(export.getId(), (key) -> 0L);
-            ExportStatus eb = ExportStatus.of(commandId, export.getId(), processed, errored);
+            long processed = counters.get(batchId);
+            long errored = errors.computeIfAbsent(batchId, (key) -> 0L);
+            ExportStatus eb = ExportStatus.of(commandId, batchId, processed, errored);
             eb.setTraining(export.isTraining());
 
-            ctx.produceRecord(OUTPUT_1, export.getId(), getAvroCodec(ExportStatus.class).encode(eb));
+            ctx.produceRecord(OUTPUT_1, batchId, getAvroCodec(ExportStatus.class).encode(eb));
             // Clear counter
-            counters.remove(export.getId());
+            counters.remove(batchId);
             ctx.askForCheckpoint();
         }
 
         updateDelta(export.getId());
-
     }
 
     private void updateDatasetDocument(BulkCommand cmd, Blob blob, boolean isTraining, ExportRecord export) {
@@ -131,7 +131,7 @@ public class DatasetUpdateComputation extends AbstractComputation {
             if (document != null) {
                 log.debug("Updating document {} with blob {}", document.getId(), blob.getDigest());
 
-                document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, getCount(export.getId()));
+                document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, counters.get(export.getId()));
 
                 String prop = isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA;
                 document.setPropertyValue(prop, (Serializable) blob);
@@ -142,10 +142,6 @@ public class DatasetUpdateComputation extends AbstractComputation {
             }
             return null;
         });
-    }
-
-    protected Long getCount(String id) {
-        return counters.get(id);
     }
 
     protected void updateDelta(String key) {

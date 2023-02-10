@@ -88,7 +88,6 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.kv.KeyValueStore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -278,19 +277,10 @@ public class ExportInitComputation extends AbstractBulkComputation {
         DatasetExport adapter = doc.getAdapter(DatasetExport.class);
         adapter.setQuery(query);
         adapter.setSplit(split);
-        List<DatasetExport.IOParam> inputForAdp = inputs.stream().map(p -> new DatasetExport.IOParam() {
-            {
-                put("name", p.getName());
-                put("type", p.getType());
-            }
-        }).collect(Collectors.toList());
+
+        List<Map<String, String>> inputForAdp = inputs.stream().map(p -> Map.of("name", p.getName(), "type", p.getType())).collect(Collectors.toList());
         adapter.setInputs(inputForAdp);
-        List<DatasetExport.IOParam> outputForAdp = outputs.stream().map(p -> new DatasetExport.IOParam() {
-            {
-                put("name", p.getName());
-                put("type", p.getType());
-            }
-        }).collect(Collectors.toList());
+        List<Map<String, String>> outputForAdp = outputs.stream().map(p -> Map.of("name", p.getName(), "type", p.getType())).collect(Collectors.toList());
         adapter.setOutputs(outputForAdp);
         adapter.setStatistics(statsBlob);
 

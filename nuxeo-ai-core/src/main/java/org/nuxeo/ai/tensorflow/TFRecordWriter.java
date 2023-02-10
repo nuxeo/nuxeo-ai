@@ -142,14 +142,14 @@ public class TFRecordWriter extends AbstractRecordWriter {
         int written = 0;
         int skipped = 0;
         if (list != null && !list.isEmpty()) {
-            File file = getFile(list.get(0).getId());
+            for (ExportRecord record : list) {
+                File file = getFile(record.getId());
+                try (FileOutputStream fos = new FileOutputStream(file, true);
+                        BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
+                        DataOutputStream dos = new DataOutputStream(bos)) {
 
-            try (FileOutputStream fos = new FileOutputStream(file, true);
-                    BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
-                    DataOutputStream dos = new DataOutputStream(bos)) {
+                    TensorflowWriter writer = new TensorflowWriter(dos);
 
-                TensorflowWriter writer = new TensorflowWriter(dos);
-                for (ExportRecord record : list) {
                     if (write(writer, record)) {
                         record.setFailed(false);
                         written++;
