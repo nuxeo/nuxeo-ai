@@ -53,7 +53,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -62,6 +61,7 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.nuxeo.ai.adapters.DatasetExport;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
@@ -179,13 +179,12 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     @Override
     public void endBucket(ComputationContext context, BulkStatus ignored) {
-        Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
-        Random random = new Random(42);
         shuffle(suitable);
+        int trainingSize = (int) (suitable.size() * (split / 100.0));
+        suitable.subList(0, trainingSize).forEach(r -> r.setTraining(true));
+
+        Codec<ExportRecord> codec = getAvroCodec(ExportRecord.class);
         for (ExportRecord record : suitable) {
-            if (random.nextInt(100) < split) {
-                record.setTraining(true);
-            }
             context.produceRecord(OUTPUT_1, record.getId(), codec.encode(record));
         }
 
@@ -276,23 +275,26 @@ public class ExportInitComputation extends AbstractBulkComputation {
         DatasetExport adapter = doc.getAdapter(DatasetExport.class);
         adapter.setQuery(query);
         adapter.setSplit(split);
-        List<DatasetExport.IOParam> inputForAdp = inputs.stream().map(p -> new DatasetExport.IOParam() {
-            {
-                put("name", p.getName());
-                put("type", p.getType());
-            }
-        }).collect(Collectors.toList());
+
+        List<Map<String, String>> inputForAdp = inputs.stream()
+                                                      .map(ExportInitComputation::ioParams)
+                                                      .collect(Collectors.toList());
         adapter.setInputs(inputForAdp);
-        List<DatasetExport.IOParam> outputForAdp = outputs.stream().map(p -> new DatasetExport.IOParam() {
-            {
-                put("name", p.getName());
-                put("type", p.getType());
-            }
-        }).collect(Collectors.toList());
+        List<Map<String, String>> outputForAdp = outputs.stream()
+                                                        .map(ExportInitComputation::ioParams)
+                                                        .collect(Collectors.toList());
         adapter.setOutputs(outputForAdp);
         adapter.setStatistics(statsBlob);
 
         return adapter;
+    }
+
+    @NotNull
+    private static Map<String, String> ioParams(PropertyType p) {
+        Map<String, String> map = new HashMap<>();
+        map.put("name", p.getName());
+        map.put("type", p.getType());
+        return map;
     }
 
     private void propagateParameters(DocumentModel document, Map<String, Serializable> modelParams) {

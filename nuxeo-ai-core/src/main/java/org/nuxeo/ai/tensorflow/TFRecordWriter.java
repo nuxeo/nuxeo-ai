@@ -121,7 +121,7 @@ public class TFRecordWriter extends AbstractRecordWriter {
     @Override
     public void init(Map<String, String> options) {
         super.init(options);
-        this.imageConversionService = options.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);
+        imageConversionService = options.getOrDefault(CONVERSION_SERVICE, DEFAULT_CONVERTER);
         try {
             Framework.getService(ConversionService.class).isConverterAvailable(imageConversionService);
         } catch (ConverterNotRegistered e) {
@@ -142,27 +142,18 @@ public class TFRecordWriter extends AbstractRecordWriter {
         int written = 0;
         int skipped = 0;
         if (list != null && !list.isEmpty()) {
-            File file = getFile(list.get(0).getId());
-
-            try (FileOutputStream fos = new FileOutputStream(file, true);
-                    BufferedOutputStream bos = new BufferedOutputStream(fos, bufferSize);
-                    DataOutputStream dos = new DataOutputStream(bos)) {
-
-                TensorflowWriter writer = new TensorflowWriter(dos);
-                for (ExportRecord record : list) {
-                    if (write(writer, record)) {
-                        record.setFailed(false);
-                        written++;
-                    } else {
-                        record.setFailed(true);
-                        skipped++;
-                    }
+            for (ExportRecord record : list) {
+                if (write(record)) {
+                    written++;
+                } else {
+                    skipped++;
                 }
             }
-            if (list.size() != written) {
-                log.warn("{} writer had {} records, {} were written, {} were skipped.", name, list.size(), written,
-                        skipped);
-            }
+        }
+
+        if (list != null && list.size() != written) {
+            log.warn("{} writer had {} records, {} were written, {} were skipped.", name, list.size(), written,
+                    skipped);
         }
 
         return skipped;
