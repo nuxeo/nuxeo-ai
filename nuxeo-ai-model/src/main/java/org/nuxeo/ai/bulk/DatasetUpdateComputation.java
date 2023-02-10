@@ -133,6 +133,8 @@ public class DatasetUpdateComputation extends AbstractComputation {
                     document.setPropertyValue(DATASET_EXPORT_DOCUMENTS_COUNT, counters.get(export.getId()));
 
                     String prop = isTraining ? DATASET_EXPORT_TRAINING_DATA : DATASET_EXPORT_EVALUATION_DATA;
+                    log.info("Blob size {} for command {} batch ID {} and document {}", blob.getLength(), cmd.getId(),
+                            export.getId(), document.getId());
                     document.setPropertyValue(prop, (Serializable) blob);
                     session.saveDocument(document);
                 } else {
