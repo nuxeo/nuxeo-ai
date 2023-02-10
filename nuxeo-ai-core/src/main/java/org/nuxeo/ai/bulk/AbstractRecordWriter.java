@@ -140,5 +140,4 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
     protected String sanitize(String name) {
         return name.replace("/", "-");
     }
-
 }

@@ -104,7 +104,8 @@ public class DatasetUpdateComputation extends AbstractComputation {
                         throw new NuxeoException("Unable to complete action " + commandId, e);
                     }
                 } else {
-                    log.warn("No writer file exists for command {} name {} blob ID {}", commandId, name, batchId);
+                    log.warn("No writer for command {} name {} batch ID {} of size {}", commandId, name, batchId,
+                            counters.get(batchId) - errors.get(batchId));
                 }
             }
 
