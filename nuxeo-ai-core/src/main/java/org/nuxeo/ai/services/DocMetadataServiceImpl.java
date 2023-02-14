@@ -26,6 +26,7 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_PROPERTY;
 import static org.nuxeo.ai.AIConstants.SUGGESTION_SUGGESTIONS;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.api.CoreSession.ALLOW_VERSION_WRITE;
 import static org.nuxeo.ecm.core.event.impl.DocumentEventContext.COMMENT_PROPERTY_KEY;
 
 import java.io.IOException;
@@ -125,6 +126,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             Collection<Map<String, Object>> allEnriched = updateEnrichment(enrichmentList, anItem);
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, allEnriched);
             doc.putContextData(ENRICHMENT_ADDED, Boolean.TRUE);
+            doc.putContextData(ALLOW_VERSION_WRITE, Boolean.FALSE);
             raiseEvent(doc, ENRICHMENT_MODIFIED, null, metadata.getModelName());
         }
         return doc;
@@ -216,6 +218,8 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
             if (resetValue) {
                 doc.setPropertyValue(xPath, (Serializable) previousValue);
+            } else {
+                doc.putContextData(ALLOW_VERSION_WRITE, Boolean.FALSE);
             }
         }
 
