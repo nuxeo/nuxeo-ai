@@ -21,6 +21,7 @@ package org.nuxeo.ai.auto;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.ALL;
 import static org.nuxeo.ai.enrichment.EnrichmentProvider.UNSET;
 import static org.nuxeo.ai.services.DocMetadataServiceImpl.hadBeenModified;
+import static org.nuxeo.ecm.core.api.CoreSession.ALLOW_VERSION_WRITE;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -147,7 +148,7 @@ public class AutoServiceImpl implements AutoService {
                                             .map(AIMetadata.Label::getName)
                                             .collect(Collectors.toList());
                 doc.setPropertyValue(xpath, (Serializable) values);
-                String comment = String.format("Auto filled a list %s. (Threshold %s)", xpath, threshold);
+                String comment = "Auto filled a list " + xpath + ". (Threshold " + threshold + ")";
                 log.debug(comment);
 
                 Framework.getService(DocMetadataService.class)
@@ -165,8 +166,9 @@ public class AutoServiceImpl implements AutoService {
                     float maxConfidence = max.getConfidence();
 
                     if (setProperty(doc.getCoreSession(), doc, xpath, null, max.getName())) {
-                        String comment = String.format("Auto filled %s. (Confidence %s , Threshold %s)", xpath,
-                                maxConfidence, threshold);
+                        String comment =
+                                "Auto filled " + xpath + ". (Confidence " + maxConfidence + " , Threshold " + threshold
+                                        + ")";
                         log.debug(comment);
 
                         Framework.getService(DocMetadataService.class)
@@ -174,6 +176,8 @@ public class AutoServiceImpl implements AutoService {
                                          comment);
                         docMetadata.addAutoFilled(xpath, reduce.getModel());
                         autofilled = true;
+                    } else {
+                        doc.putContextData(ALLOW_VERSION_WRITE, Boolean.FALSE);
                     }
                 }
             }
@@ -246,6 +250,8 @@ public class AutoServiceImpl implements AutoService {
 
                 metadataService.updateAuto(metadata.getDoc(), AUTO.CORRECTED, xpath, reduce.getModel(), oldValue,
                         comment);
+            } else {
+                doc.putContextData(ALLOW_VERSION_WRITE, Boolean.FALSE);
             }
         } else {
             if (alreadyAutoCorrected) {
@@ -265,6 +271,7 @@ public class AutoServiceImpl implements AutoService {
                 log.debug("Failed to set property " + key, e);
             }
         }
+
         return false;
     }
 
