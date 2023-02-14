@@ -40,6 +40,8 @@ import net.jodah.failsafe.RetryPolicy;
 
 public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
+    public static final long KEYPHRASE_MAX_SIZE = 1_000_000;
+
     public static final String LANGUAGE_CODE = "language";
 
     public static final String DEFAULT_LANGUAGE = "en";
@@ -52,6 +54,7 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         languageCode = descriptor.options.getOrDefault(LANGUAGE_CODE, DEFAULT_LANGUAGE);
+        maxSize = KEYPHRASE_MAX_SIZE;
     }
 
     @Override

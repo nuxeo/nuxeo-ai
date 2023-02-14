@@ -301,7 +301,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
         // Obliged to use the api in this way (and not in fluent) cause there is an issue in the framework
         // test that truncates the batch id after a first call
-        log.info("Uploading {} Dataset of size {} MB", name, fileBlob.getFile().length() / (1024 * 1024));
+        log.info("Uploading {} Dataset of size {} KB", name, fileBlob.getFile().length() / 1024);
         batchUpload.upload(index, fileBlob);
 
         return true;

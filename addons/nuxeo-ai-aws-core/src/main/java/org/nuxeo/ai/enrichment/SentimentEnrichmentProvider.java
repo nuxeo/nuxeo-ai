@@ -43,6 +43,8 @@ import net.jodah.failsafe.RetryPolicy;
  */
 public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
+    public static final long SENTIMENT_MAX_SIZE = 5_000;
+
     public static final String LANGUAGE_CODE = "language";
 
     public static final String DEFAULT_LANGUAGE = "en";
@@ -53,6 +55,7 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         languageCode = descriptor.options.getOrDefault(LANGUAGE_CODE, DEFAULT_LANGUAGE);
+        maxSize = SENTIMENT_MAX_SIZE;
     }
 
     @Override
