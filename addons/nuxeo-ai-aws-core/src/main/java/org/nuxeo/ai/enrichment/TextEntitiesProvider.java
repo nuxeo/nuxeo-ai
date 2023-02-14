@@ -40,6 +40,9 @@ import net.jodah.failsafe.RetryPolicy;
 
 public class TextEntitiesProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
+    // in bytes
+    public static final long ENTITY_MAX_SIZE = 1_000_000;
+
     public static final String LANGUAGE_CODE = "language";
 
     public static final String DEFAULT_LANGUAGE = "en";
@@ -52,6 +55,7 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         languageCode = descriptor.options.getOrDefault(LANGUAGE_CODE, DEFAULT_LANGUAGE);
+        maxSize = ENTITY_MAX_SIZE;
     }
 
     @Override

@@ -20,6 +20,7 @@ package org.nuxeo.ai.enrichment;
 
 import static org.nuxeo.ecm.core.transientstore.TransientStorageComponent.DEFAULT_STORE_NAME;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -76,12 +77,13 @@ public class EnrichmentDescriptor {
 
     public EnrichmentProvider getProvider() {
         try {
-            EnrichmentProvider serviceInstance = service.newInstance();
+            EnrichmentProvider serviceInstance = service.getDeclaredConstructor().newInstance();
             if (serviceInstance instanceof EnrichmentSupport) {
                 ((EnrichmentSupport) serviceInstance).init(this);
             }
             return serviceInstance;
-        } catch (IllegalAccessException | NullPointerException | InstantiationException e) {
+        } catch (IllegalAccessException | NullPointerException | InstantiationException | InvocationTargetException |
+                 NoSuchMethodException e) {
             throw new NuxeoException(
                     String.format("EnrichmentDescriptor for %s must define a valid EnrichmentProvider", name), e);
         }
