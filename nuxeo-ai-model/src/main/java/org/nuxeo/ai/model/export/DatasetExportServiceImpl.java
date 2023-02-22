@@ -48,7 +48,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -134,6 +133,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     protected static final String BASE_QUERY =
             "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
                     + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
+
+    protected static final Set<String> VALID_DOC_TYPES = Sets.newHashSet(DataType.IMAGE.shorten(),
+            DataType.TEXT.shorten(), DataType.CATEGORY.shorten(), null);
 
     protected static final Properties TERM_PROPS;
 
@@ -227,15 +229,24 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     protected void validate(String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs) {
-        HashSet<String> types = Sets.newHashSet(DataType.IMAGE.shorten(), DataType.TEXT.shorten(),
-                DataType.CATEGORY.shorten(), null);
-        boolean valid = Stream.concat(inputs.stream(), outputs.stream()).allMatch(p -> types.contains(p.getType()));
+        if (StringUtils.isBlank(nxql) || inputs.isEmpty() || outputs.isEmpty()) {
+            throw new IllegalArgumentException("nxql and properties are required parameters");
+        }
+
+        if (!nxql.toUpperCase().contains("WHERE")) {
+            throw new IllegalArgumentException("You cannot use an unbounded nxql query, please add a WHERE clause.");
+        }
+
+        boolean valid = Stream.concat(inputs.stream(), outputs.stream())
+                              .allMatch(p -> VALID_DOC_TYPES.contains(p.getType()));
         if (!valid) {
             throw new IllegalArgumentException("Input and Output types must be an image, text, category or null");
         }
-        List<String> inputNames = inputs.stream().map(PropertyType::getName).collect(Collectors.toList());
-        List<String> outputNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toList());
-        validateParams(nxql, inputNames, outputNames);
+
+        boolean disjoint = Collections.disjoint(inputs, outputs);
+        if (!disjoint) {
+            throw new IllegalArgumentException("Input and Output properties must be disjoint");
+        }
     }
 
     protected Map<String, String> toMap(PropertyType p) {
@@ -393,10 +404,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public Collection<Statistic> getStatistics(CoreSession session, String nxql, Set<PropertyType> inputProperties,
             Set<PropertyType> outputProperties) {
-        Set<String> inputPropNames = inputProperties.stream().map(PropertyType::getName).collect(Collectors.toSet());
-        Set<String> outputPropNames = outputProperties.stream().map(PropertyType::getName).collect(Collectors.toSet());
-        validateParams(nxql, inputPropNames, outputPropNames);
-
+        validate(nxql, inputProperties, outputProperties);
         List<PropertyType> featuresList = inputProperties.stream()
                                                          .map(ExportHelper::addTypeIfNull)
                                                          .collect(Collectors.toList());
@@ -411,20 +419,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
         addCount(stats, qb);
         return stats;
-    }
-
-    /**
-     * Validate if the specified params are correct.
-     */
-    protected void validateParams(String nxql, Collection<String> inputProperties,
-            Collection<String> outputProperties) {
-        if (StringUtils.isBlank(nxql) || inputProperties == null || inputProperties.isEmpty()
-                || outputProperties == null || outputProperties.isEmpty()) {
-            throw new IllegalArgumentException("nxql and properties are required parameters");
-        }
-        if (!nxql.toUpperCase().contains("WHERE")) {
-            throw new IllegalArgumentException("You cannot use an unbounded nxql query, please add a WHERE clause.");
-        }
     }
 
     /**
