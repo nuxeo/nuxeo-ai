@@ -343,7 +343,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
             DocumentModel doc) {
         Map<String, String> nameTypePair = Stream.concat(inputs.stream(), outputs.stream())
                                                  .filter(prop -> Objects.nonNull(prop.getType()))
-                                                 .collect(toMap(PropertyType::getName, PropertyType::getType));
+                                                 .collect(toMap(PropertyType::getName, PropertyType::getType, (a, b) -> a));
 
         if (doc.hasFacet(ENRICHMENT_FACET)) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);

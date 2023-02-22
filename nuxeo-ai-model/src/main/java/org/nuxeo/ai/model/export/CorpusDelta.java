@@ -76,13 +76,13 @@ public class CorpusDelta {
 
     public Set<PropertyType> getInputs() {
         return inputs.stream()
-                     .map(field -> new PropertyType((String) field.get("name"), (String) field.get("type")))
+                     .map(field -> PropertyType.of((String) field.get("name"), (String) field.get("type")))
                      .collect(Collectors.toSet());
     }
 
     public Set<PropertyType> getOutputs() {
         return outputs.stream()
-                      .map(field -> new PropertyType((String) field.get("name"), (String) field.get("type")))
+                      .map(field -> PropertyType.of((String) field.get("name"), (String) field.get("type")))
                       .collect(Collectors.toSet());
     }
 

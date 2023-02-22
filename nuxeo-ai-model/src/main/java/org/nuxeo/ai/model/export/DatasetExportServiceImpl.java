@@ -48,13 +48,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -65,6 +66,7 @@ import org.joda.time.DateTime;
 import org.nuxeo.ai.bulk.ExportHelper;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.sdk.objects.DataType;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.Statistic;
 import org.nuxeo.ai.utils.DateUtils;
@@ -109,6 +111,7 @@ import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.DefaultComponent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 
 /**
  * Exports data
@@ -186,10 +189,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
             int split, Map<String, Serializable> modelParams) {
-        List<String> inputNames = inputs.stream().map(PropertyType::getName).collect(Collectors.toList());
-        List<String> outputNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toList());
-        validateParams(nxql, inputNames, outputNames);
-
+        validate(nxql, inputs, outputs);
         if (split < 1 || split > 100) {
             throw new IllegalArgumentException("Dataset split value is a percentage between 1 and 100");
         }
@@ -199,8 +199,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         String notNullNXQL = notNullNxql(nxql, featuresWithType);
         String username = session.getPrincipal().getName();
-        List<Map<String, String>> inputAsParameter = inputs.stream().map(toMap()).collect(Collectors.toList());
-        List<Map<String, String>> outputAsParameter = outputs.stream().map(toMap()).collect(Collectors.toList());
+        List<Map<String, String>> inputAsParameter = inputs.stream().map(this::toMap).collect(Collectors.toList());
+        List<Map<String, String>> outputAsParameter = outputs.stream().map(this::toMap).collect(Collectors.toList());
         BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL).user(username)
                                                                                           .repository(
                                                                                                   session.getRepositoryName())
@@ -226,13 +226,23 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         return Framework.getService(BulkService.class).submit(bulkCommand);
     }
 
-    protected Function<PropertyType, Map<String, String>> toMap() {
-        return p -> {
-            Map<String, String> map = new HashMap<>();
-            map.put("name", p.getName());
-            map.put("type", p.getType());
-            return map;
-        };
+    protected void validate(String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs) {
+        HashSet<String> types = Sets.newHashSet(DataType.IMAGE.shorten(), DataType.TEXT.shorten(),
+                DataType.CATEGORY.shorten(), null);
+        boolean valid = Stream.concat(inputs.stream(), outputs.stream()).allMatch(p -> types.contains(p.getType()));
+        if (!valid) {
+            throw new IllegalArgumentException("Input and Output types must be an image, text, category or null");
+        }
+        List<String> inputNames = inputs.stream().map(PropertyType::getName).collect(Collectors.toList());
+        List<String> outputNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toList());
+        validateParams(nxql, inputNames, outputNames);
+    }
+
+    protected Map<String, String> toMap(PropertyType p) {
+        Map<String, String> map = new HashMap<>();
+        map.put("name", p.getName());
+        map.put("type", p.getType());
+        return map;
     }
 
     @Override
