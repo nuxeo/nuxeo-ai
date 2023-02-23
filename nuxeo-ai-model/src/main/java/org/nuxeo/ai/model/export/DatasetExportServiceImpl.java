@@ -53,8 +53,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
@@ -65,6 +65,7 @@ import org.joda.time.DateTime;
 import org.nuxeo.ai.bulk.ExportHelper;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
+import org.nuxeo.ai.sdk.objects.DataType;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.Statistic;
 import org.nuxeo.ai.utils.DateUtils;
@@ -109,6 +110,7 @@ import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.DefaultComponent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 
 /**
  * Exports data
@@ -131,6 +133,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     protected static final String BASE_QUERY =
             "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
                     + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
+
+    protected static final Set<String> VALID_DOC_TYPES = Sets.newHashSet(DataType.IMAGE.shorten(),
+            DataType.TEXT.shorten(), DataType.CATEGORY.shorten(), null);
 
     protected static final Properties TERM_PROPS;
 
@@ -186,10 +191,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
             int split, Map<String, Serializable> modelParams) {
-        List<String> inputNames = inputs.stream().map(PropertyType::getName).collect(Collectors.toList());
-        List<String> outputNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toList());
-        validateParams(nxql, inputNames, outputNames);
-
+        validate(nxql, inputs, outputs);
         if (split < 1 || split > 100) {
             throw new IllegalArgumentException("Dataset split value is a percentage between 1 and 100");
         }
@@ -199,8 +201,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         String notNullNXQL = notNullNxql(nxql, featuresWithType);
         String username = session.getPrincipal().getName();
-        List<Map<String, String>> inputAsParameter = inputs.stream().map(toMap()).collect(Collectors.toList());
-        List<Map<String, String>> outputAsParameter = outputs.stream().map(toMap()).collect(Collectors.toList());
+        List<Map<String, String>> inputAsParameter = inputs.stream().map(this::toMap).collect(Collectors.toList());
+        List<Map<String, String>> outputAsParameter = outputs.stream().map(this::toMap).collect(Collectors.toList());
         BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL).user(username)
                                                                                           .repository(
                                                                                                   session.getRepositoryName())
@@ -226,13 +228,32 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         return Framework.getService(BulkService.class).submit(bulkCommand);
     }
 
-    protected Function<PropertyType, Map<String, String>> toMap() {
-        return p -> {
-            Map<String, String> map = new HashMap<>();
-            map.put("name", p.getName());
-            map.put("type", p.getType());
-            return map;
-        };
+    protected void validate(String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs) {
+        if (StringUtils.isBlank(nxql) || inputs.isEmpty() || outputs.isEmpty()) {
+            throw new IllegalArgumentException("nxql and properties are required parameters");
+        }
+
+        if (!nxql.toUpperCase().contains("WHERE")) {
+            throw new IllegalArgumentException("You cannot use an unbounded nxql query, please add a WHERE clause.");
+        }
+
+        boolean valid = Stream.concat(inputs.stream(), outputs.stream())
+                              .allMatch(p -> VALID_DOC_TYPES.contains(p.getType()));
+        if (!valid) {
+            throw new IllegalArgumentException("Input and Output types must be an image, text, category or null");
+        }
+
+        boolean disjoint = Collections.disjoint(inputs, outputs);
+        if (!disjoint) {
+            throw new IllegalArgumentException("Input and Output properties must be disjoint");
+        }
+    }
+
+    protected Map<String, String> toMap(PropertyType p) {
+        Map<String, String> map = new HashMap<>();
+        map.put("name", p.getName());
+        map.put("type", p.getType());
+        return map;
     }
 
     @Override
@@ -383,10 +404,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     @Override
     public Collection<Statistic> getStatistics(CoreSession session, String nxql, Set<PropertyType> inputProperties,
             Set<PropertyType> outputProperties) {
-        Set<String> inputPropNames = inputProperties.stream().map(PropertyType::getName).collect(Collectors.toSet());
-        Set<String> outputPropNames = outputProperties.stream().map(PropertyType::getName).collect(Collectors.toSet());
-        validateParams(nxql, inputPropNames, outputPropNames);
-
+        validate(nxql, inputProperties, outputProperties);
         List<PropertyType> featuresList = inputProperties.stream()
                                                          .map(ExportHelper::addTypeIfNull)
                                                          .collect(Collectors.toList());
@@ -401,20 +419,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
         addCount(stats, qb);
         return stats;
-    }
-
-    /**
-     * Validate if the specified params are correct.
-     */
-    protected void validateParams(String nxql, Collection<String> inputProperties,
-            Collection<String> outputProperties) {
-        if (StringUtils.isBlank(nxql) || inputProperties == null || inputProperties.isEmpty()
-                || outputProperties == null || outputProperties.isEmpty()) {
-            throw new IllegalArgumentException("nxql and properties are required parameters");
-        }
-        if (!nxql.toUpperCase().contains("WHERE")) {
-            throw new IllegalArgumentException("You cannot use an unbounded nxql query, please add a WHERE clause.");
-        }
     }
 
     /**
