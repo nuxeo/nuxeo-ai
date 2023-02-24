@@ -20,15 +20,6 @@
   </extension-point>
 
   <extension-point name="configuration">
-    <!-- Deduplication Configuration by default -->
-    <deduplication name="dedup-default-config">
-      <xpath>file:content</xpath>
-      <filter id="dedup-default-filter">
-        <rule grant="true">
-          <type>File</type>
-        </rule>
-      </filter>
-    </deduplication>
 
     <documentation>
       Configure deduplication parameters
