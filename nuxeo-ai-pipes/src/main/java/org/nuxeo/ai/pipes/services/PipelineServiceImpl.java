@@ -85,6 +85,7 @@ public class PipelineServiceImpl extends DefaultComponent implements PipelineSer
                 original.merge(descriptor);
                 descriptor = original;
             }
+
             descriptor.validate();
             this.configs.put(descriptor.id, descriptor);
         } else if (TEXT_AP.equals(extensionPoint)) {
