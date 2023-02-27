@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>nuxeo-ai-addons</artifactId>
-    <version>2.7.13-SNAPSHOT</version>
+    <version>2.7.13</version>
   </parent>
   <artifactId>nuxeo-ai-aws-package</artifactId>
   <packaging>zip</packaging>
