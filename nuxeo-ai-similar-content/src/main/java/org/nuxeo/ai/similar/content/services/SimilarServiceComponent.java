@@ -229,6 +229,12 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         }
 
         TensorInstances instances = constructTensor(doc, xpath);
+        if (instances == null) {
+            log.warn("Cannot index Document {} with value at xpath {} = {}; resulting blob is null", doc.getId(), xpath,
+                    value);
+            return false;
+        }
+
         Boolean result = client.api(API.Dedup.INDEX).call(params, instances);
         if (Boolean.FALSE.equals(result)) {
             log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
@@ -361,6 +367,10 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
             Optional<PictureView> pv = getPictureView(doc);
             if (pv.isPresent()) {
                 blob = pv.get().getBlob();
+            }
+
+            if (blob == null) {
+                return null;
             }
         }
 
