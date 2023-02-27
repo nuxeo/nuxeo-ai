@@ -26,6 +26,8 @@ import static org.nuxeo.ecm.core.bulk.action.computation.AbstractBulkComputation
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.sdk.rest.exception.InvalidParametersException;
@@ -39,6 +41,8 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
+import org.nuxeo.ecm.platform.audit.api.AuditLogger;
+import org.nuxeo.ecm.platform.audit.api.LogEntry;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
@@ -75,23 +79,24 @@ public class IndexComputation extends AbstractComputation {
         BulkCommand command = service.getCommand(ir.getCommandId());
 
         TransactionHelper.runInTransaction(() -> {
-            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(command.getRepository(),
-                    command.getUsername())) {
+            try (CloseableCoreSession session = CoreInstance.openCoreSessionSystem(command.getRepository())) {
                 IdRef ref = new IdRef(ir.getDocId());
                 if (!session.exists(ref)) {
                     log.error("Cannot index document {}; provided document was removed", ir.getDocId());
                 }
 
                 DocumentModel document = session.getDocument(ref);
-                SimilarContentService scs = Framework.getService(SimilarContentService.class);
                 BulkStatus status = service.getStatus(ir.getCommandId());
                 BulkStatus delta = BulkStatus.deltaOf(ir.getCommandId());
                 if (status.getProcessingStartTime() == null) {
                     delta.setProcessingStartTime(Instant.now());
                 }
 
+                SimilarContentService scs = Framework.getService(SimilarContentService.class);
                 boolean success = scs.index(document, ir.getXpath());
+
                 reportStatus(ctx, status, delta, success);
+                storeAudit(ir, command.getUsername(), document);
             } catch (IOException | InvalidParametersException e) {
                 log.error("An error occurred during Insight API for document {}", ir.getDocId(), e);
                 throw new NuxeoException(e);
@@ -99,5 +104,24 @@ public class IndexComputation extends AbstractComputation {
         });
 
         ctx.askForCheckpoint();
+    }
+
+    protected static void storeAudit(IndexRecord ir, String username, DocumentModel document) {
+        AuditLogger audit = Framework.getService(AuditLogger.class);
+        if (audit != null) {
+            LogEntry logEntry = audit.newLogEntry();
+            logEntry.setCategory("AI");
+            logEntry.setEventId(INDEX_COMPUTATION_NAME);
+            logEntry.setComment("Document " + document.getId() + " indexed for similar content; xpath: " + ir.getXpath() + "; user " + username);
+            logEntry.setDocUUID(document.getId());
+            logEntry.setDocPath(document.getPathAsString());
+            logEntry.setPrincipalName(username);
+            logEntry.setRepositoryId(document.getRepositoryName());
+            logEntry.setEventDate(new Date());
+
+            audit.addLogEntries(Collections.singletonList(logEntry));
+        } else {
+            log.warn("Audit Logger is not available");
+        }
     }
 }
