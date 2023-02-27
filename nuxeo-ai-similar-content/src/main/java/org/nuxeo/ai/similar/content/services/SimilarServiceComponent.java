@@ -22,6 +22,9 @@ package org.nuxeo.ai.similar.content.services;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getConversionMode;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureView;
 import static org.nuxeo.ai.sdk.rest.Common.DISTANCE_PARAM;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
@@ -42,6 +45,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -72,6 +76,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.platform.picture.api.PictureView;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
@@ -223,6 +228,12 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         }
 
         TensorInstances instances = constructTensor(doc, xpath);
+        if (instances == null) {
+            log.warn("Cannot index Document {} with value at xpath {} = {}; resulting blob is null", doc.getId(), xpath,
+                    value);
+            return false;
+        }
+
         Boolean result = client.api(API.Dedup.INDEX).call(params, instances);
         if (Boolean.FALSE.equals(result)) {
             log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
@@ -349,9 +360,24 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Nullable
     protected TensorInstances constructTensor(DocumentModel doc, String xpath) {
-        Blob blob = (Blob) doc.getPropertyValue(xpath);
+        boolean strict = getConversionMode();
+        Blob blob = null;
+        if (strict && FILE_CONTENT.equals(xpath)) {
+            Optional<PictureView> pv = getPictureView(doc);
+            if (pv.isPresent()) {
+                blob = pv.get().getBlob();
+            }
+
+            if (blob == null) {
+                return null;
+            }
+        }
+
         if (blob == null) {
-            return null;
+            blob = (Blob) doc.getPropertyValue(xpath);
+            if (blob == null) {
+                return null;
+            }
         }
 
         Map<String, TensorInstances.Tensor> props = new HashMap<>();

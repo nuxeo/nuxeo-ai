@@ -274,6 +274,21 @@ public class PropertyUtils {
         return (ManagedBlob) pictureView.get().getBlob();
     }
 
+    public static Optional<PictureView> getPictureView(DocumentModel doc) {
+        MultiviewPicture managedConversion = doc.getAdapter(MultiviewPicture.class);
+        // Check if multiview picture adapter can be accessible
+        if (managedConversion == null) {
+            return Optional.empty();
+        }
+
+        String renditionName = Framework.getProperty(AI_BLOB_RENDITION, AI_BLOB_RENDITION_DEFAULT_VALUE);
+        return Arrays.stream(managedConversion.getViews())
+                     .filter(view -> renditionName.equals(view.getTitle()))
+                     .filter(view -> view.getWidth() >= 299 || view.getHeight() >= 299)
+                     .filter(view -> !view.getFilename().startsWith("empty_picture"))
+                     .min(Comparator.comparingInt(PictureView::getWidth));
+    }
+
     /**
      * Turn an array into a list.
      */
