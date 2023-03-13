@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ecm.restapi.server.jaxrs;
 
-import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
 import static org.nuxeo.ecm.core.api.CoreInstance.openCoreSessionSystem;
 
 import java.io.IOException;
@@ -36,6 +35,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +45,9 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.AbstractResource;
 import org.nuxeo.ecm.webengine.model.impl.ResourceTypeImpl;
-import org.nuxeo.elasticsearch.http.readonly.HttpClient;
+import org.nuxeo.elasticsearch.api.ESClient;
+import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
+import org.nuxeo.elasticsearch.client.ESRestClient;
 import org.nuxeo.elasticsearch.http.readonly.filter.DefaultSearchRequestFilter;
 import org.nuxeo.elasticsearch.http.readonly.filter.SearchRequestFilter;
 import org.nuxeo.elasticsearch.http.readonly.service.RequestFilterService;
@@ -56,6 +58,8 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
+import org.opensearch.client.Request;
+import org.opensearch.client.Response;
 
 /**
  * Wrapping Nuxeo search web object to be able to introspect index names
@@ -68,11 +72,7 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
 
     protected static final String TYPE = "ai.search";
 
-    protected static final String DEFAULT_ES_BASE_URL = "http://localhost:9200/";
-
     protected static final String AUDIT = "audit";
-
-    public static final String ALL = "_all";
 
     public static final String TEMPLATE_FILE_NAME = "/es-query-template.json.ftl";
 
@@ -159,24 +159,28 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
     protected String doSearchWithPayload(CoreSession session, String payload) {
         RequestFilterService requestFilterService = Framework.getService(RequestFilterService.class);
         try {
-            SearchRequestFilter req = requestFilterService.getRequestFilters(AUDIT);
-            if (req == null) {
-                req = new DefaultSearchRequestFilter();
+            SearchRequestFilter filter = requestFilterService.getRequestFilters(AUDIT);
+            if (filter == null) {
+                filter = new DefaultSearchRequestFilter();
             }
-            req.init(session, AUDIT, ALL, "", payload);
-            log.debug(req);
-            return HttpClient.get(getElasticsearchBaseUrl() + req.getUrl(), req.getPayload());
+            filter.init(session, AUDIT, "", payload);
+            log.debug(filter);
+
+            ESClient esClient = Framework.getService(ElasticSearchAdmin.class).getClient();
+            if (!(esClient instanceof ESRestClient)) {
+                throw new IllegalStateException("Passthrough works only with a RestClient");
+            }
+            ESRestClient client = (ESRestClient) esClient;
+            Request request = new Request("GET", filter.getUrl());
+            if (payload != null) {
+                request.setJsonEntity(payload);
+            }
+            Response response = client.performRequestWithTracing(request);
+            return EntityUtils.toString(response.getEntity());
         } catch (Exception e) {
             log.error("Error when trying to get Search Request Filter for index audit", e);
             return null;
         }
-    }
-
-    protected String getElasticsearchBaseUrl() {
-        if (esBaseUrl == null) {
-            esBaseUrl = Framework.getProperty(ES_BASE_URL_PROPERTY, DEFAULT_ES_BASE_URL);
-        }
-        return esBaseUrl;
     }
 
     protected Configuration initFreeMarker() {

@@ -114,7 +114,7 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
         } while (result.getNextToken() != null);
 
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("celebrityFaces", nativeCelebrityObjects.stream().map(CelebrityRecognition::getCelebrity));
+            jg.writeObjectField("celebrityFaces", nativeCelebrityObjects.stream().map(CelebrityRecognition::getCelebrity).collect(Collectors.toList()));
             jg.writeObjectField("unrecognizedFaces", Collections.emptyList());
         });
 

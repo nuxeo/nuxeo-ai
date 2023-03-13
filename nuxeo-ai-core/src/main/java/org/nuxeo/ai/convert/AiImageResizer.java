@@ -32,7 +32,6 @@ import org.nuxeo.ecm.platform.commandline.executor.api.CommandLineExecutorServic
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandNotAvailable;
 import org.nuxeo.ecm.platform.commandline.executor.api.ExecResult;
 import org.nuxeo.ecm.platform.picture.api.ImageInfo;
-import org.nuxeo.ecm.platform.picture.magick.MagickExecutor;
 import org.nuxeo.ecm.platform.picture.magick.utils.ImageIdentifier;
 import org.nuxeo.runtime.api.Framework;
 
@@ -42,7 +41,7 @@ import org.nuxeo.runtime.api.Framework;
  *
  * @since 2.2.0
  */
-public class AiImageResizer extends MagickExecutor {
+public class AiImageResizer {
 
     public static final String TARGET_WIDTH_PARAM = "targetWidth";
 

@@ -60,7 +60,6 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.nuxeo.ai.bulk.ExportHelper;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.model.analyzis.DatasetStatsService;
@@ -109,6 +108,7 @@ import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.DefaultComponent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.opensearch.search.aggregations.Aggregation;
 import com.google.common.collect.Sets;
 
 /**
@@ -168,7 +168,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
      * Make an Aggregate using AggregateFactory.
      */
     protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
-            Properties properties) {
+                                                                                            Properties properties) {
         AggregateDescriptor descriptor = new AggregateDescriptor();
         descriptor.setId(aggKey(field, type));
         descriptor.setDocumentField(field);

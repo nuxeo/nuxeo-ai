@@ -18,9 +18,9 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.blobTestImage;
