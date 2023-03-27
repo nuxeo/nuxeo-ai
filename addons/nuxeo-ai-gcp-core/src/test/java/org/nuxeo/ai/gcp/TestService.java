@@ -232,7 +232,8 @@ public class TestService {
                                     .stream()
                                     .map(tag -> tag.name)
                                     .collect(Collectors.toList());
-        assertThat(tags).contains("Sacré-Cœur");
+        // different version of GCP API return different names
+        assertThat(tags.contains("Sacre-Coeur") || tags.contains("Sacré-Coeur") || tags.contains("Square Louise Michel")).isTrue();
     }
 
     @Test

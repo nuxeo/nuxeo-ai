@@ -60,7 +60,11 @@ public class LabelSuggestion implements Serializable {
     }
 
     public void keepUniqueOnly() {
-        values = getValues().stream().filter(distinctByKey(AIMetadata.Label::getName)).collect(Collectors.toList());
+        values = getValues().stream()
+                            .filter(Objects::nonNull)
+                            .filter(l -> l.getName() != null)
+                            .filter(distinctByKey(AIMetadata.Label::getName))
+                            .collect(Collectors.toList());
     }
 
     public static <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
