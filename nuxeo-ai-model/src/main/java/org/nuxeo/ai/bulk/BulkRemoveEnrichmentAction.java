@@ -26,14 +26,15 @@ import static org.nuxeo.lib.stream.computation.AbstractComputation.OUTPUT_1;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.AIConstants.AUTO;
+import org.nuxeo.ai.AIConstants;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
@@ -89,29 +90,35 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
         protected void compute(CoreSession session, List<String> ids, Map<String, Serializable> properties) {
             DocMetadataService metadataService = Framework.getService(DocMetadataService.class);
             for (DocumentModel doc : loadDocuments(session, ids)) {
-                if (doc.hasFacet(ENRICHMENT_FACET)) {
-                    SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
-                    Set<String> removalProperties;
-                    if (modelId != null) {
-                        List<LabelSuggestion> suggestions = wrapper.getSuggestionsByModel(modelId);
-                        removalProperties = suggestions.stream()
-                                                       .map(LabelSuggestion::getProperty)
-                                                       .collect(Collectors.toSet());
-                    } else if (!xPaths.isEmpty()) {
-                        removalProperties = xPaths;
-                    } else {
-                        removalProperties = wrapper.getAutoProperties();
-                    }
-                    try {
-                        for (String xPath : removalProperties) {
-                            metadataService.resetAuto(doc, AUTO.CORRECTED, xPath, true);
-                            metadataService.resetAuto(doc, AUTO.FILLED, xPath, true);
-                            metadataService.removeSuggestionsForTargetProperty(doc, xPath);
+                if (!doc.hasFacet(ENRICHMENT_FACET)) {
+                    continue;
+                }
+
+                SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
+                Set<String> removalProperties;
+                if (modelId != null) {
+                    List<LabelSuggestion> suggestions = wrapper.getSuggestionsByModel(modelId);
+                    removalProperties = suggestions.stream()
+                                                   .map(LabelSuggestion::getProperty)
+                                                   .collect(Collectors.toSet());
+                } else if (!xPaths.isEmpty()) {
+                    removalProperties = xPaths;
+                } else {
+                    removalProperties = wrapper.getAutoProperties();
+                }
+
+                try {
+                    for (String xpath : removalProperties) {
+                        if (StringUtils.isEmpty(xpath)) {
+                            continue;
                         }
-                        session.saveDocument(doc);
-                    } catch (PropertyException e) {
-                        log.warn("Cannot update enrichment document: {}", doc.getId(), e);
+                        metadataService.resetAuto(doc, AIConstants.AUTO.CORRECTED, xpath, true);
+                        metadataService.resetAuto(doc, AIConstants.AUTO.FILLED, xpath, true);
+                        metadataService.removeSuggestionsForTargetProperty(doc, xpath);
                     }
+                    session.saveDocument(doc);
+                } catch (PropertyException e) {
+                    log.warn("Cannot update enrichment document: {}", doc.getId(), e);
                 }
             }
         }
@@ -123,15 +130,12 @@ public class BulkRemoveEnrichmentAction implements StreamProcessorTopology {
             if (value == null) {
                 return Collections.emptySet();
             }
+
             if (value instanceof List<?>) {
-                List<?> objects = (List<?>) value;
-                Set<String> values = new HashSet<>(objects.size());
-                for (Object object : objects) {
-                    if (object != null) {
-                        values.add(object.toString());
-                    }
-                }
-                return values;
+                return ((List<?>) value).stream()
+                                        .filter(Objects::nonNull)
+                                        .map(Object::toString)
+                                        .collect(Collectors.toSet());
             } else {
                 log.debug("Illegal parameter '{}'", value);
                 return Collections.emptySet();

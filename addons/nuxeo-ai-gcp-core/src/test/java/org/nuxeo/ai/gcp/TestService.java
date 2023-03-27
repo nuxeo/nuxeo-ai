@@ -21,6 +21,7 @@ package org.nuxeo.ai.gcp;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 
@@ -231,7 +232,8 @@ public class TestService {
                                     .stream()
                                     .map(tag -> tag.name)
                                     .collect(Collectors.toList());
-        assertThat(tags).contains("Sacré-Cœur");
+        // different version of GCP API return different names
+        assertTrue(tags.contains("Sacre-Coeur") || tags.contains("Sacré-Coeur"));
     }
 
     @Test
