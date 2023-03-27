@@ -339,13 +339,18 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
         if (doc.hasFacet(ENRICHMENT_FACET)) {
             SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(doc);
-            wrapper.getAutoFilled().stream().map(val -> val.get("xpath")).forEach(nameTypePair::remove);
-            wrapper.getAutoCorrected().stream().map(val -> val.get("xpath")).forEach(nameTypePair::remove);
+            Stream.concat(wrapper.getAutoFilled().stream(), wrapper.getAutoCorrected().stream())
+                  .map(val -> val.get("xpath"))
+                  .filter(Objects::nonNull)
+                  .forEach(nameTypePair::remove);
         }
 
         BlobTextFromDocument subDoc = null;
         if (!nameTypePair.isEmpty()) {
-            Set<String> outNames = outputs.stream().map(PropertyType::getName).collect(Collectors.toSet());
+            Set<String> outNames = outputs.stream()
+                                          .map(PropertyType::getName)
+                                          .filter(Objects::nonNull)
+                                          .collect(Collectors.toSet());
             Set<PropertyType> properties = nameTypePair.entrySet()
                                                        .stream()
                                                        .map(p -> new PropertyType(p.getKey(), p.getValue()))
