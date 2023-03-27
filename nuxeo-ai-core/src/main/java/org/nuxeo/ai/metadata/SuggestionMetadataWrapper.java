@@ -37,8 +37,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants.AUTO;
@@ -119,16 +121,19 @@ public class SuggestionMetadataWrapper {
 
                 suggestionsByModelId.put(modelId, byModel);
             }
-
         });
 
-        autoProperties.addAll(suggestionsByModelId.values()
-                                                  .stream()
-                                                  .flatMap(Collection::stream)
-                                                  .map(val -> val.property)
-                                                  .collect(Collectors.toSet()));
-        autoProperties.addAll(autoFilled.stream().map(val -> val.get("xpath")).collect(Collectors.toSet()));
-        autoProperties.addAll(autoCorrected.stream().map(val -> val.get("xpath")).collect(Collectors.toSet()));
+        suggestionsByModelId.values()
+                            .stream()
+                            .flatMap(Collection::stream)
+                            .map(val -> val.property)
+                            .filter(Objects::nonNull)
+                            .forEach(autoProperties::add);
+
+        Stream.concat(autoFilled.stream(), autoCorrected.stream())
+              .map(val -> val.get("xpath"))
+              .filter(Objects::nonNull)
+              .forEach(autoProperties::add);
     }
 
     public DocumentModel getDoc() {
