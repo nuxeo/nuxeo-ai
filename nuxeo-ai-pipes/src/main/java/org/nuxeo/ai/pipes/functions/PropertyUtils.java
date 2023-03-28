@@ -204,7 +204,7 @@ public class PropertyUtils {
         return getPropertyValue(doc, propertyName) != null;
     }
 
-    public static boolean getConversionMode() {
+    public static boolean isStrictModeEnabled() {
         return Boolean.parseBoolean(Framework.getProperty(AI_CONVERSION_STRICT_MODE, "false"));
     }
 

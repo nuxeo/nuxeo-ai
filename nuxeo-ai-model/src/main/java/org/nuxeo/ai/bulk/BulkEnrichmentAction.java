@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getConversionMode;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ecm.core.bulk.BulkServiceImpl.STATUS_STREAM;
 import static org.nuxeo.lib.stream.computation.AbstractComputation.INPUT_1;
@@ -82,7 +81,7 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
         @Override
         protected void compute(CoreSession coreSession, List<String> ids, Map<String, Serializable> options) {
             ModelServingService modelServingService = Framework.getService(ModelServingService.class);
-            boolean conversionMode = getConversionMode();
+            boolean conversionMode = PropertyUtils.isStrictModeEnabled();
             for (DocumentModel doc : loadDocuments(coreSession, ids)) {
                 Set<ModelProperty> inputs = modelServingService.getFlatInputs(doc);
                 if (!inputs.isEmpty()) {
