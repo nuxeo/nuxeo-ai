@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>nuxeo-ai-addons</artifactId>
-    <version>3.5.9</version>
+    <version>3.5.10-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-image-quality-core</artifactId>
   <name>Nuxeo AI image quality core</name>
