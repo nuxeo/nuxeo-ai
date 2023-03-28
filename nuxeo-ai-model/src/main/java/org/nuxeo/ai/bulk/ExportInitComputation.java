@@ -364,7 +364,7 @@ public class ExportInitComputation extends AbstractBulkComputation {
                                                        .map(p -> new PropertyType(p.getKey(), p.getValue()))
                                                        .collect(Collectors.toSet());
             boolean outputPresent = false;
-            subDoc = PropertyUtils.docSerialize(doc, properties, getConversionMode());
+            subDoc = PropertyUtils.docSerialize(doc, properties, isStrictModeEnabled());
             for (PropertyType pType : properties) {
                 Serializable propVal = getPropertyValue(doc, pType.getName());
                 if ((propVal instanceof ManagedBlob) && IMAGE_TYPE.equals(pType.getType())) {
@@ -423,9 +423,9 @@ public class ExportInitComputation extends AbstractBulkComputation {
         return PARENT_PATH.toString();
     }
 
-    protected boolean getConversionMode() {
+    protected boolean isStrictModeEnabled() {
         if (strictMode == null) {
-            strictMode = PropertyUtils.getConversionMode();
+            strictMode = PropertyUtils.isStrictModeEnabled();
         }
 
         return strictMode;
