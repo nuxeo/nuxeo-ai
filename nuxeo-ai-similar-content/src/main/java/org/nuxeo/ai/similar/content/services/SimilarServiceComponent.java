@@ -23,7 +23,7 @@ package org.nuxeo.ai.similar.content.services;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.getConversionMode;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.isStrictModeEnabled;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureView;
 import static org.nuxeo.ai.sdk.rest.Common.DISTANCE_PARAM;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
@@ -360,7 +360,7 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     @Nullable
     protected TensorInstances constructTensor(DocumentModel doc, String xpath) {
-        boolean strict = getConversionMode();
+        boolean strict = isStrictModeEnabled();
         Blob blob = null;
         if (strict && FILE_CONTENT.equals(xpath)) {
             Optional<PictureView> pv = getPictureView(doc);
