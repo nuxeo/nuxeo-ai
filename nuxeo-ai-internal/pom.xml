@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>3.5.10-SNAPSHOT</version>
+    <version>3.5.10</version>
   </parent>
   <artifactId>nuxeo-ai-internal</artifactId>
   <name>AI Core Internal</name>
