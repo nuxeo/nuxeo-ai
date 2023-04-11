@@ -239,11 +239,16 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         if (Boolean.FALSE.equals(result)) {
             log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
             return false;
-        } else {
+        }
+
+        if (!doc.isImmutable()) {
             addDeduplicationFacet(session, doc, xpath);
             fireEvent(session, doc);
             return true;
         }
+
+        log.warn("Document {} is immutable, cannot add facet", doc.getId());
+        return false;
     }
 
     @Override
