@@ -20,6 +20,7 @@ package org.nuxeo.ai.functions;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.CoreInstance;

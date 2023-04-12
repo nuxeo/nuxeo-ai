@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import javax.inject.Inject;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,10 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.nuxeo.ai.AIConstants;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.auto.AutoService;
@@ -61,11 +63,12 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AuditFeature.class, RepositoryElasticSearchFeature.class })
-@Deploy({ "org.nuxeo.ai.ai-core" })
+@Features({EnrichmentTestFeature.class, AuditFeature.class, RepositoryElasticSearchFeature.class})
+@Deploy({"org.nuxeo.ai.ai-core"})
 public class TestAutoServicesAudit {
 
     @Inject
@@ -102,9 +105,11 @@ public class TestAutoServicesAudit {
         txFeature.nextTransaction();
 
         for (String schema : testDoc.getSchemas()) {
-            for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
+            for (Map.Entry<String, Object> entry : testDoc.getProperties(schema)
+                                                          .entrySet()) {
                 System.out.println(schema + " prop " + entry.getKey() + " is list " + testDoc.getPropertyObject(schema,
-                        entry.getKey()).isList());
+                                                                                                     entry.getKey())
+                                                                                             .isList());
             }
         }
 
@@ -125,7 +130,8 @@ public class TestAutoServicesAudit {
 
         AuditQueryBuilder qb = new AuditQueryBuilder();
         Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
-        qb.predicate(predicate).and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.FILLED.eventName()));
+        qb.predicate(predicate)
+          .and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.FILLED.eventName()));
         List<LogEntry> logEntries = auditReader.queryLogs(qb);
         Set<LogEntry> perModelAudit = logEntries.stream()
                                                 .filter(entry -> entry.getExtendedInfos()
@@ -159,7 +165,8 @@ public class TestAutoServicesAudit {
         assertEquals("cat", testDoc.getPropertyValue("dc:format"));
         List<AutoHistory> history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(1, history.size());
-        assertEquals(formatText, history.get(0).getPreviousValue());
+        assertEquals(formatText, history.get(0)
+                                        .getPreviousValue());
 
         // Manipulate the test data so the suggestion are removed
         testDoc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, null);
@@ -172,12 +179,14 @@ public class TestAutoServicesAudit {
         assertEquals("The property must be reset to old value.", formatText, testDoc.getPropertyValue("dc:format"));
         assertFalse("Property is no longer AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
         history = docMetadataService.getAutoHistory(testDoc);
-        assertTrue(wrapper.getAutoProperties().isEmpty());
+        assertTrue(wrapper.getAutoProperties()
+                          .isEmpty());
         assertTrue(history.isEmpty());
 
         AuditQueryBuilder qb = new AuditQueryBuilder();
         Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
-        qb.predicate(predicate).and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.CORRECTED.eventName()));
+        qb.predicate(predicate)
+          .and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.CORRECTED.eventName()));
         List<LogEntry> logEntries = auditReader.queryLogs(qb);
         Set<LogEntry> perModelAudit = logEntries.stream()
                                                 .filter(entry -> entry.getExtendedInfos()

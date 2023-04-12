@@ -18,35 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.metadata.AIMetadata;
-import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
-import org.nuxeo.ai.metadata.LabelSuggestion;
-import org.nuxeo.ai.metadata.TagSuggestion;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.services.AIComponent;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.Blobs;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.transientstore.api.TransientStore;
-import org.nuxeo.runtime.api.Framework;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_INPUT_DOCPROP_PROPERTY;
@@ -62,6 +33,37 @@ import static org.nuxeo.ai.AIConstants.SUGGESTION_TIMESTAMP;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getDigests;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getPropertyNames;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.AbstractMetaDataBuilder;
+import org.nuxeo.ai.metadata.LabelSuggestion;
+import org.nuxeo.ai.metadata.TagSuggestion;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
+import org.nuxeo.runtime.api.Framework;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A normalized view of the result of an Enrichment Service. This class is designed to be serialized as JSON.
@@ -116,14 +118,14 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("labelSuggestions", labelSuggestions)
-                .append("tagSuggestions", tagSuggestions)
-                .append("created", created)
-                .append("creator", creator)
-                .append("modelName", modelName)
-                .append("context", context)
-                .append("kind", kind)
-                .append("rawKey", rawKey)
-                .toString();
+                                        .append("tagSuggestions", tagSuggestions)
+                                        .append("created", created)
+                                        .append("creator", creator)
+                                        .append("modelName", modelName)
+                                        .append("context", context)
+                                        .append("kind", kind)
+                                        .append("rawKey", rawKey)
+                                        .toString();
     }
 
     @Override
@@ -143,26 +145,28 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
      */
     public Map<String, Object> toMap() {
         List<Map<String, Object>> suggestions = getLabels().stream()
-                .filter(Objects::nonNull)
-                .filter(s -> s.getValues() != null && !s.getValues().isEmpty())
-                .filter(s -> StringUtils.isNotBlank(s.getProperty()))
-                .map(suggestion -> {
-                    Map<String, Object> entry = new HashMap<>();
-                    entry.put(SUGGESTION_PROPERTY, suggestion.getProperty());
-                    List<Map<String, Object>> values = suggestion.getValues().stream()
-                            .filter(Objects::nonNull)
-                            .filter(value -> StringUtils.isNotBlank(value.getName()))
-                            .map(value -> {
-                                Map<String, Object> val = new HashMap<>();
-                                val.put(SUGGESTION_LABEL, value.getName());
-                                val.put(SUGGESTION_CONFIDENCE, value.getConfidence());
-                                val.put(SUGGESTION_TIMESTAMP, value.getTimestamp());
-                                return val;
-                            })
-                            .collect(Collectors.toList());
-                    entry.put(SUGGESTION_LABELS, values);
-                    return entry;
-                }).collect(Collectors.toList());
+                                                           .filter(Objects::nonNull)
+                                                           .filter(s -> s.getValues() != null && !s.getValues()
+                                                                                                   .isEmpty())
+                                                           .map(suggestion -> {
+                                                               Map<String, Object> entry = new HashMap<>();
+                                                               entry.put(SUGGESTION_PROPERTY, suggestion.getProperty());
+                                                               List<Map<String, Object>> values = suggestion.getValues()
+                                                                                                            .stream()
+                                                                                                            .filter(Objects::nonNull)
+                                                                                                            .filter(value -> StringUtils.isNotBlank(value.getName()))
+                                                                                                            .map(value -> {
+                                                                                                                Map<String, Object> val = new HashMap<>();
+                                                                                                                val.put(SUGGESTION_LABEL, value.getName());
+                                                                                                                val.put(SUGGESTION_CONFIDENCE, value.getConfidence());
+                                                                                                                val.put(SUGGESTION_TIMESTAMP, value.getTimestamp());
+                                                                                                                return val;
+                                                                                                            })
+                                                                                                            .collect(Collectors.toList());
+                                                               entry.put(SUGGESTION_LABELS, values);
+                                                               return entry;
+                                                           })
+                                                           .collect(Collectors.toList());
 
         Map<String, Object> entry = new HashMap<>();
         if (!suggestions.isEmpty()) {
@@ -183,7 +187,8 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
             }
 
             EnrichmentMetadata clone = (EnrichmentMetadata) clone();
-            clone.getLabels().forEach(LabelSuggestion::keepUniqueOnly);
+            clone.getLabels()
+                 .forEach(LabelSuggestion::keepUniqueOnly);
             Blob metadataBlob = Blobs.createJSONBlob(MAPPER.writeValueAsString(clone));
             metadataBlob.setFilename(NORMALIZED_PROPERTY + ".json");
             entry.put(NORMALIZED_PROPERTY, metadataBlob);
@@ -229,20 +234,27 @@ public class EnrichmentMetadata extends AIMetadata implements Cloneable {
             super(created, kind, modelName, context);
         }
 
-        public EnrichmentMetadata.Builder withLabels(List<LabelSuggestion> labelSuggestions) {
-            this.labelSuggestions = labelSuggestions;
+        public EnrichmentMetadata.Builder withLabels(List<LabelSuggestion> labels) {
+            this.labelSuggestions = labels.stream()
+                                          .filter(Objects::nonNull)
+                                          .filter(l -> l.getValues() != null && !l.getValues()
+                                                                                  .isEmpty())
+                                          .collect(Collectors.toList());
             return this;
         }
 
-        public EnrichmentMetadata.Builder withTags(List<TagSuggestion> tagSuggestions) {
-            this.tagSuggestions = tagSuggestions;
+        public EnrichmentMetadata.Builder withTags(List<TagSuggestion> tags) {
+            this.tagSuggestions = tags.stream()
+                                      .filter(Objects::nonNull)
+                                      .filter(t -> t.getValues() != null && !t.getValues()
+                                                                              .isEmpty())
+                                      .collect(Collectors.toList());
             return this;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        protected EnrichmentMetadata build(AbstractMetaDataBuilder abstractMetaDataBuilder) {
-
+        protected EnrichmentMetadata build(AbstractMetaDataBuilder builder) {
             if (labelSuggestions == null) {
                 labelSuggestions = emptyList();
             }
