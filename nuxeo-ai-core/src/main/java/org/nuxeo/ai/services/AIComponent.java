@@ -21,14 +21,6 @@ package org.nuxeo.ai.services;
 import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.AIConstants.AI_KIND_DIRECTORY;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.bulk.RecordWriter;
 import org.nuxeo.ai.bulk.RecordWriterDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -46,6 +38,16 @@ import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides one or more services using AI
@@ -98,15 +100,18 @@ public class AIComponent extends DefaultComponent {
         super.start(context);
         metrics.register();
         getKindResolver();
-        enrichmentConfigs.values().forEach(descriptor -> {
-            if (!enrichmentProviders.containsKey(descriptor.name)) {
-                initialize(descriptor);
-            }
-        });
+        enrichmentConfigs.values()
+                         .forEach(descriptor -> {
+                             if (!enrichmentProviders.containsKey(descriptor.name)) {
+                                 initialize(descriptor);
+                             }
+                         });
         recordWriterDescriptors.forEach(
-                descriptor -> descriptor.getNames().forEach(n -> writers.put(n, descriptor.getWriter(n))));
+                descriptor -> descriptor.getNames()
+                                        .forEach(n -> writers.put(n, descriptor.getWriter(n))));
         if (log.isDebugEnabled()) {
-            writers.entrySet().forEach(e -> log.debug("Adding a record writer: " + e.toString()));
+            writers.entrySet()
+                   .forEach(e -> log.debug("Adding a record writer: " + e.toString()));
             log.debug("AIComponent has started.");
         }
     }
@@ -146,14 +151,15 @@ public class AIComponent extends DefaultComponent {
 
             if (enrichmentProvider instanceof EnrichmentSupport) {
                 List<String> mimeTypes = new ArrayList<>();
-                descriptor.getMimeTypes().forEach(mimeType -> {
-                    if (mimeType.normalized) {
-                        MimetypeEntry entry = mimeRegistry.getMimetypeEntryByMimeType(mimeType.name);
-                        mimeTypes.addAll(entry.getMimetypes());
-                    } else {
-                        mimeTypes.add(mimeType.name);
-                    }
-                });
+                descriptor.getMimeTypes()
+                          .forEach(mimeType -> {
+                              if (mimeType.normalized) {
+                                  MimetypeEntry entry = mimeRegistry.getMimetypeEntryByMimeType(mimeType.name);
+                                  mimeTypes.addAll(entry.getMimetypes());
+                              } else {
+                                  mimeTypes.add(mimeType.name);
+                              }
+                          });
                 ((EnrichmentSupport) enrichmentProvider).addMimeTypes(mimeTypes);
             }
             addEnrichmentProvider(descriptor.name, enrichmentProvider);
@@ -205,7 +211,8 @@ public class AIComponent extends DefaultComponent {
     public TransientStore getTransientStoreForEnrichmentProvider(String providerName) {
         EnrichmentDescriptor descriptor = enrichmentConfigs.get(providerName);
         if (descriptor != null) {
-            return Framework.getService(TransientStoreService.class).getStore(descriptor.getTransientStoreName());
+            return Framework.getService(TransientStoreService.class)
+                            .getStore(descriptor.getTransientStoreName());
         }
         throw new IllegalArgumentException("Unknown enrichment provider " + providerName);
     }
