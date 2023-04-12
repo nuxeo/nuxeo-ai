@@ -18,8 +18,11 @@
  */
 package org.nuxeo.ai.functions;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
+
 import org.apache.commons.lang3.StringUtils;
+
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentUtils;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -41,13 +44,19 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
             TagService tagService = Framework.getService(TagService.class);
             metadata.getLabels()
                     .stream()
-                    .flatMap(label -> label.getValues().stream())
+                    .filter(Objects::nonNull)
+                    .flatMap(label -> label.getValues()
+                                           .stream())
+                    .filter(Objects::nonNull)
                     .map(this::toTag)
                     .filter(StringUtils::isNotBlank)
                     .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
             metadata.getTags()
                     .stream()
-                    .flatMap(tag -> EnrichmentUtils.getTagLabels(tag.getValues()).stream())
+                    .filter(Objects::nonNull)
+                    .flatMap(tag -> EnrichmentUtils.getTagLabels(tag.getValues())
+                                                   .stream())
+                    .filter(Objects::nonNull)
                     .map(this::toTag)
                     .filter(StringUtils::isNotBlank)
                     .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
@@ -55,10 +64,12 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
     }
 
     protected String toTag(AIMetadata.Label label) {
-        return ALLOWED_PATTERN.matcher(label.getName()).replaceAll("");
+        return ALLOWED_PATTERN.matcher(label.getName())
+                              .replaceAll("");
     }
 
     protected String toTag(String tag) {
-        return ALLOWED_PATTERN.matcher(tag).replaceAll("");
+        return ALLOWED_PATTERN.matcher(tag)
+                              .replaceAll("");
     }
 }

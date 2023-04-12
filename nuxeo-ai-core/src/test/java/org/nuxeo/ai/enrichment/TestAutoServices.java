@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import javax.inject.Inject;
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,9 +38,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.auto.AutoPropertiesOperation;
 import org.nuxeo.ai.auto.AutoService;
@@ -62,8 +64,8 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class })
-@Deploy({ "org.nuxeo.ai.ai-core" })
+@Features({EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class})
+@Deploy({"org.nuxeo.ai.ai-core"})
 public class TestAutoServices {
 
     @Inject
@@ -105,7 +107,8 @@ public class TestAutoServices {
         @SuppressWarnings("unchecked")
         List<Map<String, String>> property = (List<Map<String, String>>) testDoc.getProperty(ENRICHMENT_SCHEMA_NAME,
                 AUTO.FILLED.lowerName());
-        assertThat(property).isNotEmpty().hasSize(1);
+        assertThat(property).isNotEmpty()
+                            .hasSize(1);
         Map<String, String> pred = property.get(0);
         assertThat(pred.get("xpath")).isEqualTo("dc:title");
     }
@@ -148,9 +151,11 @@ public class TestAutoServices {
         txFeature.nextTransaction();
 
         for (String schema : testDoc.getSchemas()) {
-            for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
+            for (Map.Entry<String, Object> entry : testDoc.getProperties(schema)
+                                                          .entrySet()) {
                 System.out.println(schema + " prop " + entry.getKey() + " is list " + testDoc.getPropertyObject(schema,
-                        entry.getKey()).isList());
+                                                                                                     entry.getKey())
+                                                                                             .isList());
             }
         }
 
@@ -160,7 +165,8 @@ public class TestAutoServices {
         txFeature.nextTransaction();
 
         SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertTrue(wrapper.getModels().contains("stest"));
+        assertTrue(wrapper.getModels()
+                          .contains("stest"));
         assertTrue("dc:title must be auto filled.", wrapper.isAutoFilled("dc:title"));
         assertTrue("dc:format must be auto filled.", wrapper.isAutoFilled("dc:format"));
         assertTrue("complexTest:testList must be auto filled.", wrapper.isAutoFilled("complexTest:testList"));
@@ -202,8 +208,10 @@ public class TestAutoServices {
         wrapper = new SuggestionMetadataWrapper(testDoc);
         assertFalse("dc:title must no longer by autofilled.", wrapper.isAutoFilled("dc:title"));
         assertTrue("dc:format must be AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
-        assertTrue(wrapper.getSuggestionsByProperty("dc:title").isEmpty());
-        assertFalse(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(wrapper.getSuggestionsByProperty("dc:title")
+                          .isEmpty());
+        assertFalse(wrapper.getSuggestionsByProperty("dc:format")
+                           .isEmpty());
         assertTrue(wrapper.hasHumanValue("dc:title"));
         assertFalse(wrapper.hasHumanValue("dc:format"));
 
@@ -212,7 +220,8 @@ public class TestAutoServices {
         txFeature.nextTransaction();
         wrapper = new SuggestionMetadataWrapper(testDoc);
         assertFalse("dc:format must no longer by AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
-        assertTrue(wrapper.getSuggestionsByProperty("dc:format").isEmpty());
+        assertTrue(wrapper.getSuggestionsByProperty("dc:format")
+                          .isEmpty());
         assertTrue(wrapper.hasHumanValue("dc:format"));
     }
 
@@ -241,7 +250,8 @@ public class TestAutoServices {
         assertEquals("cat", testDoc.getPropertyValue("dc:format"));
         List<AutoHistory> history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(1, history.size());
-        assertEquals(formatText, history.get(0).getPreviousValue());
+        assertEquals(formatText, history.get(0)
+                                        .getPreviousValue());
 
         // Manipulate the test data so the suggestion are removed
         testDoc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, null);
@@ -254,7 +264,8 @@ public class TestAutoServices {
         assertEquals("The property must be reset to old value.", formatText, testDoc.getPropertyValue("dc:format"));
         assertFalse("Property is no longer AutoCorrected.", wrapper.isAutoCorrected("dc:format"));
         history = docMetadataService.getAutoHistory(testDoc);
-        assertTrue(wrapper.getAutoProperties().isEmpty());
+        assertTrue(wrapper.getAutoProperties()
+                          .isEmpty());
         assertTrue(history.isEmpty());
     }
 
@@ -275,7 +286,8 @@ public class TestAutoServices {
 
         Blob histBlob = (Blob) testDoc.getProperty(ENRICHMENT_SCHEMA_NAME, AUTO.HISTORY.lowerName());
         assertNotNull(histBlob);
-        assertThat(histBlob.getFilename()).isNotEmpty().endsWith(".json");
+        assertThat(histBlob.getFilename()).isNotEmpty()
+                                          .endsWith(".json");
 
         history = docMetadataService.getAutoHistory(testDoc);
         assertEquals(1, history.size());
@@ -329,9 +341,17 @@ public class TestAutoServices {
         // We have updated dc:title and dc:format twice but we should have only the 2 latest entries in the history.
         assertEquals(2, history.size());
         assertEquals("NOT_OLD",
-                history.stream().filter(h -> "dc:title".equals(h.getProperty())).findFirst().get().getPreviousValue());
+                history.stream()
+                       .filter(h -> "dc:title".equals(h.getProperty()))
+                       .findFirst()
+                       .get()
+                       .getPreviousValue());
         assertEquals("OLDISH",
-                history.stream().filter(h -> "dc:format".equals(h.getProperty())).findFirst().get().getPreviousValue());
+                history.stream()
+                       .filter(h -> "dc:format".equals(h.getProperty()))
+                       .findFirst()
+                       .get()
+                       .getPreviousValue());
 
     }
 
@@ -379,7 +399,7 @@ public class TestAutoServices {
         wrapper = new SuggestionMetadataWrapper(testDoc);
         assertFalse("Must allow empty strings[]", wrapper.hasHumanValue("dc:subjects"));
 
-        testDoc.setPropertyValue("dc:subjects", new String[] { "sciences", "art/cinema" });
+        testDoc.setPropertyValue("dc:subjects", new String[]{"sciences", "art/cinema"});
         wrapper = new SuggestionMetadataWrapper(testDoc);
         assertTrue(wrapper.hasHumanValue("dc:subjects"));
 
