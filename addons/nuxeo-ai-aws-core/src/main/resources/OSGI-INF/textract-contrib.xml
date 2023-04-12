@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.textract.contrib">
+
+    <extension point="processor" target="org.nuxeo.ai.textract.TextractService">
+        <textract id="awsTextLabels" serviceName="aws.documentText"
+                  class="org.nuxeo.ai.textract.DefaultTextractProcessor">
+            <option name="minConfidence">65</option>
+        </textract>
+        <textract id="awsTextAnalyzeLabels" serviceName="aws.documentAnalyze"
+                  class="org.nuxeo.ai.textract.DefaultTextractProcessor">
+            <option name="minConfidence">65</option>
+        </textract>
+    </extension>
+
+</component>
