@@ -18,7 +18,7 @@
                          logConfig="bulk"
                          class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
           <option name="source">insight.${nuxeo.enrichment.source.stream}</option>
-          <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+          <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
         </streamProcessor>
     </extension>
 </#if>

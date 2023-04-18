@@ -151,6 +151,7 @@ public class TFRuntimeModel extends AbstractRuntimeModel implements EnrichmentPr
             return null;
         } finally {
             responseTime.stop();
+            responseTime.close();
         }
     }
 
