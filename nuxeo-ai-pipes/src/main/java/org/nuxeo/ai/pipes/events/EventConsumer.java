@@ -21,11 +21,12 @@ package org.nuxeo.ai.pipes.events;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.functions.MetricsProducer;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.EventListener;
+import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.runtime.metrics.NuxeoMetricSet;
 
 /**
@@ -33,7 +34,7 @@ import org.nuxeo.runtime.metrics.NuxeoMetricSet;
  */
 public class EventConsumer<R> implements EventListener, MetricsProducer {
 
-    private static final Log log = LogFactory.getLog(EventConsumer.class);
+    private static final Logger log = LogManager.getLogger(EventConsumer.class);
 
     private final Function<Event, Collection<R>> function;
 
@@ -51,10 +52,22 @@ public class EventConsumer<R> implements EventListener, MetricsProducer {
     @Override
     public void handleEvent(Event event) {
         handled++;
+        String id;
+        if (event instanceof DocumentEventContext) {
+            id = ((DocumentEventContext) event).getSourceDocument().getId();
+        } else {
+            id = null;
+        }
+
         Collection<R> applied = function.apply(event);
         if (applied != null && !applied.isEmpty()) {
             applied.forEach(i -> {
-                consumer.accept(i);
+                if (i == null) {
+                    log.error("Null value returned from function for event {}; document {}", event.getName(), id);
+                } else {
+                    consumer.accept(i);
+                }
+
                 consumed++;
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Consumed event %s", event.getName()));

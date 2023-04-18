@@ -40,6 +40,7 @@
     <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
       <streamProcessor name="sightengineDefaultProcessor" defaultConcurrency="1" defaultPartitions="4"
                        class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+        <policy name="default" maxRetries="3" delay="200ms" maxDelay="2s" continueOnFailure="true" />
         <!-- The input stream to process -->
         <option name="source">ai/images</option>
         <!-- The output stream to write out enrichment metadata -->

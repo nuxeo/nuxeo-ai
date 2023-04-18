@@ -101,6 +101,18 @@
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
   </extension>
+
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="textKeyphraseProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     logConfig="${nuxeo.ai.stream.config.name}"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
+      <option name="source">text</option>
+      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="enrichmentProviderName">aws.textKeyphrase</option>
+      <option name="cache">${nuxeo.enrichment.aws.cache}</option>
+    </streamProcessor>
+  </extension>
 </#if>
 
 <#if "${nuxeo.enrichment.aws.document.text}" == "true">
@@ -210,6 +222,7 @@
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="videoTranscribeProcessor" defaultConcurrency="1" defaultPartitions="4"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
       <option name="sink">${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.transcribe</option>

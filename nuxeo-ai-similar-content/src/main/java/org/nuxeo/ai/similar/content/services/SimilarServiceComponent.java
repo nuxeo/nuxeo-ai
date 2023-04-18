@@ -23,8 +23,8 @@ package org.nuxeo.ai.similar.content.services;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
-import static org.nuxeo.ai.pipes.functions.PropertyUtils.isStrictModeEnabled;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.getPictureView;
+import static org.nuxeo.ai.pipes.functions.PropertyUtils.isStrictModeEnabled;
 import static org.nuxeo.ai.sdk.rest.Common.DISTANCE_PARAM;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
@@ -238,11 +238,16 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         if (Boolean.FALSE.equals(result)) {
             log.error("Couldn't trigger dedup index - [docId={}, xpath={}]", doc.getId(), xpath);
             return false;
-        } else {
+        }
+
+        if (!doc.isImmutable()) {
             addDeduplicationFacet(session, doc, xpath);
             fireEvent(session, doc);
             return true;
         }
+
+        log.warn("Document {} is immutable, cannot add facet", doc.getId());
+        return false;
     }
 
     @Override
