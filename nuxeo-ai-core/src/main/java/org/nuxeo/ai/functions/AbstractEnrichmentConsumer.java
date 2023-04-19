@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.functions;
 
-import static java.util.Optional.empty;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
 import java.util.Optional;
@@ -39,6 +38,7 @@ public abstract class AbstractEnrichmentConsumer
         if (metadata != null) {
             this.accept(metadata);
         }
-        return empty();
+
+        return Optional.of(record);
     }
 }

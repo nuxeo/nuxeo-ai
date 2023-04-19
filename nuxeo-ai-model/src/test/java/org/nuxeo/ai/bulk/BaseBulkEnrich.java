@@ -30,6 +30,8 @@ public class BaseBulkEnrich {
 
     public static final int NUM_OF_DOCS = 100;
 
+    public static final int NUM_OF_FAIL_DOCS = 10;
+
     @Inject
     private CoreSession session;
 
@@ -68,6 +70,12 @@ public class BaseBulkEnrich {
             session.createDocument(doc);
         }
 
+        // Create faulty documents with no fields
+        for (int i = 0; i < NUM_OF_FAIL_DOCS; ++i) {
+            DocumentModel doc = session.createDocumentModel(test.getPathAsString(), "faulty" + i, "File");
+            session.createDocument(doc);
+        }
+
         txFeature.nextTransaction();
         return testRoot;
     }
@@ -77,7 +85,7 @@ public class BaseBulkEnrich {
         assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(60)));
         BulkStatus status = bulkService.getStatus(command.getId());
         assertEquals(COMPLETED, status.getState());
-        assertEquals(NUM_OF_DOCS, status.getProcessed());
+        assertEquals(NUM_OF_DOCS + NUM_OF_FAIL_DOCS, status.getProcessed());
     }
 
     protected List<DocumentModel> getSomeDocuments(String nxql) {
