@@ -45,6 +45,7 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
             if (doc != null) {
                 try {
                     if (!doc.isImmutable()) {
+                        log.debug("Saving enrichment for document {}.", doc.getId());
                         session.saveDocument(doc);
                     } else {
                         log.error("Attempt to write into an Immutable Document Model id: {}, AI Model name {}",

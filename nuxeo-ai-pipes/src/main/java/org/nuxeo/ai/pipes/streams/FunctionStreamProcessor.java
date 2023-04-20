@@ -147,6 +147,7 @@ public class FunctionStreamProcessor {
         protected void writeToStreams(ComputationContext context, Record record) {
             if (record != null && !metadata.outputStreams().isEmpty()) {
                 metrics.produced();
+                log.debug("Writing record {} to streams {}.", record, metadata.outputStreams());
                 metadata.outputStreams().forEach(o -> context.produceRecord(o, record));
             }
         }

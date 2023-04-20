@@ -64,6 +64,7 @@ public class EventConsumer<R> implements EventListener, MetricsProducer {
                 if (i == null) {
                     log.error("Null value returned from function for event {}; document {}", event.getName(), id);
                 } else {
+                    log.debug("Consuming event {} for document {}", event.getName(), id);
                     consumer.accept(i);
                 }
 

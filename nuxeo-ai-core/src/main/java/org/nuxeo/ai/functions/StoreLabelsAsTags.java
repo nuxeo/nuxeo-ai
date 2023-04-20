@@ -49,6 +49,7 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
 
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
             TagService tagService = Framework.getService(TagService.class);
+            log.debug("Tagging document {} with metadata: {}", metadata.context.documentRef, metadata);
             if (metadata.getLabels() != null) {
                 metadata.getLabels()
                         .stream()
@@ -59,6 +60,8 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
                         .map(this::toTag)
                         .filter(StringUtils::isNotBlank)
                         .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
+            } else {
+                log.debug("No labels found in metadata: {}", metadata);
             }
 
             if (metadata.getTags() != null) {
@@ -70,6 +73,8 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
                         .map(this::toTag)
                         .filter(StringUtils::isNotBlank)
                         .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
+            } else {
+                log.debug("No tags found in metadata: {}", metadata);
             }
         }));
     }

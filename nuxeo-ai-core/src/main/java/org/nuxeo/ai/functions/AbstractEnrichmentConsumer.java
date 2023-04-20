@@ -22,6 +22,8 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.streams.FunctionStreamProcessorTopology;
 import org.nuxeo.lib.stream.computation.Record;
@@ -32,10 +34,13 @@ import org.nuxeo.lib.stream.computation.Record;
 public abstract class AbstractEnrichmentConsumer
         implements FunctionStreamProcessorTopology, Consumer<EnrichmentMetadata> {
 
+    private static final Logger log = LogManager.getLogger(AbstractEnrichmentConsumer.class);
+
     @Override
     public Optional<Record> apply(Record record) {
         EnrichmentMetadata metadata = fromRecord(record, EnrichmentMetadata.class);
         if (metadata != null) {
+            log.debug("Enrichment metadata: {}", metadata);
             this.accept(metadata);
         }
 
