@@ -52,19 +52,19 @@ public class EventConsumer<R> implements EventListener, MetricsProducer {
     @Override
     public void handleEvent(Event event) {
         handled++;
-        String id;
-        if (event instanceof DocumentEventContext) {
-            id = ((DocumentEventContext) event).getSourceDocument().getId();
-        } else {
-            id = null;
-        }
-
         Collection<R> applied = function.apply(event);
         if (applied != null && !applied.isEmpty()) {
+            String id;
+            if (event instanceof DocumentEventContext) {
+                id = ((DocumentEventContext) event).getSourceDocument().getId();
+            } else {
+                id = null;
+            }
             applied.forEach(i -> {
                 if (i == null) {
                     log.error("Null value returned from function for event {}; document {}", event.getName(), id);
                 } else {
+                    log.debug("Consuming event {} for document {}", event.getName(), id);
                     consumer.accept(i);
                 }
 

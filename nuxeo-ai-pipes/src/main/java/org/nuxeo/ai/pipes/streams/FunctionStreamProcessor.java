@@ -111,7 +111,6 @@ public class FunctionStreamProcessor {
 
         public FunctionComputation(int outputStreams, String name, FunctionMetrics metrics,
                 Function<Record, Optional<Record>> function) {
-
             super(name, 1, outputStreams);
             this.metrics = metrics;
             this.function = function;
@@ -119,7 +118,7 @@ public class FunctionStreamProcessor {
 
         @Override
         public void init(ComputationContext context) {
-            log.debug(String.format("Starting computation for %s", metadata.name()));
+            log.debug("Starting computation for " + metadata.name());
         }
 
         @Override
@@ -133,13 +132,13 @@ public class FunctionStreamProcessor {
             } catch (NuxeoException e) {
                 log.debug("Problem with record {}. Error is {}.", record, e.getMessage());
                 metrics.error();
-                throw e; // Throw the error so it can be handled or retried higher up the stack.
+                throw e; // Throw the error, so it can be handled or retried higher up the stack.
             }
         }
 
         @Override
         public void destroy() {
-            log.debug(String.format("Destroy computation: %s", metadata.name()));
+            log.debug("Destroy computation: " + metadata.name());
         }
 
         /**
@@ -148,6 +147,7 @@ public class FunctionStreamProcessor {
         protected void writeToStreams(ComputationContext context, Record record) {
             if (record != null && !metadata.outputStreams().isEmpty()) {
                 metrics.produced();
+                log.debug("Writing record {} to streams {}.", record, metadata.outputStreams());
                 metadata.outputStreams().forEach(o -> context.produceRecord(o, record));
             }
         }

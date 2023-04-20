@@ -24,8 +24,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
@@ -63,7 +61,6 @@ import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RandomBug;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
@@ -93,7 +90,6 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    @RandomBug.Repeat(issue = "AICORE-412")
     public void testBulkEnrich() throws Exception {
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
                 getRoot().getId());
@@ -116,7 +112,7 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
 
         // Call with Model param
         BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
-                session.getPrincipal().getName())
+                                                                                                           session.getPrincipal().getName())
                                                                                                    .repository(
                                                                                                            session.getRepositoryName())
                                                                                                    .param(PARAM_MODEL,
@@ -136,7 +132,7 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
 
         // Call with XPaths param
         removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
-                session.getPrincipal().getName())
+                                                                                               session.getPrincipal().getName())
                                                                                        .repository(
                                                                                                session.getRepositoryName())
                                                                                        .param(PARAM_XPATHS,
@@ -165,7 +161,7 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
             assertTrue(wrapper.getModels().isEmpty());
         }
 
-        // All removed so lets add again.
+        // All removed so let's add again.
         command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(session.getPrincipal().getName())
                                                                                  .repository(
                                                                                          session.getRepositoryName())
@@ -181,6 +177,10 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
             assertEquals(2, wrapper.getModels().size());
             assertEquals(4, wrapper.getAutoProperties().size());
         }
+
+        BulkStatus status = bulkService.getStatus(command.getId());
+        assertEquals(COMPLETED, status.getState());
+        assertEquals(NUM_OF_DOCS + NUM_OF_FAIL_DOCS, status.getProcessed());
     }
 
     @Test
@@ -217,7 +217,7 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
         txFeature.nextTransaction();
 
         BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
-                session.getPrincipal().getName())
+                                                                                                           session.getPrincipal().getName())
                                                                                                    .repository(
                                                                                                            session.getRepositoryName())
                                                                                                    .param(PARAM_MODEL,
@@ -234,18 +234,13 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkExportNoAutoFields() throws Exception {
-        String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
-                getRoot().getId());
+        String nxql =
+                "SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='" + getRoot().getId() + "' ";
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
 
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang).user(
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
-
-        DocumentModel fakeDE = session.createDocumentModel("/", "FakeDE", DATASET_EXPORT_TYPE);
-        fakeDE.setPropertyValue(DATASET_EXPORT_JOB_ID, command.getId());
-        session.createDocument(fakeDE);
-        session.save();
 
         bulkService.submit(command);
         assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(30)));
@@ -265,8 +260,8 @@ public class BulkEnrichmentTest extends BaseBulkEnrich {
         assertTrue("Bulk action didn't finish", bulkService.await(commandId, Duration.ofSeconds(60)));
         BulkStatus status = bulkService.getStatus(commandId);
         assertEquals(COMPLETED, status.getState());
-        assertEquals(100, status.getProcessed());
-        // 20 were skipped because they were already auto-corrected
+        assertEquals(NUM_OF_DOCS + NUM_OF_FAIL_DOCS, status.getProcessed());
+        // 20 were skipped because they were already autocorrected
         assertEquals(20, status.getErrorCount());
 
         DocumentModelList datasetExports = exportService.getDatasetExports(session, commandId);

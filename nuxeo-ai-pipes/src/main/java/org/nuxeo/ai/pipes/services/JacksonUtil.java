@@ -86,11 +86,8 @@ public class JacksonUtil {
         if (docCtx == null) {
             return null;
         }
-        DocumentModel doc = docCtx.getSourceDocument();
-        if (doc == null) {
-            return null;
-        }
-        return doc;
+
+        return docCtx.getSourceDocument();
     }
 
     /**

@@ -95,7 +95,6 @@ public class TestConfiguredStreamProcessors {
 
     @Test
     public void testConfiguredStreamProcessor() throws Exception {
-
         // Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Doc", "File");
         testDoc = session.createDocument(testDoc);
@@ -160,7 +159,6 @@ public class TestConfiguredStreamProcessors {
 
     @Test
     public void testCaching() throws IOException, InterruptedException {
-
         // Setup test data.
         DocumentModel testDoc = session.createDocumentModel("/", "My caching Doc", "File");
         testDoc = session.createDocument(testDoc);
@@ -193,7 +191,6 @@ public class TestConfiguredStreamProcessors {
 
     @Test
     public void testSuggestConsumer() throws IOException, InterruptedException {
-
         BlobTextFromDocument blobTextFromDoc = blobTestImage(blobManager);
         blobTextFromDoc.setId("mydocId");
         blobTextFromDoc.setRepositoryName("text");
