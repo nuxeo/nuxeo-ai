@@ -48,7 +48,7 @@ public class EnrichmentTestFeature implements RunnerFeature {
     public static final String FILE_CONTENT = "file:content";
 
     @Override
-    public void beforeRun(FeaturesRunner runner) throws Exception {
+    public void beforeRun(FeaturesRunner runner) {
         Framework.getProperties().put(PipelineServiceImpl.PIPES_CONFIG, PIPES_TEST_CONFIG);
         Framework.getProperties().put(AUTOFILL_DEFAULT_VALUE, "0.2");
         Framework.getProperties().put(AUTO_CORRECT_DEFAULT_VALUE, "0.4");

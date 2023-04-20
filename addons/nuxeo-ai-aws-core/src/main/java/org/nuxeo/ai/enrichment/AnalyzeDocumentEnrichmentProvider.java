@@ -108,6 +108,7 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public RetryPolicy getRetryPolicy() {
         return new RetryPolicy().abortOn(NuxeoException.class, FatalEnrichmentError.class)
                                 .withMaxRetries(2)

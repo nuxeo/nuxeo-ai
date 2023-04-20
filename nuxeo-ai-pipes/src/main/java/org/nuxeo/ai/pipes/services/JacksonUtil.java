@@ -82,15 +82,16 @@ public class JacksonUtil {
      * Gets the DocumentModel from an Event.  Returns null if that's not possible
      */
     public static DocumentModel toDoc(Event event) {
+        if (!(event instanceof DocumentEventContext)) {
+            return null;
+        }
+
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
-        if (docCtx == null) {
+        if (docCtx == null || docCtx.getSourceDocument() == null) {
             return null;
         }
-        DocumentModel doc = docCtx.getSourceDocument();
-        if (doc == null) {
-            return null;
-        }
-        return doc;
+
+        return docCtx.getSourceDocument();
     }
 
     /**

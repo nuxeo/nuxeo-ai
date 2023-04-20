@@ -227,6 +227,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     return () -> EnrichmentUtils.copyEnrichmentMetadata(metadata, blobTextFromDoc);
                 }
             }
+
             if (!blobTextFromDoc.getBlobs().isEmpty() && enrichmentSupport != null) {
                 for (ManagedBlob blob : blobTextFromDoc.getBlobs().values()) {
                     // Only checks if the first blob matches
@@ -240,6 +241,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     }
                 }
             }
+
             return () -> getAiMetadata(blobTextFromDoc);
         }
 
