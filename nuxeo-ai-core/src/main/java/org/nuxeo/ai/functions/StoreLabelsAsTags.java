@@ -55,6 +55,7 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
                         .filter(Objects::nonNull)
                         .flatMap(label -> label.getValues().stream())
                         .filter(Objects::nonNull)
+                        .filter(l -> l.getName() != null)
                         .map(this::toTag)
                         .filter(StringUtils::isNotBlank)
                         .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
