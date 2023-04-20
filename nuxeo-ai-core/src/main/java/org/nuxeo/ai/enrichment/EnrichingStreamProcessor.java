@@ -115,7 +115,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
             EnrichmentProvider enrichmentProvider = Framework.getService(AIComponent.class)
                                                              .getEnrichmentProvider(enricherName);
             if (enrichmentProvider == null) {
-                log.error(String.format("Invalid enricher name %s", enricherName));
+                log.error("Invalid enricher name " + enricherName);
                 throw new IllegalArgumentException("Unknown enrichment provider " + enricherName);
             }
             this.provider = enrichmentProvider;
@@ -158,11 +158,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     // The error is logged by onFailedAttempt so just move on to the next record.
                 }
 
+                if (result != null && useCache && provider instanceof EnrichmentCachable) {
+                    EnrichmentCachable cachable = (EnrichmentCachable) provider;
+                    cachePut(cachable.getCacheKey(blobTextFromDoc), result, cachable.getTimeToLive());
+                }
+
                 if (result != null) {
-                    if (useCache && provider instanceof EnrichmentCachable) {
-                        EnrichmentCachable cachable = (EnrichmentCachable) provider;
-                        cachePut(cachable.getCacheKey(blobTextFromDoc), result, cachable.getTimeToLive());
-                    }
                     List<Record> results = result.stream()
                                                  .map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
@@ -186,7 +187,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         /**
          * Get an entry from the enrichment cache
          *
-         * @return
+         * @return the cached entry or empty list if not found
          */
         protected Collection<? extends AIMetadata> cacheGet(String cacheKey) {
             return EnrichmentUtils.cacheGet(cacheKey);
@@ -203,7 +204,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 }
             }).onFailedAttempt(failure -> {
                 metrics.error();
-                log.warn(String.format("Enrichment error (%s) for record: %s ", enricherName, record), failure);
+                log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
             }).onRetry(c -> {
                 metrics.retry();
                 if (log.isDebugEnabled()) {

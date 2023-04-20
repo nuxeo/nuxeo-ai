@@ -119,5 +119,12 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
             processed.set(0);
             errored.set(0);
         }
+
+        @Override
+        public void processFailure(ComputationContext context, Throwable failure) {
+            super.processFailure(context, failure);
+            processed.set(0);
+            errored.set(0);
+        }
     }
 }
