@@ -189,7 +189,6 @@ public class TestConfiguredStreamProcessors {
 
     @Test
     public void testCaching() throws IOException, InterruptedException {
-
         // Setup test data.
         DocumentModel testDoc = session.createDocumentModel("/", "My caching Doc", "File");
         testDoc = session.createDocument(testDoc);

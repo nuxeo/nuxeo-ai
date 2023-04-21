@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,6 +62,10 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
     public static final String COMPUTATION_NAME = INPUT_STREAM;
 
     public static final String STREAM_NAME = "streamName";
+
+    protected static final AtomicInteger processed = new AtomicInteger(0);
+
+    protected static final AtomicInteger errored = new AtomicInteger(0);
 
     @Override
     public Topology getTopology(Map<String, String> options) {
@@ -95,16 +100,35 @@ public class BulkEnrichmentAction implements StreamProcessorTopology {
                     BlobTextFromDocument blobTextFromDocument = PropertyUtils.docSerialize(doc, inputPairs,
                             conversionMode);
                     outputs.add(toRecord(blobTextFromDocument.getKey(), blobTextFromDocument));
+                } else {
+                    log.warn("No inputs found for document {}", doc.getId());
+                    errored.incrementAndGet();
                 }
             }
+
+            processed.addAndGet(ids.size());
         }
 
         @Override
         public void endBucket(ComputationContext context, BulkStatus delta) {
             outputs.forEach(record -> context.produceRecord(OUTPUT_2, record));
             outputs.clear();
+
+            delta.setProcessed(processed.get());
+            delta.setErrorCount(errored.get());
+
             updateStatus(context, delta);
             context.askForCheckpoint();
+
+            processed.set(0);
+            errored.set(0);
+        }
+
+        @Override
+        public void processFailure(ComputationContext context, Throwable failure) {
+            super.processFailure(context, failure);
+            processed.set(0);
+            errored.set(0);
         }
     }
 }

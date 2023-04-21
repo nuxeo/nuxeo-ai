@@ -158,11 +158,12 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     // The error is logged by onFailedAttempt so just move on to the next record.
                 }
 
+                if (result != null && useCache && provider instanceof EnrichmentCachable) {
+                    EnrichmentCachable cachable = (EnrichmentCachable) provider;
+                    cachePut(cachable.getCacheKey(blobTextFromDoc), result, cachable.getTimeToLive());
+                }
+
                 if (result != null) {
-                    if (useCache && provider instanceof EnrichmentCachable) {
-                        EnrichmentCachable cachable = (EnrichmentCachable) provider;
-                        cachePut(cachable.getCacheKey(blobTextFromDoc), result, cachable.getTimeToLive());
-                    }
                     List<Record> results = result.stream()
                                                  .map(meta -> toRecord(meta.context.documentRef, meta))
                                                  .collect(Collectors.toList());
@@ -186,7 +187,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
         /**
          * Get an entry from the enrichment cache
          *
-         * @return
+         * @return the cached entry or empty list if not found
          */
         protected Collection<? extends AIMetadata> cacheGet(String cacheKey) {
             return EnrichmentUtils.cacheGet(cacheKey);
@@ -226,6 +227,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     return () -> EnrichmentUtils.copyEnrichmentMetadata(metadata, blobTextFromDoc);
                 }
             }
+
             if (!blobTextFromDoc.getBlobs().isEmpty() && enrichmentSupport != null) {
                 for (ManagedBlob blob : blobTextFromDoc.getBlobs().values()) {
                     // Only checks if the first blob matches
@@ -239,6 +241,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     }
                 }
             }
+
             return () -> getAiMetadata(blobTextFromDoc);
         }
 

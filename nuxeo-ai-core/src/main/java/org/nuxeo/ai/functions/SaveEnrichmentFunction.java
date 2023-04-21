@@ -18,13 +18,14 @@
  */
 package org.nuxeo.ai.functions;
 
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.validation.ConstraintViolation;
 import org.nuxeo.ecm.core.api.validation.DocumentValidationException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
@@ -44,13 +45,23 @@ public class SaveEnrichmentFunction extends AbstractEnrichmentConsumer {
             if (doc != null) {
                 try {
                     if (!doc.isImmutable()) {
+                        log.debug("Saving enrichment for document {}.", doc.getId());
                         session.saveDocument(doc);
                     } else {
                         log.error("Attempt to write into an Immutable Document Model id: {}, AI Model name {}",
                                 doc.getId(), metadata.getModelName());
                     }
                 } catch (DocumentValidationException e) {
-                    log.warn("Failed to save document enrichment data for {}.", metadata.context.documentRef, e);
+                    log.warn("Failed to save document enrichment data for {}; error {}", metadata.context.documentRef,
+                            e.getMessage());
+                    if (log.isDebugEnabled()) {
+                        // log field violations
+                        List<ConstraintViolation> violations = e.getReport().asList();
+                        for (ConstraintViolation violation : violations) {
+                            log.debug("Constraint: {}, Value: {}", violation.getConstraint().getDescription(),
+                                    violation.getInvalidValue());
+                        }
+                    }
                 }
             } else {
                 log.debug("Failed to save enrichment for document {}.", metadata.context.documentRef);

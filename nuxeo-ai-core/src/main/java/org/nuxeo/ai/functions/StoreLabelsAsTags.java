@@ -49,23 +49,33 @@ public class StoreLabelsAsTags extends AbstractEnrichmentConsumer {
 
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
             TagService tagService = Framework.getService(TagService.class);
-            metadata.getLabels()
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .flatMap(label -> label.getValues().stream())
-                    .map(AIMetadata.Label::getName)
-                    .filter(Objects::nonNull)
-                    .map(this::toTag)
-                    .filter(StringUtils::isNotBlank)
-                    .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
-            metadata.getTags()
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .flatMap(tag -> EnrichmentUtils.getTagLabels(tag.getValues()).stream())
-                    .filter(Objects::nonNull)
-                    .map(this::toTag)
-                    .filter(StringUtils::isNotBlank)
-                    .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
+            log.debug("Tagging document {} with metadata: {}", metadata.context.documentRef, metadata);
+            if (metadata.getLabels() != null) {
+                metadata.getLabels()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .flatMap(label -> label.getValues().stream())
+                        .filter(Objects::nonNull)
+                        .filter(l -> l.getName() != null)
+                        .map(this::toTag)
+                        .filter(StringUtils::isNotBlank)
+                        .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
+            } else {
+                log.debug("No labels found in metadata: {}", metadata);
+            }
+
+            if (metadata.getTags() != null) {
+                metadata.getTags()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .flatMap(tag -> EnrichmentUtils.getTagLabels(tag.getValues()).stream())
+                        .filter(Objects::nonNull)
+                        .map(this::toTag)
+                        .filter(StringUtils::isNotBlank)
+                        .forEach(t -> tagService.tag(session, metadata.context.documentRef, t));
+            } else {
+                log.debug("No tags found in metadata: {}", metadata);
+            }
         }));
     }
 

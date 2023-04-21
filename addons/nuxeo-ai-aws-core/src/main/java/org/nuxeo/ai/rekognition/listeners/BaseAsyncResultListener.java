@@ -96,7 +96,7 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
             DocMetadataService docMetadataService = Framework.getService(DocMetadataService.class);
             DocumentModel doc = docMetadataService.saveEnrichment(session, metadata);
-            if (doc != null) {
+            if (doc != null && !doc.isImmutable()) {
                 try {
                     session.saveDocument(doc);
                 } catch (DocumentValidationException e) {

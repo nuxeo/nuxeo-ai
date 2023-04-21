@@ -26,8 +26,6 @@ import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.AIConstants.AUTO.HISTORY;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_FACET;
 import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
 import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
@@ -90,7 +88,7 @@ import com.google.common.collect.Sets;
 @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-public class BulkEnrichmentTest {
+public class BulkEnrichmentTest extends BaseBulkEnrich {
 
     public static final int NUM_OF_DOCS = 100;
 
@@ -217,6 +215,10 @@ public class BulkEnrichmentTest {
             assertEquals(2, wrapper.getModels().size());
             assertEquals(4, wrapper.getAutoProperties().size());
         }
+
+        BulkStatus status = bulkService.getStatus(command.getId());
+        assertEquals(COMPLETED, status.getState());
+        assertEquals(NUM_OF_DOCS + NUM_OF_FAIL_DOCS, status.getProcessed());
     }
 
     @Test
@@ -255,7 +257,7 @@ public class BulkEnrichmentTest {
         txFeature.nextTransaction();
 
         BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
-                session.getPrincipal().getName())
+                                                                                                           session.getPrincipal().getName())
                                                                                                    .repository(
                                                                                                            session.getRepositoryName())
                                                                                                    .param(PARAM_MODEL,
@@ -283,19 +285,13 @@ public class BulkEnrichmentTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testBulkExportNoAutoFields() throws Exception {
-        String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
-        String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
-                testRoot);
+        String nxql =
+                "SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='" + getRoot().getId() + "' ";
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
 
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
-
-        DocumentModel fakeDE = session.createDocumentModel("/", "FakeDE", DATASET_EXPORT_TYPE);
-        fakeDE.setPropertyValue(DATASET_EXPORT_JOB_ID, command.getId());
-        session.createDocument(fakeDE);
-        session.save();
 
         bulkService.submit(command);
         assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(30)));
@@ -315,8 +311,8 @@ public class BulkEnrichmentTest {
         assertTrue("Bulk action didn't finish", bulkService.await(commandId, Duration.ofSeconds(60)));
         BulkStatus status = bulkService.getStatus(commandId);
         assertEquals(COMPLETED, status.getState());
-        assertEquals(100, status.getProcessed());
-        // 20 were skipped because they were already auto-corrected
+        assertEquals(NUM_OF_DOCS + NUM_OF_FAIL_DOCS, status.getProcessed());
+        // 20 were skipped because they were already autocorrected
         assertEquals(20, status.getErrorCount());
 
         DocumentModelList datasetExports = exportService.getDatasetExports(session, commandId);
