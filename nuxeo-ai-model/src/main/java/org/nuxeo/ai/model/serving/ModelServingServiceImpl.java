@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -99,13 +100,13 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     public static final String AI_DATATYPES = "aidatatypes";
 
-    protected final Map<String, ModelDescriptor> configs = new HashMap<>();
+    protected final Map<String, ModelDescriptor> configs = new ConcurrentHashMap<>();
 
-    protected final Map<String, RuntimeModel> models = new HashMap<>();
+    protected final Map<String, RuntimeModel> models = new ConcurrentHashMap<>();
 
-    protected final Map<String, Predicate<DocumentModel>> predicates = new HashMap<>();
+    protected final Map<String, Predicate<DocumentModel>> predicates = new ConcurrentHashMap<>();
 
-    protected final Map<String, Predicate<DocumentModel>> filterPredicates = new HashMap<>();
+    protected final Map<String, Predicate<DocumentModel>> filterPredicates = new ConcurrentHashMap<>();
 
     protected DirectoryEntryResolver inputTypesResolver;
 
@@ -119,7 +120,6 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     @Override
     public void reload(Descriptor desc) {
-        String labels = ((ModelDescriptor) desc).getInfo().get("modelLabel");
         this.registerContribution(desc, MODELS_AP, null);
         this.addModel((ModelDescriptor) desc);
     }
@@ -188,8 +188,8 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
     public void addModel(ModelDescriptor descriptor) {
         if (!descriptor.getInputs().stream().allMatch(i -> getInputTypesResolver().validate(i.getType()))) {
             throw new IllegalArgumentException(
-                    String.format("The input types %s for service %s must be defined in the %s vocabulary",
-                            descriptor.getInputs(), descriptor.id, AI_DATATYPES));
+                    "The input types " + descriptor.getInputs() + " for service " + descriptor.id
+                            + " must be defined in the " + AI_DATATYPES + " vocabulary");
         }
 
         configs.put(descriptor.id, descriptor);
@@ -249,6 +249,7 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
         return filterPredicates.entrySet()
                                .stream()
                                .filter(e -> e.getValue().test(document))
+                               .filter(e -> models.containsKey(e.getKey()))
                                .map(e -> models.get(e.getKey()))
                                .filter(Objects::nonNull)
                                .flatMap(m -> m.getInputs().stream())
@@ -257,12 +258,16 @@ public class ModelServingServiceImpl extends DefaultComponent implements ModelSe
 
     @Override
     public List<EnrichmentMetadata> predict(DocumentModel document) {
-        return predicates.entrySet()
-                         .stream()
-                         .filter(e -> e.getValue().test(document))
-                         .map(e -> models.get(e.getKey()).predict(document))
-                         .filter(Objects::nonNull)
-                         .collect(Collectors.toList());
+        // avoid concurrent modification
+        HashMap<String, Predicate<DocumentModel>> copy = new HashMap<>(predicates);
+        return copy.entrySet()
+                   .stream()
+                   .filter(e -> e.getValue().test(document))
+                   .filter(e -> models.containsKey(e.getKey()))
+                   .map(e -> models.get(e.getKey()))
+                   .map(model -> model.predict(document))
+                   .filter(Objects::nonNull)
+                   .collect(Collectors.toList());
     }
 
     protected void modelInvalidator(String topic, byte[] message) {
