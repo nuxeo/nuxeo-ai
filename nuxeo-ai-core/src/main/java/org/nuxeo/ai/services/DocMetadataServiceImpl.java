@@ -43,12 +43,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -69,7 +67,6 @@ import org.nuxeo.ecm.platform.audit.api.LogEntry;
 import org.nuxeo.ecm.platform.audit.impl.ExtendedInfoImpl;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -77,12 +74,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
  */
 public class DocMetadataServiceImpl extends DefaultComponent implements DocMetadataService {
 
-    public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
+    private static final Logger log = LogManager.getLogger(DocMetadataServiceImpl.class);
 
     protected static final TypeReference<List<AutoHistory>> HISTORY_TYPE = new TypeReference<List<AutoHistory>>() {
     };
 
-    private static final Logger log = LogManager.getLogger(DocMetadataServiceImpl.class);
+    public static final String ENRICHMENT_ADDED = "ENRICHMENT_ADDED";
 
     /**
      * Have one of the supplied properties been modified?
@@ -111,7 +108,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         try {
             doc = session.getDocument(new IdRef(metadata.context.documentRef));
         } catch (DocumentNotFoundException e) {
-            log.info("Unable to save enrichment data for missing doc " + metadata.context.documentRef);
+            log.warn("Unable to save enrichment data for missing doc {}", metadata.context.documentRef);
             return null;
         }
 
@@ -139,7 +136,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
      * Updates enrichment, ensures we have one enrichment entry per model/version and input
      */
     protected Collection<Map<String, Object>> updateEnrichment(List<Map<String, Object>> original,
-                                                               Map<String, Object> item) {
+            Map<String, Object> item) {
         Map<String, Map<String, Object>> enrichmentByKey = new HashMap<>();
         original.forEach(o -> enrichmentByKey.put(uniqueKey(o), o));
         enrichmentByKey.put(uniqueKey(item), item);
@@ -164,7 +161,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
 
     @Override
     public DocumentModel updateAuto(DocumentModel doc, AUTO autoField, String xPath, String model,
-                                    Serializable oldValue, String comment) {
+            Serializable oldValue, String comment) {
         if (!doc.hasFacet(ENRICHMENT_FACET)) {
             doc.addFacet(ENRICHMENT_FACET);
         }
@@ -197,22 +194,18 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     @Override
     public DocumentModel resetAuto(DocumentModel doc, AUTO autoField, String xPath, boolean resetValue) {
         List<AutoHistory> history = getAutoHistory(doc);
-        Optional<AutoHistory> previous = history.stream()
-                                                .filter(h -> xPath.equals(h.getProperty()))
-                                                .findFirst();
+        Optional<AutoHistory> previous = history.stream().filter(h -> xPath.equals(h.getProperty())).findFirst();
         boolean present = previous.isPresent();
         Set<Map<String, String>> set = getAutoPropAsSet(doc, autoField.lowerName());
         Set<Map<String, String>> toReset = set.stream()
-                                              .filter(val -> val.get("xpath")
-                                                                .equals(xPath))
+                                              .filter(val -> val.get("xpath").equals(xPath))
                                               .collect(Collectors.toSet());
         @SuppressWarnings("unchecked")
         Collection<Map<String, String>> noOldXpath = CollectionUtils.disjunction(set, toReset);
         Object previousValue = null;
         if (set.size() > noOldXpath.size()) {
             if (present) {
-                previousValue = previous.get()
-                                        .getPreviousValue();
+                previousValue = previous.get().getPreviousValue();
                 history.remove(previous.get());
                 setAutoHistory(doc, history);
             }
@@ -271,8 +264,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     }
 
     protected void raiseEvent(DocumentModel doc, String eventName, Set<String> xPaths, String comment) {
-        DocumentEventContext ctx = new DocumentEventContext(doc.getCoreSession(), doc.getCoreSession()
-                                                                                     .getPrincipal(),
+        DocumentEventContext ctx = new DocumentEventContext(doc.getCoreSession(), doc.getCoreSession().getPrincipal(),
                 doc);
         ctx.setProperty(CoreEventConstants.REPOSITORY_NAME, doc.getRepositoryName());
         ctx.setProperty(CoreEventConstants.SESSION_ID, doc.getSessionId());
@@ -287,8 +279,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         } else {
             ctx.setProperty(COMMENT_PROPERTY_KEY, comment);
         }
-        Framework.getService(EventService.class)
-                 .fireEvent(ctx.newEvent(eventName));
+        Framework.getService(EventService.class).fireEvent(ctx.newEvent(eventName));
     }
 
     @Override
