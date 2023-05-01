@@ -10,13 +10,13 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>2.7.20</version>
+  <version>2.7.21-SNAPSHOT</version>
   <name>AI core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
 
   <properties>
-    <nuxeo.ai.version>2.7.20</nuxeo.ai.version>
+    <nuxeo.ai.version>2.7.21-SNAPSHOT</nuxeo.ai.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <!-- distribution server compliance: "target platform" -->
     <nuxeo.target.version>10.10</nuxeo.target.version>
