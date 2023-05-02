@@ -105,6 +105,11 @@ jobs:
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nuxeo-ai-github-build
+        path: ./**/target/*
     - name: Publish package
       if: ${{ inputs.should-push }}
       run: mvn --batch-mode deploy -nsu -DskipTests
