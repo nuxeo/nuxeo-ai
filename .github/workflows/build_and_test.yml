@@ -105,9 +105,44 @@ jobs:
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+    - name: Get project version
+      run: echo "VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec | xargs echo -n)" >> $GITHUB_ENV
+    - run: ls -alR | grep ".*package.*.zip"
+    - run: ls -alR | grep ".*nuxeo-ai-core-.*.zip"
+    - name: Upload packages build artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nuxeo-ai-github-packages-build
+        path: |
+          ./**/target/**/*package*.zip
+          ./nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip
     - name: Publish package
       if: ${{ inputs.should-push }}
       run: mvn --batch-mode deploy -nsu -DskipTests
+    - name: Publish nuxeo-ai-core package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+    - name: Publish nuxeo-ai-aws-package package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+    - name: Publish nuxeo-ai-gcp-package package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+    - name: Publish nuxeo-ai-image-quality-package package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: addons/nuxeo-ai-aws-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
   build-master:
     name: 'Build Master LTS'
     runs-on: ubuntu-latest
@@ -181,6 +216,41 @@ jobs:
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+    - name: Get project version
+      run: echo "VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec | xargs echo -n)" >> $GITHUB_ENV
+    - run: ls -alR | grep ".*package.*.zip"
+    - run: ls -alR | grep ".*nuxeo-ai-core-.*.zip"
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: nuxeo-ai-github-build
+        path: |
+          ./**/target/**/*package*.zip
+          ./nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip
     - name: Publish package
       if: ${{ inputs.should-push }}
       run: mvn --batch-mode deploy -nsu -DskipTests
+    - name: Publish nuxeo-ai-core package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+    - name: Publish nuxeo-ai-aws-package package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+    - name: Publish nuxeo-ai-gcp-package package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+    - name: Publish nuxeo-ai-image-quality-package package to Production Connect Marketplace
+      if: ${{ inputs.should-push }}
+      env:
+        PACKAGE: addons/nuxeo-ai-aws-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
+        CONNECT_URL: https://connect.nuxeo.com/nuxeo
+      run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
