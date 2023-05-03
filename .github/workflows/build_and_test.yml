@@ -140,7 +140,7 @@ jobs:
     - name: Publish nuxeo-ai-image-quality-package package to Production Connect Marketplace
       if: ${{ inputs.should-push }}
       env:
-        PACKAGE: addons/nuxeo-ai-aws-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
+        PACKAGE: addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
         CONNECT_URL: https://connect.nuxeo.com/nuxeo
       run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
   build-master:
@@ -251,6 +251,6 @@ jobs:
     - name: Publish nuxeo-ai-image-quality-package package to Production Connect Marketplace
       if: ${{ inputs.should-push }}
       env:
-        PACKAGE: addons/nuxeo-ai-aws-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
+        PACKAGE: addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
         CONNECT_URL: https://connect.nuxeo.com/nuxeo
       run: curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
