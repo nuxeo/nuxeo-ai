@@ -145,9 +145,7 @@
     </nx:studioExtraction>
 
     <zip destfile="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" basedir="${outdir}/marketplace"/>
-    <zip destfile="${outdir}/dummy-package.zip" whenempty="create" includes="" excludes="**" basedir="${outdir}"
-         comment="This package is only available in the Marketplace"/>
-    <artifact:attach file="${outdir}/dummy-package.zip" type="zip"/>
+    <artifact:attach file="${outdir}/nuxeo-ai-core-${maven.project.version}.zip" type="zip"/>
   </target>
 
 </project>
