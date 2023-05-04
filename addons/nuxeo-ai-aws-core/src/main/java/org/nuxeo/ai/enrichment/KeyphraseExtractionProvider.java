@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -40,7 +42,10 @@ import net.jodah.failsafe.RetryPolicy;
 
 public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
-    public static final long KEYPHRASE_MAX_SIZE = 1_000_000;
+    private static final Log log = LogFactory.getLog(KeyphraseExtractionProvider.class);
+
+    // in bytes
+    public static final long KEYPHRASE_MAX_SIZE = 100_000;
 
     public static final String LANGUAGE_CODE = "language";
 
@@ -62,6 +67,11 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, String> prop : blobTextFromDoc.getProperties().entrySet()) {
+                if (prop.getValue().length() > maxSize) {
+                    log.warn("Skipping extracting keyphrase for a property as the property value has a length of "
+                            + prop.getValue().length());
+                    continue;
+                }
                 DetectKeyPhrasesResult result = Framework.getService(ComprehendService.class)
                                                          .extractKeyphrase(prop.getValue(), languageCode);
                 if (result != null && !result.getKeyPhrases().isEmpty()) {
