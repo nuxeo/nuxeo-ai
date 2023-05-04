@@ -9,13 +9,14 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>3.5.10-SNAPSHOT</version>
+  <version>${revision}</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
 
   <properties>
-    <nuxeo.ai.version>3.5.10-SNAPSHOT</nuxeo.ai.version>
+    <revision>3.5.10-SNAPSHOT</revision>
+    <nuxeo.ai.version>${revision}</nuxeo.ai.version>
     <dropwizard.version>4.1.17</dropwizard.version>
     <tensorflow.version>1.11.0</tensorflow.version>
     <nuxeo.target.version>2021.*</nuxeo.target.version>
@@ -302,6 +303,34 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
+        </configuration>
+        <executions>
+          <!-- enable flattening -->
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+          <!-- ensure proper cleanup -->
+          <execution>
+            <id>flatten.clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
   <scm>
