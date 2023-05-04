@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -43,6 +45,9 @@ import net.jodah.failsafe.RetryPolicy;
  */
 public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
+    private static final Log log = LogFactory.getLog(SentimentEnrichmentProvider.class);
+
+    // in bytes
     public static final long SENTIMENT_MAX_SIZE = 5_000;
 
     public static final String LANGUAGE_CODE = "language";
@@ -63,6 +68,11 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, String> prop : blobTextFromDoc.getProperties().entrySet()) {
+                if (prop.getValue().length() > maxSize) {
+                    log.warn("Skipping detecting sentiment for a property as the property value has a length of "
+                            + prop.getValue().length());
+                    continue;
+                }
                 DetectSentimentResult result = Framework.getService(ComprehendService.class)
                                                         .detectSentiment(prop.getValue(), languageCode);
                 if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {

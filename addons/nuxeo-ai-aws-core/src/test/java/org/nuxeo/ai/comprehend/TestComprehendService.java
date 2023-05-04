@@ -23,11 +23,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.nuxeo.ai.enrichment.KeyphraseExtractionProvider.KEYPHRASE_MAX_SIZE;
+import static org.nuxeo.ai.enrichment.SentimentEnrichmentProvider.SENTIMENT_MAX_SIZE;
+import static org.nuxeo.ai.enrichment.TextEntitiesProvider.ENTITY_MAX_SIZE;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -38,13 +44,13 @@ import org.nuxeo.ai.enrichment.SentimentEnrichmentProvider;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
+import org.nuxeo.common.utils.FileUtils;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
 import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
 import com.amazonaws.services.comprehend.model.DetectSentimentResult;
 import com.amazonaws.services.comprehend.model.SentimentScore;
@@ -58,6 +64,14 @@ public class TestComprehendService {
 
     @Inject
     protected AIComponent aiComponent;
+
+    String loremIpsum;
+
+    @Before
+    public void setup() throws IOException {
+        File loremIpsumFile = FileUtils.getResourceFileFromContext("files/lorem_ipsum.txt");
+        loremIpsum = new String(Files.readAllBytes(loremIpsumFile.toPath()));
+    }
 
     @Test
     public void testSentiment() {
@@ -78,9 +92,22 @@ public class TestComprehendService {
         EnrichmentMetadata result = metadataCollection.iterator().next();
         assertEquals(SentimentType.NEGATIVE.toString(), result.getLabels().get(0).getValues().get(0).getName());
         textStream.addProperty("dc:title", "A car");
+        textStream.addProperty("long-text", loremIpsum.substring(0, (int) (SENTIMENT_MAX_SIZE - 10)));
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
         assertEquals(SentimentType.NEUTRAL.toString(), result.getLabels().get(0).getValues().get(0).getName());
+    }
+
+    @Test
+    public void testSentimentBeyondQuota() {
+        AWS.assumeCredentials();
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textSentiment");
+        assertNotNull(service);
+
+        BlobTextFromDocument textStream = new BlobTextFromDocument();
+        textStream.addProperty("dc:title", "I am very disappointed. " + loremIpsum);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
+        assertEquals(0, metadataCollection.size());
     }
 
     @Test
@@ -103,9 +130,27 @@ public class TestComprehendService {
         EnrichmentMetadata result = metadataCollection.iterator().next();
         assertEquals("power", result.getLabels().get(0).getValues().get(0).getName());
         textStream.addProperty("dc:title", "Instagram and Facebook");
+        textStream.addProperty("long-text", loremIpsum.substring(0, (int) (KEYPHRASE_MAX_SIZE - 10)));
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
         assertEquals("Instagram", result.getLabels().get(0).getValues().get(0).getName());
+    }
+
+    @Test
+    public void testExtractKeyphraseBeyondQuota() {
+        AWS.assumeCredentials();
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textKeyphrase");
+        assertNotNull(service);
+
+        DetectKeyPhrasesResult results = Framework.getService(ComprehendService.class)
+                                                  .extractKeyphrase("power and convenience", "en");
+        assertNotNull(results);
+        assertThat(results.getKeyPhrases()).isNotEmpty();
+
+        BlobTextFromDocument textStream = new BlobTextFromDocument();
+        textStream.addProperty("dc:title", "Instagram and Facebook " + loremIpsum);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
+        assertEquals(0, metadataCollection.size());
     }
 
     @Test
@@ -113,11 +158,6 @@ public class TestComprehendService {
         AWS.assumeCredentials();
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textEntities");
         assertNotNull(service);
-
-        DetectEntitiesResult results = Framework.getService(ComprehendService.class)
-                                                .detectEntities("One of the Nuxeo headquarters located in Paris", "en");
-        assertNotNull(results);
-        assertThat(results.getEntities()).isNotEmpty();
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
@@ -134,10 +174,23 @@ public class TestComprehendService {
                                       .collect(Collectors.toList());
         assertThat(entities).contains("London");
         assertThat(entities).contains("New York");
-        textStream.addProperty("dc:title", "Nuxeo is a young and promising company");
+        textStream.addProperty("dc:title", "Nuxeo has been acquired by Hyland");
+        textStream.addProperty("long-text", loremIpsum.substring(0, (int) (ENTITY_MAX_SIZE - 10)));
         metadataCollection = service.enrich(textStream);
         result = metadataCollection.iterator().next();
         assertEquals("Nuxeo", result.getLabels().get(0).getValues().get(0).getName());
+    }
+
+    @Test
+    public void testTextEntitiesBeyondQuota() {
+        AWS.assumeCredentials();
+        EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textEntities");
+        assertNotNull(service);
+
+        BlobTextFromDocument textStream = new BlobTextFromDocument();
+        textStream.addProperty("dc:title", "Nuxeo has been acquired by Hyland. " + loremIpsum);
+        Collection<EnrichmentMetadata> metadataCollection = service.enrich(textStream);
+        assertEquals(0, metadataCollection.size());
     }
 
     @Test
