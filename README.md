@@ -211,7 +211,7 @@ You can set these in your `nuxeo.conf`.
 <tr>
 <td colspan="1"><code>nuxeo.enrichment.source.stream</code></td>
 <td colspan="1">The name of the stream that receives Enrichment data</td>
-<td colspan="1"><code>ai/enrichment-in</code></td>
+<td colspan="1"><code>enrichment-in</code></td>
 <td colspan="1">Since 1.0</td>
 </tr>
 <tr>

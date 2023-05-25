@@ -8,7 +8,7 @@
                        logConfig="bulk">
         <policy name="default" maxRetries="${nuxeo.enrichment.insight.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
         <option name="source">ai/bulkEnriched</option>
-        <option name="sink">${nuxeo.enrichment.source.stream}</option>
+        <option name="sink">insight/${nuxeo.enrichment.source.stream}</option>
         <option name="enrichmentProviderName">insight.customModel</option>
       </streamProcessor>
     </extension>
@@ -17,7 +17,7 @@
         <streamProcessor name="insightSaveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
                          logConfig="bulk"
                          class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
-          <option name="source">insight.${nuxeo.enrichment.source.stream}</option>
+          <option name="source">insight/${nuxeo.enrichment.source.stream}</option>
           <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
         </streamProcessor>
     </extension>

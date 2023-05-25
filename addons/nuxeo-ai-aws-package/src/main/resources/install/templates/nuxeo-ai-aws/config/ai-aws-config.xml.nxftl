@@ -17,7 +17,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.imageLabels</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -28,7 +28,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.textDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -39,7 +39,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.faceDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -50,7 +50,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.celebrityDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -61,7 +61,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.unsafeImages</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -74,7 +74,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/text</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.textSentiment</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -85,7 +85,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/text</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.textKeyphrase</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -96,7 +96,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/text</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.textEntities</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -107,8 +107,8 @@
                      logConfig="${nuxeo.ai.stream.config.name}"
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-      <option name="source">text</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="source">ai/text</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.textKeyphrase</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -121,7 +121,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.documentText</option>
     </streamProcessor>
   </extension>
@@ -133,7 +133,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/images</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.documentAnalyze</option>
     </streamProcessor>
   </extension>
@@ -156,7 +156,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.videoLabels</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -167,7 +167,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.unsafeVideo</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -178,7 +178,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.videoFaceDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -189,7 +189,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.videoCelebrityDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -200,7 +200,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.videoSegmentDetection</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
@@ -224,7 +224,7 @@
                      class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
       <policy name="default" maxRetries="${nuxeo.enrichment.aws.enrichment.retry}" delay="200ms" maxDelay="2s" continueOnFailure="true" />
       <option name="source">ai/videos</option>
-      <option name="sink">${nuxeo.enrichment.source.stream}</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
       <option name="enrichmentProviderName">aws.transcribe</option>
       <option name="cache">${nuxeo.enrichment.aws.cache}</option>
     </streamProcessor>
