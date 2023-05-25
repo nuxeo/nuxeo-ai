@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import javax.inject.Inject;
 import org.junit.After;
 import org.junit.Before;
@@ -112,8 +113,16 @@ public class BulkEnrichmentTest {
     @Inject
     protected TransactionalFeature txFeature;
 
+
+    protected static final Pattern VALID_LOG_NAME_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_\\-]*");
+
     @Before
     public void setup() {
+        String name  = ENRICHMENT_IN.getName();
+        if (!VALID_LOG_NAME_PATTERN.matcher(name).matches()) {
+            throw new IllegalArgumentException("Invalid name: '" + name + "'.");
+        }
+
         DocumentModel testRoot = session.createDocumentModel("/", "bulkenrichtest", "Folder");
         testRoot = session.createDocument(testRoot);
         session.saveDocument(testRoot);

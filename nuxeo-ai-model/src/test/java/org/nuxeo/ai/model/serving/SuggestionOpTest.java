@@ -18,6 +18,7 @@
  */
 package org.nuxeo.ai.model.serving;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -52,6 +53,8 @@ import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
@@ -59,6 +62,8 @@ import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.impl.SimpleDocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.ecm.platform.usermanager.UserManager;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.mockito.MockitoFeature;
 import org.nuxeo.runtime.mockito.RuntimeService;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -157,6 +162,13 @@ public class SuggestionOpTest {
 
     @Test
     public void shouldResolvePropertiesFromSimpleDoc() throws OperationException {
+        UserManager um = Framework.getService(UserManager.class);
+        DocumentModel userModel = um.getBareUserModel();
+        userModel.setProperty("user", "username", "testUser");
+        userModel.setProperty("user", "password", "password");
+        userModel.setProperty("user", "groups", Collections.singletonList("members"));
+        um.createUser(userModel);
+
         SimpleDocumentModel simple = SimpleDocumentModel.ofSchemas("uid", "file", "common", "files", "dublincore",
                 "relatedtext");
         simple.setPropertyValue("dc:title", "Been updated");
@@ -169,15 +181,16 @@ public class SuggestionOpTest {
         fileDoc.setPropertyValue("dc:title", "Test File");
         fileDoc = session.createDocument(fileDoc);
 
+        CoreSession userSession = CoreInstance.getCoreSession(session.getRepositoryName(), "testUser");
         Set<ModelProperty> props = Sets.newHashSet(ModelProperty.of("dc:title", "txt"),
                 ModelProperty.of("dc:description", "txt"));
         when(modelServingService.getGroupedInputs(fileDoc)).thenReturn(Collections.singleton(props));
         when(modelServingService.getFlatInputs(fileDoc)).thenReturn(props);
 
-        OperationContext opCtx = new OperationContext(session);
+        OperationContext opCtx = new OperationContext(userSession);
         opCtx.setInput(fileDoc);
-        automationService.run(opCtx, SuggestionOp.ID, parameters);
-
+        Blob blob = (Blob) automationService.run(opCtx, SuggestionOp.ID, parameters);
+        assertThat(blob).isNotNull();
         ArgumentCaptor<DocumentModel> argument = ArgumentCaptor.forClass(DocumentModel.class);
         verify(modelServingService).predict(argument.capture());
         assertEquals("Been updated", argument.getValue().getPropertyValue("dc:title"));

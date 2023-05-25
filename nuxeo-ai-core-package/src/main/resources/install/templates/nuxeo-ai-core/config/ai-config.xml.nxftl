@@ -6,7 +6,7 @@
     <streamProcessor name="tagsProcessor" defaultConcurrency="2" defaultPartitions="4"
                      class="org.nuxeo.ai.functions.StoreLabelsAsTags">
       <policy name="default" maxRetries="5" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-      <option name="source">${nuxeo.enrichment.source.stream}</option>
+      <option name="source">ai/${nuxeo.enrichment.source.stream}</option>
     </streamProcessor>
   </extension>
 </#if>
@@ -16,7 +16,7 @@
     <streamProcessor name="saveMetadataProcessor" defaultConcurrency="2" defaultPartitions="4"
                      class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
       <policy name="default" maxRetries="5" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-      <option name="source">${nuxeo.enrichment.source.stream}</option>
+      <option name="source">ai/${nuxeo.enrichment.source.stream}</option>
     </streamProcessor>
   </extension>
 
@@ -27,7 +27,7 @@
     <streamProcessor name="raiseEventProcessor" defaultConcurrency="2" defaultPartitions="4"
                      class="org.nuxeo.ai.functions.RaiseEnrichmentEvent">
       <policy name="default" maxRetries="5" delay="200ms" maxDelay="2s" continueOnFailure="true" />
-      <option name="source">${nuxeo.enrichment.source.stream}</option>
+      <option name="source">ai/${nuxeo.enrichment.source.stream}</option>
     </streamProcessor>
   </extension>
 </#if>

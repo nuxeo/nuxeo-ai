@@ -44,7 +44,7 @@
         <!-- The input stream to process -->
         <option name="source">ai/images</option>
         <!-- The output stream to write out enrichment metadata -->
-        <option name="sink">${nuxeo.enrichment.source.stream}</option>
+        <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
         <!-- The name matches the enrichment service name defined above -->
         <option name="enrichmentProviderName">ai.imagequality.all</option>
       </streamProcessor>
