@@ -24,6 +24,7 @@ import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.IN_
 import static org.nuxeo.ecm.platform.video.VideoConstants.VIDEO_FACET;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -155,7 +156,7 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
                 CloseableHttpResponse resp = httpClient.execute(req)) {
             HttpEntity entity = resp.getEntity();
-            return EntityUtils.toString(entity);
+            return EntityUtils.toString(entity, StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.error(e);
             throw new NuxeoException(
