@@ -56,7 +56,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -308,7 +307,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Override
-    public String uploadedDataset(@NotNull DocumentModel dataset) {
+    public String uploadDataset(@Nonnull DocumentModel dataset) {
         String jobId = (String) dataset.getPropertyValue(DATASET_EXPORT_JOB_ID);
         Blob trainingData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_TRAINING_DATA);
         Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
@@ -338,6 +337,12 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 String batch2 = batchUpload.getBatchId();
                 batch2 = createBatch(batchUpload, "evaluation", "1", evalData) ? batch2 : null;
 
+                if (StringUtils.isAllBlank(batch1, batch2)) {
+                    log.error("Job/Command: {} has no training and no evaluation data. Document {}", jobId,
+                            dataset.getId());
+                    return null;
+                }
+
                 batchUpload = client.getBatchUpload(CHUNK_100_MB);
                 String batch3 = batchUpload.getBatchId();
                 batch3 = createBatch(batchUpload, "statistics", "2", statsData) ? batch3 : null;
@@ -351,6 +356,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 log.error("User {} failed to upload dataset. ", session.getPrincipal().getActingUser(), e);
             }
         }
+
         return null;
     }
 

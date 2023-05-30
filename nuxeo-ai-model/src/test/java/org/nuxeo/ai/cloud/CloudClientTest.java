@@ -118,7 +118,7 @@ public class CloudClientTest {
         assertFalse(client.isAvailable(session));
         // Doesn't do anything because its not configured.
         DocumentModel not_used = session.createDocumentModel("/", "not_used", DATASET_EXPORT_TYPE);
-        assertNull(client.uploadedDataset(not_used));
+        assertNull(client.uploadDataset(not_used));
 
         assertThat(((NuxeoCloudClient) client).configureClient(session, new CloudConfigDescriptor())
                                               .orElse(null)).isNull();
@@ -127,7 +127,7 @@ public class CloudClientTest {
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     public void testConfiguredSuccess() throws IOException {
-        assertNotNull(client.uploadedDataset(testDocument()));
+        assertNotNull(client.uploadDataset(testDocument()));
         String secret = client.getClient(session).get().getConfiguration().getAuthentication().getSecret();
         assertThat(secret).isNotEmpty();
 
@@ -157,13 +157,13 @@ public class CloudClientTest {
         // TODO: test it
         // ((NuxeoCloudClient) client).client = null;
 
-        assertNotNull(client.uploadedDataset(testDocument()));
+        assertNotNull(client.uploadDataset(testDocument()));
     }
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-bad-test.xml")
     public void testConfiguredFails() throws IOException {
-        assertNull(client.uploadedDataset(testDocument()));
+        assertNull(client.uploadDataset(testDocument()));
     }
 
     protected DocumentModel testDocument() throws IOException {

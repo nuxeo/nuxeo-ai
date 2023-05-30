@@ -30,6 +30,7 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_NAME;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_START_DATE;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
+import static org.nuxeo.ai.bulk.AbstractRecordWriter.TIMEOUT_KV_STORE;
 import static org.nuxeo.ai.bulk.ExportHelper.getAvroCodec;
 import static org.nuxeo.ai.bulk.ExportHelper.getKVS;
 import static org.nuxeo.ai.model.export.CorpusDelta.CORPORA_ID_PARAM;
@@ -56,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -96,11 +98,9 @@ public class ExportInitComputation extends AbstractBulkComputation {
 
     public static final String UUID_QUERY_INIT = "SELECT * FROM Document WHERE ecm:uuid IN ";
 
-    public static final long TIMEOUT_48_HOURS_IN_SEC = 48 * 60 * 60;
+    public static final long TIMEOUT_48_HOURS_IN_SEC = TimeUnit.HOURS.toSeconds(48);
 
     public static final String COMMA_DELIMITER = ",";
-
-    private static final String TIMEOUT_KV_STORE = "nuxeo.ai.timeout.kv.store";
 
     public static final int DEFAULT_SPLIT = 75;
 
