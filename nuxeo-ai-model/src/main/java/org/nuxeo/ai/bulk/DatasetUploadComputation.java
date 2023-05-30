@@ -66,20 +66,23 @@ public class DatasetUploadComputation extends AbstractComputation {
     }
 
     protected void uploadDataset(ExportStatus status, BulkCommand command) {
-        String commandId = command.getId();
         CoreSession session = CoreInstance.getCoreSessionSystem(command.getRepository(), command.getUsername());
-        DocumentModel document = Framework.getService(DatasetExportService.class)
-                                          .getCorpusOfBatch(session, commandId, status.getId());
+        DatasetExportService service = Framework.getService(DatasetExportService.class);
 
-        if (status.getProcessed() - status.getErrored() <= 0) {
+        String commandId = command.getId();
+        DocumentModel document = service.getCorpusOfBatch(session, commandId, status.getId());
+
+        long processed = status.getProcessed();
+        long errored = status.getErrored();
+        if (processed - errored <= 0) {
             log.warn("{} documents were processed with {} errors for command {}, dataset doc: {}; skipping upload",
-                    status.getProcessed(), status.getErrored(), commandId,
-                    document == null ? "no document found" : document.getId());
+                    processed, errored, commandId, document);
         } else if (document != null) {
+            // Trying to upload dataset.
             CloudClient client = Framework.getService(CloudClient.class);
             if (client.isAvailable(session)) {
                 log.info("Uploading dataset to cloud for command {}, dataset doc {} processed {} documents, {} errors",
-                        commandId, document.getId(), status.getProcessed(), status.getErrored());
+                        commandId, document.getId(), processed, errored);
                 if (client.uploadDataset(document) == null) {
                     log.warn("Document wasn't uploaded {}", document.getId());
                 }
