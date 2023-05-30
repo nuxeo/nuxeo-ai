@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.bulk;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.optionAsInteger;
 
@@ -26,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,9 +44,11 @@ import org.nuxeo.runtime.kv.KeyValueStore;
  */
 public abstract class AbstractRecordWriter implements RecordWriter, Initializable {
 
+    public static final String TIMEOUT_KV_STORE = "nuxeo.ai.timeout.kv.store";
+
     public static final int DEFAULT_BUFFER_SIZE = 524288;  //512K
 
-    public static final int DEFAULT_BLOB_TTL_SEC = 7200; // 2 hours
+    public static final long DEFAULT_BLOB_TTL_SEC = TimeUnit.HOURS.toSeconds(48);
 
     public static final String BUFFER_SIZE_OPT = "bufferSize";
 
@@ -80,7 +82,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
     public Optional<Blob> complete(String id) throws IOException {
         KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(RECORD_STREAM_KV);
         String filename = kvStore.getString(makeKey(id, name));
-        if (filename != null && isNotBlank(blobProviderName)) {
+        if (StringUtils.isNoneBlank(filename, blobProviderName)) {
             File file = new File(filename);
             if (file.exists() && file.length() > 0) {
                 BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blobProviderName);
@@ -90,8 +92,15 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
                 if (managedBlob != null) {
                     return Optional.of(managedBlob);
                 }
+            } else {
+                log.warn("Unable to complete record {} as the file {} does not exist or is empty: {}", id, filename,
+                        blobProviderName);
             }
+        } else {
+            log.warn("Unable to complete record {} as the file {} or the blob provider {} is not set", id, filename,
+                    blobProviderName);
         }
+
         return Optional.empty();
     }
 
@@ -105,11 +114,7 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
     @Override
     public boolean exists(String id) {
         KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(RECORD_STREAM_KV);
-        return kvStore.getString(makeKey(id, name)) != null;
-    }
-
-    public String getBlobProviderName() {
-        return blobProviderName;
+        return StringUtils.isNotBlank(kvStore.getString(makeKey(id, name)));
     }
 
     /**
@@ -132,7 +137,9 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
             try {
                 File tempFile = Framework.createTempFile(id, name);
                 Framework.trackFile(tempFile, this);
-                kvStore.put(key, tempFile.getAbsolutePath(), DEFAULT_BLOB_TTL_SEC);
+                long ttl = Long.parseLong(
+                        Framework.getProperty(TIMEOUT_KV_STORE, String.valueOf(DEFAULT_BLOB_TTL_SEC)));
+                kvStore.put(key, tempFile.getAbsolutePath(), ttl);
                 if (log.isDebugEnabled()) {
                     log.debug("Tmp record file {} created ", tempFile.getAbsolutePath());
                 }

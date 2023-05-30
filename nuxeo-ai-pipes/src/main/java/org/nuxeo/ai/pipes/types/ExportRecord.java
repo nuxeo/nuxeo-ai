@@ -20,6 +20,8 @@
 package org.nuxeo.ai.pipes.types;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class ExportRecord implements Serializable {
 
@@ -95,5 +97,33 @@ public class ExportRecord implements Serializable {
 
     public void setTraining(boolean training) {
         isTraining = training;
+    }
+
+    @Override
+    public String toString() {
+        return "ExportRecord{" + "id='" + id + '\'' + ", commandId='" + commandId + '\'' + ", isFailed=" + isFailed
+                + ", isTraining=" + isTraining + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ExportRecord that = (ExportRecord) o;
+        return isFailed == that.isFailed && isTraining == that.isTraining && Objects.equals(id, that.id)
+                && Objects.equals(commandId, that.commandId) && Arrays.equals(data, that.data);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(id, commandId, isFailed, isTraining);
+        if (data != null) {
+            result = 31 * result + Arrays.hashCode(data);
+        }
+        return result;
     }
 }

@@ -57,7 +57,7 @@ public interface CloudClient {
      *
      * @return corpus id
      */
-    String uploadedDataset(@NotNull DocumentModel dataset);
+    String uploadDataset(@NotNull DocumentModel dataset);
 
     /**
      * Bind model and corpora in the cloud
