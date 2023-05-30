@@ -60,6 +60,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
+import org.joda.time.Seconds;
 import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
@@ -348,6 +349,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 batch3 = createBatch(batchUpload, "statistics", "2", statsData) ? batch3 : null;
 
                 DateTime end = DateTime.now();
+                log.info("Dataset upload took {} seconds", Seconds.secondsBetween(start, end).getSeconds());
 
                 AICorpus corpus = createCorpus(dataset, batch1, batch2, batch3, start, end);
                 String corporaId = (String) dataset.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
