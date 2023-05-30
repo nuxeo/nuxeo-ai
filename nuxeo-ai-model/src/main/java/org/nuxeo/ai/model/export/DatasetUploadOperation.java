@@ -54,7 +54,7 @@ public class DatasetUploadOperation {
             if (document != null && DATASET_EXPORT_TYPE.equals(document.getType())) {
                 if (client.isAvailable(session)) {
                     log.info("Uploading dataset to cloud for dataset doc {}", document.getId());
-                    client.uploadedDataset(document);
+                    client.uploadDataset(document);
                 } else {
                     log.warn("Upload to cloud not possible for dataset doc {}, type {} and client {}", document.getId(),
                             document.getType(), client.isAvailable(session));

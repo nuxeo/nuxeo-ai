@@ -60,30 +60,35 @@ public class DatasetUploadComputation extends AbstractComputation {
             log.warn("The bulk command with id {} is missing.  Unable to upload a dataset.", export.getCommandId());
         }
 
-        ctx.produceRecord(OUTPUT_1, record);
+        // use ExportStatus id (batch id) as the record id to ensure same node execution
+        ctx.produceRecord(OUTPUT_1, export.getId(), record.getData());
         ctx.askForCheckpoint();
     }
 
     protected void uploadDataset(ExportStatus status, BulkCommand command) {
-        String commandId = command.getId();
         CoreSession session = CoreInstance.getCoreSessionSystem(command.getRepository(), command.getUsername());
-        DocumentModel document = Framework.getService(DatasetExportService.class)
-                                          .getCorpusOfBatch(session, commandId, status.getId());
+        DatasetExportService service = Framework.getService(DatasetExportService.class);
 
-        if (status.getProcessed() - status.getErrored() <= 0) {
-            log.warn("{} documents were processed with {} errors for command {}, dataset doc {}; skipping upload",
-                    status.getProcessed(), status.getErrored(), commandId, document.getId());
+        String commandId = command.getId();
+        DocumentModel document = service.getCorpusOfBatch(session, commandId, status.getId());
+
+        long processed = status.getProcessed();
+        long errored = status.getErrored();
+        if (processed - errored <= 0) {
+            log.warn("{} documents were processed with {} errors for command {}, dataset doc: {}; skipping upload",
+                    processed, errored, commandId, document);
         } else if (document != null) {
+            // Trying to upload dataset.
             CloudClient client = Framework.getService(CloudClient.class);
             if (client.isAvailable(session)) {
-                log.info("Uploading dataset to cloud for command {}," + " dataset doc {}", commandId, document.getId());
-                if (client.uploadedDataset(document) == null) {
+                log.info("Uploading dataset to cloud for command {}, dataset doc {} processed {} documents, {} errors",
+                        commandId, document.getId(), processed, errored);
+                if (client.uploadDataset(document) == null) {
                     log.warn("Document wasn't uploaded {}", document.getId());
                 }
             } else {
-                log.warn(
-                        "Upload to cloud not possible for export command {}, export {} and client {}; document is null",
-                        commandId, status.getId(), client.isAvailable(session));
+                log.warn("Upload to cloud not possible for export command {}, export {} and client {}", commandId,
+                        status.getId(), client.isAvailable(session));
             }
         } else {
             log.error("Unable to find DatasetExport with job id " + commandId);
