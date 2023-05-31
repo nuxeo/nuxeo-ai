@@ -24,6 +24,8 @@ import static org.nuxeo.ai.convert.AiResizePictureConverter.AI_JPEG_RESIZER_COMM
 import static org.nuxeo.ai.convert.AiResizePictureConverter.AI_RESIZER_COMMAND;
 import static org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants.JPEG_CONVERSATION_FORMAT;
 
+import java.awt.Point;
+import java.io.File;
 import org.nuxeo.ecm.platform.commandline.executor.api.CmdParameters;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandException;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandLineExecutorService;
@@ -33,9 +35,6 @@ import org.nuxeo.ecm.platform.picture.api.ImageInfo;
 import org.nuxeo.ecm.platform.picture.magick.MagickExecutor;
 import org.nuxeo.ecm.platform.picture.magick.utils.ImageIdentifier;
 import org.nuxeo.runtime.api.Framework;
-
-import java.awt.Point;
-import java.io.File;
 
 /**
  * Unit command to extract a simplified view of a JPEG file using ImageMagick = extract the needed picture information
@@ -58,10 +57,9 @@ public class AiImageResizer extends MagickExecutor {
     public static final int MAX_JPEG_DIMENSION = 65500;
 
     public static ImageInfo resize(String inputFile, String outputFile, int targetWidth, int targetHeight,
-                                   int targetDepth) throws CommandNotAvailable, CommandException {
+            int targetDepth) throws CommandNotAvailable, CommandException {
         if (targetDepth == -1) {
-            targetDepth = ImageIdentifier.getInfo(inputFile)
-                                         .getDepth();
+            targetDepth = ImageIdentifier.getInfo(inputFile).getDepth();
         }
         CommandLineExecutorService cles = Framework.getService(CommandLineExecutorService.class);
         CmdParameters params = cles.getDefaultCmdParameters();
