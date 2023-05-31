@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>3.5.12</version>
+    <version>3.5.13-SNAPSHOT</version>
   </parent>
 
   <artifactId>nuxeo-ai-pipes</artifactId>
