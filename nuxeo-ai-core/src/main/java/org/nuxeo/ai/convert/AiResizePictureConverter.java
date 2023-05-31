@@ -68,19 +68,25 @@ public class AiResizePictureConverter implements Converter {
             if (source != null) {
                 Blob result = new IMImageUtils.ImageMagickCaller() {
                     @Override
-                    public void callImageMagick() throws CommandNotAvailable, CommandException {
-                        AiImageResizer.resize(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), width, height,
-                                depth);
+                    public void callImageMagick() throws CommandNotAvailable {
+                        try {
+                            AiImageResizer.resize(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), width,
+                                    height, depth);
+                        } catch (CommandException e) {
+                            log.error("Could not resize blob {} with digest {}; error: {}", source.getFilename(),
+                                    source.getDigest(), e.getLocalizedMessage());
+                        }
                     }
                 }.call(source, format, AI_RESIZER_COMMAND);
 
-                if (result != null) {
+                if (result != null && result.getLength() > 0) {
                     results.add(result);
                 } else {
                     log.warn("Could not resize blob {} with digest {}", source.getFilename(), source.getDigest());
                 }
             }
         }
+
         return new SimpleCachableBlobHolder(results);
     }
 

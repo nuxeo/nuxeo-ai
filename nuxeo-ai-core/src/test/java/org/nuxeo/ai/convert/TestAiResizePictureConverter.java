@@ -92,4 +92,23 @@ public class TestAiResizePictureConverter {
         assertThat(resBlob.getMimeType()).isEqualTo("image/jpeg");
         assertThat(resBlob.getLength()).isNotZero();
     }
+
+    @Test
+    public void shouldSkipNotImageBlob() throws IOException {
+        File htmlFile = FileUtils.getResourceFileFromContext("files/htmlTensor.html");
+        Blob planeBlob = Blobs.createBlob(htmlFile);
+        planeBlob.setMimeType("image/html");
+
+        SimpleBlobHolder bh = new SimpleBlobHolder(planeBlob);
+        Map<String, Serializable> parameters = new HashMap<>();
+        parameters.put(ImagingConvertConstants.OPTION_RESIZE_WIDTH, DEFAULT_IMAGE_WIDTH);
+        parameters.put(ImagingConvertConstants.OPTION_RESIZE_HEIGHT, DEFAULT_IMAGE_HEIGHT);
+        parameters.put(ImagingConvertConstants.OPTION_RESIZE_DEPTH, DEFAULT_IMAGE_DEPTH);
+        parameters.put(ImagingConvertConstants.CONVERSION_FORMAT, DEFAULT_CONVERSATION_FORMAT);
+
+        BlobHolder res = conversionService.convert(DEFAULT_CONVERTER, bh, parameters);
+        assertThat(res).isNotNull();
+        assertThat(res.getBlob()).isNull();
+        assertThat(res.getBlobs()).isEmpty();
+    }
 }
