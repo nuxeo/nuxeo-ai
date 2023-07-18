@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -43,7 +42,6 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
-
 import com.amazonaws.services.rekognition.model.BoundingBox;
 import com.amazonaws.services.rekognition.model.CelebrityDetail;
 import com.amazonaws.services.rekognition.model.CelebrityRecognition;
@@ -107,14 +105,15 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
                                              .stream()
                                              .map(c -> newCelebrityTag(c.getCelebrity(), c.getTimestamp()))
                                              .filter(Objects::nonNull)
-                                             .collect(Collectors.toList());
+                                             .toList();
 
             tags.addAll(currentPageTags);
             nativeCelebrityObjects.addAll(result.getCelebrities());
         } while (result.getNextToken() != null);
 
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("celebrityFaces", nativeCelebrityObjects.stream().map(CelebrityRecognition::getCelebrity));
+            jg.writeObjectField("celebrityFaces", nativeCelebrityObjects.stream().map(CelebrityRecognition::getCelebrity).collect(
+                    Collectors.toList()));
             jg.writeObjectField("unrecognizedFaces", Collections.emptyList());
         });
 
