@@ -24,7 +24,6 @@ import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEFAULT_CONFIGURATION;
 
 import javax.ws.rs.core.Response;
-import org.elasticsearch.search.SearchHit;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;

@@ -18,8 +18,8 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static com.tngtech.jgiven.impl.util.AssertionUtil.assertNotNull;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
@@ -63,7 +63,7 @@ public class TestEnrichmentMetaData {
     public void testBuilder() {
         EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(Instant.now(), "m1", "test",
                 new AIMetadata.Context(repositoryName, "doc1", null, null)).build();
-        assertNotNull(metadata);
+        assertThat(metadata).isNotNull();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -99,14 +99,14 @@ public class TestEnrichmentMetaData {
                                                                                                    .withCreator("bob")
                                                                                                    .withRawKey("xyz")
                                                                                                    .build();
-        assertNotNull(metadata);
+        assertThat(metadata).isNotNull();
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);
         assertEquals(metadata, metadataBackAgain);
-        assertNotNull(metadataBackAgain.toString());
+        assertThat(metadataBackAgain.toString()).isNotNull();
 
         EnrichmentMetadata suggest = EnrichmentUtils.copyMetadata(metadataBackAgain, blobTextFromDoc);
-        assertNotNull(suggest);
+        assertThat(suggest).isNotNull();
         assertEquals(metadataBackAgain.getLabels(), metadata.getLabels());
         assertEquals(metadataBackAgain.getTags(), metadata.getTags());
     }

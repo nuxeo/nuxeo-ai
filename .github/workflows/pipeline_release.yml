@@ -16,6 +16,7 @@ on:
         options:
           - "8"
           - "11"
+          - "17"
 
 jobs:
   release-publish:

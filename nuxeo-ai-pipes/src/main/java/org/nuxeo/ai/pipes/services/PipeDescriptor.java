@@ -157,7 +157,7 @@ public class PipeDescriptor {
             try {
                 DocumentEventFilter.Builder builder = new DocumentEventFilter.Builder();
                 for (PipeFilter filter : event.filters) {
-                    Filter theFilter = filter.clazz.newInstance();
+                    Filter theFilter = filter.clazz.getDeclaredConstructor().newInstance();
                     if (theFilter instanceof Initializable) {
                         filter.options.putAll(event.options);
                         ((Initializable) theFilter).init(filter.options);
@@ -169,7 +169,8 @@ public class PipeDescriptor {
                     }
                 }
                 return builder.build();
-            } catch (IllegalAccessException | InstantiationException | ClassCastException e) {
+            } catch (IllegalAccessException | InstantiationException | ClassCastException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 throw new NuxeoException("PipeDescriptor must define valid event filters", e);
             }
         }
