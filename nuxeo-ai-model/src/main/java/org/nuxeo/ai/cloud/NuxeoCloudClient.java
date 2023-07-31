@@ -294,6 +294,12 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
     protected boolean createBatch(BatchUpload batchUpload, String name, String index, Blob blob) {
         if (blob == null) {
+            log.warn("Batch blob for {} is null", name);
+            return false;
+        }
+
+        if (blob.getFile() == null) {
+            log.warn("Could not get blob file for {}", name);
             return false;
         }
 
@@ -314,8 +320,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
         Blob statsData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_STATS);
 
-        if ((trainingData == null || trainingData.getLength() == 0) && (evalData == null
-                || evalData.getLength() == 0)) {
+        if ((trainingData == null || trainingData.getLength() == 0 || trainingData.getFile() == null) && (
+                evalData == null || evalData.getLength() == 0 || evalData.getFile() == null)) {
             log.warn("Job/Command: {} has no training and/or evaluation data. Document {}", jobId, dataset.getId());
         } else if (statsData == null || statsData.getLength() == 0) {
             log.warn("Job/Command: {} has no statistics data.", jobId);
@@ -330,13 +336,34 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             try {
                 DateTime start = DateTime.now();
                 BatchUpload batchUpload = client.getBatchUpload(CHUNK_100_MB);
-
                 String batch1 = batchUpload.getBatchId();
-                batch1 = createBatch(batchUpload, "training", "0", trainingData) ? batch1 : null;
+                if (trainingData == null) {
+                    log.warn("Job/Command: {} has no training data - null data", jobId);
+                    batch1 = null;
+                } else if (trainingData.getLength() == 0) {
+                    log.warn("Job/Command: {} has no training data - data has 0 length", jobId);
+                    batch1 = null;
+                } else if (trainingData.getFile() == null) {
+                    log.warn("Job/Command: {} has no training data - data blob file is null", jobId);
+                    batch1 = null;
+                } else {
+                    batch1 = createBatch(batchUpload, "training", "0", trainingData) ? batch1 : null;
+                }
 
                 batchUpload = client.getBatchUpload(CHUNK_100_MB);
                 String batch2 = batchUpload.getBatchId();
-                batch2 = createBatch(batchUpload, "evaluation", "1", evalData) ? batch2 : null;
+                if (evalData == null) {
+                    log.warn("Job/Command: {} has no evaluation data - null data", jobId);
+                    batch2 = null;
+                } else if (evalData.getLength() == 0) {
+                    log.warn("Job/Command: {} has no evaluation data - data has 0 length", jobId);
+                    batch2 = null;
+                } else if (evalData.getFile() == null) {
+                    log.warn("Job/Command: {} has no evaluation data - data blob file is null", jobId);
+                    batch2 = null;
+                } else {
+                    batch2 = createBatch(batchUpload, "evaluation", "1", evalData) ? batch2 : null;
+                }
 
                 if (StringUtils.isAllBlank(batch1, batch2)) {
                     log.error("Job/Command: {} has no training and no evaluation data. Document {}", jobId,
