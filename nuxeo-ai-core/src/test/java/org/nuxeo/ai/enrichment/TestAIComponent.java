@@ -67,7 +67,7 @@ public class TestAIComponent {
         ComputationContext testContext = new ComputationContextImpl(null);
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.addBlob(FILE_CONTENT, "img",
-                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L, null));
         Record record = toRecord("k", blobTextFromDoc);
 
         EnrichingStreamProcessor.EnrichmentMetrics metrics = new EnrichingStreamProcessor.EnrichmentMetrics("test.e1");
@@ -196,7 +196,7 @@ public class TestAIComponent {
         blobTextFromDoc.setId("xderftgt");
         blobTextFromDoc.setRepositoryName("test");
         blobTextFromDoc.addBlob(FILE_CONTENT, "img",
-                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L, null));
         return toRecord("k", blobTextFromDoc);
     }
 

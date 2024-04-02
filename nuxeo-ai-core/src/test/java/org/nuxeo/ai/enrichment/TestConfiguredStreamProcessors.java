@@ -136,7 +136,7 @@ public class TestConfiguredStreamProcessors {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.setId(docId);
         blobTextFromDoc.setRepositoryName(testDoc.getRepositoryName());
-        blobTextFromDoc.addBlob(FILE_CONTENT, "img", new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L));
+        blobTextFromDoc.addBlob(FILE_CONTENT, "img", new BlobMetaImpl("test", "image/jpeg", "xyx", "xyz", null, 45L, null));
 
         // Check metrics, nothing produced
         Map<String, Gauge> gauges = getMetrics(METRICS_PREFIX);

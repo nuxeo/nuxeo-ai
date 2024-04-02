@@ -381,6 +381,6 @@ public class TestService {
     }
 
     protected ManagedBlob blob(Blob blob, String key) {
-        return new BlobMetaImpl("test", blob.getMimeType(), key, key, blob.getEncoding(), blob.getLength());
+        return new BlobMetaImpl("test", blob.getMimeType(), key, key, blob.getEncoding(), blob.getLength(), null);
     }
 }

@@ -148,6 +148,7 @@ public class JacksonUtil {
             jg.writeStringField("providerId", blob.getProviderId());
             jg.writeStringField("key", blob.getKey());
             jg.writeNumberField("length", blob.getLength());
+            jg.writeStringField("filename", blob.getFilename());
             jg.writeEndObject();
         }
     }

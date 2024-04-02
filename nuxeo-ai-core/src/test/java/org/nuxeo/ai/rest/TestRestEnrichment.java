@@ -68,7 +68,7 @@ public class TestRestEnrichment {
 
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
         blobTextFromDoc.addBlob(FILE_CONTENT, "img",
-                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L));
+                new BlobMetaImpl("test", "application/pdf", "xyx", "xyz", null, 45L, null));
         Collection<EnrichmentMetadata> results = service.enrich(blobTextFromDoc);
         assertEquals(1, results.size());
         EnrichmentMetadata metadata = results.iterator().next();

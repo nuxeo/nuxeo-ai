@@ -43,13 +43,15 @@ public class BlobMetaImpl extends AbstractBlob implements ManagedBlob {
     @JsonCreator
     public BlobMetaImpl(@JsonProperty("providerId") String providerId, @JsonProperty("mimeType") String mimeType,
             @JsonProperty("key") String key, @JsonProperty("digest") String digest,
-            @JsonProperty("encoding") String encoding, @JsonProperty("length") long length) {
+            @JsonProperty("encoding") String encoding, @JsonProperty("length") long length,
+            @JsonProperty("filename") String filename ) {
         this.providerId = providerId;
         this.mimeType = mimeType;
         this.key = key;
         this.digest = digest;
         this.encoding = encoding;
         this.length = length;
+        this.filename = filename;
     }
 
     @Override
@@ -95,6 +97,11 @@ public class BlobMetaImpl extends AbstractBlob implements ManagedBlob {
     @Override
     public String getDigest() {
         return digest;
+    }
+
+    @Override
+    public String getFilename() {
+        return filename;
     }
 
     @Override

@@ -106,7 +106,7 @@ public class TestModelServing {
 
     protected static ManagedBlob blob(Blob blob, String key) {
         return new BlobMetaImpl("test", blob.getMimeType(), key, blob.getDigest(), blob.getEncoding(),
-                blob.getLength());
+                blob.getLength(), null);
     }
 
     /**

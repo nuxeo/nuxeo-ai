@@ -129,7 +129,7 @@ public class TestEnrichmentMetaData {
         ManagedBlob blob = blobTextFromDoc.computePropertyBlobs().get(fileContentProp);
         blobTextFromDoc.addBlob("TEST_AGAIN", "img",
                 new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(), blob.getKey(), "58YY", blob.getEncoding(),
-                        blob.getLength()));
+                        blob.getLength(), null));
         assertEquals("testin47XX_58YY", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
     }
 }

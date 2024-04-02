@@ -62,7 +62,7 @@ public class EnrichmentTestFeature implements RunnerFeature {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(manager.getClass().getResourceAsStream(fileName), mimeType);
         ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobProvider.writeBlob(blob),
-                blob.getDigest(), blob.getEncoding(), blob.getLength());
+                blob.getDigest(), blob.getEncoding(), blob.getLength(), null);
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument();
         blobTextFromDoc.setRepositoryName("test");
         blobTextFromDoc.setId(UUID.randomUUID().toString());
