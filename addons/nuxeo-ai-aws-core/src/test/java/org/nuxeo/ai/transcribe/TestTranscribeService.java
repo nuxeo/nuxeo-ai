@@ -154,7 +154,7 @@ public class TestTranscribeService {
         Blob blob = Blobs.createBlob("A string blob here");
         String blobKey = blobProvider.writeBlob(blob);
         ManagedBlob managedBlob = new BlobMetaImpl("test", blob.getMimeType(), blobKey, blobKey, blob.getEncoding(),
-                blob.getLength());
+                blob.getLength(), blob.getFilename());
         btfd.addBlob("file:content", "img", managedBlob);
         AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME,
                 new BlobTextFromDocument(doc)).withLabels(
