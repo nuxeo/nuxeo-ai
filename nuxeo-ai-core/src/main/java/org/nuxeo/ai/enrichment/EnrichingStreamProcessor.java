@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 import net.jodah.failsafe.FailsafeExecutor;
 import net.jodah.failsafe.Timeout;
-import net.jodah.failsafe.function.CheckedRunnable;
+import net.jodah.failsafe.event.ExecutionAttemptedEvent;
 import net.jodah.failsafe.function.CheckedSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -211,6 +211,10 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                 if (log.isDebugEnabled()) {
                     log.debug("Retrying record " + record);
                 }
+                //If we are retrying it means it has errorred out so metric has to be taken care of in higher versions of failsafe
+                metrics.error();
+                log.warn("Enrichment error ({}) for record: {}", enricherName, record, ((ExecutionAttemptedEvent) c).getLastFailure());
+
             });
 
             FailsafeExecutor<Collection<AIMetadata>> executor = Failsafe.with(retryPolicy, circuitBreaker, timeout)
@@ -221,6 +225,7 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                                                                         }
                                                                     })
                                                                     .onFailure(failure -> {
+                                                                        //this is final failure after all retries
                                                                         metrics.error();
                                                                         log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
                                                                     });

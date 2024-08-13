@@ -126,7 +126,7 @@ public class PropertyUtils {
      */
     public static String base64EncodeBlob(Blob blob) {
         try {
-            if (blob != null) {
+            if (blob != null && blob.getByteArray() != null && blob.getByteArray().length > 0) {
                 return Base64.encodeBase64String(blob.getByteArray());
             }
         } catch (IOException ioe) {
