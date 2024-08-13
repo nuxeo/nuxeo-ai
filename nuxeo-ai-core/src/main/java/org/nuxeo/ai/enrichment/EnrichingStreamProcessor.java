@@ -27,11 +27,17 @@ import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.registerMetrics;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import net.jodah.failsafe.FailsafeExecutor;
+import net.jodah.failsafe.Timeout;
+import net.jodah.failsafe.function.CheckedRunnable;
+import net.jodah.failsafe.function.CheckedSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -196,20 +202,30 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * Calls the provider using the retryPolicy
          */
         protected Collection<AIMetadata> callProvider(Record record, Callable<Collection<AIMetadata>> callable) {
-            return Failsafe.with(retryPolicy).onSuccess(r -> {
-                metrics.success();
-                if (log.isDebugEnabled()) {
-                    log.debug("Enrichment result is " + r);
-                }
-            }).onFailedAttempt(failure -> {
-                metrics.error();
-                log.warn("Enrichment error ({}) for record: {} ", enricherName, record, failure);
-            }).onRetry(c -> {
+
+            CheckedSupplier<Collection<AIMetadata>> supplier = callable::call;
+            Timeout<Collection<AIMetadata>> timeout = Timeout.of(Duration.ofSeconds(60));
+
+            retryPolicy.onRetry(c -> {
                 metrics.retry();
                 if (log.isDebugEnabled()) {
                     log.debug("Retrying record " + record);
                 }
-            }).with(circuitBreaker).get(callable);
+            });
+
+            FailsafeExecutor<Collection<AIMetadata>> executor = Failsafe.with(retryPolicy, circuitBreaker, timeout)
+                                                                    .onSuccess(r -> {
+                                                                        metrics.success();
+                                                                        if (log.isDebugEnabled()) {
+                                                                            log.debug("Enrichment result is " + r);
+                                                                        }
+                                                                    })
+                                                                    .onFailure(failure -> {
+                                                                        metrics.error();
+                                                                        log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
+                                                                    });
+
+            return executor.get(supplier);
         }
 
         /**
