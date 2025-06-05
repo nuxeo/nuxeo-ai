@@ -16,7 +16,8 @@
  *
  * Contributors:
  *     anechaev
- */
+ *//*
+
 package org.nuxeo.ai.tensorflow;
 
 import static com.google.protobuf.WireFormat.WIRETYPE_LENGTH_DELIMITED;
@@ -37,9 +38,11 @@ import com.google.protobuf.MessageOrBuilder;
 import com.google.protobuf.Parser;
 import com.google.protobuf.UnknownFieldSet;
 
+*/
 /**
  * Partial implementation of a Protobuf object that represents Tensorflow record
- */
+ *//*
+
 public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
 
     protected static final int FEATURES_FIELD_NUMBER = 1;
@@ -73,11 +76,13 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
         this.features = features;
     }
 
-    /**
+    */
+/**
      * Must be never called explicitly. For PB internal use only
      *
      * @throws IOException in case of broken record
-     */
+     *//*
+
     protected TFRecord(CodedInputStream is, ExtensionRegistryLite registry) throws IOException {
         Objects.requireNonNull(registry);
 
@@ -123,7 +128,7 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
             throw new InvalidProtocolBufferException(e).setUnfinishedMessage(this);
         } finally {
             this.unknownFields = unknownBuilder.build();
-            makeExtensionsImmutable();
+           // makeExtensionsImmutable();
         }
     }
 
@@ -176,13 +181,15 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
         return size;
     }
 
-    /**
+    */
+/**
      * Deserialization method
      *
      * @param bytes to restore the object
      * @return restored {@link TFRecord}
      * @throws InvalidProtocolBufferException in case of broken record
-     */
+     *//*
+
     public static TFRecord from(byte[] bytes) throws InvalidProtocolBufferException {
         return PARSER.parsePartialFrom(bytes);
     }
@@ -218,3 +225,123 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
         return PARSER;
     }
 }
+*/
+package org.nuxeo.ai.tensorflow;
+
+import java.io.IOException;
+import java.util.Objects;
+
+import org.apache.commons.lang3.StringUtils;
+import org.tensorflow.example.Features;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import com.google.protobuf.ExtensionRegistryLite;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.UnknownFieldSet;
+
+/**
+ * Custom class representing a TensorFlow record - after removing makeExtensionsImmutable() which is deprecated now
+ * after protobuf upgrade to 3.25.7
+ */
+public class TFRecord {
+
+    private Features features;
+    private String docId;
+    private UnknownFieldSet unknownFields = UnknownFieldSet.getDefaultInstance();
+
+    public TFRecord(String docId, Features features) {
+        this.docId = docId;
+        this.features = features;
+    }
+
+    public static TFRecord from(byte[] bytes) throws InvalidProtocolBufferException {
+        try {
+            return new TFRecord(CodedInputStream.newInstance(bytes), ExtensionRegistryLite.getEmptyRegistry());
+        } catch (IOException e) {
+            throw new InvalidProtocolBufferException(e);
+        }
+    }
+
+    private TFRecord(CodedInputStream input, ExtensionRegistryLite registry) throws IOException {
+        Objects.requireNonNull(registry);
+        UnknownFieldSet.Builder unknownBuilder = UnknownFieldSet.newBuilder();
+
+        boolean done = false;
+        while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+                case 0:
+                    done = true;
+                    break;
+                case 10:
+                    features = input.readMessage(Features.parser(), registry);
+                    break;
+                case 18:
+                    docId = input.readString();
+                    break;
+                default:
+                    if (!input.skipField(tag)) {
+                        done = true;
+                    }
+                    break;
+            }
+        }
+
+        this.unknownFields = unknownBuilder.build();
+    }
+
+    public void writeTo(CodedOutputStream output) throws IOException {
+        if (StringUtils.isNotEmpty(docId)) {
+            output.writeString(2, docId);
+        }
+        if (features != null) {
+            output.writeMessage(1, features);
+        }
+        unknownFields.writeTo(output);
+    }
+
+    public byte[] toByteArray() throws IOException {
+        int size = getSerializedSize();
+        byte[] result = new byte[size];
+        CodedOutputStream output = CodedOutputStream.newInstance(result);
+        writeTo(output);
+        output.flush();
+        return result;
+    }
+
+    public int getSerializedSize() {
+        int size = 0;
+
+        if (features != null) {
+            size += CodedOutputStream.computeMessageSize(1, features);
+        }
+
+        if (StringUtils.isNotEmpty(docId)) {
+            size += CodedOutputStream.computeStringSize(2, docId);
+        }
+
+        size += unknownFields.getSerializedSize();
+
+        return size;
+    }
+
+
+    public String getDocId() {
+        return docId;
+    }
+
+    public void setDocId(String docId) {
+        this.docId = docId;
+    }
+
+    public Features getFeatures() {
+        return features;
+    }
+
+    public void setFeatures(Features features) {
+        this.features = features;
+    }
+}
+
+
