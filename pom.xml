@@ -17,7 +17,8 @@
   <properties>
     <nuxeo.ai.version>4.0.2-SNAPSHOT</nuxeo.ai.version>
     <dropwizard.version>4.1.17</dropwizard.version>
-    <tensorflow.version>1.11.0</tensorflow.version>
+<!--    <tensorflow.version>1.15.0</tensorflow.version>-->
+<!--    <tensorflow.java.version>0.5.0</tensorflow.java.version>-->
     <nuxeo.target.version>2023.*</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.java.client.version>3.13.0</nuxeo.java.client.version>
@@ -199,11 +200,21 @@
         <artifactId>nuxeo-log4j-core</artifactId>
         <version>${nuxeo.log4j.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.tensorflow</groupId>
-        <artifactId>proto</artifactId>
-        <version>${tensorflow.version}</version>
-      </dependency>
+<!--      <dependency>-->
+<!--        <groupId>org.tensorflow</groupId>-->
+<!--        <artifactId>tensorflow-core-platform</artifactId>-->
+<!--        <version>${tensorflow.java.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.tensorflow</groupId>-->
+<!--        <artifactId>tensorflow-core-api</artifactId>-->
+<!--        <version>${tensorflow.java.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.tensorflow</groupId>-->
+<!--        <artifactId>proto</artifactId>-->
+<!--        <version>${tensorflow.version}</version>-->
+<!--      </dependency>-->
       <dependency>
         <groupId>io.dropwizard.metrics</groupId>
         <artifactId>metrics-core</artifactId>
@@ -228,6 +239,11 @@
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
         <version>${nuxeo.ai.jwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>4.29.3</version>
       </dependency>
       <!-- <grpc-netty.version>1.28.0</grpc-netty.version> specified in nuxeo parent pom -->
       <dependency>
@@ -269,11 +285,23 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-context</artifactId>
         <version>${grpc-netty.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-protobuf</artifactId>
         <version>${grpc-netty.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>io.grpc</groupId>
