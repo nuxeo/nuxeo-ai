@@ -10,23 +10,11 @@
   <name>Ai core</name>
   <description>Core AI functionality</description>
   <dependencies>
-<!--    <dependency>-->
-<!--      <groupId>org.tensorflow</groupId>-->
-<!--      <artifactId>proto</artifactId>-->
-<!--    </dependency>-->
-<!--    <dependency>-->
-<!--      <groupId>org.tensorflow</groupId>-->
-<!--      <artifactId>tensorflow-core-platform</artifactId>-->
-<!--    </dependency>-->
       <dependency>
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
 <!--          <version>4.29.3</version>-->
       </dependency>
-<!--    <dependency>-->
-<!--      <groupId>org.tensorflow</groupId>-->
-<!--      <artifactId>tensorflow-core-api</artifactId>-->
-<!--    </dependency>-->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpmime</artifactId>
