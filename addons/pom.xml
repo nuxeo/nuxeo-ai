@@ -13,7 +13,7 @@
 
   <properties>
     <wiremock.version>2.18.0</wiremock.version>
-    <gcp.version>13.1.0</gcp.version>
+    <gcp.version>26.62.0</gcp.version>
   </properties>
 
   <modules>

@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * A POJO for marshaling response from Amazon Transcribe
  */
-//Testing PR builds to fix failure issue
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AudioTranscription {
 
