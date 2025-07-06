@@ -217,20 +217,17 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
             });
 
-            FailsafeExecutor<Collection<AIMetadata>> executor = Failsafe.with(retryPolicy, circuitBreaker, timeout)
+            return Failsafe.with(retryPolicy, circuitBreaker, timeout)
                                                                     .onSuccess(r -> {
                                                                         metrics.success();
-                                                                        if (log.isDebugEnabled()) {
-                                                                            log.debug("Enrichment result is " + r);
-                                                                        }
+                                                                        log.debug("Enrichment result is: {}" + r);
                                                                     })
                                                                     .onFailure(failure -> {
                                                                         //this is final failure after all retries
                                                                         metrics.error();
                                                                         log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
-                                                                    });
-
-            return executor.get(supplier);
+                                                                    })
+                                                                    .get(supplier);
         }
 
         /**

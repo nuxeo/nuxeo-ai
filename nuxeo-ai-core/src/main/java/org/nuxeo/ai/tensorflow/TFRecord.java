@@ -114,7 +114,6 @@ public class TFRecord extends GeneratedMessage implements MessageOrBuilder {
             throw new InvalidProtocolBufferException(e).setUnfinishedMessage(this);
         } finally {
             this.unknownFields = unknownBuilder.build();
-           //makeExtensionsImmutable();
         }
     }
 

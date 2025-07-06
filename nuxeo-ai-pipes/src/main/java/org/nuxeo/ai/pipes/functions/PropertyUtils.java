@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -126,8 +127,11 @@ public class PropertyUtils {
      */
     public static String base64EncodeBlob(Blob blob) {
         try {
-            if (blob != null && blob.getByteArray() != null && blob.getByteArray().length > 0) {
-                return Base64.encodeBase64String(blob.getByteArray());
+            if (blob != null) {
+                byte[] blobBytes = blob.getByteArray();
+                if (ArrayUtils.isNotEmpty(blobBytes)) {
+                    return Base64.encodeBase64String(blobBytes);
+                }
             }
         } catch (IOException ioe) {
             log.warn("Failed to convert a blob to a String", ioe);

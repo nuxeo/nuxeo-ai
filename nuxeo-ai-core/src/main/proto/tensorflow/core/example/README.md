@@ -12,38 +12,15 @@ This directory contains .proto files used to generate Java classes for TensorFlo
 
 #### 🗂️ Java Output Location
 
-Generated Java files are placed here:
+Generated Java files will be placed here after build:
 
-$HOME/nuxeo-ai/nuxeo-ai-core/src/main/java/org/tensorflow/example
+$HOME/nuxeo-ai/nuxeo-ai-core/target/generated-sources/protobuf
 
 This mirrors the package org.tensorflow.example; defined inside the .proto files.
 
-### 🔄 Regeneration Process
+### 🔄 Generation Process
 
-When updating Protobuf versions (e.g., upgrading beyond 4.29.3), follow these steps:
-
-1. Prerequisites:
-    
-   Ensure protoc is installed (v3.x+ or 4.x+). If not, run `brew install protobuf`. Check `protoc --version`.
-
-    Ensure protobuf-java in project parent pom.xml. It should match the version of protoc.
-
-
-2. Clean up old generated files:
-   
-   `rm -f $HOME/nuxeo-ai/nuxeo-ai-core/src/main/java/org/tensorflow/example/*.java`
-
-
-3. Generate new Java files:
-   
-    Navigate to directory $HOME/nuxeo-ai/nuxeo-ai-core
-
-    `protoc 
-  -I=src/main/proto 
-  --java_out=src/main/java \
-  src/main/proto/tensorflow/core/example/example.proto \
-  src/main/proto/tensorflow/core/example/feature.proto
-    `
+Java classes are **automatically generated during the Maven build process** using the `protobuf-maven-plugin`. This eliminates the need for manual `protoc` commands and ensures consistency with the Protobuf version defined in the project.
 
 The generated files include:
 
@@ -53,26 +30,18 @@ The generated files include:
 
 * additional nested types defined in these .proto files.
 
-4. Verify:
+### 🔄 How it works
 
-   Ensure the new .java files exist in the org/tensorflow/example directory and compile without errors.
+- The Maven plugin automatically detects `.proto` files in `src/main/proto`.
+- It uses the `protoc` compiler (version defined in the parent `pom.xml`) to generate Java classes.
+- The generated sources are added to the build path via the `build-helper-maven-plugin`.
+- No manual cleanup or regeneration is required.
 
-### ✅ Summary of Commands
+### 🛠️ When to Regenerate
 
-#### Navigate to project root directory
-`cd $HOME/nuxeo-ai/nuxeo-ai-core/`
-
-#### Remove old generated Java sources
-`rm -f src/main/java/org/tensorflow/example/*.java`
-
-#### Regenerate Java from proto files
-`protoc 
-  -I=src/main/proto 
-  --java_out=src/main/java \
-  src/main/proto/tensorflow/core/example/example.proto \
-  src/main/proto/tensorflow/core/example/feature.proto`
-
-#### Build project from $HOME/nuxeo-ai
+If you update the `.proto` files or upgrade the Protobuf version in the parent `pom.xml`, simply run:
 `mvn clean install`
 
-
+>[!WARNING]
+>
+>**Do not change the location of the `.proto` files. This might fail the build. If you need to change it at all, make the required changes in `$HOME/nuxeo-ai/nuxeo-ai-core/pom.xml`**
