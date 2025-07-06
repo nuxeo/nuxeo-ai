@@ -208,26 +208,25 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
             retryPolicy.onRetry(c -> {
                 metrics.retry();
-                if (log.isDebugEnabled()) {
-                    log.debug("Retrying record " + record);
-                }
+                log.debug("Retrying record: {}", record);
                 //If we are retrying it means it has errorred out so metric has to be taken care of in higher versions of failsafe
                 metrics.error();
                 log.warn("Enrichment error ({}) for record: {}", enricherName, record, ((ExecutionAttemptedEvent) c).getLastFailure());
 
             });
 
-            return Failsafe.with(retryPolicy, circuitBreaker, timeout)
-                                                                    .onSuccess(r -> {
-                                                                        metrics.success();
-                                                                        log.debug("Enrichment result is: {}" + r);
-                                                                    })
-                                                                    .onFailure(failure -> {
-                                                                        //this is final failure after all retries
-                                                                        metrics.error();
-                                                                        log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
-                                                                    })
-                                                                    .get(supplier);
+            FailsafeExecutor<Collection<AIMetadata>> executor = Failsafe.with(retryPolicy, circuitBreaker, timeout)
+                    .onSuccess(r -> {
+                        metrics.success();
+                        log.debug("Enrichment result is: {}", r);
+                    })
+                    .onFailure(failure -> {
+                        //this is final failure after all retries
+                        metrics.error();
+                        log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
+                    });
+
+            return executor.get(supplier);
         }
 
         /**
