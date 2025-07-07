@@ -103,9 +103,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected EnrichmentSupport enrichmentSupport;
 
-        protected RetryPolicy retryPolicy;
+        protected RetryPolicy<Collection<AIMetadata>> retryPolicy;
 
-        protected CircuitBreaker circuitBreaker;
+        protected CircuitBreaker<Collection<AIMetadata>> circuitBreaker;
 
         public EnrichmentComputation(int outputStreams, String computationName, String enricherName,
                 EnrichmentMetrics metrics, boolean useCache) {
@@ -203,19 +203,18 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          */
         protected Collection<AIMetadata> callProvider(Record record, Callable<Collection<AIMetadata>> callable) {
 
-            CheckedSupplier<Collection<AIMetadata>> supplier = callable::call;
             Timeout<Collection<AIMetadata>> timeout = Timeout.of(Duration.ofSeconds(60));
 
-            retryPolicy.onRetry(c -> {
+            var retryPolicy = this.retryPolicy.copy().onRetry(c -> {
                 metrics.retry();
                 log.debug("Retrying record: {}", record);
                 //If we are retrying it means it has errorred out so metric has to be taken care of in higher versions of failsafe
                 metrics.error();
-                log.warn("Enrichment error ({}) for record: {}", enricherName, record, ((ExecutionAttemptedEvent) c).getLastFailure());
+                log.warn("Enrichment error ({}) for record: {}", enricherName, record, c.getLastFailure());
 
             });
 
-            FailsafeExecutor<Collection<AIMetadata>> executor = Failsafe.with(retryPolicy, circuitBreaker, timeout)
+            return Failsafe.with(retryPolicy, circuitBreaker, timeout)
                     .onSuccess(r -> {
                         metrics.success();
                         log.debug("Enrichment result is: {}", r);
@@ -223,10 +222,8 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
                     .onFailure(failure -> {
                         //this is final failure after all retries
                         metrics.error();
-                        log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure);
-                    });
-
-            return executor.get(supplier);
+                        log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure.getFailure());
+                    }).get(callable::call);
         }
 
         /**

@@ -60,7 +60,7 @@ public interface EnrichmentProvider {
      * The retry policy for the provider
      */
     @SuppressWarnings("unchecked")
-    default RetryPolicy getRetryPolicy() {
+    default RetryPolicy<Collection<AIMetadata>> getRetryPolicy() {
         return new RetryPolicy<Collection<AIMetadata>>()
             .abortOn(NuxeoException.class, FatalEnrichmentError.class)
             .withBackoff(3,36, ChronoUnit.SECONDS)
@@ -70,7 +70,7 @@ public interface EnrichmentProvider {
     /**
      * The circuit breaker for the provider
      */
-    default CircuitBreaker getCircuitBreaker() {
+    default CircuitBreaker<Collection<AIMetadata>> getCircuitBreaker() {
         return new CircuitBreaker<Collection<AIMetadata>>().withFailureThreshold(8, 9)
                                    .withSuccessThreshold(1)
                                    .withDelay(Duration.of(2, ChronoUnit.MINUTES));
