@@ -23,24 +23,15 @@ import static com.google.protobuf.WireFormat.WIRETYPE_LENGTH_DELIMITED;
 
 import java.io.IOException;
 import java.util.Objects;
+import com.google.protobuf.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.tensorflow.example.Features;
-import com.google.protobuf.AbstractParser;
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.ExtensionRegistryLite;
-import com.google.protobuf.GeneratedMessageV3;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
-import com.google.protobuf.MessageOrBuilder;
-import com.google.protobuf.Parser;
-import com.google.protobuf.UnknownFieldSet;
 
 /**
  * Partial implementation of a Protobuf object that represents Tensorflow record
  */
-public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
+public class TFRecord extends GeneratedMessage implements MessageOrBuilder {
 
     protected static final int FEATURES_FIELD_NUMBER = 1;
 
@@ -123,7 +114,6 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
             throw new InvalidProtocolBufferException(e).setUnfinishedMessage(this);
         } finally {
             this.unknownFields = unknownBuilder.build();
-            makeExtensionsImmutable();
         }
     }
 
