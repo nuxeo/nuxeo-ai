@@ -107,7 +107,7 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
     @Override
     public RetryPolicy getRetryPolicy() {
         return super.getRetryPolicy()
-                    .abortOn(throwable -> ((Throwable)throwable).getMessage().contains("is not authorized to perform"));
+                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
     }
 
     @Override

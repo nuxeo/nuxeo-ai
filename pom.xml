@@ -229,7 +229,6 @@
         <artifactId>protobuf-java</artifactId>
         <version>${google.protobuf.version}</version>
       </dependency>
-      <!-- <grpc-netty.version>1.64.0</grpc-netty.version> specified in nuxeo parent pom -->
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-auth</artifactId>
