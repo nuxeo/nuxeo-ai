@@ -24,6 +24,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -34,7 +36,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ai.model.export.DatasetExportInterruptOperation;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
 import org.nuxeo.ai.model.export.DatasetExportUpdaterOperation;
@@ -49,7 +50,9 @@ import org.nuxeo.ecm.automation.core.util.Properties;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
+import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
+import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -64,6 +67,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
+@Deploy("org.nuxeo.ecm.automation.core")
 @Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class TestDatasetOperation {
 
@@ -131,12 +135,22 @@ public class TestDatasetOperation {
     }
 
     @Test
+    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/test-operations-contrib.xml")
     public void shouldRunInterruptOperation() throws OperationException {
+        BulkService mockBulkService = mock(BulkService.class);
+        BulkStatus mockStatus = new BulkStatus("fakeOne");
+        mockStatus.setState(BulkStatus.State.ABORTED);
+        when(mockBulkService.abort("fakeOne")).thenReturn(mockStatus);
+
+        TestDatasetExportInterruptOperation.testBulkService = mockBulkService;
+
         OperationContext ctx = new OperationContext(session);
         HashMap<String, Serializable> params = new HashMap<>();
         params.put("commandId", "fakeOne");
-        boolean result = (boolean) automationService.run(ctx, DatasetExportInterruptOperation.ID, params);
-        assertTrue(result);
+
+        boolean result = (boolean) automationService.run(ctx, "Test.AI.ExportInterrupt", params);
+        assertTrue("Expected operation to return true", result);
+        TestDatasetExportInterruptOperation.testBulkService = null;
     }
 
     @Test

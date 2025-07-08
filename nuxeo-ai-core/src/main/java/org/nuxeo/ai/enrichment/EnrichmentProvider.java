@@ -18,8 +18,13 @@
  */
 package org.nuxeo.ai.enrichment;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+
+import net.jodah.failsafe.Timeout;
+import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 
@@ -56,19 +61,19 @@ public interface EnrichmentProvider {
      */
     @SuppressWarnings("unchecked")
     default RetryPolicy getRetryPolicy() {
-        return new RetryPolicy().abortOn(NuxeoException.class, FatalEnrichmentError.class)
-                                .withMaxRetries(2)
-                                .withBackoff(3, 36, TimeUnit.SECONDS);
+        return new RetryPolicy<Collection<AIMetadata>>()
+            .abortOn(NuxeoException.class, FatalEnrichmentError.class)
+            .withBackoff(3,36, ChronoUnit.SECONDS)
+            .withMaxRetries(2);
     }
 
     /**
      * The circuit breaker for the provider
      */
     default CircuitBreaker getCircuitBreaker() {
-        return new CircuitBreaker().withFailureThreshold(8, 9)
-                                   .withDelay(2, TimeUnit.MINUTES)
+        return new CircuitBreaker<Collection<AIMetadata>>().withFailureThreshold(8, 9)
                                    .withSuccessThreshold(1)
-                                   .withTimeout(60, TimeUnit.SECONDS);
+                                   .withDelay(Duration.of(2, ChronoUnit.MINUTES));
     }
 
 }

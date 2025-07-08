@@ -17,30 +17,25 @@
  * Contributors:
  *     anechaev
  */
+
 package org.nuxeo.ai.tensorflow;
 
 import static com.google.protobuf.WireFormat.WIRETYPE_LENGTH_DELIMITED;
 
 import java.io.IOException;
 import java.util.Objects;
+
+import com.google.protobuf.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.tensorflow.example.Features;
-import com.google.protobuf.AbstractParser;
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.ExtensionRegistryLite;
-import com.google.protobuf.GeneratedMessageV3;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
-import com.google.protobuf.MessageOrBuilder;
-import com.google.protobuf.Parser;
-import com.google.protobuf.UnknownFieldSet;
+
 
 /**
  * Partial implementation of a Protobuf object that represents Tensorflow record
  */
-public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
+
+public class TFRecord extends GeneratedMessage implements MessageOrBuilder {
 
     protected static final int FEATURES_FIELD_NUMBER = 1;
 
@@ -73,11 +68,13 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
         this.features = features;
     }
 
-    /**
+
+/**
      * Must be never called explicitly. For PB internal use only
      *
      * @throws IOException in case of broken record
      */
+
     protected TFRecord(CodedInputStream is, ExtensionRegistryLite registry) throws IOException {
         Objects.requireNonNull(registry);
 
@@ -123,7 +120,7 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
             throw new InvalidProtocolBufferException(e).setUnfinishedMessage(this);
         } finally {
             this.unknownFields = unknownBuilder.build();
-            makeExtensionsImmutable();
+           //makeExtensionsImmutable();
         }
     }
 
@@ -176,13 +173,15 @@ public class TFRecord extends GeneratedMessageV3 implements MessageOrBuilder {
         return size;
     }
 
-    /**
+
+/**
      * Deserialization method
      *
      * @param bytes to restore the object
      * @return restored {@link TFRecord}
      * @throws InvalidProtocolBufferException in case of broken record
      */
+
     public static TFRecord from(byte[] bytes) throws InvalidProtocolBufferException {
         return PARSER.parsePartialFrom(bytes);
     }
