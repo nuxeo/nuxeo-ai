@@ -27,11 +27,17 @@ import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.buildName;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.getStreamsList;
 import static org.nuxeo.ai.pipes.streams.FunctionStreamProcessor.registerMetrics;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import net.jodah.failsafe.FailsafeExecutor;
+import net.jodah.failsafe.Timeout;
+import net.jodah.failsafe.event.ExecutionAttemptedEvent;
+import net.jodah.failsafe.function.CheckedSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -97,9 +103,9 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
         protected EnrichmentSupport enrichmentSupport;
 
-        protected RetryPolicy retryPolicy;
+        protected RetryPolicy<Collection<AIMetadata>> retryPolicy;
 
-        protected CircuitBreaker circuitBreaker;
+        protected CircuitBreaker<Collection<AIMetadata>> circuitBreaker;
 
         public EnrichmentComputation(int outputStreams, String computationName, String enricherName,
                 EnrichmentMetrics metrics, boolean useCache) {
@@ -196,20 +202,28 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          * Calls the provider using the retryPolicy
          */
         protected Collection<AIMetadata> callProvider(Record record, Callable<Collection<AIMetadata>> callable) {
-            return Failsafe.with(retryPolicy).onSuccess(r -> {
-                metrics.success();
-                if (log.isDebugEnabled()) {
-                    log.debug("Enrichment result is " + r);
-                }
-            }).onFailedAttempt(failure -> {
-                metrics.error();
-                log.warn("Enrichment error ({}) for record: {} ", enricherName, record, failure);
-            }).onRetry(c -> {
+
+            Timeout<Collection<AIMetadata>> timeout = Timeout.of(Duration.ofSeconds(60));
+
+            var retryPolicy = this.retryPolicy.copy().onRetry(c -> {
                 metrics.retry();
-                if (log.isDebugEnabled()) {
-                    log.debug("Retrying record " + record);
-                }
-            }).with(circuitBreaker).get(callable);
+                log.debug("Retrying record: {}", record);
+                //If we are retrying it means it has errorred out so metric has to be taken care of in higher versions of failsafe
+                metrics.error();
+                log.warn("Enrichment error ({}) for record: {}", enricherName, record, c.getLastFailure());
+
+            });
+
+            return Failsafe.with(retryPolicy, circuitBreaker, timeout)
+                    .onSuccess(r -> {
+                        metrics.success();
+                        log.debug("Enrichment result is: {}", r);
+                    })
+                    .onFailure(failure -> {
+                        //this is final failure after all retries
+                        metrics.error();
+                        log.warn("Enrichment error ({}) for record: {}", enricherName, record, failure.getFailure());
+                    }).get(callable::call);
         }
 
         /**

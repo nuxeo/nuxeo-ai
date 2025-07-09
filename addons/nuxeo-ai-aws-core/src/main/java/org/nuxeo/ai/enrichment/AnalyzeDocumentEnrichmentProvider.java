@@ -24,12 +24,12 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -111,6 +111,6 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
     public RetryPolicy getRetryPolicy() {
         return new RetryPolicy().abortOn(NuxeoException.class, FatalEnrichmentError.class)
                                 .withMaxRetries(2)
-                                .withBackoff(10, 60, TimeUnit.SECONDS);
+                                .withBackoff(10, 60, ChronoUnit.SECONDS);
     }
 }

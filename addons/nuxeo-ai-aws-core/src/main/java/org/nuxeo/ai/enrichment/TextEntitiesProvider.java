@@ -108,7 +108,7 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
     @Override
     public RetryPolicy getRetryPolicy() {
         return super.getRetryPolicy()
-                    .abortOn(throwable -> throwable.getMessage().contains("is not authorized to perform"));
+                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
     }
 
     @Override

@@ -161,7 +161,6 @@ public class TestAIComponent {
         computation.init(testContext);
         computation.processRecord(testContext, null, record);
         computation.processRecord(testContext, null, record);
-        computation.processRecord(testContext, null, record);
         try {
             computation.processRecord(testContext, null, record);
             fail();
@@ -169,10 +168,10 @@ public class TestAIComponent {
             assertTrue(e.getMessage().contains("Stream circuit breaker"));
             assertEquals(1, metrics.circuitBreaker);
         }
-        assertEquals(6, metrics.retries);
-        assertEquals(8, metrics.errors);
-        assertEquals(4, metrics.called);
-        assertEquals(1, metrics.success);
+        assertEquals(9, metrics.retries);
+        assertEquals(12, metrics.errors);
+        assertEquals(3, metrics.called);
+        assertEquals(0, metrics.success);
 
         metrics = new EnrichingStreamProcessor.EnrichmentMetrics("testError");
         computation = new EnrichingStreamProcessor.EnrichmentComputation(1, "teste3", "circ3", metrics, false);
