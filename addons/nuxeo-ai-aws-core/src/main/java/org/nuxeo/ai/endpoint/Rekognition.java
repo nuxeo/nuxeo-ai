@@ -148,9 +148,16 @@ public class Rekognition {
                 String subscribeURL = (String) confirmation.get("SubscribeURL");
                 if (StringUtils.isNotBlank(subscribeURL)) {
                     URL url = new URL(subscribeURL);
-                    try (InputStream is = url.openConnection().getInputStream()) {
-                        log.debug("Confirming SNS subscription");
-                        /* NOP */
+                    String host = url.getHost();
+
+                    // Allow only AWS SNS domains
+                    if (host.endsWith(".amazonaws.com")) {
+                        try (InputStream is = url.openConnection().getInputStream()) {
+                            log.debug("Confirming SNS subscription");
+                            /* NOP */
+                        }
+                    } else {
+                        log.warn("Blocked SSRF attempt to: {}", subscribeURL);
                     }
                 }
                 return true;
