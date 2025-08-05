@@ -25,9 +25,11 @@ import static org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener.JOB_ID
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -35,26 +37,20 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider;
-import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider;
-import org.nuxeo.ai.enrichment.async.DetectSegmentEnrichmentProvider;
-import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider;
-import org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider;
-import org.nuxeo.ai.rekognition.listeners.AsyncCelebritiesResultListener;
-import org.nuxeo.ai.rekognition.listeners.AsyncFaceResultListener;
-import org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener;
-import org.nuxeo.ai.rekognition.listeners.AsyncSegmentResultListener;
-import org.nuxeo.ai.rekognition.listeners.AsyncUnsafeResultListener;
+import org.nuxeo.ai.enrichment.async.*;
+import org.nuxeo.ai.rekognition.listeners.*;
 import org.nuxeo.ai.sns.Notification;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -144,23 +140,34 @@ public class Rekognition {
             @SuppressWarnings("unchecked")
             Map<String, Serializable> confirmation = OBJECT_MAPPER.readValue(json, Map.class);
             String type = (String) confirmation.get(TYPE_JSON_FIELD);
+
             if (SUBSCRIPTION_CONFIRMATION.equals(type)) {
                 String subscribeURL = (String) confirmation.get("SubscribeURL");
+
                 if (StringUtils.isNotBlank(subscribeURL)) {
                     URL url = new URL(subscribeURL);
                     String host = url.getHost();
 
-                    // Allow only AWS SNS domains
-                    if (host.endsWith(".amazonaws.com")) {
+                    // Validate domain format
+                    if (host != null && host.matches("^[a-zA-Z0-9.-]+\\.amazonaws\\.com$")) {
+                        InetAddress address = InetAddress.getByName(host);
+
+                        // Block internal/private/multicast IPs
+                        if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress()
+                                || address.isLinkLocalAddress() || address.isMulticastAddress()) {
+                            throw new SecurityException("Blocked SSRF to internal IP: " + address.getHostAddress());
+                        }
+
                         try (InputStream is = url.openConnection().getInputStream()) {
                             log.debug("Confirming SNS subscription");
                             /* NOP */
                         }
+                        return true;
                     } else {
-                        log.warn("Blocked SSRF attempt to: {}", subscribeURL);
+                        log.warn("Blocked SSRF attempt to untrusted domain: {}", subscribeURL);
+                        return false;
                     }
                 }
-                return true;
             }
         }
         return false;
