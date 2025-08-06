@@ -134,6 +134,20 @@ public class Rekognition {
         return Response.ok().build();
     }
 
+    private boolean validateAwsSubscribeUrl(URL url) throws IOException {
+        String host = url.getHost();
+
+        if (host != null && host.matches("^[a-zA-Z0-9.-]+\\.amazonaws\\.com$")) {
+            InetAddress address = InetAddress.getByName(host);
+            if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress()
+                    || address.isLinkLocalAddress() || address.isMulticastAddress()) {
+                throw new SecurityException("Blocked SSRF to internal IP: " + address.getHostAddress());
+            }
+            return true;
+        }
+        return false;
+    }
+
     protected boolean tryConfirmation(String json) throws IOException {
         if (json != null) {
             log.debug("Could not read Notification, trying SNS Confirmation");
@@ -146,18 +160,8 @@ public class Rekognition {
 
                 if (StringUtils.isNotBlank(subscribeURL)) {
                     URL url = new URL(subscribeURL);
-                    String host = url.getHost();
 
-                    // Validate domain format
-                    if (host != null && host.matches("^[a-zA-Z0-9.-]+\\.amazonaws\\.com$")) {
-                        InetAddress address = InetAddress.getByName(host);
-
-                        // Block internal/private/multicast IPs
-                        if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress()
-                                || address.isLinkLocalAddress() || address.isMulticastAddress()) {
-                            throw new SecurityException("Blocked SSRF to internal IP: " + address.getHostAddress());
-                        }
-
+                    if (validateAwsSubscribeUrl(url)) {
                         try (InputStream is = url.openConnection().getInputStream()) {
                             log.debug("Confirming SNS subscription");
                             /* NOP */
