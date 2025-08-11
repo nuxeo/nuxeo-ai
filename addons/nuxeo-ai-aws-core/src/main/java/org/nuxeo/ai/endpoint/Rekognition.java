@@ -25,9 +25,11 @@ import static org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener.JOB_ID
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -35,6 +37,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -55,6 +58,7 @@ import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -73,12 +77,10 @@ public class Rekognition {
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
-     * Generic Endpoint responsible for delegating tasks among enrichment services
-     * Runs as an asynchronous dispatcher sending success/failure events to the following services:
-     * - {@link LabelsEnrichmentProvider} for label processing
-     * - {@link DetectFacesEnrichmentProvider} for faces tracking
-     * - {@link DetectCelebritiesEnrichmentProvider} for celebrity detection
-     * - {@link DetectUnsafeImagesEnrichmentProvider} for unsafe content detection
+     * Generic Endpoint responsible for delegating tasks among enrichment services Runs as an asynchronous dispatcher
+     * sending success/failure events to the following services: - {@link LabelsEnrichmentProvider} for label processing
+     * - {@link DetectFacesEnrichmentProvider} for faces tracking - {@link DetectCelebritiesEnrichmentProvider} for
+     * celebrity detection - {@link DetectUnsafeImagesEnrichmentProvider} for unsafe content detection
      *
      * @param request of a Notification service
      * @return {@link Response}
@@ -111,25 +113,24 @@ public class Rekognition {
         String event;
         boolean succeeded = message.isSucceeded();
         switch (message.getApi()) {
-        case LabelsEnrichmentProvider.ASYNC_ACTION_NAME:
-            event = succeeded ? AsyncLabelResultListener.SUCCESS_EVENT : AsyncLabelResultListener.FAILURE_EVENT;
-            break;
-        case DetectFacesEnrichmentProvider.ASYNC_ACTION_NAME:
-            event = succeeded ? AsyncFaceResultListener.SUCCESS_EVENT : AsyncFaceResultListener.FAILURE_EVENT;
-            break;
-        case DetectCelebritiesEnrichmentProvider.ASYNC_ACTION_NAME:
-            event = succeeded ?
-                    AsyncCelebritiesResultListener.SUCCESS_EVENT :
-                    AsyncCelebritiesResultListener.FAILURE_EVENT;
-            break;
-        case DetectUnsafeImagesEnrichmentProvider.ASYNC_ACTION_NAME:
-            event = succeeded ? AsyncUnsafeResultListener.SUCCESS_EVENT : AsyncUnsafeResultListener.FAILURE_EVENT;
-            break;
-        case DetectSegmentEnrichmentProvider.ASYNC_ACTION_NAME:
-            event = succeeded ? AsyncSegmentResultListener.SUCCESS_EVENT : AsyncSegmentResultListener.FAILURE_EVENT;
-            break;
-        default:
-            throw new NuxeoException("Unknown API used: " + message.getApi());
+            case LabelsEnrichmentProvider.ASYNC_ACTION_NAME:
+                event = succeeded ? AsyncLabelResultListener.SUCCESS_EVENT : AsyncLabelResultListener.FAILURE_EVENT;
+                break;
+            case DetectFacesEnrichmentProvider.ASYNC_ACTION_NAME:
+                event = succeeded ? AsyncFaceResultListener.SUCCESS_EVENT : AsyncFaceResultListener.FAILURE_EVENT;
+                break;
+            case DetectCelebritiesEnrichmentProvider.ASYNC_ACTION_NAME:
+                event = succeeded ? AsyncCelebritiesResultListener.SUCCESS_EVENT
+                        : AsyncCelebritiesResultListener.FAILURE_EVENT;
+                break;
+            case DetectUnsafeImagesEnrichmentProvider.ASYNC_ACTION_NAME:
+                event = succeeded ? AsyncUnsafeResultListener.SUCCESS_EVENT : AsyncUnsafeResultListener.FAILURE_EVENT;
+                break;
+            case DetectSegmentEnrichmentProvider.ASYNC_ACTION_NAME:
+                event = succeeded ? AsyncSegmentResultListener.SUCCESS_EVENT : AsyncSegmentResultListener.FAILURE_EVENT;
+                break;
+            default:
+                throw new NuxeoException("Unknown API used: " + message.getApi());
         }
 
         EventService es = Framework.getService(EventService.class);
@@ -138,22 +139,44 @@ public class Rekognition {
         return Response.ok().build();
     }
 
+    private boolean validateAwsSubscribeUrl(URL url) throws IOException {
+        String host = url.getHost();
+
+        if (host != null && host.matches("^[a-zA-Z0-9.-]+\\.amazonaws\\.com$")) {
+            InetAddress address = InetAddress.getByName(host);
+            if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress()
+                    || address.isLinkLocalAddress() || address.isMulticastAddress()) {
+                throw new SecurityException("Blocked SSRF to internal IP: " + address.getHostAddress());
+            }
+            return true;
+        }
+        return false;
+    }
+
     protected boolean tryConfirmation(String json) throws IOException {
         if (json != null) {
             log.debug("Could not read Notification, trying SNS Confirmation");
             @SuppressWarnings("unchecked")
             Map<String, Serializable> confirmation = OBJECT_MAPPER.readValue(json, Map.class);
             String type = (String) confirmation.get(TYPE_JSON_FIELD);
+
             if (SUBSCRIPTION_CONFIRMATION.equals(type)) {
                 String subscribeURL = (String) confirmation.get("SubscribeURL");
+
                 if (StringUtils.isNotBlank(subscribeURL)) {
                     URL url = new URL(subscribeURL);
-                    try (InputStream is = url.openConnection().getInputStream()) {
-                        log.debug("Confirming SNS subscription");
-                        /* NOP */
+
+                    if (validateAwsSubscribeUrl(url)) {
+                        try (InputStream is = url.openConnection().getInputStream()) {
+                            log.debug("Confirming SNS subscription");
+                            /* NOP */
+                        }
+                        return true;
+                    } else {
+                        log.warn("Blocked SSRF attempt to untrusted domain: {}", subscribeURL);
+                        return false;
                     }
                 }
-                return true;
             }
         }
         return false;
