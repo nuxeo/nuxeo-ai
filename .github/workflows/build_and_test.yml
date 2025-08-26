@@ -32,6 +32,10 @@ on:
         required: true
       google-creds:
         required: true
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
 
 jobs:
   build:
@@ -146,7 +150,48 @@ jobs:
             PACKAGE=${pkg}${{ env.VERSION }}.zip
             curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
           done
-  
+
+      # --- Prepare Docker build context ---
+      - name: Debug build output
+        run: |
+          ls -R nuxeo-ai-core-package/target || echo "Target folder not found"
+      - name: Prepare Docker build context
+        run: |
+          cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/
+      - name: Rename zip files for Docker build
+        run: |
+          mv docker/nuxeo-ai-core-*.zip docker/nuxeo-ai-core.zip || true
+          mv docker/nuxeo-ai-image-quality-package-*.zip docker/nuxeo-ai-image-quality-package.zip || true
+          mv docker/nuxeo-web-ui-*.zip docker/nuxeo-web-ui.zip || true
+          mv docker/nuxeo-csv-*.zip docker/nuxeo-csv.zip || true
+
+      # --- Docker build and push steps ---
+      - uses: docker/setup-buildx-action@v3.0.0
+        with:
+          driver: docker
+
+      - name: Login to Docker registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: docker-private.packages.nuxeo.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            PLATFORM_VERSION=2023.31
+            SCM_REF=${{ github.sha }}
+            BUILD_TAG=${{ github.run_id }}
+            PACKAGES_AUTH_USER=${{ secrets.DOCKER_USERNAME }}
+            PACKAGES_AUTH_TOKEN=${{ secrets.DOCKER_PASSWORD }}
+          tags: nuxeo/nuxeo-ai:4.1.0-alpha.${{ github.run_number }}
+          push: true
+      # --- End Docker steps ---
 
   notify-on-error:
     runs-on: ubuntu-latest

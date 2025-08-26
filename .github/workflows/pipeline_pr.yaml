@@ -5,6 +5,10 @@ on:
   push:
     branches: [master, master-10.10, '2023']
 
+permissions:
+  checks: write
+  pull-requests: write
+
 jobs:
   build-and-test:
     uses: ./.github/workflows/build_and_test.yml
@@ -20,3 +24,5 @@ jobs:
       connect-auth-user: ${{secrets.CONNECT_AUTH_USER}}
       connect-auth-token: ${{secrets.CONNECT_AUTH_TOKEN}}
       google-creds: ${{secrets.GOOGLE_CREDENTIALS}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}

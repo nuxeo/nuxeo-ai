@@ -1,23 +1,46 @@
 ARG PLATFORM_VERSION
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
+RUN echo "Starting Nuxeo AI Docker build - $(date)"
+
 USER 0
-#RUN yum -y install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm && \
-#    yum -y install ffmpeg
-COPY nuxeo-private.repo~gen /etc/yum.repos.d/nuxeo-private.repo
-RUN yum -y update && \
-        yum -y install epel-release deltarpm && \
-        yum -y --setopt=skip_missing_names_on_install=False install \
-            ghostscript \
-            ImageMagick \
-            libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
-            libwpd-tools \
-            perl-Archive-Zip \
-            perl-Image-ExifTool \
-            poppler-utils \
-            ufraw \
+# Install gettext for envsubst from public repos before adding private repo
+RUN dnf -y install gettext && dnf clean all
+
+# Build arguments for private repo authentication
+ARG PACKAGES_AUTH_USER
+ARG PACKAGES_AUTH_TOKEN
+
+COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
+
+# Substitute credentials in repo file
+RUN envsubst < /etc/yum.repos.d/nuxeo-private.repo > /etc/yum.repos.d/nuxeo-private.repo.subst && \
+    mv /etc/yum.repos.d/nuxeo-private.repo.subst /etc/yum.repos.d/nuxeo-private.repo
+
+# Debug and install packages
+RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
+    echo "PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN}" && \
+    echo "--- nuxeo-private.repo ---" && cat /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf repolist && \
+    dnf -y update && \
+    dnf -y install epel-release && \
+    dnf -y --setopt=skip_missing_names_on_install=False install \
+        openexr-libs \
+        jbigkit-libs \
+        leptonica \
+        tesseract \
+        ghostscript \
+        ImageMagick \
+        libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
+        libwpd-tools \
+        perl-Archive-Zip \
+        perl-Image-ExifTool \
+        poppler-utils \
         ccextractor \
-        ffmpeg-nuxeo && \
+        ffmpeg-nuxeo \
+        darktable && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf && \
     rm /etc/yum.repos.d/nuxeo-private.repo
 
 USER $NUXEO_USER
@@ -41,4 +64,8 @@ LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo
 
 COPY --chown=$NUXEO_USER log4j2.xml /opt/nuxeo/server/lib/log4j2.xml
 COPY *.zip /tmp/
+
+# Debug: list files before running install-packages.sh
+RUN ls -l /install-packages.sh && ls -l /tmp/
+
 RUN /install-packages.sh /tmp/nuxeo-ai-core.zip /tmp/nuxeo-ai-image-quality-package.zip /tmp/nuxeo-web-ui.zip /tmp/nuxeo-csv.zip
