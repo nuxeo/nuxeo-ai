@@ -163,8 +163,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
         with:
-          context: .
-          file: docker/Dockerfile
+          context: ./docker
+          file: .docker/Dockerfile
           build-args: |
             VERSION=${{ env.VERSION }}
             PLATFORM_VERSION=2023.31
