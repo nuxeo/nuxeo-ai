@@ -20,3 +20,5 @@ jobs:
       connect-auth-user: ${{secrets.CONNECT_AUTH_USER}}
       connect-auth-token: ${{secrets.CONNECT_AUTH_TOKEN}}
       google-creds: ${{secrets.GOOGLE_CREDENTIALS}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
