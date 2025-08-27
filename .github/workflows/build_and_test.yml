@@ -151,6 +151,11 @@ jobs:
             curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
           done
 
+      - name: Debug secrets
+        run: |
+          echo "User is set: ${{ secrets.PACKAGES_AUTH_USER != '' }}"
+          echo "Token is set: ${{ secrets.PACKAGES_AUTH_TOKEN != '' }}"
+
       # --- Prepare Docker build context ---
       - name: Debug build output
         run: |
