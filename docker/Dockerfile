@@ -4,7 +4,7 @@ FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 USER 0
 #RUN yum -y install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm && \
 #    yum -y install ffmpeg
-COPY nuxeo-private.repo~gen /etc/yum.repos.d/nuxeo-private.repo
+COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
 RUN yum -y update && \
         yum -y install epel-release deltarpm && \
         yum -y --setopt=skip_missing_names_on_install=False install \
