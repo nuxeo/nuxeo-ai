@@ -154,7 +154,6 @@ jobs:
       # --- Prepare Docker build context ---
       - name: Prepare Docker build context
         run: |
-          mkdir docker
           cp nuxeo-ai-core-package/target/nuxeo-ai-core-package-${{ env.VERSION }}.zip docker/
           cp Dockerfile docker/
 
