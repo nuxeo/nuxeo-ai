@@ -157,7 +157,7 @@ jobs:
           ls -R nuxeo-ai-core-package/target || echo "Target folder not found"
       - name: Prepare Docker build context
         run: |
-          cp nuxeo-ai-core-package/target/nuxeo-ai-core-package-*.zip docker/
+          cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/
           cp Dockerfile docker/
 
       # --- Docker build and push steps ---
