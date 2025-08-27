@@ -152,9 +152,12 @@ jobs:
           done
 
       # --- Prepare Docker build context ---
+      - name: Debug build output
+        run: |
+          ls -R nuxeo-ai-core-package/target || echo "Target folder not found"
       - name: Prepare Docker build context
         run: |
-          cp nuxeo-ai-core-package/target/nuxeo-ai-core-package-${{ env.VERSION }}.zip docker/
+          cp nuxeo-ai-core-package/target/nuxeo-ai-core-package-*.zip docker/
           cp Dockerfile docker/
 
       # --- Docker build and push steps ---
