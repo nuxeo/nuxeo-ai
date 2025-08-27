@@ -33,6 +33,11 @@ on:
       google-creds:
         required: true
 
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
 jobs:
   build:
     name: "Build"
