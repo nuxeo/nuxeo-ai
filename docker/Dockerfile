@@ -4,6 +4,11 @@ FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 USER 0
 #RUN yum -y install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm && \
 #    yum -y install ffmpeg
+
+# Build arguments for private repo authentication
+ARG PACKAGES_AUTH_USER
+ARG PACKAGES_AUTH_TOKEN
+
 COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
 RUN dnf -y update && \
         dnf -y install epel-release deltarpm && \
