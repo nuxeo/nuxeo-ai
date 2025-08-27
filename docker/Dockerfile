@@ -5,9 +5,9 @@ USER 0
 #RUN yum -y install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm && \
 #    yum -y install ffmpeg
 COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
-RUN yum -y update && \
-        yum -y install epel-release deltarpm && \
-        yum -y --setopt=skip_missing_names_on_install=False install \
+RUN dnf -y update && \
+        dnf -y install epel-release deltarpm && \
+        dnf -y --setopt=skip_missing_names_on_install=False install \
             ghostscript \
             ImageMagick \
             libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
@@ -18,6 +18,8 @@ RUN yum -y update && \
             ufraw \
         ccextractor \
         ffmpeg-nuxeo && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf && \
     rm /etc/yum.repos.d/nuxeo-private.repo
 
 USER $NUXEO_USER
