@@ -158,7 +158,6 @@ jobs:
       - name: Prepare Docker build context
         run: |
           cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/
-          cp Dockerfile docker/
 
       # --- Docker build and push steps ---
       - uses: docker/setup-buildx-action@v3.0.0
