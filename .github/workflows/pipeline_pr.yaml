@@ -1,4 +1,8 @@
 name: CI for PR
+
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [master, master-10.10, release-*, '2023']
