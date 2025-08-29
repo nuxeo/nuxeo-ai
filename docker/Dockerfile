@@ -23,6 +23,11 @@ RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
     dnf -y update && \
     dnf -y install epel-release && \
     dnf -y --setopt=skip_missing_names_on_install=False install \
+        openexr-libs \
+        jbigkit-libs \
+        openjpeg2-libs \
+        leptonica \
+        tesseract \
         ghostscript \
         ImageMagick \
         libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
