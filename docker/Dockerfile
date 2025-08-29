@@ -11,12 +11,14 @@ ARG PACKAGES_AUTH_TOKEN
 
 COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
 
-ENV PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}
-ENV PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN}
+# Install gettext for envsubst
+RUN dnf -y install gettext && dnf clean all
+
+# Substitute credentials in repo file
 RUN envsubst < /etc/yum.repos.d/nuxeo-private.repo > /etc/yum.repos.d/nuxeo-private.repo.subst && \
     mv /etc/yum.repos.d/nuxeo-private.repo.subst /etc/yum.repos.d/nuxeo-private.repo
 
-# Add YUM credentials for private repo access, run dnf, then clean up credentials
+# Debug and install packages
 RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
     echo "PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN}" && \
     echo "--- nuxeo-private.repo ---" && cat /etc/yum.repos.d/nuxeo-private.repo && \
