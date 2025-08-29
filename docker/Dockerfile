@@ -21,7 +21,7 @@ RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
     echo "--- nuxeo-private.repo ---" && cat /etc/yum.repos.d/nuxeo-private.repo && \
     dnf repolist && \
     dnf -y update && \
-    dnf -y install epel-release deltarpm && \
+    dnf -y install epel-release && \
     dnf -y --setopt=skip_missing_names_on_install=False install \
         ghostscript \
         ImageMagick \
