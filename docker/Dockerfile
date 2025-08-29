@@ -11,11 +11,18 @@ ARG PACKAGES_AUTH_TOKEN
 
 COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
 
+ENV PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}
+ENV PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN}
+RUN envsubst < /etc/yum.repos.d/nuxeo-private.repo > /etc/yum.repos.d/nuxeo-private.repo.subst && \
+    mv /etc/yum.repos.d/nuxeo-private.repo.subst /etc/yum.repos.d/nuxeo-private.repo
+
 # Add YUM credentials for private repo access, run dnf, then clean up credentials
-RUN echo "machine packages.nuxeo.com login ${PACKAGES_AUTH_USER} password ${PACKAGES_AUTH_TOKEN}" > /root/.netrc && \
-    chmod 600 /root/.netrc && \
-    dnf -y update && \
-    dnf -y install epel-release deltarpm && \
+RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
+    echo "PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN}" && \
+    echo "--- nuxeo-private.repo ---" && cat /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf repolist && \
+    dnf -y update || cat /var/log/dnf.log && \
+    dnf -y install epel-release deltarpm || cat /var/log/dnf.log && \
     dnf -y --setopt=skip_missing_names_on_install=False install \
         ghostscript \
         ImageMagick \
@@ -26,11 +33,10 @@ RUN echo "machine packages.nuxeo.com login ${PACKAGES_AUTH_USER} password ${PACK
         poppler-utils \
         ufraw \
         ccextractor \
-        ffmpeg-nuxeo && \
+        ffmpeg-nuxeo || cat /var/log/dnf.log && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
-    rm /etc/yum.repos.d/nuxeo-private.repo && \
-    rm -f /root/.netrc
+    rm /etc/yum.repos.d/nuxeo-private.repo
 
 USER $NUXEO_USER
 
