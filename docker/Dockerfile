@@ -2,17 +2,14 @@ ARG PLATFORM_VERSION
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
 USER 0
-#RUN yum -y install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm && \
-#    yum -y install ffmpeg
+# Install gettext for envsubst from public repos before adding private repo
+RUN dnf -y install gettext && dnf clean all
 
 # Build arguments for private repo authentication
 ARG PACKAGES_AUTH_USER
 ARG PACKAGES_AUTH_TOKEN
 
 COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
-
-# Install gettext for envsubst
-RUN dnf -y install gettext && dnf clean all
 
 # Substitute credentials in repo file
 RUN envsubst < /etc/yum.repos.d/nuxeo-private.repo > /etc/yum.repos.d/nuxeo-private.repo.subst && \
