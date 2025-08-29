@@ -10,22 +10,27 @@ ARG PACKAGES_AUTH_USER
 ARG PACKAGES_AUTH_TOKEN
 
 COPY nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo
-RUN dnf -y update && \
-        dnf -y install epel-release deltarpm && \
-        dnf -y --setopt=skip_missing_names_on_install=False install \
-            ghostscript \
-            ImageMagick \
-            libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
-            libwpd-tools \
-            perl-Archive-Zip \
-            perl-Image-ExifTool \
-            poppler-utils \
-            ufraw \
+
+# Add YUM credentials for private repo access, run dnf, then clean up credentials
+RUN echo "machine packages.nuxeo.com login ${PACKAGES_AUTH_USER} password ${PACKAGES_AUTH_TOKEN}" > /root/.netrc && \
+    chmod 600 /root/.netrc && \
+    dnf -y update && \
+    dnf -y install epel-release deltarpm && \
+    dnf -y --setopt=skip_missing_names_on_install=False install \
+        ghostscript \
+        ImageMagick \
+        libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
+        libwpd-tools \
+        perl-Archive-Zip \
+        perl-Image-ExifTool \
+        poppler-utils \
+        ufraw \
         ccextractor \
         ffmpeg-nuxeo && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
-    rm /etc/yum.repos.d/nuxeo-private.repo
+    rm /etc/yum.repos.d/nuxeo-private.repo && \
+    rm -f /root/.netrc
 
 USER $NUXEO_USER
 

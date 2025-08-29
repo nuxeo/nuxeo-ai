@@ -151,12 +151,6 @@ jobs:
             curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
           done
 
-      # --- YUM repo login for Docker build ---
-      - name: YUM repo login
-        run: |
-          echo "machine packages.nuxeo.com login ${{ secrets.PACKAGES_AUTH_USER }} password ${{ secrets.PACKAGES_AUTH_TOKEN }}" > ~/.netrc
-          chmod 600 ~/.netrc
-          echo "YUM repo .netrc created for Docker build context."
       # --- Prepare Docker build context ---
       - name: Debug build output
         run: |
@@ -187,15 +181,11 @@ jobs:
             PLATFORM_VERSION=2023.31
             SCM_REF=${{ github.sha }}
             BUILD_TAG=${{ github.run_id }}
-            PACKAGES_AUTH_USER=${{ secrets.DOCKER_USERNAME }}
-            PACKAGES_AUTH_TOKEN=${{ secrets.DOCKER_PASSWORD }}
+            PACKAGES_AUTH_USER=${{ secrets.PACKAGES_AUTH_USER }}
+            PACKAGES_AUTH_TOKEN=${{ secrets.PACKAGES_AUTH_TOKEN }}
           tags: nuxeo/nuxeo-ai:4.1.0-alpha.${{ github.run_number }}
           push: true
       # --- End Docker steps ---
-      # --- Cleanup YUM credentials ---
-      - name: Cleanup YUM credentials
-        run: rm -f ~/.netrc
-        if: always()
 
   notify-on-error:
     runs-on: ubuntu-latest
