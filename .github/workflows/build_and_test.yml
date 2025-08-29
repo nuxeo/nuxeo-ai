@@ -181,8 +181,8 @@ jobs:
             PLATFORM_VERSION=2023.31
             SCM_REF=${{ github.sha }}
             BUILD_TAG=${{ github.run_id }}
-            PACKAGES_AUTH_USER=${{ secrets.PACKAGES_AUTH_USER }}
-            PACKAGES_AUTH_TOKEN=${{ secrets.PACKAGES_AUTH_TOKEN }}
+            PACKAGES_AUTH_USER=${{ secrets.DOCKER_USERNAME }}
+            PACKAGES_AUTH_TOKEN=${{ secrets.DOCKER_USERNAME }}
           tags: nuxeo/nuxeo-ai:4.1.0-alpha.${{ github.run_number }}
           push: true
       # --- End Docker steps ---
