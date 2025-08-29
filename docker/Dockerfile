@@ -20,8 +20,8 @@ RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
     echo "PACKAGES_AUTH_TOKEN=${PACKAGES_AUTH_TOKEN}" && \
     echo "--- nuxeo-private.repo ---" && cat /etc/yum.repos.d/nuxeo-private.repo && \
     dnf repolist && \
-    dnf -y update || cat /var/log/dnf.log && \
-    dnf -y install epel-release deltarpm || cat /var/log/dnf.log && \
+    dnf -y update && \
+    dnf -y install epel-release deltarpm && \
     dnf -y --setopt=skip_missing_names_on_install=False install \
         ghostscript \
         ImageMagick \
@@ -30,9 +30,9 @@ RUN echo "PACKAGES_AUTH_USER=${PACKAGES_AUTH_USER}" && \
         perl-Archive-Zip \
         perl-Image-ExifTool \
         poppler-utils \
-        ufraw \
         ccextractor \
-        ffmpeg-nuxeo || cat /var/log/dnf.log && \
+        ffmpeg-nuxeo \
+        darktable && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
     rm /etc/yum.repos.d/nuxeo-private.repo
@@ -58,4 +58,8 @@ LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo
 
 COPY --chown=$NUXEO_USER log4j2.xml /opt/nuxeo/server/lib/log4j2.xml
 COPY *.zip /tmp/
+
+# Debug: list files before running install-packages.sh
+RUN ls -l /install-packages.sh && ls -l /tmp/
+
 RUN /install-packages.sh /tmp/nuxeo-ai-core.zip /tmp/nuxeo-ai-image-quality-package.zip /tmp/nuxeo-web-ui.zip /tmp/nuxeo-csv.zip

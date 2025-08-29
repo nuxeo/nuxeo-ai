@@ -158,6 +158,12 @@ jobs:
       - name: Prepare Docker build context
         run: |
           cp nuxeo-ai-core-package/target/nuxeo-ai-core-*.zip docker/
+      - name: Rename zip files for Docker build
+        run: |
+          mv docker/nuxeo-ai-core-*.zip docker/nuxeo-ai-core.zip || true
+          mv docker/nuxeo-ai-image-quality-package-*.zip docker/nuxeo-ai-image-quality-package.zip || true
+          mv docker/nuxeo-web-ui-*.zip docker/nuxeo-web-ui.zip || true
+          mv docker/nuxeo-csv-*.zip docker/nuxeo-csv.zip || true
 
       # --- Docker build and push steps ---
       - uses: docker/setup-buildx-action@v3.0.0
