@@ -1,6 +1,8 @@
 ARG PLATFORM_VERSION
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
+RUN echo "Starting Nuxeo AI Docker build - $(date)"
+
 USER 0
 # Install gettext for envsubst from public repos before adding private repo
 RUN dnf -y install gettext && dnf clean all
