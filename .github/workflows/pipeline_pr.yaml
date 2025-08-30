@@ -6,8 +6,8 @@ on:
     branches: [master, master-10.10, '2023']
 
 permissions:
-  checks: none
-  pull-requests: none
+  checks: write
+  pull-requests: write
 
 jobs:
   build-and-test:
