@@ -5,6 +5,10 @@ on:
   push:
     branches: [master, master-10.10, '2023']
 
+permissions:
+  checks: none
+  pull-requests: none
+
 jobs:
   build-and-test:
     uses: ./.github/workflows/build_and_test.yml
