@@ -2,6 +2,8 @@ name: CI for PR
 
 permissions:
   contents: read
+  checks: write
+  pull-requests: write
 
 on:
   pull_request:
@@ -16,6 +18,7 @@ jobs:
       aws-account: 407995386968
       aws-region: us-east-1
       should-push: ${{ github.event_name == 'push' }}
+      preview: ${{ github.event_name == 'pull_request' && contains(join(github.event.pull_request.labels.*.name, ','), 'preview') }}
     secrets:
       aws-access-key-id: ${{secrets.AI_CI_ROLE_AWS_ACCESS_KEY_ID}}
       aws-secret-access-key: ${{secrets.AI_CI_ROLE_AWS_ACCESS_KEY_SECRET}}
@@ -24,3 +27,5 @@ jobs:
       connect-auth-user: ${{secrets.CONNECT_AUTH_USER}}
       connect-auth-token: ${{secrets.CONNECT_AUTH_TOKEN}}
       google-creds: ${{secrets.GOOGLE_CREDENTIALS}}
+      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}

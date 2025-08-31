@@ -17,6 +17,10 @@ on:
         required: false
         type: boolean
         default: false
+      preview:
+        required: false
+        type: boolean
+        default: false
     secrets:
       aws-access-key-id:
         required: true
@@ -32,11 +36,19 @@ on:
         required: true
       google-creds:
         required: true
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
 
 permissions:
   contents: read
   pull-requests: write
   checks: write
+
+env:
+  REGISTRY: docker-private.packages.nuxeo.com
+  REPOSITORY: nuxeo-ai-build
 
 jobs:
   build:
@@ -151,7 +163,19 @@ jobs:
             PACKAGE=${pkg}${{ env.VERSION }}.zip
             curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
           done
-  
+
+      # --- Prepare Docker build context ---
+      - name: Build & Push Docker Preview Image
+        if: ${{ inputs.preview }}
+        uses: ./.github/actions/docker-build-preview
+        with:
+          version: ${{ env.VERSION }}
+          registry: ${{ env.REGISTRY }}
+          repository: ${{ env.REPOSITORY }}
+          docker-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # --- End Docker steps ----
 
   notify-on-error:
     runs-on: ubuntu-latest
