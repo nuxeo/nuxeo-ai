@@ -17,6 +17,10 @@ on:
         required: false
         type: boolean
         default: false
+      preview:
+        required: false
+        type: boolean
+        default: false
     secrets:
       aws-access-key-id:
         required: true
@@ -32,11 +36,14 @@ on:
         required: true
       google-creds:
         required: true
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
 
-permissions:
-  contents: read
-  pull-requests: write
-  checks: write
+env:
+  REGISTRY: docker-private.packages.nuxeo.com
+  REPOSITORY: nuxeo-ai-build
 
 jobs:
   build:
@@ -151,7 +158,67 @@ jobs:
             PACKAGE=${pkg}${{ env.VERSION }}.zip
             curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
           done
-  
+
+      # --- Prepare Docker build context ---
+      - name: Prepare Docker build context
+        if: ${{ inputs.preview }}
+        run: |
+          echo "=== Copying available package zips to docker directory ==="
+          # Ensure the nuxeo-ai-core package is always copied (using dynamic version)
+          if [ -f "nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip" ]; then
+            echo "Copying nuxeo-ai-core package..."
+            cp "nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip" docker/
+          else
+            echo "ERROR: nuxeo-ai-core package not found at nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip"
+            exit 1
+          fi
+          
+          # Copy other available packages (optional) - use dynamic naming
+          find addons/nuxeo-ai-image-quality-package/target/ -name "*package*.zip" -exec cp {} docker/ \; 2>/dev/null || echo "image-quality package not found"  
+          find addons/nuxeo-ai-aws-package/target/ -name "*package*.zip" -exec cp {} docker/ \; 2>/dev/null || echo "aws package not found"
+          find addons/nuxeo-ai-gcp-package/target/ -name "*package*.zip" -exec cp {} docker/ \; 2>/dev/null || echo "gcp package not found"
+          
+          # Copy any other built packages dynamically
+          find . -path "*/target/*package*.zip" -not -path "./docker/*" -exec cp {} docker/ \; 2>/dev/null || echo "No additional packages found"
+
+      # --- Docker build and push steps ---
+      - uses: docker/setup-buildx-action@v3.0.0
+        if: ${{ inputs.preview }}
+        with:
+          driver: docker
+
+      - name: Login to Docker registry
+        if: ${{ inputs.preview }}
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        if: ${{ inputs.preview }}
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile
+          secrets: |
+            nuxeo-private=docker/nuxeo-private.repo
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            PLATFORM_VERSION=2023
+            SCM_REF=${{ github.sha }}
+            BUILD_TAG=${{ github.run_id }}
+            PACKAGES_AUTH_USER=${{ secrets.DOCKER_USERNAME }}
+            PACKAGES_AUTH_TOKEN=${{ secrets.DOCKER_PASSWORD }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}:${{ env.VERSION }}
+          push: ${{ inputs.preview }}
+
+      - name: Cleanup staged zips
+        if: ${{ inputs.preview }}
+        run: rm -f docker/*.zip
+
+      # --- End Docker steps ---
 
   notify-on-error:
     runs-on: ubuntu-latest
