@@ -90,12 +90,20 @@ public class Rekognition {
             Notification notification = OBJECT_MAPPER.readValue(json, Notification.class);
             message = OBJECT_MAPPER.readValue(notification.message(), Notification.Message.class);
         } catch (IOException e) {
-            if (tryConfirmation(json)) {
-                return Response.ok().build();
+            log.warn("Failed to parse Rekognition notification: {}", e.getMessage());
+
+            boolean confirmed = false;
+            try {
+                confirmed = tryConfirmation(json);
+            } catch (IOException ex) {
+                log.error("Failed to process SNS confirmation: {}", ex.getMessage());
             }
 
-            log.error("Could not get Notification from service request");
-            return Response.serverError().build();
+            if (confirmed) {
+                return Response.ok().build();
+            } else {
+                return Response.serverError().build();
+            }
         }
 
         log.debug("Received notification from Rekognition {}", message.getApi());
@@ -133,15 +141,7 @@ public class Rekognition {
         return Response.ok().build();
     }
 
-    /*
-     * private boolean validateAwsSubscribeUrl(URL url) throws IOException { String host = url.getHost(); if (host !=
-     * null && host.matches("^[a-zA-Z0-9.-]+\\.amazonaws\\.com$")) { InetAddress address = InetAddress.getByName(host);
-     * if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress() ||
-     * address.isLinkLocalAddress() || address.isMulticastAddress()) { throw new
-     * SecurityException("Blocked SSRF to internal IP: " + address.getHostAddress()); } return true; } return false; }
-     */
-
-   protected boolean tryConfirmation(String json) throws JsonProcessingException {
+    protected boolean tryConfirmation(String json) throws JsonProcessingException {
         if (json != null) {
             log.debug("Could not read Notification, trying SNS Confirmation");
             @SuppressWarnings("unchecked")
