@@ -39,8 +39,16 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.enrichment.async.*;
-import org.nuxeo.ai.rekognition.listeners.*;
+import org.nuxeo.ai.enrichment.async.DetectCelebritiesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.DetectFacesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.DetectSegmentEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.DetectUnsafeImagesEnrichmentProvider;
+import org.nuxeo.ai.enrichment.async.LabelsEnrichmentProvider;
+import org.nuxeo.ai.rekognition.listeners.AsyncCelebritiesResultListener;
+import org.nuxeo.ai.rekognition.listeners.AsyncFaceResultListener;
+import org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener;
+import org.nuxeo.ai.rekognition.listeners.AsyncSegmentResultListener;
+import org.nuxeo.ai.rekognition.listeners.AsyncUnsafeResultListener;
 import org.nuxeo.ai.sns.Notification;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.event.EventService;
@@ -68,7 +76,18 @@ public class Rekognition {
 
     private static final String TYPE_JSON_FIELD = "Type";
 
+    private static final AmazonSNS snsClient = AmazonSNSClientBuilder.defaultClient();
+
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    static {
+        log.debug("SNS client initialized as static singleton.");
+        // Register a shutdown hook to clean up when JVM exits
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("JVM shutdown: shutting down SNS client.");
+            snsClient.shutdown();
+        }));
+    }
 
     /**
      * Generic Endpoint responsible for delegating tasks among enrichment services Runs as an asynchronous dispatcher
@@ -153,8 +172,6 @@ public class Rekognition {
                 String topicArn = (String) confirmation.get("TopicArn");
 
                 if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(topicArn)) {
-                    AmazonSNS snsClient = AmazonSNSClientBuilder.defaultClient();
-
                     ConfirmSubscriptionRequest request = new ConfirmSubscriptionRequest().withToken(token)
                                                                                          .withTopicArn(topicArn);
 
