@@ -76,17 +76,15 @@ public class Rekognition {
 
     private static final String TYPE_JSON_FIELD = "Type";
 
-    private static final AmazonSNS snsClient = AmazonSNSClientBuilder.defaultClient();
-
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    static {
-        log.debug("SNS client initialized as static singleton.");
-        // Register a shutdown hook to clean up when JVM exits
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("JVM shutdown: shutting down SNS client.");
-            snsClient.shutdown();
-        }));
+    private AmazonSNS snsClient;
+
+    private AmazonSNS getSnsClient() {
+        if (snsClient == null) {
+            snsClient = AmazonSNSClientBuilder.defaultClient();
+        }
+        return snsClient;
     }
 
     /**
@@ -175,7 +173,7 @@ public class Rekognition {
                     ConfirmSubscriptionRequest request = new ConfirmSubscriptionRequest().withToken(token)
                                                                                          .withTopicArn(topicArn);
 
-                    ConfirmSubscriptionResult result = snsClient.confirmSubscription(request);
+                    ConfirmSubscriptionResult result = getSnsClient().confirmSubscription(request);
                     String subscriptionArn = result.getSubscriptionArn();
 
                     if (StringUtils.isNotBlank(subscriptionArn)) {
