@@ -23,10 +23,7 @@ import static java.util.Collections.singletonMap;
 import static org.nuxeo.ai.rekognition.listeners.AsyncLabelResultListener.JOB_ID_CTX_KEY;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Map;
 
@@ -59,6 +56,11 @@ import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
 
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.AmazonSNSClientBuilder;
+import com.amazonaws.services.sns.model.ConfirmSubscriptionRequest;
+import com.amazonaws.services.sns.model.ConfirmSubscriptionResult;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -75,6 +77,15 @@ public class Rekognition {
     private static final String TYPE_JSON_FIELD = "Type";
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private AmazonSNS snsClient;
+
+    private AmazonSNS getSnsClient() {
+        if (snsClient == null) {
+            snsClient = AmazonSNSClientBuilder.defaultClient();
+        }
+        return snsClient;
+    }
 
     /**
      * Generic Endpoint responsible for delegating tasks among enrichment services Runs as an asynchronous dispatcher
@@ -96,12 +107,20 @@ public class Rekognition {
             Notification notification = OBJECT_MAPPER.readValue(json, Notification.class);
             message = OBJECT_MAPPER.readValue(notification.message(), Notification.Message.class);
         } catch (IOException e) {
-            if (tryConfirmation(json)) {
-                return Response.ok().build();
+            log.warn("Failed to parse Rekognition notification: {}", e.getMessage());
+
+            boolean confirmed = false;
+            try {
+                confirmed = tryConfirmation(json);
+            } catch (IOException ex) {
+                log.error("Failed to process SNS confirmation: {}", ex.getMessage());
             }
 
-            log.error("Could not get Notification from service request");
-            return Response.serverError().build();
+            if (confirmed) {
+                return Response.ok().build();
+            } else {
+                return Response.serverError().build();
+            }
         }
 
         log.debug("Received notification from Rekognition {}", message.getApi());
@@ -139,21 +158,7 @@ public class Rekognition {
         return Response.ok().build();
     }
 
-    private boolean validateAwsSubscribeUrl(URL url) throws IOException {
-        String host = url.getHost();
-
-        if (host != null && host.matches("^[a-zA-Z0-9.-]+\\.amazonaws\\.com$")) {
-            InetAddress address = InetAddress.getByName(host);
-            if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress()
-                    || address.isLinkLocalAddress() || address.isMulticastAddress()) {
-                throw new SecurityException("Blocked SSRF to internal IP: " + address.getHostAddress());
-            }
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean tryConfirmation(String json) throws IOException {
+    protected boolean tryConfirmation(String json) throws JsonProcessingException {
         if (json != null) {
             log.debug("Could not read Notification, trying SNS Confirmation");
             @SuppressWarnings("unchecked")
@@ -161,21 +166,26 @@ public class Rekognition {
             String type = (String) confirmation.get(TYPE_JSON_FIELD);
 
             if (SUBSCRIPTION_CONFIRMATION.equals(type)) {
-                String subscribeURL = (String) confirmation.get("SubscribeURL");
+                String token = (String) confirmation.get("Token");
+                String topicArn = (String) confirmation.get("TopicArn");
 
-                if (StringUtils.isNotBlank(subscribeURL)) {
-                    URL url = new URL(subscribeURL);
+                if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(topicArn)) {
+                    ConfirmSubscriptionRequest request = new ConfirmSubscriptionRequest().withToken(token)
+                                                                                         .withTopicArn(topicArn);
 
-                    if (validateAwsSubscribeUrl(url)) {
-                        try (InputStream is = url.openConnection().getInputStream()) {
-                            log.debug("Confirming SNS subscription");
-                            /* NOP */
-                        }
+                    ConfirmSubscriptionResult result = getSnsClient().confirmSubscription(request);
+                    String subscriptionArn = result.getSubscriptionArn();
+
+                    if (StringUtils.isNotBlank(subscriptionArn)) {
+                        log.debug("SNS subscription confirmed with ARN: {}", subscriptionArn);
                         return true;
                     } else {
-                        log.warn("Blocked SSRF attempt to untrusted domain: {}", subscribeURL);
+                        log.warn("SNS subscription confirmation failed: empty SubscriptionArn");
                         return false;
                     }
+                } else {
+                    log.warn("Missing Token or TopicArn in SNS confirmation message");
+                    return false;
                 }
             }
         }

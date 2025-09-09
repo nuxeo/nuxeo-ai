@@ -2,6 +2,9 @@ name: CI for PR
 
 permissions:
   contents: read
+  checks: write
+  pull-requests: write
+
 
 on:
   pull_request:
