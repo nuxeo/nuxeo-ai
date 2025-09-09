@@ -40,9 +40,6 @@ runs:
         cp addons/nuxeo-ai-aws-package/target/*package*.zip docker/ 2>/dev/null || echo "aws package not found"
         cp addons/nuxeo-ai-gcp-package/target/*package*.zip docker/ 2>/dev/null || echo "gcp package not found"
 
-        # Any remaining packages from submodules
-        cp $(find . -path "*/target/*package*.zip" -not -path "./docker/*") docker/ 2>/dev/null || echo "no additional packages found"
-
         echo "Docker context contents:"
         ls -al docker || true
 

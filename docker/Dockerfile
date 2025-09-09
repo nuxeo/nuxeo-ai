@@ -23,8 +23,11 @@ LABEL org.nuxeo.ai.build-tag="$BUILD_TAG" \
 # Switch to root
 USER root
 
-# Install system dependencies
-RUN dnf -y install \
+# Combined system dependencies and secure private repo installation into a single RUN to reduce image layers
+# --- Install system dependencies and secure private repo ---
+RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
+    cp /tmp/nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf -y install --skip-broken \
         ghostscript \
         libwpd-tools \
         perl-Archive-Zip \
@@ -37,14 +40,10 @@ RUN dnf -y install \
         gettext \
         curl \
         unzip \
-        zip && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
-
-# --- Secure way to inject secrets for private repo ---
-RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
-    cp /tmp/nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo && \
-    dnf -y install ffmpeg-nuxeo ImageMagick ccextractor --skip-broken && \
+        zip \
+        ffmpeg-nuxeo \
+        ImageMagick \
+        ccextractor && \
     rm -f /etc/yum.repos.d/nuxeo-private.repo && \
     dnf clean all && \
     rm -rf /var/cache/dnf
