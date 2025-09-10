@@ -158,7 +158,7 @@ jobs:
   notify-on-error:
     runs-on: ubuntu-latest
     needs: [build]
-    if: ${{ failure() && inputs.should-push }}
+    if: ${{ failure() }}
     steps:
       - name: Notify Teams on Failure
         uses: ./.github/workflows/notify_teams.yml
