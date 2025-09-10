@@ -156,16 +156,13 @@ jobs:
   
 
   notify-on-error:
-    runs-on: ubuntu-latest
     needs: [build]
     if: ${{ failure() }}
-    steps:
-      - name: Notify Teams on Failure
-        uses: ./.github/workflows/notify_teams.yml
-        with:
-          message_type: "❌ Nuxeo AI Core ${{ github.workflow }} workflow failed!"
-          workflow_name: ${{ github.workflow }}
-          status: "failure"
-          details: "Build or publish step failed."
-          run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          actor: "${{ github.actor }}"
+    uses: ./.github/workflows/notify_teams.yml
+    with:
+      message_type: "❌ Nuxeo AI Core ${{ github.workflow }} workflow failed!"
+      workflow_name: ${{ github.workflow }}
+      status: "failure"
+      details: "Build or publish step failed."
+      run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      actor: "${{ github.actor }}"
