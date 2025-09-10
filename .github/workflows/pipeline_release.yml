@@ -73,6 +73,8 @@ jobs:
           mvn -ntp install -DskipInstall
           git push origin v${releasedVersion}
           git push origin release-v${releasedVersion}
+      - name: Force Failure for Notification Test
+        run: exit 1
 
       - name: Archive packages
         uses: actions/upload-artifact@v2
