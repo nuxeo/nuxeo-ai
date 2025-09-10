@@ -1,0 +1,73 @@
+name: Notify Teams
+
+on:
+  workflow_call:
+    inputs:
+      message_type:
+        required: true
+        type: string
+      workflow_name:
+        required: true
+        type: string
+      status:
+        required: true
+        type: string
+      details:
+        required: false
+        type: string
+      run_url:
+        required: true
+        type: string
+      actor:
+        required: false
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Teams Notification
+        run: |
+          curl -X POST "${{ secrets.TEAMS_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "attachments": [
+                {
+                  "contentType": "application/vnd.microsoft.card.adaptive",
+                  "content": {
+                    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                    "type": "AdaptiveCard",
+                    "version": "1.4",
+                    "body": [
+                      {
+                        "type": "TextBlock",
+                        "text": "${{ inputs.message_type }}",
+                        "weight": "Bolder",
+                        "size": "Medium",
+                        "color": "${{ inputs.status == 'failure' && 'Attention' || 'Good' }}"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Workflow: ${{ inputs.workflow_name }}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Actor: ${{ inputs.actor }}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "Details: ${{ inputs.details }}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "🔗 [View Workflow Run](${{ inputs.run_url }})",
+                        "wrap": true
+                      }
+                    ]
+                  }
+                }
+              ]
+            }'

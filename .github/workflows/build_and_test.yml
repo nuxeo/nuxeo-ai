@@ -158,11 +158,12 @@ jobs:
     needs: [build]
     if: ${{ failure() && inputs.should-push }}
     steps:
-      - name: Slack Notification
-        id: slack
-        uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844
+      - name: Notify Teams on Failure
+        uses: ./.github/workflows/notify_teams.yml
         with:
-          channel-id: "C9W4P9RKM"
-          slack-message: "Nuxeo AI Core ${{ github.workflow }} workflow failed!\n${{ github.event.head_commit.url }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_NOTIFICATION_BOT_TOKEN }}
+          message_type: "❌ Nuxeo AI Core ${{ github.workflow }} workflow failed!"
+          workflow_name: ${{ github.workflow }}
+          status: "failure"
+          details: "Build or publish step failed."
+          run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          actor: "${{ github.actor }}"
