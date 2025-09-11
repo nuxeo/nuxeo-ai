@@ -1,5 +1,10 @@
 name: Release Publish
 
+permissions:
+  contents: write
+  packages: write
+  actions: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -121,6 +126,8 @@ jobs:
       details: "Release or publish step failed."
       run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       actor: "${{ github.actor }}"
+    secrets:
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
   notify-on-success:
     needs: release-publish
@@ -133,3 +140,5 @@ jobs:
       details: "Release and publish steps completed successfully."
       run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       actor: "${{ github.actor }}"
+    secrets:
+      TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
