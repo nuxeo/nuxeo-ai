@@ -5,6 +5,7 @@ permissions:
   checks: write
   pull-requests: write
 
+
 on:
   pull_request:
     branches: [master, master-10.10, release-*, '2023']
