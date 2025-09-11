@@ -2,8 +2,6 @@ name: Release Publish
 
 permissions:
   contents: write
-  packages: write
-  actions: read
 
 on:
   workflow_dispatch:

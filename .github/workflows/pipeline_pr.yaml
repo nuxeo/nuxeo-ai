@@ -2,9 +2,9 @@ name: CI for PR
 
 permissions:
   contents: read
-  pull-requests: write
   checks: write
-
+  pull-requests: write
+  
 on:
   pull_request:
     branches: [master, master-10.10, release-*, '2023']
