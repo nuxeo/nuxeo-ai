@@ -32,6 +32,8 @@ on:
         required: true
       google-creds:
         required: true
+      TEAMS_WEBHOOK_URL:
+        required: true
 
 permissions:
   contents: read
