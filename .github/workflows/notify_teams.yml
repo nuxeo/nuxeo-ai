@@ -30,14 +30,6 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Teams Webhook URL
-        run: |
-          if [ -z "${{ secrets.TEAMS_WEBHOOK_URL }}" ]; then
-            echo "TEAMS_WEBHOOK_URL is not set!"
-            exit 1
-          else
-            echo "TEAMS_WEBHOOK_URL is set."
-          fi
       - name: Send Teams Notification
         run: |
           curl -X POST "${{ secrets.TEAMS_WEBHOOK_URL }}" \
