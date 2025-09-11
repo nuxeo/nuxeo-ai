@@ -73,9 +73,6 @@ jobs:
           mvn -ntp install -DskipInstall
           git push origin v${releasedVersion}
           git push origin release-v${releasedVersion}
-      - name: Force Failure for Notification Test
-        run: exit 1
-
       - name: Archive packages
         uses: actions/upload-artifact@v2
         with:
@@ -122,5 +119,17 @@ jobs:
       workflow_name: ${{ github.workflow }}
       status: "failure"
       details: "Release or publish step failed."
+      run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      actor: "${{ github.actor }}"
+
+  notify-on-success:
+    needs: release-publish
+    if: ${{ !failure() }}
+    uses: ./.github/workflows/notify_teams.yml
+    with:
+      message_type: "✅ Nuxeo AI Core ${{ github.workflow }} workflow succeeded!"
+      workflow_name: ${{ github.workflow }}
+      status: "success"
+      details: "Release and publish steps completed successfully."
       run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       actor: "${{ github.actor }}"

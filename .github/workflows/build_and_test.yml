@@ -117,8 +117,6 @@ jobs:
         run: find .m2/repository/.locks -type f -delete || true
       - name: Build with Maven
         run: mvn install -fae -B -DskipTests
-      - name: Force Failure for Notification Test
-        run: exit 1
       - name: Run Tests with Maven
         run: mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
       - name: Publish Test Report
@@ -164,5 +162,17 @@ jobs:
       workflow_name: ${{ github.workflow }}
       status: "failure"
       details: "Build or publish step failed."
+      run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      actor: "${{ github.actor }}"
+
+  notify-on-success:
+    needs: [build]
+    if: ${{ !failure() }}
+    uses: ./.github/workflows/notify_teams.yml
+    with:
+      message_type: "✅ Nuxeo AI Core ${{ github.workflow }} workflow succeeded!"
+      workflow_name: ${{ github.workflow }}
+      status: "success"
+      details: "Build and tests completed successfully."
       run_url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
       actor: "${{ github.actor }}"
