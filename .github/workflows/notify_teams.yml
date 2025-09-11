@@ -1,4 +1,5 @@
 name: Notify Teams
+permissions: {}
 
 on:
   workflow_call:
