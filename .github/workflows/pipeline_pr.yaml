@@ -20,3 +20,4 @@ jobs:
       connect-auth-user: ${{secrets.CONNECT_AUTH_USER}}
       connect-auth-token: ${{secrets.CONNECT_AUTH_TOKEN}}
       google-creds: ${{secrets.GOOGLE_CREDENTIALS}}
+      TEAMS_WEBHOOK_URL: ${{secrets.TEAMS_WEBHOOK_URL}}
