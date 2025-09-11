@@ -30,6 +30,15 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      - name: Set color based on status
+        id: set-color
+        run: |
+          if [ "${{ inputs.status }}" = "failure" ]; then
+            echo "color=Attention" >> $GITHUB_OUTPUT
+          else
+            echo "color=Good" >> $GITHUB_OUTPUT
+          fi
+
       - name: Send Teams Notification
         run: |
           curl -X POST "${{ secrets.TEAMS_WEBHOOK_URL }}" \
@@ -48,7 +57,7 @@ jobs:
                         "text": "${{ inputs.message_type }}",
                         "weight": "Bolder",
                         "size": "Medium",
-                        "color": "${{ inputs.status == 'failure' ? 'Attention' : 'Good' }}"
+                        "color": "${{ steps.set-color.outputs.color }}"
                       },
                       {
                         "type": "TextBlock",
