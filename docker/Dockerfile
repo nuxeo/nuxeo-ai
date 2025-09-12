@@ -1,44 +1,67 @@
-ARG PLATFORM_VERSION
+# Base image
+ARG PLATFORM_VERSION=2023
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
-USER 0
-#RUN yum -y install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm && \
-#    yum -y install ffmpeg
-COPY nuxeo-private.repo~gen /etc/yum.repos.d/nuxeo-private.repo
-RUN yum -y update && \
-        yum -y install epel-release deltarpm && \
-        yum -y --setopt=skip_missing_names_on_install=False install \
-            ghostscript \
-            ImageMagick \
-            libreoffice-calc libreoffice-headless libreoffice-impress libreoffice-writer \
-            libwpd-tools \
-            perl-Archive-Zip \
-            perl-Image-ExifTool \
-            poppler-utils \
-            ufraw \
-        ccextractor \
-        ffmpeg-nuxeo && \
-    rm /etc/yum.repos.d/nuxeo-private.repo
-
-USER $NUXEO_USER
-
+# Build arguments
+ARG BUILD_TAG=unknown
+ARG SCM_REF=unknown
+ARG VERSION=unknown
+ARG PACKAGES_AUTH_USER
+ARG PACKAGES_AUTH_TOKEN
 ARG PLATFORM_VERSION
-ARG VERSION
-ARG SCM_REF
-ARG BUILD_TAG
-LABEL org.nuxeo.version="${VERSION}"
-LABEL org.nuxeo.scm-ref="${SCM_REF}"
-LABEL org.nuxeo.scm-url="git@github.com:nuxeo/nuxeo-ai.git"
-LABEL org.nuxeo.build-tag="${BUILD_TAG}"
-LABEL org.opencontainers.image.version="${VERSION}"
-LABEL org.opencontainers.image.revision="${SCM_REF}"
-LABEL org.opencontainers.image.source="git@github.com:nuxeo/nuxeo-ai.git"
-LABEL org.opencontainers.image.title="Nuxeo AI Core"
-LABEL org.opencontainers.image.description="Nuxeo AI Core based on Nuxeo Platform ${PLATFORM_VERSION}"
-LABEL org.opencontainers.image.authors="Nuxeo AI <ai-team@nuxeo.com>"
-LABEL org.opencontainers.image.vendor="Nuxeo"
-LABEL org.opencontainers.image.licenses="(C) Copyright 2020 Nuxeo (https://nuxeo.com/)."
 
-COPY --chown=$NUXEO_USER log4j2.xml /opt/nuxeo/server/lib/log4j2.xml
-COPY *.zip /tmp/
-RUN /install-packages.sh /tmp/nuxeo-ai-core.zip /tmp/nuxeo-ai-image-quality-package.zip /tmp/nuxeo-web-ui.zip /tmp/nuxeo-csv.zip
+# Labels
+LABEL org.nuxeo.ai.build-tag="$BUILD_TAG" \
+      org.nuxeo.ai.scm-ref="$SCM_REF" \
+      org.nuxeo.ai.version="$VERSION" \
+      org.opencontainers.image.version="$VERSION" \
+      org.opencontainers.image.revision="$SCM_REF" \
+      org.opencontainers.image.source="git@github.com:nuxeo/nuxeo-ai.git" \
+      org.opencontainers.image.title="Nuxeo AI Core" \
+      org.opencontainers.image.description="Nuxeo AI Core based on Nuxeo Platform $PLATFORM_VERSION"
+
+# Switch to root
+USER root
+
+# Combined system dependencies and secure private repo installation into a single RUN to reduce image layers
+# --- Install system dependencies and secure private repo ---
+RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
+    cp /tmp/nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf -y install --skip-broken \
+        ghostscript \
+        libwpd-tools \
+        perl-Archive-Zip \
+        perl-Image-ExifTool \
+        poppler-utils \
+        libreoffice-calc \
+        libreoffice-headless \
+        libreoffice-impress \
+        libreoffice-writer \
+        gettext \
+        curl \
+        unzip \
+        zip \
+        ffmpeg-nuxeo \
+        ImageMagick \
+        ccextractor && \
+    rm -f /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# Create /packages directory
+RUN mkdir -p /packages && chown 900:0 /packages
+
+# Copy Nuxeo AI packages into /packages
+COPY --chown=900:0 nuxeo-ai-core-${VERSION}.zip /packages/
+COPY --chown=900:0 nuxeo-ai-aws-package-${VERSION}.zip /packages/
+COPY --chown=900:0 nuxeo-ai-gcp-package-${VERSION}.zip /packages/
+COPY --chown=900:0 nuxeo-ai-image-quality-package-${VERSION}.zip /packages/
+
+RUN /install-packages.sh --offline \
+    /packages/nuxeo-ai-core-${VERSION}.zip \
+    /packages/nuxeo-ai-aws-package-${VERSION}.zip \
+    /packages/nuxeo-ai-gcp-package-${VERSION}.zip \
+    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip
+
+# Switch back to Nuxeo user
+USER 900
