@@ -131,7 +131,7 @@ jobs:
 
   notify-on-success:
     needs: release-publish
-    if: ${{ !failure() }}
+    if: ${{ success() }}
     uses: ./.github/workflows/notify_teams.yml
     with:
       message_type: "✅ Nuxeo AI Core ${{ github.workflow }} workflow succeeded!"
