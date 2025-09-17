@@ -26,7 +26,8 @@ USER root
 # Combined system dependencies and secure private repo installation into a single RUN to reduce image layers
 # --- Install system dependencies and secure private repo ---
 RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
-    cp /tmp/nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf -y install gettext && \
+    envsubst </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo && \
     dnf -y install --skip-broken \
         ghostscript \
         libwpd-tools \
@@ -37,7 +38,6 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
         libreoffice-headless \
         libreoffice-impress \
         libreoffice-writer \
-        gettext \
         curl \
         unzip \
         zip \
