@@ -48,24 +48,16 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Create /packages and make it owned by UID 900 / GID 1000 (so runtime user can read/write when needed)
-RUN mkdir -p /packages && chown 900:1000 /packages
+USER nuxeo
 
 # Copy Nuxeo AI packages into /packages and set ownership to 900:1000
-COPY --chown=900:1000 nuxeo-ai-core-${VERSION}.zip /packages/
-COPY --chown=900:1000 nuxeo-ai-aws-package-${VERSION}.zip /packages/
-COPY --chown=900:1000 nuxeo-ai-gcp-package-${VERSION}.zip /packages/
-COPY --chown=900:1000 nuxeo-ai-image-quality-package-${VERSION}.zip /packages/
+COPY nuxeo-ai-core-${VERSION}.zip /packages/
+COPY nuxeo-ai-aws-package-${VERSION}.zip /packages/
+COPY nuxeo-ai-gcp-package-${VERSION}.zip /packages/
+COPY nuxeo-ai-image-quality-package-${VERSION}.zip /packages/
 
 RUN /install-packages.sh --offline \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
     /packages/nuxeo-ai-gcp-package-${VERSION}.zip \
     /packages/nuxeo-ai-image-quality-package-${VERSION}.zip
-
-# Ensure nxserver tree exists and is owned by UID 900 / GID 1000 
-RUN mkdir -p /opt/nuxeo/server/nxserver/config && \
-    chown -R 900:1000 /opt/nuxeo/server/nxserver
-
-# Switch back to Nuxeo user
-USER 900
