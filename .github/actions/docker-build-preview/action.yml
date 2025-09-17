@@ -66,7 +66,7 @@ runs:
       with:
         context: ./docker
         file: ./docker/Dockerfile
-        secrets: |
+        secret-files: |
           nuxeo-private=docker/nuxeo-private.repo
         build-args: |
           VERSION=${{ inputs.version }}
