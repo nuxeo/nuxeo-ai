@@ -50,14 +50,9 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
 
 USER nuxeo
 
-# Copy Nuxeo AI packages into /packages and set ownership to 900:1000
-COPY nuxeo-ai-core-${VERSION}.zip /packages/
-COPY nuxeo-ai-aws-package-${VERSION}.zip /packages/
-COPY nuxeo-ai-gcp-package-${VERSION}.zip /packages/
-COPY nuxeo-ai-image-quality-package-${VERSION}.zip /packages/
-
-RUN /install-packages.sh --offline \
+RUN --mount=type=bind,target=/packages /install-packages.sh --offline \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
     /packages/nuxeo-ai-gcp-package-${VERSION}.zip \
-    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip
+    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip && \
+     nuxeoctl mp-list
