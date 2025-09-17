@@ -13,6 +13,12 @@ inputs:
   docker-password:
     description: Docker registry password
     required: true
+  packages-username:
+    description: packages.nuxeo.com username
+    required: true
+  packages-password:
+    description: packages.nuxeo.com password
+    required: true
   repository:
     description: Docker repository name
     required: true
@@ -66,8 +72,8 @@ runs:
           VERSION=${{ inputs.version }}
           SCM_REF=${{ github.sha }}
           BUILD_TAG=${{ github.run_id }}
-          PACKAGES_AUTH_USER=${{ inputs.docker-username }}
-          PACKAGES_AUTH_TOKEN=${{ inputs.docker-password }}
+          PACKAGES_AUTH_USER=${{ inputs.packages-username }}
+          PACKAGES_AUTH_TOKEN=${{ inputs.packages-password }}
         tags: |
           ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}.${{ github.run_id }}
         push: true
