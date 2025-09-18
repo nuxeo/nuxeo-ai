@@ -42,9 +42,7 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
         unzip \
         zip \
         ffmpeg-nuxeo \
-        ImageMagick \
-        ccextractor && \
-    rm -f /etc/yum.repos.d/nuxeo-private.repo && \
+        ccextractor-nuxeo || true && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -54,5 +52,4 @@ RUN --mount=type=bind,target=/packages /install-packages.sh --offline \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
     /packages/nuxeo-ai-gcp-package-${VERSION}.zip \
-    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip && \
-     nuxeoctl mp-list
+    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip
