@@ -42,7 +42,8 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
         unzip \
         zip \
         ffmpeg-nuxeo \
-        ccextractor-nuxeo || true && \
+        ccextractor-nuxeo && \
+    rm /etc/yum.repos.d/nuxeo-private.repo && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
