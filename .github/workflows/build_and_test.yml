@@ -47,8 +47,8 @@ permissions:
   checks: write
 
 env:
-  REGISTRY: docker-private.packages.nuxeo.com
-  REPOSITORY: nuxeo-ai-build
+  REGISTRY: docker-internal.packages.nuxeo.com
+  REPOSITORY: nuxeo/nuxeo-ai
 
 jobs:
   build:

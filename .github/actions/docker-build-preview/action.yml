@@ -48,7 +48,14 @@ runs:
       with:
         driver: docker
 
-    - name: Login to Docker registry
+    - name: Login to Nuxeo private registry (FROM)
+      uses: docker/login-action@v3
+      with:
+        registry: docker-private.packages.nuxeo.com
+        username: ${{ inputs.docker-username }}
+        password: ${{ inputs.docker-password }}
+
+    - name: Login to destination registry ${{ inputs.registry }}
       uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registry }}
