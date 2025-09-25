@@ -30,3 +30,4 @@ jobs:
       google-creds: ${{secrets.GOOGLE_CREDENTIALS}}
       DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
       DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      NUXEO_CLID: ${{secrets.DEVOPS_CLID}}

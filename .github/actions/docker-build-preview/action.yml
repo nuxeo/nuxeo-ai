@@ -16,6 +16,9 @@ inputs:
   repository:
     description: Docker repository name
     required: true
+  nuxeo-clid:
+    description: Nuxeo CLID (CLID as a string)
+    required: true
 
 runs:
   using: composite
@@ -64,9 +67,13 @@ runs:
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
+      env:
+        NUXEO_CLID: ${{ inputs.nuxeo-clid }}
       with:
         context: ./docker
         file: ./docker/Dockerfile
+        secret-envs: |
+          NUXEO_CLID=NUXEO_CLID
         secret-files: |
           nuxeo-private=docker/nuxeo-private.repo
         build-args: |
