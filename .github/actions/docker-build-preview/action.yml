@@ -65,11 +65,15 @@ runs:
         username: ${{ inputs.docker-username }}
         password: ${{ inputs.docker-password }}
 
+    - name: Set up QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       env:
         NUXEO_CLID: ${{ inputs.nuxeo-clid }}
       with:
+        platforms: linux/amd64,linux/arm64
         context: ./docker
         file: ./docker/Dockerfile
         secret-envs: |
