@@ -40,6 +40,8 @@ on:
         required: true
       DOCKER_PASSWORD:
         required: true
+      NUXEO_CLID:
+        required: true
 
 permissions:
   contents: read
@@ -47,8 +49,8 @@ permissions:
   checks: write
 
 env:
-  REGISTRY: docker-private.packages.nuxeo.com
-  REPOSITORY: nuxeo-ai-build
+  REGISTRY: docker-internal.packages.nuxeo.com
+  REPOSITORY: nuxeo/nuxeo-ai
 
 jobs:
   build:
@@ -154,9 +156,9 @@ jobs:
         env:
           CONNECT_URL: https://connect.nuxeo.com/nuxeo
         run: |
-          packages=('nuxeo-ai-core-package/target/nuxeo-ai-core-' 
-                    'addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-' 
-                    'addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-' 
+          packages=('nuxeo-ai-core-package/target/nuxeo-ai-core-'
+                    'addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-'
+                    'addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-'
                     'addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-')
 
           for pkg in "${packages[@]}"; do
@@ -174,6 +176,7 @@ jobs:
           repository: ${{ env.REPOSITORY }}
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
+          nuxeo-clid: ${{ secrets.NUXEO_CLID }}
 
       # --- End Docker steps ----
 

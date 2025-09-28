@@ -26,7 +26,8 @@ USER root
 # Combined system dependencies and secure private repo installation into a single RUN to reduce image layers
 # --- Install system dependencies and secure private repo ---
 RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
-    cp /tmp/nuxeo-private.repo /etc/yum.repos.d/nuxeo-private.repo && \
+    dnf -y install gettext && \
+    envsubst </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo && \
     dnf -y install --skip-broken \
         ghostscript \
         libwpd-tools \
@@ -37,31 +38,22 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
         libreoffice-headless \
         libreoffice-impress \
         libreoffice-writer \
-        gettext \
         curl \
         unzip \
         zip \
         ffmpeg-nuxeo \
-        ImageMagick \
-        ccextractor && \
-    rm -f /etc/yum.repos.d/nuxeo-private.repo && \
+        ccextractor-nuxeo && \
+    rm /etc/yum.repos.d/nuxeo-private.repo && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
-# Create /packages directory
-RUN mkdir -p /packages && chown 900:0 /packages
+USER nuxeo
 
-# Copy Nuxeo AI packages into /packages
-COPY --chown=900:0 nuxeo-ai-core-${VERSION}.zip /packages/
-COPY --chown=900:0 nuxeo-ai-aws-package-${VERSION}.zip /packages/
-COPY --chown=900:0 nuxeo-ai-gcp-package-${VERSION}.zip /packages/
-COPY --chown=900:0 nuxeo-ai-image-quality-package-${VERSION}.zip /packages/
-
-RUN /install-packages.sh --offline \
+RUN --mount=type=bind,target=/packages \
+    --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID \
+    /install-packages.sh --clid ${NUXEO_CLID} nuxeo-web-ui && \
+    /install-packages.sh --offline \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
     /packages/nuxeo-ai-gcp-package-${VERSION}.zip \
     /packages/nuxeo-ai-image-quality-package-${VERSION}.zip
-
-# Switch back to Nuxeo user
-USER 900
