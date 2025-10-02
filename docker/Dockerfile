@@ -29,6 +29,7 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
     dnf -y install gettext && \
     envsubst </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo && \
     dnf -y install --skip-broken \
+        awscli \
         ghostscript \
         libwpd-tools \
         perl-Archive-Zip \
