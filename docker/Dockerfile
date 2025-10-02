@@ -51,7 +51,7 @@ USER nuxeo
 
 RUN --mount=type=bind,target=/packages \
     --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID \
-    /install-packages.sh --clid ${NUXEO_CLID} nuxeo-web-ui && \
+    /install-packages.sh --clid ${NUXEO_CLID} nuxeo-web-ui replace-administrator-user-1.0.0 && \
     /install-packages.sh --offline \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
