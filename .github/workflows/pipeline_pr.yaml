@@ -23,11 +23,11 @@ jobs:
     secrets:
       aws-access-key-id: ${{secrets.AI_CI_ROLE_AWS_ACCESS_KEY_ID}}
       aws-secret-access-key: ${{secrets.AI_CI_ROLE_AWS_ACCESS_KEY_SECRET}}
-      packages-auth-user: ${{secrets.PACKAGES_AUTH_USER}}
-      packages-auth-token: ${{secrets.PACKAGES_AUTH_TOKEN}}
-      connect-auth-user: ${{secrets.CONNECT_AUTH_USER}}
-      connect-auth-token: ${{secrets.CONNECT_AUTH_TOKEN}}
+      packages-auth-user: ${{secrets.REPOSITORY_MANAGER_USERNAME}}
+      packages-auth-token: ${{secrets.REPOSITORY_MANAGER_PASSWORD}}
+      connect-auth-user: ${{secrets.CONNECT_USERNAME}}
+      connect-auth-token: ${{secrets.CONNECT_PASSWORD}}
       google-creds: ${{secrets.GOOGLE_CREDENTIALS}}
-      DOCKER_USERNAME: ${{secrets.DOCKER_USERNAME}}
-      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      DOCKER_USERNAME: ${{secrets.REPOSITORY_MANAGER_USERNAME}}
+      DOCKER_PASSWORD: ${{secrets.REPOSITORY_MANAGER_PASSWORD}}
       NUXEO_CLID: ${{secrets.DEVOPS_CLID}}
