@@ -29,6 +29,7 @@ RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
     dnf -y install gettext && \
     envsubst </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo && \
     dnf -y install --skip-broken \
+        awscli \
         ghostscript \
         libwpd-tools \
         perl-Archive-Zip \
@@ -51,7 +52,7 @@ USER nuxeo
 
 RUN --mount=type=bind,target=/packages \
     --mount=type=secret,id=NUXEO_CLID,env=NUXEO_CLID \
-    /install-packages.sh --clid ${NUXEO_CLID} nuxeo-web-ui && \
+    /install-packages.sh --clid ${NUXEO_CLID} nuxeo-web-ui replace-administrator-user-1.0.0 && \
     /install-packages.sh --offline \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
