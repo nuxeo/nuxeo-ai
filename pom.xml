@@ -4,20 +4,20 @@
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>2023.37.10</version>
+    <version>2025.7</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>4.0.3-SNAPSHOT</version>
+  <version>5.0.0</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
 
   <properties>
-    <nuxeo.ai.version>4.0.3-SNAPSHOT</nuxeo.ai.version>
+    <nuxeo.ai.version>5.0.0</nuxeo.ai.version>
     <dropwizard.version>4.1.17</dropwizard.version>
-    <nuxeo.target.version>2023.*</nuxeo.target.version>
+    <nuxeo.target.version>2025.7</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.java.client.version>3.13.0</nuxeo.java.client.version>
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
@@ -27,6 +27,8 @@
     <nuxeo.ai.jwt.version>1.0.5</nuxeo.ai.jwt.version>
     <grpc-netty.version>1.64.0</grpc-netty.version>
     <google.protobuf.version>4.29.3</google.protobuf.version>
+    <gcp.version>26.62.0</gcp.version>
+    <aws.sdk.version>2.26.0</aws.sdk.version>
   </properties>
 
   <modules>
@@ -126,6 +128,21 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- AWS SDK v2 BOM should be the first entry -->
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws.sdk.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+      <dependency>
+        <groupId>com.google.cloud</groupId>
+        <artifactId>libraries-bom</artifactId>
+        <version>${gcp.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-pipes</artifactId>
@@ -169,8 +186,8 @@
         <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.nuxeo.elasticsearch</groupId>
-        <artifactId>nuxeo-elasticsearch-core</artifactId>
+        <groupId>org.nuxeo.ecm.core</groupId>
+        <artifactId>nuxeo-core-search</artifactId>
         <classifier>tests</classifier>
         <version>${nuxeo.platform.version}</version>
       </dependency>

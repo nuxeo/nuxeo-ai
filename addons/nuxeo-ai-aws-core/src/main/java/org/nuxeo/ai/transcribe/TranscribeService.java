@@ -22,9 +22,9 @@ package org.nuxeo.ai.transcribe;
 import java.util.List;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
-import com.amazonaws.services.transcribe.AmazonTranscribe;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.TranscriptionJob;
+import software.amazon.awssdk.services.transcribe.TranscribeClient;
+import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobResponse;
 
 /**
  * Service interface intended for Video/Audio transcription
@@ -36,9 +36,9 @@ public interface TranscribeService {
      *
      * @param blob      that contains Video/Audio
      * @param languages an array of languages
-     * @return {@link TranscriptionJob} of created request
+     * @return {@link StartTranscriptionJobResponse} of created request
      */
-    StartTranscriptionJobResult requestTranscription(Blob blob, String... languages);
+    StartTranscriptionJobResponse requestTranscription(Blob blob, String... languages);
 
     /**
      * @param transcription to convert to lables
@@ -58,7 +58,7 @@ public interface TranscribeService {
     /**
      * Get AWS Transcribe Client
      *
-     * @return {@link AmazonTranscribe}
+     * @return {@link TranscribeClient}
      */
-    AmazonTranscribe getClient();
+    TranscribeClient getClient();
 }

@@ -36,7 +36,7 @@ import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
+import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesResponse;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -72,9 +72,9 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
                             + prop.getValue().length());
                     continue;
                 }
-                DetectKeyPhrasesResult result = Framework.getService(ComprehendService.class)
-                                                         .extractKeyphrase(prop.getValue(), languageCode);
-                if (result != null && !result.getKeyPhrases().isEmpty()) {
+                DetectKeyPhrasesResponse result = Framework.getService(ComprehendService.class)
+                                                         .detectKeyPhrases(prop.getValue(), "en");
+                if (result != null && !result.keyPhrases().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -86,13 +86,13 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            DetectKeyPhrasesResult result) {
-        List<AIMetadata.Label> labels = result.getKeyPhrases()
+            DetectKeyPhrasesResponse result) {
+        List<AIMetadata.Label> labels = result.keyPhrases()
                                               .stream()
-                                              .map(kp -> new AIMetadata.Label(kp.getText(), kp.getScore()))
+                                              .map(kp -> new AIMetadata.Label(kp.text(), kp.score()))
                                               .collect(Collectors.toList());
         String raw = toJsonString(jg -> {
-            jg.writeObjectField(KEYPHRASE_KEY, result.getKeyPhrases());
+            jg.writeObjectField(KEYPHRASE_KEY, result.keyPhrases());
         });
 
         String rawKey = saveJsonAsRawBlob(raw);

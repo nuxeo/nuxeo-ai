@@ -20,9 +20,9 @@ package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
 import java.util.Optional;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import jakarta.validation.constraints.NotNull;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.ResponseHandler;

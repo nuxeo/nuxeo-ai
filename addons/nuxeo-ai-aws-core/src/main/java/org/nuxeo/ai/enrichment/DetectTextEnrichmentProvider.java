@@ -39,9 +39,8 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.DetectTextResult;
-import com.amazonaws.services.rekognition.model.TextDetection;
+import software.amazon.awssdk.services.rekognition.model.DetectTextResponse;
+import software.amazon.awssdk.services.rekognition.model.TextDetection;
 
 /**
  * Detects words and lines in an image.
@@ -71,11 +70,11 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
      * Create a normalized tag
      */
     protected AIMetadata.Tag newTag(TextDetection textD) {
-        if (textD.getConfidence() >= minConfidence && textTypes.contains(textD.getType())) {
-            BoundingBox box = textD.getGeometry().getBoundingBox();
-            return new EnrichmentMetadata.Tag(textD.getDetectedText(), kind, null,
-                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), null,
-                    textD.getConfidence() / 100);
+        if (textD.confidence() >= minConfidence && textTypes.contains(textD.typeAsString())) {
+            software.amazon.awssdk.services.rekognition.model.BoundingBox box = textD.geometry().boundingBox();
+            return new EnrichmentMetadata.Tag(textD.detectedText(), kind, null,
+                    new AIMetadata.Box(box.width(), box.height(), box.left(), box.top()), null,
+                    textD.confidence() / 100);
         }
         return null;
     }
@@ -85,8 +84,8 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                DetectTextResult result = Framework.getService(RekognitionService.class).detectText(blob.getValue());
-                if (result != null && !result.getTextDetections().isEmpty()) {
+                DetectTextResponse result = Framework.getService(RekognitionService.class).detectText(blob.getValue());
+                if (result != null && !result.textDetections().isEmpty()) {
                     enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result));
                 }
             }
@@ -98,13 +97,13 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectTextResult result) {
-        List<AIMetadata.Tag> tags = result.getTextDetections()
+            DetectTextResponse result) {
+        List<AIMetadata.Tag> tags = result.textDetections()
                                           .stream()
                                           .map(this::newTag)
                                           .filter(Objects::nonNull)
                                           .collect(Collectors.toList());
-        String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
+        String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.textDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))

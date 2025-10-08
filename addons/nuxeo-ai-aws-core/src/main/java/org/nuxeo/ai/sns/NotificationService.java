@@ -21,7 +21,7 @@ package org.nuxeo.ai.sns;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import com.amazonaws.services.sns.AmazonSNS;
+import software.amazon.awssdk.services.sns.SnsClient;
 
 /**
  * A service responsible for registering and creating and using AWS SNS topics
@@ -31,7 +31,7 @@ public interface NotificationService {
     /**
      * @return AWS SNS client
      */
-    AmazonSNS getClient();
+    SnsClient getClient();
 
     /**
      * Subscribes for a topic with

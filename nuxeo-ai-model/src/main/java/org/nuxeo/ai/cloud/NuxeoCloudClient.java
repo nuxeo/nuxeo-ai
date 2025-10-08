@@ -54,8 +54,8 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,7 +85,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.auth0.jwt.impl.PublicClaims;
+import com.auth0.jwt.RegisteredClaims;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
@@ -173,7 +173,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             JWTKeyService jwt = Framework.getService(JWTKeyService.class);
             Map<String, Serializable> claims = new HashMap<>();
-            claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
+            claims.put(RegisteredClaims.SUBJECT, session.getPrincipal().getActingUser());
 
             // TODO: AICORE-541 - use session to apply correct groups
             String[] groups = { INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX };

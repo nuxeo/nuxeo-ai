@@ -29,7 +29,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.similar.content.DedupConstants.CONF_LISTENER_ENABLE;
 
 import java.io.Serializable;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

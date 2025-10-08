@@ -34,9 +34,9 @@ import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
-import com.amazonaws.services.comprehend.model.SentimentScore;
-import com.amazonaws.services.comprehend.model.SentimentType;
+import software.amazon.awssdk.services.comprehend.model.DetectSentimentResponse;
+import software.amazon.awssdk.services.comprehend.model.SentimentScore;
+import software.amazon.awssdk.services.comprehend.model.SentimentType;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -73,9 +73,9 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
                             + prop.getValue().length());
                     continue;
                 }
-                DetectSentimentResult result = Framework.getService(ComprehendService.class)
+                DetectSentimentResponse result = Framework.getService(ComprehendService.class)
                                                         .detectSentiment(prop.getValue(), languageCode);
-                if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {
+                if (result != null && StringUtils.isNotEmpty(result.sentimentAsString())) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -87,11 +87,11 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectSentimentResult result) {
+            DetectSentimentResponse result) {
         List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("sentimentScore", result.getSentimentScore());
-            jg.writeStringField("sentiment", result.getSentiment());
+            jg.writeObjectField("sentimentScore", result.sentimentScore());
+            jg.writeStringField("sentiment", result.sentimentAsString());
         });
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(
@@ -105,12 +105,12 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
     /**
      * Builds a normalized list of labels from the sentiment result
      */
-    public List<EnrichmentMetadata.Label> getSentimentLabel(DetectSentimentResult result) {
+    public List<EnrichmentMetadata.Label> getSentimentLabel(DetectSentimentResponse result) {
         List<EnrichmentMetadata.Label> labels = new ArrayList<>(1);
-        SentimentScore sentimentScore = result.getSentimentScore();
+        SentimentScore sentimentScore = result.sentimentScore();
         SentimentType sentiment;
         try {
-            sentiment = SentimentType.valueOf(result.getSentiment().toUpperCase());
+            sentiment = SentimentType.valueOf(result.sentimentAsString().toUpperCase());
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new NuxeoException(e);
         }
@@ -118,16 +118,16 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
         Float confidence;
         switch (sentiment) {
         case POSITIVE:
-            confidence = sentimentScore.getPositive();
+            confidence = sentimentScore.positive();
             break;
         case NEGATIVE:
-            confidence = sentimentScore.getNegative();
+            confidence = sentimentScore.negative();
             break;
         case MIXED:
-            confidence = sentimentScore.getMixed();
+            confidence = sentimentScore.mixed();
             break;
         case NEUTRAL:
-            confidence = sentimentScore.getNeutral();
+            confidence = sentimentScore.neutral();
             break;
         default:
             throw new NuxeoException("Invalid sentiment: " + sentiment);

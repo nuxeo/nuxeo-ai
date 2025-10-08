@@ -31,10 +31,9 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sns.model.SubscribeRequest;
-import com.amazonaws.services.sns.model.SubscribeResult;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.SubscribeRequest;
+import software.amazon.awssdk.services.sns.model.SubscribeResponse;
 
 /**
  * A component implementing {@link NotificationService}
@@ -43,7 +42,7 @@ public class NotificationComponent extends DefaultComponent implements Notificat
 
     private static final Logger log = LogManager.getLogger(NotificationComponent.class);
 
-    protected AmazonSNS amazonSNS;
+    protected SnsClient amazonSNS;
 
     protected URI endpointURL;
 
@@ -81,15 +80,19 @@ public class NotificationComponent extends DefaultComponent implements Notificat
     }
 
     @Override
-    public AmazonSNS getClient() {
+    public SnsClient getClient() {
         return client();
     }
 
     @Override
     public String subscribe(String arn, URI uri) {
-        SubscribeRequest request = new SubscribeRequest(arn, uri.getScheme(), uri.toString());
-        SubscribeResult result = client().subscribe(request);
-        return result.getSubscriptionArn();
+        SubscribeRequest request = SubscribeRequest.builder()
+                                                  .topicArn(arn)
+                                                  .protocol(uri.getScheme())
+                                                  .endpoint(uri.toString())
+                                                  .build();
+        SubscribeResponse result = client().subscribe(request);
+        return result.subscriptionArn();
     }
 
     @Override
@@ -106,16 +109,16 @@ public class NotificationComponent extends DefaultComponent implements Notificat
         return 500;
     }
 
-    protected AmazonSNS client() {
+    protected SnsClient client() {
         if (amazonSNS != null) {
             return amazonSNS;
         }
 
         synchronized (this) {
-            amazonSNS = AmazonSNSClientBuilder.standard()
-                                              .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
-                                              .withRegion(AWSHelper.getInstance().getRegion())
-                                              .build();
+            amazonSNS = SnsClient.builder()
+                                .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                                .region(AWSHelper.getInstance().getRegion())
+                                .build();
             return amazonSNS;
         }
     }

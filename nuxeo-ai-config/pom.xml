@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>5.0.0</version>
   </parent>
   <artifactId>nuxeo-ai-config</artifactId>
   <name>Nuxeo AI Config Module</name>
@@ -30,8 +30,8 @@
       <artifactId>nuxeo-automation-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.elasticsearch</groupId>
-      <artifactId>nuxeo-elasticsearch-core</artifactId>
+      <groupId>org.nuxeo.ecm.core</groupId>
+      <artifactId>nuxeo-core-search</artifactId>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
@@ -94,8 +94,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.elasticsearch</groupId>
-      <artifactId>nuxeo-elasticsearch-core</artifactId>
+      <groupId>org.nuxeo.ecm.core</groupId>
+      <artifactId>nuxeo-core-search</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

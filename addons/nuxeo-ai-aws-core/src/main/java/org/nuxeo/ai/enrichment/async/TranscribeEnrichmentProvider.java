@@ -19,8 +19,8 @@
  */
 package org.nuxeo.ai.enrichment.async;
 
-import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.FAILED;
-import static com.amazonaws.services.transcribe.model.TranscriptionJobStatus.IN_PROGRESS;
+import static software.amazon.awssdk.services.transcribe.model.TranscriptionJobStatus.FAILED;
+import static software.amazon.awssdk.services.transcribe.model.TranscriptionJobStatus.IN_PROGRESS;
 import static org.nuxeo.ecm.platform.video.VideoConstants.VIDEO_FACET;
 
 import java.io.IOException;
@@ -56,10 +56,10 @@ import org.nuxeo.ecm.platform.video.TranscodedVideo;
 import org.nuxeo.ecm.platform.video.VideoDocument;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.GetTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.TranscriptionJob;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobRequest;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
@@ -116,12 +116,12 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
         }
 
         TranscribeService ts = Framework.getService(TranscribeService.class);
-        StartTranscriptionJobResult result = ts.requestTranscription(blob, languages);
-        TranscriptionJob job = result.getTranscriptionJob();
+        StartTranscriptionJobResponse result = ts.requestTranscription(blob, languages);
+        TranscriptionJob job = result.transcriptionJob();
         job = awaitJob(docId, ts, job);
-        if (FAILED.name().equals(job.getTranscriptionJobStatus())) {
-            throw new NuxeoException("Transcribe job failed with reason: " + job.getFailureReason() + "; Job: "
-                    + job.getTranscriptionJobName() + " Document Id: " + docId);
+        if (FAILED.name().equals(job.transcriptionJobStatusAsString())) {
+            throw new NuxeoException("Transcribe job failed with reason: " + job.failureReason() + "; Job: "
+                    + job.transcriptionJobName() + " Document Id: " + docId);
         }
 
         String json = getResponse(docId, job);
@@ -150,7 +150,7 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
     }
 
     private String getResponse(String docId, TranscriptionJob job) {
-        String transcriptUri = job.getTranscript().getTranscriptFileUri();
+        String transcriptUri = job.transcript().transcriptFileUri();
         HttpGet req = new HttpGet(transcriptUri);
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -160,18 +160,18 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
         } catch (IOException e) {
             log.error(e);
             throw new NuxeoException(
-                    "Could not retrieve result for Job " + job.getTranscriptionJobName() + " Document Id: " + docId);
+                    "Could not retrieve result for Job " + job.transcriptionJobName() + " Document Id: " + docId);
         }
     }
 
     @NotNull
     private TranscriptionJob awaitJob(String docId, TranscribeService ts, TranscriptionJob job) {
         long timeSpent = 0;
-        String jobName = job.getTranscriptionJobName();
-        GetTranscriptionJobRequest jobRequest = new GetTranscriptionJobRequest().withTranscriptionJobName(jobName);
-        while (IN_PROGRESS.name().equals(job.getTranscriptionJobStatus())) {
-            GetTranscriptionJobResult jobResult = ts.getClient().getTranscriptionJob(jobRequest);
-            job = jobResult.getTranscriptionJob();
+        String jobName = job.transcriptionJobName();
+        GetTranscriptionJobRequest jobRequest = GetTranscriptionJobRequest.builder().transcriptionJobName(jobName).build();
+        while (IN_PROGRESS.name().equals(job.transcriptionJobStatusAsString())) {
+            GetTranscriptionJobResponse jobResult = ts.getClient().getTranscriptionJob(jobRequest);
+            job = jobResult.transcriptionJob();
             if (timeSpent > TIMEOUT) {
                 throw new NuxeoException("Work reached timeout; Job name: " + jobName + " Document Id: " + docId);
             }

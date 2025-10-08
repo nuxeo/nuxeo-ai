@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,16 +48,15 @@ import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ai.services.ModelUsageService;
+import org.nuxeo.audit.api.AuditQueryBuilder;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.query.sql.model.Predicate;
 import org.nuxeo.ecm.core.query.sql.model.Predicates;
 import org.nuxeo.ecm.platform.audit.AuditFeature;
-import org.nuxeo.ecm.platform.audit.api.AuditQueryBuilder;
 import org.nuxeo.ecm.platform.audit.api.AuditReader;
 import org.nuxeo.ecm.platform.audit.api.LogEntry;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -67,7 +66,7 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AuditFeature.class, RepositoryElasticSearchFeature.class})
+@Features({EnrichmentTestFeature.class, AuditFeature.class})
 @Deploy({"org.nuxeo.ai.ai-core"})
 public class TestAutoServicesAudit {
 
@@ -92,7 +91,8 @@ public class TestAutoServicesAudit {
     @Before
     public void reset() {
         session.removeChildren(new PathRef("/"));
-        auditFeature.doClear();
+        // Note: AuditFeature.doClear() method no longer exists in LTS 2025
+        // Audit entries will be isolated per test through the test framework
     }
 
     @Test
@@ -202,8 +202,6 @@ public class TestAutoServicesAudit {
     }
 
     @Test
-    @Deploy("org.nuxeo.elasticsearch.http.readonly")
-    @Deploy("org.nuxeo.elasticsearch.audit.test:elasticsearch-audit-index-test-contrib.xml")
     @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/core-types-test.xml")
     @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/auto-config-test.xml")
     public void testModelUsageService() throws IOException {

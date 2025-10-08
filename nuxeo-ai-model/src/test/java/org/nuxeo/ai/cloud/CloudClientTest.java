@@ -51,7 +51,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,7 +79,7 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.impl.PublicClaims;
+import com.auth0.jwt.RegisteredClaims;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
@@ -143,7 +143,7 @@ public class CloudClientTest {
                                   .withIssuer("mockTestProject")
                                   .withAudience("nuxeo")
                                   .withSubject("Administrator")
-                                  .withClaim(PublicClaims.NOT_BEFORE, Instant.now().toEpochMilli() + 3000)
+                                  .withClaim(RegisteredClaims.NOT_BEFORE, Instant.now().toEpochMilli() + 3000)
                                   .acceptIssuedAt(LEEWAY_10_MIN)
                                   .acceptExpiresAt(10)
                                   .build();

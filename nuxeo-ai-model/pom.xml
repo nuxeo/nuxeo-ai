@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>5.0.0</version>
   </parent>
   <artifactId>nuxeo-ai-model</artifactId>
   <name>Ai custom models</name>
@@ -28,10 +28,29 @@
     <dependency>
       <groupId>org.nuxeo.client</groupId>
       <artifactId>nuxeo-java-client</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.mail</groupId>
+          <artifactId>mail</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.activation</groupId>
+          <artifactId>javax.activation</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- Add Jakarta replacements for excluded javax dependencies -->
+    <dependency>
+      <groupId>jakarta.mail</groupId>
+      <artifactId>jakarta.mail-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.elasticsearch</groupId>
-      <artifactId>nuxeo-elasticsearch-core</artifactId>
+      <groupId>jakarta.activation</groupId>
+      <artifactId>jakarta.activation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.nuxeo.ecm.core</groupId>
+      <artifactId>nuxeo-core-search</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -58,10 +77,6 @@
       <groupId>org.nuxeo.lib.stream</groupId>
       <artifactId>nuxeo-stream</artifactId>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.nuxeo.ecm.platform</groupId>
-      <artifactId>nuxeo-platform-audit-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.ecm.platform</groupId>
@@ -97,8 +112,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.elasticsearch</groupId>
-      <artifactId>nuxeo-elasticsearch-core</artifactId>
+      <groupId>org.nuxeo.ecm.core</groupId>
+      <artifactId>nuxeo-core-search</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

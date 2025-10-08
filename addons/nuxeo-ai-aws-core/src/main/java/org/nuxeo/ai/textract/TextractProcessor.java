@@ -23,8 +23,8 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentRef;
-import com.amazonaws.services.textract.model.Block;
-import com.amazonaws.services.textract.model.BoundingBox;
+import software.amazon.awssdk.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.BoundingBox;
 
 /**
  * A processor of a Textract Response
@@ -43,15 +43,15 @@ public interface TextractProcessor {
      * Turn a Block geometry into a normalized AIMetadata.Box
      */
     default AIMetadata.Box asBox(Block block) {
-        BoundingBox box = block.getGeometry().getBoundingBox();
-        return new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop());
+        BoundingBox box = block.geometry().boundingBox();
+        return new AIMetadata.Box(box.width(), box.height(), box.left(), box.top());
     }
 
     /**
      * Gets the normalized confidence from the block
      */
     default float normalizeConfidence(Block block) {
-        return block.getConfidence() / 100;
+        return block.confidence() / 100;
     }
 
 }

@@ -30,8 +30,8 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +55,6 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.sun.jersey.core.spi.factory.ResponseImpl;
 
 @RunWith(FeaturesRunner.class)
 @Features({ PlatformFeature.class, AutomationFeature.class })
@@ -95,7 +94,7 @@ public class DeduplicationOperationsTest {
         ctx.setInput(fileDoc);
         Map<String, Object> params = new HashMap<>();
         params.put("xpath", XPATH);
-        ResponseImpl response = (ResponseImpl) automationService.run(ctx, DedupIndexOperation.ID, params);
+        Response response = (Response) automationService.run(ctx, DedupIndexOperation.ID, params);
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     }
 
@@ -112,7 +111,7 @@ public class DeduplicationOperationsTest {
         ctx.setInput(fileDoc);
         Map<String, Object> params = new HashMap<>();
         params.put("xpath", XPATH);
-        ResponseImpl response = (ResponseImpl) automationService.run(ctx, DedupDeleteIndexOperation.ID, params);
+        Response response = (Response) automationService.run(ctx, DedupDeleteIndexOperation.ID, params);
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
     }
 }

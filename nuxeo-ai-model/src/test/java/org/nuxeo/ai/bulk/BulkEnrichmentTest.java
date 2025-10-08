@@ -43,7 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -66,7 +66,6 @@ import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.platform.audit.AuditFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
@@ -80,8 +79,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class,
-        RepositoryElasticSearchFeature.class, AuditFeature.class })
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class, AuditFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")

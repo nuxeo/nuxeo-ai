@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,12 +41,13 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.ecm.restapi.test.BaseTest;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
@@ -54,7 +55,9 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-model", "org.nuxeo.ai.ai-model:OSGI-INF/override-file-doctype.xml",
         "org.nuxeo.ecm.platform.url", "org.nuxeo.ecm.platform.types", "org.nuxeo.ecm.platform.types" })
-public class TestDocsToAnnotate extends BaseTest {
+public class TestDocsToAnnotate {
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(5089);

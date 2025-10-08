@@ -32,8 +32,8 @@ import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CON
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +47,6 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.EventService;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -59,7 +58,7 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({ AutomationFeature.class, RepositoryElasticSearchFeature.class })
+@Features({ AutomationFeature.class })
 @Deploy("org.nuxeo.ai.similar-content")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")

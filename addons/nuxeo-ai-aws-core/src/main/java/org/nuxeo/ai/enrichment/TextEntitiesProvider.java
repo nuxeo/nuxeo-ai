@@ -36,7 +36,7 @@ import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
+import software.amazon.awssdk.services.comprehend.model.DetectEntitiesResponse;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -72,9 +72,9 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
                             + prop.getValue().length());
                     continue;
                 }
-                DetectEntitiesResult result = Framework.getService(ComprehendService.class)
+                DetectEntitiesResponse result = Framework.getService(ComprehendService.class)
                                                        .detectEntities(prop.getValue(), languageCode);
-                if (result != null && !result.getEntities().isEmpty()) {
+                if (result != null && !result.entities().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -86,13 +86,13 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            DetectEntitiesResult result) {
-        List<AIMetadata.Label> labels = result.getEntities()
+            DetectEntitiesResponse result) {
+        List<AIMetadata.Label> labels = result.entities()
                                               .stream()
-                                              .map(kp -> new AIMetadata.Label(kp.getText(), kp.getScore()))
+                                              .map(kp -> new AIMetadata.Label(kp.text(), kp.score()))
                                               .collect(Collectors.toList());
         String raw = toJsonString(jg -> {
-            jg.writeObjectField(ENTITIES_KEY, result.getEntities());
+            jg.writeObjectField(ENTITIES_KEY, result.entities());
         });
 
         String rawKey = saveJsonAsRawBlob(raw);

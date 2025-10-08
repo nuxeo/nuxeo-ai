@@ -18,7 +18,7 @@
  */
 package org.nuxeo.ai.translate;
 
-import com.amazonaws.services.translate.model.TranslateTextResult;
+import software.amazon.awssdk.services.translate.model.TranslateTextResponse;
 
 /**
  * Works with AWS Translate.
@@ -28,5 +28,5 @@ public interface TranslateService {
     /**
      * Translates text from source to target language.
      */
-    TranslateTextResult translateText(String text, String sourceLanguageCode, String targetLanguageCode);
+    TranslateTextResponse translateText(String text, String sourceLanguageCode, String targetLanguageCode);
 }

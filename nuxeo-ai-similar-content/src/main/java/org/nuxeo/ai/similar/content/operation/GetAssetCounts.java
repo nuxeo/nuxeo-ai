@@ -23,15 +23,19 @@ import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CON
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEFAULT_CONFIGURATION;
 
-import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.elasticsearch.api.ElasticSearchService;
-import org.nuxeo.elasticsearch.api.EsScrollResult;
-import org.nuxeo.elasticsearch.query.NxQueryBuilder;
+import org.nuxeo.ecm.core.search.SearchService;
+import org.nuxeo.ecm.core.search.SearchQuery;
+import org.nuxeo.ecm.core.search.SearchResponse;
 import org.nuxeo.runtime.api.Framework;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,7 +57,7 @@ public class GetAssetCounts {
     protected SimilarContentService scs;
 
     @Context
-    protected ElasticSearchService es;
+    protected SearchService searchService;
 
     @OperationMethod
     public Response run() throws JsonProcessingException {
@@ -77,9 +81,14 @@ public class GetAssetCounts {
     }
 
     protected long getTotalHits(String query) {
-        EsScrollResult esScroll = es.scroll(
-                (new NxQueryBuilder(this.session)).nxql(query).limit(1).onlyElasticsearchResponse(), 10);
-        return esScroll.getElasticsearchResponse().getHits().getTotalHits().value;
+        try {
+            SearchQuery searchQuery = SearchQuery.builder(query, session).build();
+            SearchResponse response = searchService.search(searchQuery);
+            return response.getTotal();
+        } catch (Exception e) {
+            // Fallback to a simple query if the search service fails
+            return session.query(query).size();
+        }
     }
 
     protected static class Counts {

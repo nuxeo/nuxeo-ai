@@ -25,14 +25,14 @@ import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.services.comprehend.AmazonComprehend;
-import com.amazonaws.services.comprehend.AmazonComprehendClientBuilder;
-import com.amazonaws.services.comprehend.model.DetectEntitiesRequest;
-import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesRequest;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
-import com.amazonaws.services.comprehend.model.DetectSentimentRequest;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.comprehend.ComprehendClient;
+import software.amazon.awssdk.services.comprehend.model.DetectEntitiesRequest;
+import software.amazon.awssdk.services.comprehend.model.DetectEntitiesResponse;
+import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesRequest;
+import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesResponse;
+import software.amazon.awssdk.services.comprehend.model.DetectSentimentRequest;
+import software.amazon.awssdk.services.comprehend.model.DetectSentimentResponse;
 
 /**
  * Calls AWS Comprehend apis
@@ -41,7 +41,7 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
 
     private static final Log log = LogFactory.getLog(ComprehendServiceImpl.class);
 
-    protected volatile AmazonComprehend client;
+    protected volatile ComprehendClient client;
 
     protected AWSMetrics awsMetrics;
 
@@ -58,14 +58,17 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
     }
 
     @Override
-    public DetectSentimentResult detectSentiment(String text, String languageCode) {
+    public DetectSentimentResponse detectSentiment(String text, String languageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling DetectSentiment for " + text);
         }
 
-        DetectSentimentRequest request = new DetectSentimentRequest().withText(text).withLanguageCode(languageCode);
+        DetectSentimentRequest request = DetectSentimentRequest.builder()
+                .text(text)
+                .languageCode(languageCode)
+                .build();
 
-        DetectSentimentResult result = getClient().detectSentiment(request);
+        DetectSentimentResponse result = getClient().detectSentiment(request);
         if (log.isDebugEnabled()) {
             log.debug("DetectSentimentResult is " + result);
         }
@@ -74,14 +77,17 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
     }
 
     @Override
-    public DetectKeyPhrasesResult extractKeyphrase(String text, String languageCode) {
+    public DetectKeyPhrasesResponse detectKeyPhrases(String text, String languageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling DetectKeyPhrases for " + text);
         }
 
-        DetectKeyPhrasesRequest request = new DetectKeyPhrasesRequest().withText(text).withLanguageCode(languageCode);
+        DetectKeyPhrasesRequest request = DetectKeyPhrasesRequest.builder()
+                .text(text)
+                .languageCode(languageCode)
+                .build();
 
-        DetectKeyPhrasesResult result = getClient().detectKeyPhrases(request);
+        DetectKeyPhrasesResponse result = getClient().detectKeyPhrases(request);
         if (log.isDebugEnabled()) {
             log.debug("DetectKeyPhrasesResult is " + result);
         }
@@ -90,13 +96,16 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
     }
 
     @Override
-    public DetectEntitiesResult detectEntities(String text, String languageCode) {
+    public DetectEntitiesResponse detectEntities(String text, String languageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling DetectEntities for " + text);
         }
 
-        DetectEntitiesRequest request = new DetectEntitiesRequest().withText(text).withLanguageCode(languageCode);
-        DetectEntitiesResult result = getClient().detectEntities(request);
+        DetectEntitiesRequest request = DetectEntitiesRequest.builder()
+                .text(text)
+                .languageCode(languageCode)
+                .build();
+        DetectEntitiesResponse result = getClient().detectEntities(request);
         if (log.isDebugEnabled()) {
             log.debug("DetectEntitiesResult is " + result);
         }
@@ -104,26 +113,19 @@ public class ComprehendServiceImpl extends DefaultComponent implements Comprehen
         return result;
     }
 
-    /**
-     * Get the AmazonComprehend client
-     */
-    protected AmazonComprehend getClient() {
-        AmazonComprehend localClient = client;
-        if (localClient == null) {
+    protected ComprehendClient getClient() {
+        ComprehendClient result = client;
+        if (result == null) {
             synchronized (this) {
-                localClient = client;
-                if (localClient == null) {
-                    AmazonComprehendClientBuilder builder = buildClient();
-                    client = localClient = builder.build();
+                result = client;
+                if (result == null) {
+                    client = result = ComprehendClient.builder()
+                            .region(AWSHelper.getInstance().getRegion())
+                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                            .build();
                 }
             }
         }
-        return localClient;
-    }
-
-    protected AmazonComprehendClientBuilder buildClient() {
-        return AmazonComprehendClientBuilder.standard()
-                                            .withCredentials(AWSHelper.getInstance().getCredentialsProvider())
-                                            .withRegion(AWSHelper.getInstance().getRegion());
+        return result;
     }
 }

@@ -29,7 +29,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.FILE_CONTENT;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 import static org.nuxeo.ai.services.AIComponent.ENRICHMENT_XP;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;

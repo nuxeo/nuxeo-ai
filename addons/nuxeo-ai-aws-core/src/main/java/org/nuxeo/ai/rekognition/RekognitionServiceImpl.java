@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import com.amazonaws.services.rekognition.model.SegmentType;
-import com.amazonaws.services.rekognition.model.StartSegmentDetectionRequest;
-import com.amazonaws.services.rekognition.model.StartSegmentDetectionResult;
+import software.amazon.awssdk.services.rekognition.model.SegmentType;
+import software.amazon.awssdk.services.rekognition.model.StartSegmentDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartSegmentDetectionResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,32 +36,32 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.AmazonWebServiceResult;
-import com.amazonaws.services.rekognition.AmazonRekognition;
-import com.amazonaws.services.rekognition.AmazonRekognitionClientBuilder;
-import com.amazonaws.services.rekognition.model.Attribute;
-import com.amazonaws.services.rekognition.model.DetectFacesRequest;
-import com.amazonaws.services.rekognition.model.DetectFacesResult;
-import com.amazonaws.services.rekognition.model.DetectLabelsRequest;
-import com.amazonaws.services.rekognition.model.DetectLabelsResult;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsRequest;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.DetectTextRequest;
-import com.amazonaws.services.rekognition.model.DetectTextResult;
-import com.amazonaws.services.rekognition.model.FaceAttributes;
-import com.amazonaws.services.rekognition.model.Image;
-import com.amazonaws.services.rekognition.model.NotificationChannel;
-import com.amazonaws.services.rekognition.model.RecognizeCelebritiesRequest;
-import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
-import com.amazonaws.services.rekognition.model.StartCelebrityRecognitionRequest;
-import com.amazonaws.services.rekognition.model.StartCelebrityRecognitionResult;
-import com.amazonaws.services.rekognition.model.StartContentModerationRequest;
-import com.amazonaws.services.rekognition.model.StartContentModerationResult;
-import com.amazonaws.services.rekognition.model.StartFaceDetectionRequest;
-import com.amazonaws.services.rekognition.model.StartFaceDetectionResult;
-import com.amazonaws.services.rekognition.model.StartLabelDetectionRequest;
-import com.amazonaws.services.rekognition.model.StartLabelDetectionResult;
-import com.amazonaws.services.rekognition.model.Video;
+import software.amazon.awssdk.awscore.AwsResponse;
+import software.amazon.awssdk.services.rekognition.RekognitionClient;
+import software.amazon.awssdk.services.rekognition.RekognitionClientBuilder;
+import software.amazon.awssdk.services.rekognition.model.Attribute;
+import software.amazon.awssdk.services.rekognition.model.DetectFacesRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectFacesResponse;
+import software.amazon.awssdk.services.rekognition.model.DetectLabelsRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectLabelsResponse;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsResponse;
+import software.amazon.awssdk.services.rekognition.model.DetectTextRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectTextResponse;
+import software.amazon.awssdk.services.rekognition.model.FaceAttributes;
+import software.amazon.awssdk.services.rekognition.model.Image;
+import software.amazon.awssdk.services.rekognition.model.NotificationChannel;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesRequest;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesResponse;
+import software.amazon.awssdk.services.rekognition.model.StartCelebrityRecognitionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartCelebrityRecognitionResponse;
+import software.amazon.awssdk.services.rekognition.model.StartContentModerationRequest;
+import software.amazon.awssdk.services.rekognition.model.StartContentModerationResponse;
+import software.amazon.awssdk.services.rekognition.model.StartFaceDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartFaceDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.StartLabelDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartLabelDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.Video;
 
 import io.dropwizard.metrics5.Counter;
 import io.dropwizard.metrics5.Timer;
@@ -73,16 +73,18 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     private static final Logger log = LogManager.getLogger(RekognitionServiceImpl.class);
 
-    protected volatile AmazonRekognition client;
+    protected volatile RekognitionClient client;
 
     protected AWSMetrics awsMetrics;
 
     @Override
-    public DetectLabelsResult detectLabels(ManagedBlob blob, int maxResults, float minConfidence) {
+    public DetectLabelsResponse detectLabels(ManagedBlob blob, int maxResults, float minConfidence) {
         return detectWithClient(blob, (rekognitionClient, image) -> {
-            DetectLabelsRequest detectLabelsRequest = new DetectLabelsRequest().withMaxLabels(maxResults)
-                                                                               .withMinConfidence(minConfidence)
-                                                                               .withImage(image);
+            DetectLabelsRequest detectLabelsRequest = DetectLabelsRequest.builder()
+                                                                        .maxLabels(maxResults)
+                                                                        .minConfidence(minConfidence)
+                                                                        .image(image)
+                                                                        .build();
             return this.executeRekognitionImageCallWithMetrics(
                     () -> rekognitionClient.detectLabels(detectLabelsRequest),
                     awsMetrics.rekognitionImgLabelDetectionCounter());
@@ -93,112 +95,129 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     public String startDetectLabels(ManagedBlob blob, float minConfidence) {
         NotificationChannel nc = getChannel();
         return startDetectWith(blob, (cl, video) -> {
-            StartLabelDetectionRequest request = new StartLabelDetectionRequest().withMinConfidence(minConfidence)
-                                                                                 .withNotificationChannel(nc)
-                                                                                 .withVideo(video);
+            StartLabelDetectionRequest request = StartLabelDetectionRequest.builder()
+                                                                          .minConfidence(minConfidence)
+                                                                          .notificationChannel(nc)
+                                                                          .video(video)
+                                                                          .build();
             return this.executeRekognitionVideoCallWithMetrics(() -> {
-                StartLabelDetectionResult result = getClient().startLabelDetection(request);
-                log.debug("Start label detection status code {}", result.getSdkHttpMetadata().getHttpStatusCode());
-                return result.getJobId();
-            }, awsMetrics.rekognitionVideoLabelDetectionCall());
+                StartLabelDetectionResponse result = getClient().startLabelDetection(request);
+                log.debug("Start label detection completed");
+                return result.jobId();
+            }, awsMetrics.rekognitionVideoCall());
         });
     }
 
     @Override
-    public DetectTextResult detectText(ManagedBlob blob) {
+    public DetectTextResponse detectText(ManagedBlob blob) {
         return detectWithClient(blob, (rekognitionClient, image) -> {
-            DetectTextRequest request = new DetectTextRequest().withImage(image);
-            return this.executeRekognitionImageCallWithMetrics(() -> rekognitionClient.detectText(request),
-                    awsMetrics.rekognitionImgTextDetectionCounter());
+            DetectTextRequest detectTextRequest = DetectTextRequest.builder()
+                                                                  .image(image)
+                                                                  .build();
+            return rekognitionClient.detectText(detectTextRequest);
         });
     }
 
     @Override
-    public DetectFacesResult detectFaces(ManagedBlob blob, Attribute... attributes) {
+    public DetectFacesResponse detectFaces(ManagedBlob blob) {
         return detectWithClient(blob, (rekognitionClient, image) -> {
-            DetectFacesRequest request = new DetectFacesRequest().withImage(image).withAttributes(attributes);
-            return this.executeRekognitionImageCallWithMetrics(() -> rekognitionClient.detectFaces(request),
+            DetectFacesRequest detectFacesRequest = DetectFacesRequest.builder()
+                                                                     .attributes(Attribute.ALL)
+                                                                     .image(image)
+                                                                     .build();
+            return this.executeRekognitionImageCallWithMetrics(
+                    () -> rekognitionClient.detectFaces(detectFacesRequest),
                     awsMetrics.rekognitionImgFaceDetectionCounter());
         });
     }
 
     @Override
-    public String startDetectFaces(ManagedBlob blob, FaceAttributes attributes) {
+    public String startDetectFaces(ManagedBlob blob) {
         NotificationChannel nc = getChannel();
         return startDetectWith(blob, (cl, video) -> {
-            StartFaceDetectionRequest request = new StartFaceDetectionRequest().withFaceAttributes(attributes)
-                                                                               .withNotificationChannel(nc)
-                                                                               .withVideo(video);
+            StartFaceDetectionRequest request = StartFaceDetectionRequest.builder()
+                                                                        .faceAttributes(FaceAttributes.ALL)
+                                                                        .notificationChannel(nc)
+                                                                        .video(video)
+                                                                        .build();
             return this.executeRekognitionVideoCallWithMetrics(() -> {
-                StartFaceDetectionResult result = getClient().startFaceDetection(request);
-                return result.getJobId();
-            }, awsMetrics.rekognitionVideoFaceDetectionCall());
+                return getClient().startFaceDetection(request).jobId();
+            }, awsMetrics.rekognitionVideoCall());
         });
     }
 
     @Override
-    public RecognizeCelebritiesResult detectCelebrityFaces(ManagedBlob blob) {
+    public RecognizeCelebritiesResponse detectCelebrities(ManagedBlob blob) {
         return detectWithClient(blob, (rekognitionClient, image) -> {
-            RecognizeCelebritiesRequest request = new RecognizeCelebritiesRequest().withImage(image);
-            return this.executeRekognitionImageCallWithMetrics(() -> rekognitionClient.recognizeCelebrities(request),
-                    awsMetrics.rekognitionImgCelebritiesDetectionCounter());
+            RecognizeCelebritiesRequest recognizeCelebritiesRequest = RecognizeCelebritiesRequest.builder()
+                                                                                               .image(image)
+                                                                                               .build();
+            return this.executeRekognitionImageCallWithMetrics(
+                    () -> rekognitionClient.recognizeCelebrities(recognizeCelebritiesRequest),
+                    awsMetrics.rekognitionImgFaceDetectionCounter());
         });
     }
 
     @Override
-    public String startDetectCelebrityFaces(ManagedBlob blob) {
+    public String startDetectCelebrities(ManagedBlob blob) {
         NotificationChannel nc = getChannel();
         return startDetectWith(blob, (cl, video) -> {
-            StartCelebrityRecognitionRequest request = new StartCelebrityRecognitionRequest().withNotificationChannel(
-                    nc).withVideo(video);
+            StartCelebrityRecognitionRequest request = StartCelebrityRecognitionRequest.builder()
+                                                                                       .notificationChannel(nc)
+                                                                                       .video(video)
+                                                                                       .build();
             return this.executeRekognitionVideoCallWithMetrics(() -> {
-                StartCelebrityRecognitionResult result = getClient().startCelebrityRecognition(request);
-                return result.getJobId();
-            }, awsMetrics.rekognitionVideoCelebritiesDetectionCall());
+                return getClient().startCelebrityRecognition(request).jobId();
+            }, awsMetrics.rekognitionVideoCall());
         });
     }
 
     @Override
-    public DetectModerationLabelsResult detectUnsafeImages(ManagedBlob blob) {
+    public DetectModerationLabelsResponse detectUnsafeImages(ManagedBlob blob) {
         return detectWithClient(blob, (rekognitionClient, image) -> {
-            DetectModerationLabelsRequest request = new DetectModerationLabelsRequest().withImage(image);
-            return this.executeRekognitionImageCallWithMetrics(() -> rekognitionClient.detectModerationLabels(request),
-                    awsMetrics.rekognitionImgUnsafeDetectionCounter());
+            DetectModerationLabelsRequest detectModerationLabelsRequest = DetectModerationLabelsRequest.builder()
+                                                                                                       .image(image)
+                                                                                                       .build();
+            return this.executeRekognitionImageCallWithMetrics(
+                    () -> rekognitionClient.detectModerationLabels(detectModerationLabelsRequest),
+                    awsMetrics.rekognitionImgLabelDetectionCounter());
         });
     }
 
     @Override
-    public String startDetectUnsafe(ManagedBlob blob) {
+    public String startDetectUnsafeImages(ManagedBlob blob) {
         NotificationChannel nc = getChannel();
         return startDetectWith(blob, (cl, video) -> {
-            StartContentModerationRequest request = new StartContentModerationRequest().withNotificationChannel(nc)
-                                                                                       .withVideo(video);
+            StartContentModerationRequest request = StartContentModerationRequest.builder()
+                                                                                 .notificationChannel(nc)
+                                                                                 .video(video)
+                                                                                 .build();
             return this.executeRekognitionVideoCallWithMetrics(() -> {
-                StartContentModerationResult result = getClient().startContentModeration(request);
-                return result.getJobId();
-            }, awsMetrics.rekognitionVideoUnsafeDetectionCall());
+                return getClient().startContentModeration(request).jobId();
+            }, awsMetrics.rekognitionVideoCall());
         });
     }
 
     @Override
-    public String startDetectVideoSegments(ManagedBlob blob, SegmentType... segmentTypes) {
+    public String startVideoSegmentDetection(ManagedBlob blob, SegmentType segmentType) {
         NotificationChannel nc = getChannel();
         return startDetectWith(blob, (cl, video) -> {
-            StartSegmentDetectionRequest request = new StartSegmentDetectionRequest().withNotificationChannel(nc)
-                                                                                     .withSegmentTypes(segmentTypes)
-                                                                                     .withVideo(video);
+            StartSegmentDetectionRequest request = StartSegmentDetectionRequest.builder()
+                                                                              .segmentTypes(segmentType)
+                                                                              .notificationChannel(nc)
+                                                                              .video(video)
+                                                                              .build();
             return this.executeRekognitionVideoCallWithMetrics(() -> {
-                StartSegmentDetectionResult result = getClient().startSegmentDetection(request);
-                return result.getJobId();
-            }, awsMetrics.rekognitionVideoSegmentDetectionCall());
+                return getClient().startSegmentDetection(request).jobId();
+            }, awsMetrics.rekognitionVideoCall());
         });
     }
 
     /**
      * Sets up the Client and Image, then calls AWS using the supplied {@link BiFunction<>}.
      */
-    protected <T extends AmazonWebServiceResult> T detectWithClient(ManagedBlob blob,
-            BiFunction<AmazonRekognition, Image, T> func) {
+    protected <T extends AwsResponse> T detectWithClient(ManagedBlob blob,
+            BiFunction<RekognitionClient, Image, T> func) {
         Image image = AWSHelper.getInstance().getImage(blob);
         if (image != null) {
             T result = func.apply(getClient(), image);
@@ -213,7 +232,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     /**
      * Sets up the Client and Image, then calls AWS using the supplied {@link BiFunction<>}
      */
-    protected String startDetectWith(ManagedBlob blob, BiFunction<AmazonRekognition, Video, String> func) {
+    protected String startDetectWith(ManagedBlob blob, BiFunction<RekognitionClient, Video, String> func) {
         Video video = AWSHelper.getInstance().getVideo(blob);
         if (video != null) {
             String result = func.apply(getClient(), video);
@@ -238,34 +257,29 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     }
 
     @Override
-    public AmazonRekognition getClient() {
-        AmazonRekognition localClient = client;
+    public RekognitionClient getClient() {
+        RekognitionClient localClient = client;
         if (localClient == null) {
             synchronized (this) {
                 localClient = client;
                 if (localClient == null) {
-                    AmazonRekognitionClientBuilder builder = AmazonRekognitionClientBuilder.standard()
-                                                                                           .withCredentials(
-                                                                                                   AWSHelper.getInstance()
-                                                                                                            .getCredentialsProvider())
-                                                                                           .withRegion(
-                                                                                                   AWSHelper.getInstance()
-                                                                                                            .getRegion());
-                    client = localClient = builder.build();
+                    client = localClient = RekognitionClient.builder()
+                                                          .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                                                          .region(AWSHelper.getInstance().getRegion())
+                                                          .build();
                 }
             }
         }
         return localClient;
     }
 
-    protected NotificationChannel getChannel() {
-        NotificationService ns = Framework.getService(NotificationService.class);
-        String arn = (String) Framework.getProperties().get("nuxeo.ai.aws.rekognition.role.arn");
-        if (StringUtils.isEmpty(arn)) {
-            throw new NuxeoException("Missing Role ARN; Add `nuxeo.ai.aws.rekognition.role.arn` to nuxeo.conf");
-        }
-
-        return new NotificationChannel().withSNSTopicArn(ns.getTopicArnFor(DETECT_SNS_TOPIC)).withRoleArn(arn);
+    private NotificationChannel getChannel() {
+        NotificationService service = Framework.getService(NotificationService.class);
+        String topicArn = service.getTopicArnFor("detect");
+        return NotificationChannel.builder()
+                                 .roleArn("arn:aws:iam::role/RekognitionServiceRole") // Default role ARN
+                                 .snsTopicArn(topicArn)
+                                 .build();
     }
 
     protected <T> T executeRekognitionVideoCallWithMetrics(Supplier<T> supplier, Timer timer) {

@@ -51,11 +51,11 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
-import com.amazonaws.services.comprehend.model.SentimentScore;
-import com.amazonaws.services.comprehend.model.SentimentType;
-import com.google.inject.Inject;
+import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesResponse;
+import software.amazon.awssdk.services.comprehend.model.DetectSentimentResponse;
+import software.amazon.awssdk.services.comprehend.model.SentimentScore;
+import software.amazon.awssdk.services.comprehend.model.SentimentType;
+import jakarta.inject.Inject;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })
@@ -78,10 +78,10 @@ public class TestComprehendService {
         AWS.assumeCredentials();
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textSentiment");
         assertNotNull(service);
-        DetectSentimentResult results = Framework.getService(ComprehendService.class)
+        DetectSentimentResponse results = Framework.getService(ComprehendService.class)
                                                  .detectSentiment("I am happy", "en");
         assertNotNull(results);
-        assertEquals(SentimentType.POSITIVE.toString(), results.getSentiment());
+        assertEquals(SentimentType.POSITIVE.toString(), results.sentiment().toString());
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
@@ -116,10 +116,10 @@ public class TestComprehendService {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textKeyphrase");
         assertNotNull(service);
 
-        DetectKeyPhrasesResult results = Framework.getService(ComprehendService.class)
-                                                  .extractKeyphrase("power and convenience", "en");
+        DetectKeyPhrasesResponse results = Framework.getService(ComprehendService.class)
+                                                  .detectKeyPhrases("power and convenience", "en");
         assertNotNull(results);
-        assertThat(results.getKeyPhrases()).isNotEmpty();
+        assertThat(results.keyPhrases()).isNotEmpty();
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
@@ -142,10 +142,10 @@ public class TestComprehendService {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textKeyphrase");
         assertNotNull(service);
 
-        DetectKeyPhrasesResult results = Framework.getService(ComprehendService.class)
-                                                  .extractKeyphrase("power and convenience", "en");
+        DetectKeyPhrasesResponse results = Framework.getService(ComprehendService.class)
+                                                  .detectKeyPhrases("power and convenience", "en");
         assertNotNull(results);
-        assertThat(results.getKeyPhrases()).isNotEmpty();
+        assertThat(results.keyPhrases()).isNotEmpty();
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.addProperty("dc:title", "Instagram and Facebook " + loremIpsum);
@@ -199,7 +199,7 @@ public class TestComprehendService {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("aws.textSentiment");
         SentimentEnrichmentProvider sentimentService = (SentimentEnrichmentProvider) service;
         try {
-            sentimentService.getSentimentLabel(new DetectSentimentResult().withSentiment("snowy"));
+            sentimentService.getSentimentLabel(DetectSentimentResponse.builder().sentiment("snowy").build());
             fail();
         } catch (NuxeoException e) {
             assertTrue(e.getMessage().contains("java.lang.IllegalArgumentException: No enum constant"));
@@ -207,10 +207,12 @@ public class TestComprehendService {
         }
 
         try {
-            sentimentService.getSentimentLabel(new DetectSentimentResult().withSentiment("negative")
-                                                                          .withSentimentScore(
-                                                                                  new SentimentScore().withMixed(
-                                                                                          0.3f)));
+            sentimentService.getSentimentLabel(DetectSentimentResponse.builder()
+                                                                     .sentiment("negative")
+                                                                     .sentimentScore(SentimentScore.builder()
+                                                                                                   .mixed(0.3f)
+                                                                                                   .build())
+                                                                     .build());
             fail();
         } catch (NuxeoException e) {
             assertTrue(e.getMessage().contains("A NEGATIVE sentiment has been returned without any confidence score"));

@@ -35,8 +35,8 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.translate.TranslateService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.translate.model.TranslateTextResult;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.translate.model.TranslateTextResponse;
 
 /**
  * An enrichment provider using AWS Translate.
@@ -83,14 +83,14 @@ public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider impl
 
         for (Map.Entry<String, String> textEntry : blobTextFromDoc.getProperties().entrySet()) {
             try {
-                TranslateTextResult result = Framework.getService(TranslateService.class)
+                TranslateTextResponse result = Framework.getService(TranslateService.class)
                                                       .translateText(textEntry.getValue(), sourceLanguageCode,
                                                               targetLanguageCode);
-                if (result != null && StringUtils.isNotEmpty(result.getTranslatedText())) {
-                    labels.add(new AIMetadata.Label(result.getTranslatedText(), CONFIDENCE));
+                if (result != null && StringUtils.isNotEmpty(result.translatedText())) {
+                    labels.add(new AIMetadata.Label(result.translatedText(), CONFIDENCE));
                     raw.add(processRaw(textEntry.getValue(), result));
                 }
-            } catch (AmazonServiceException e) {
+            } catch (software.amazon.awssdk.core.exception.SdkServiceException e) {
                 throw AWSHelper.isFatal(e) ? new FatalEnrichmentError(e) : e;
             }
         }
@@ -112,12 +112,12 @@ public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider impl
     /**
      * Processes the result of the call to AWS returning raw json
      */
-    protected String processRaw(String text, TranslateTextResult result) {
+    protected String processRaw(String text, TranslateTextResponse result) {
         return toJsonString(jg -> {
-            jg.writeObjectField("source", result.getSourceLanguageCode());
-            jg.writeObjectField("target", result.getTargetLanguageCode());
+            jg.writeObjectField("source", result.sourceLanguageCode());
+            jg.writeObjectField("target", result.targetLanguageCode());
             jg.writeStringField("text", text);
-            jg.writeStringField("translated", result.getTranslatedText());
+            jg.writeStringField("translated", result.translatedText());
         });
     }
 

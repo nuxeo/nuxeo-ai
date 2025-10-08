@@ -44,13 +44,13 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import com.amazonaws.services.rekognition.model.Attribute;
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.FaceAttributes;
-import com.amazonaws.services.rekognition.model.FaceDetail;
-import com.amazonaws.services.rekognition.model.FaceDetection;
-import com.amazonaws.services.rekognition.model.GetFaceDetectionRequest;
-import com.amazonaws.services.rekognition.model.GetFaceDetectionResult;
+import software.amazon.awssdk.services.rekognition.model.Attribute;
+import software.amazon.awssdk.services.rekognition.model.BoundingBox;
+import software.amazon.awssdk.services.rekognition.model.FaceAttributes;
+import software.amazon.awssdk.services.rekognition.model.FaceDetail;
+import software.amazon.awssdk.services.rekognition.model.FaceDetection;
+import software.amazon.awssdk.services.rekognition.model.GetFaceDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.GetFaceDetectionResponse;
 
 /**
  * Detects faces in an image.
@@ -83,7 +83,7 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
         RekognitionService rs = Framework.getService(RekognitionService.class);
         KeyValueStore store = getStore();
         for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-            String jobId = rs.startDetectFaces(blob.getValue(), FaceAttributes.ALL);
+            String jobId = rs.startDetectFaces(blob.getValue());
             HashMap<String, Serializable> params = new HashMap<>();
             params.put("doc", doc);
             params.put("key", blob.getKey());
@@ -102,24 +102,24 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
         RekognitionService rs = Framework.getService(RekognitionService.class);
         List<AIMetadata.Tag> tags = new ArrayList<>();
         List<FaceDetection> nativeFaceObjects = new ArrayList<>();
-        GetFaceDetectionResult result = null;
+        GetFaceDetectionResponse result = null;
         do {
-            GetFaceDetectionRequest request = new GetFaceDetectionRequest().withJobId(jobId);
+            GetFaceDetectionRequest.Builder requestBuilder = GetFaceDetectionRequest.builder().jobId(jobId);
 
-            if (result != null && result.getNextToken() != null) {
-                request.withNextToken(result.getNextToken());
+            if (result != null && result.nextToken() != null) {
+                requestBuilder.nextToken(result.nextToken());
             }
-            result = rs.getClient().getFaceDetection(request);
+            result = rs.getClient().getFaceDetection(requestBuilder.build());
 
-            List<AIMetadata.Tag> currentPageTags = result.getFaces()
+            List<AIMetadata.Tag> currentPageTags = result.faces()
                     .stream()
-                    .map(c -> newFaceTag(c.getFace(), c.getTimestamp()))
+                    .map(c -> newFaceTag(c.face(), c.timestamp()))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             tags.addAll(currentPageTags);
-            nativeFaceObjects.addAll(result.getFaces());
-        } while (result.getNextToken() != null);
+            nativeFaceObjects.addAll(result.faces());
+        } while (result.nextToken() != null);
 
 
         List<EnrichmentMetadata> metadata = new ArrayList<>();
@@ -140,12 +140,12 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
      * Create a AI Tag based on the face details.
      */
     protected AIMetadata.Tag newFaceTag(FaceDetail faceDetail, long timestamp) {
-        BoundingBox box = faceDetail.getBoundingBox();
-        if (faceDetail.getConfidence() >= minConfidence) {
+        BoundingBox box = faceDetail.boundingBox();
+        if (faceDetail.confidence() >= minConfidence) {
             List<AIMetadata.Label> labels = collectLabels(faceDetail, timestamp);
             return new AIMetadata.Tag("face", kind, null,
-                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), labels,
-                    faceDetail.getConfidence());
+                    new AIMetadata.Box(box.width(), box.height(), box.left(), box.top()), labels,
+                    faceDetail.confidence());
         }
         return null;
     }
@@ -155,50 +155,50 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
      */
     protected List<AIMetadata.Label> collectLabels(FaceDetail faceDetail, long timestamp) {
         List<AIMetadata.Label> labels = new ArrayList<>();
-        if (faceDetail.getSmile() != null && faceDetail.getSmile().getValue()
-                && faceDetail.getSmile().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("smile", faceDetail.getSmile().getConfidence() / 100, timestamp));
+        if (faceDetail.smile() != null && faceDetail.smile().value()
+                && faceDetail.smile().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("smile", faceDetail.smile().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getEyeglasses() != null && faceDetail.getEyeglasses().getValue()
-                && faceDetail.getEyeglasses().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("eyeglasses", faceDetail.getEyeglasses().getConfidence() / 100, timestamp));
+        if (faceDetail.eyeglasses() != null && faceDetail.eyeglasses().value()
+                && faceDetail.eyeglasses().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("eyeglasses", faceDetail.eyeglasses().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getSunglasses() != null && faceDetail.getSunglasses().getValue()
-                && faceDetail.getSunglasses().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("sunglasses", faceDetail.getSunglasses().getConfidence() / 100, timestamp));
+        if (faceDetail.sunglasses() != null && faceDetail.sunglasses().value()
+                && faceDetail.sunglasses().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("sunglasses", faceDetail.sunglasses().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getBeard() != null && faceDetail.getBeard().getValue()
-                && faceDetail.getBeard().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("beard", faceDetail.getBeard().getConfidence() / 100, timestamp));
+        if (faceDetail.beard() != null && faceDetail.beard().value()
+                && faceDetail.beard().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("beard", faceDetail.beard().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getMustache() != null && faceDetail.getMustache().getValue()
-                && faceDetail.getMustache().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("mustache", faceDetail.getMustache().getConfidence() / 100, timestamp));
+        if (faceDetail.mustache() != null && faceDetail.mustache().value()
+                && faceDetail.mustache().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("mustache", faceDetail.mustache().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getEyesOpen() != null && faceDetail.getEyesOpen().getValue()
-                && faceDetail.getEyesOpen().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("eyesOpen", faceDetail.getEyesOpen().getConfidence() / 100, timestamp));
+        if (faceDetail.eyesOpen() != null && faceDetail.eyesOpen().value()
+                && faceDetail.eyesOpen().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("eyesOpen", faceDetail.eyesOpen().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getMouthOpen() != null && faceDetail.getMouthOpen().getValue()
-                && faceDetail.getMouthOpen().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("mouthOpen", faceDetail.getMouthOpen().getConfidence() / 100, timestamp));
+        if (faceDetail.mouthOpen() != null && faceDetail.mouthOpen().value()
+                && faceDetail.mouthOpen().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label("mouthOpen", faceDetail.mouthOpen().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getGender() != null && faceDetail.getGender().getConfidence() > minConfidence) {
-            labels.add(new AIMetadata.Label(faceDetail.getGender().getValue().toLowerCase(),
-                    faceDetail.getGender().getConfidence() / 100, timestamp));
+        if (faceDetail.gender() != null && faceDetail.gender().confidence() > minConfidence) {
+            labels.add(new AIMetadata.Label(faceDetail.gender().value().toString().toLowerCase(),
+                    faceDetail.gender().confidence() / 100, timestamp));
         }
 
-        if (faceDetail.getEmotions() != null && !faceDetail.getEmotions().isEmpty()) {
-            faceDetail.getEmotions().forEach(emotion -> {
-                if (emotion.getConfidence() > minConfidence) {
-                    labels.add(new AIMetadata.Label(emotion.getType().toLowerCase(), emotion.getConfidence() / 100,
+        if (faceDetail.emotions() != null && !faceDetail.emotions().isEmpty()) {
+            faceDetail.emotions().forEach(emotion -> {
+                if (emotion.confidence() > minConfidence) {
+                    labels.add(new AIMetadata.Label(emotion.type().toString().toLowerCase(), emotion.confidence() / 100,
                             timestamp));
                 }
             });

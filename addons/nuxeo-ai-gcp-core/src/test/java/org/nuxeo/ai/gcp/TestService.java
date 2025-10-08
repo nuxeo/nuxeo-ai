@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +53,6 @@ import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -67,7 +66,7 @@ import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.protobuf.ByteString;
 
 @RunWith(FeaturesRunner.class)
-@Features({ PlatformFeature.class, EnrichmentTestFeature.class, RepositoryElasticSearchFeature.class })
+@Features({ PlatformFeature.class, EnrichmentTestFeature.class })
 @Deploy("org.nuxeo.ai.gcp.gcp-core")
 public class TestService {
 

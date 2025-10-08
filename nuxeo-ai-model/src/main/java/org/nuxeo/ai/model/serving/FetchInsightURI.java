@@ -36,7 +36,7 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.runtime.api.Framework;
-import com.auth0.jwt.impl.PublicClaims;
+import com.auth0.jwt.RegisteredClaims;
 
 /**
  * Fetching Insight URI for the current Nuxeo instance
@@ -63,7 +63,7 @@ public class FetchInsightURI {
         String url = cloudConfig.getUrl();
         JWTKeyService jwt = Framework.getService(JWTKeyService.class);
         Map<String, Serializable> claims = new HashMap<>();
-        claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
+        claims.put(RegisteredClaims.SUBJECT, session.getPrincipal().getActingUser());
         String[] groups = session.getPrincipal()
                                  .getAllGroups()
                                  .stream()

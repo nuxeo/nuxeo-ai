@@ -21,7 +21,6 @@ package org.nuxeo.ai.model.analyzis;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.IMAGE_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_COUNT;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,6 +45,9 @@ import org.nuxeo.ecm.directory.DirectoryEntryResolver;
  * For a given dataset provides statistics.
  */
 public interface DatasetStatsService {
+
+    // Local constant to replace the removed elasticsearch constant
+    String AGG_COUNT = "count";
 
     List<String> VOCABULARY_TYPES = Arrays.asList("vocabulary", "xvocabulary", "l10nxvocabulary");
 

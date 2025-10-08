@@ -18,16 +18,18 @@
  */
 package org.nuxeo.ai.rekognition;
 
-import com.amazonaws.services.rekognition.model.SegmentType;
+import java.util.Collection;
+
+import software.amazon.awssdk.services.rekognition.model.SegmentType;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import com.amazonaws.services.rekognition.AmazonRekognition;
-import com.amazonaws.services.rekognition.model.Attribute;
-import com.amazonaws.services.rekognition.model.DetectFacesResult;
-import com.amazonaws.services.rekognition.model.DetectLabelsResult;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.DetectTextResult;
-import com.amazonaws.services.rekognition.model.FaceAttributes;
-import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
+import software.amazon.awssdk.services.rekognition.RekognitionClient;
+import software.amazon.awssdk.services.rekognition.model.Attribute;
+import software.amazon.awssdk.services.rekognition.model.DetectFacesResponse;
+import software.amazon.awssdk.services.rekognition.model.DetectLabelsResponse;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsResponse;
+import software.amazon.awssdk.services.rekognition.model.DetectTextResponse;
+import software.amazon.awssdk.services.rekognition.model.FaceAttributes;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesResponse;
 
 /**
  * Works with AWS Rekognition
@@ -39,7 +41,7 @@ public interface RekognitionService {
     /**
      * Detect labels for the provided blob
      */
-    DetectLabelsResult detectLabels(ManagedBlob blob, int maxResults, float minConfidence);
+    DetectLabelsResponse detectLabels(ManagedBlob blob, int maxResults, float minConfidence);
 
     /**
      * Starts async detect of labels for the provided blob
@@ -53,51 +55,58 @@ public interface RekognitionService {
     /**
      * Detect text for the provided blob
      */
-    DetectTextResult detectText(ManagedBlob blob);
+    DetectTextResponse detectText(ManagedBlob blob);
 
     /**
-     * Detect if the provided blob contains explicit or suggestive adult content.
+     * Detect unsafe content for the provided blob
      */
-    DetectModerationLabelsResult detectUnsafeImages(ManagedBlob blob);
+    DetectModerationLabelsResponse detectUnsafeImages(ManagedBlob blob);
 
     /**
-     * Starts async detect of explicit or suggestive adult content for
+     * Starts async detect of unsafe content for the provided blob
      *
-     * @param blob reference to a video
+     * @param blob a blob reference to a video
+     * @return JobId
      */
-    String startDetectUnsafe(ManagedBlob blob);
+    String startDetectUnsafeImages(ManagedBlob blob);
 
     /**
      * Detect faces for the provided blob
      */
-    DetectFacesResult detectFaces(ManagedBlob blob, Attribute... attributes);
+    DetectFacesResponse detectFaces(ManagedBlob blob);
 
     /**
      * Starts async detect of faces for the provided blob
      *
-     * @param blob reference to a video
+     * @param blob a blob reference to a video
+     * @return JobId
      */
-    String startDetectFaces(ManagedBlob blob, FaceAttributes attributes);
+    String startDetectFaces(ManagedBlob blob);
 
     /**
-     * Detect celebrity faces for the provided blob
+     * Detect celebrities
      */
-    RecognizeCelebritiesResult detectCelebrityFaces(ManagedBlob blob);
+    RecognizeCelebritiesResponse detectCelebrities(ManagedBlob blob);
 
     /**
-     * Starts async detect of celebrity faces for the provided blob
+     * Starts async detect of celebrities for the provided blob
      *
-     * @param blob reference to a video
+     * @param blob a blob reference to a video
+     * @return JobId
      */
-    String startDetectCelebrityFaces(ManagedBlob blob);
+    String startDetectCelebrities(ManagedBlob blob);
 
     /**
-     * @since 3.5.2
+     * Starts async detect of video segments for the provided blob
+     *
+     * @param blob a blob reference to a video
+     * @param segmentType segment type to detect
+     * @return JobId
      */
-    String startDetectVideoSegments(ManagedBlob blob, SegmentType... segmentTypes);
+    String startVideoSegmentDetection(ManagedBlob blob, SegmentType segmentType);
 
     /**
-     * @return AWS Rekognition client
+     * @return the AWS client
      */
-    AmazonRekognition getClient();
+    public RekognitionClient getClient();
 }

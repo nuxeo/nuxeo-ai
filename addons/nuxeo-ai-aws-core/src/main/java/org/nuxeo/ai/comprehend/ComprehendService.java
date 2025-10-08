@@ -18,9 +18,9 @@
  */
 package org.nuxeo.ai.comprehend;
 
-import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
+import software.amazon.awssdk.services.comprehend.model.DetectEntitiesResponse;
+import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesResponse;
+import software.amazon.awssdk.services.comprehend.model.DetectSentimentResponse;
 
 /**
  * Works with AWS Comprehend
@@ -30,23 +30,23 @@ public interface ComprehendService {
     /**
      * Detect sentiment for the provided text
      */
-    DetectSentimentResult detectSentiment(String text, String languageCode);
+    DetectSentimentResponse detectSentiment(String text, String languageCode);
 
     /**
      * Extract key phrases from the given text
      *
      * @param text         provided for extraction
      * @param languageCode code of the language to use for extraction (ie `en`)
-     * @return {@link DetectKeyPhrasesResult} as a response value of the service
+     * @return {@link DetectKeyPhrasesResponse} as a response value of the service
      */
-    DetectKeyPhrasesResult extractKeyphrase(String text, String languageCode);
+    DetectKeyPhrasesResponse detectKeyPhrases(String text, String languageCode);
 
     /**
-     * Detect Entities from the given text
+     * Extract entities from the given text
      *
      * @param text         provided for extraction
      * @param languageCode code of the language to use for extraction (ie `en`)
-     * @return {@link DetectKeyPhrasesResult} as a response value of the service
+     * @return {@link DetectEntitiesResponse} as a response value of the service
      */
-    DetectEntitiesResult detectEntities(String text, String languageCode);
+    DetectEntitiesResponse detectEntities(String text, String languageCode);
 }

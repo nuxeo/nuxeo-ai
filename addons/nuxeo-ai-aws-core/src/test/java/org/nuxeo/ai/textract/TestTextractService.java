@@ -34,7 +34,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -46,18 +48,24 @@ import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.common.utils.FileUtils;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.BlobProvider;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeFeature;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
+import software.amazon.awssdk.services.textract.model.DetectDocumentTextResponse;
+import software.amazon.awssdk.services.textract.model.Block;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, RuntimeFeature.class, PlatformFeature.class })
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-textract-config.xml")
@@ -106,17 +114,16 @@ public class TestTextractService {
 
     @Test
     public void testBlocks() throws URISyntaxException, IOException {
-        Block b = new Block();
-        b.setBlockType("LINE");
+        Block b = Block.builder().blockType("LINE").build();
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", Arrays.asList(b)));
 
-        AnalyzeDocumentResult result = JacksonUtil.MAPPER.readValue(raw, AnalyzeDocumentResult.class);
-        List<Block> rawBlock = result.getBlocks();
+        AnalyzeDocumentResponse result = JacksonUtil.MAPPER.readValue(raw, AnalyzeDocumentResponse.class);
+        List<Block> rawBlock = result.blocks();
         assertNotNull(rawBlock);
 
         File json = FileUtils.getResourceFileFromContext("files/textract.json");
-        AnalyzeDocumentResult helper = JacksonUtil.MAPPER.readValue(json, AnalyzeDocumentResult.class);
-        List<Block> blocks = helper.getBlocks();
+        AnalyzeDocumentResponse helper = JacksonUtil.MAPPER.readValue(json, AnalyzeDocumentResponse.class);
+        List<Block> blocks = helper.blocks();
         assertNotNull(blocks);
     }
 
@@ -130,8 +137,7 @@ public class TestTextractService {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder("b1", "myb", blobTextFromDoc);
 
-        Block b = new Block();
-        b.setBlockType("TABLE");
+        Block b = Block.builder().blockType("TABLE").build();
         processors.forEach(p -> p.process(Arrays.asList(b), null, new IdRef(blobTextFromDoc.getId()), builder));
 
         EnrichmentMetadata metadata = builder.build();

@@ -29,7 +29,7 @@ import static org.nuxeo.ai.similar.content.pipelines.IndexAction.XPATH_PARAM;
 
 import java.io.Serializable;
 import java.time.Duration;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

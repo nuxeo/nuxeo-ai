@@ -39,8 +39,8 @@ import org.nuxeo.ai.textract.TextractService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
+import software.amazon.awssdk.services.textract.model.Block;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -83,10 +83,10 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                AnalyzeDocumentResult result = Framework.getService(TextractService.class)
+                AnalyzeDocumentResponse result = Framework.getService(TextractService.class)
                                                         .analyzeDocument(blob.getValue(), features);
-                if (result != null && !result.getBlocks().isEmpty()) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
+                if (result != null && !result.blocks().isEmpty()) {
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.blocks()));
                 }
             }
             return enriched;

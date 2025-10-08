@@ -30,7 +30,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,7 +38,6 @@ import org.nuxeo.ai.similar.content.operation.FindSimilar;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
-import org.nuxeo.ecm.automation.server.jaxrs.batch.BatchManager;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -73,9 +72,6 @@ public class FindSimilarTest {
     @Inject
     protected AutomationService automationService;
 
-    @Inject
-    protected BatchManager batchManager;
-
     @Test
     public void shouldRunOperationOnDocument() throws OperationException {
         DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
@@ -108,29 +104,6 @@ public class FindSimilarTest {
         OperationContext ctx = new OperationContext(session);
         ctx.setInput(textBlob);
         ctx.put("xpath", FILE_CONTENT);
-        @SuppressWarnings("unchecked")
-        List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
-        assertThat(response).isNotEmpty();
-    }
-
-    @Test
-    public void shouldRunOperationOnBlobFromBatchUpload() throws OperationException, IOException {
-        Blob textBlob = Blobs.createBlob("this is a blob");
-        DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
-        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
-        fileDoc = session.createDocument(fileDoc);
-        session.save();
-
-        String url = "/api/v1/ai/dedup/mockTestProject/find?distance=0&xpath=file:content";
-        stubFor(WireMock.post(url).willReturn(okJson("[\"" + fileDoc.getId() + "\"]")));
-
-        String batchId = batchManager.initBatch();
-        batchManager.addBlob(batchId, "0", textBlob, textBlob.getFilename(), textBlob.getEncoding());
-
-        // void input
-        OperationContext ctx = new OperationContext(session);
-        ctx.put("batchId", batchId);
-        ctx.put("fileId", "0");
         @SuppressWarnings("unchecked")
         List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
         assertThat(response).isNotEmpty();

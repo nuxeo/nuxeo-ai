@@ -34,9 +34,9 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsResponse;
+import software.amazon.awssdk.services.rekognition.model.ModerationLabel;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -52,8 +52,8 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
     protected float minConfidence;
 
     protected EnrichmentMetadata.Label newLabel(ModerationLabel l) {
-        if (l.getConfidence() >= minConfidence) {
-            return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100);
+        if (l.confidence() >= minConfidence) {
+            return new EnrichmentMetadata.Label(l.name(), l.confidence() / 100);
         } else {
             return null;
         }
@@ -72,8 +72,8 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-                DetectModerationLabelsResult result = rs.detectUnsafeImages(blob.getValue());
-                if (result != null && !result.getModerationLabels().isEmpty()) {
+                DetectModerationLabelsResponse result = rs.detectUnsafeImages(blob.getValue());
+                if (result != null && !result.moderationLabels().isEmpty()) {
                     enriched.addAll(processResult(doc, blob.getKey(), result));
                 }
             }
@@ -91,14 +91,14 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectModerationLabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
+            DetectModerationLabelsResponse result) {
+        List<EnrichmentMetadata.Label> labels = result.moderationLabels()
                                                       .stream()
                                                       .map(this::newLabel)
                                                       .filter(Objects::nonNull)
                                                       .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
+        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.moderationLabels()));
 
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(

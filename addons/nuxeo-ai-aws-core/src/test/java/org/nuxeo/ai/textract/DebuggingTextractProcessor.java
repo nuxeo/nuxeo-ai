@@ -29,7 +29,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentRef;
-import com.amazonaws.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.Block;
 
 /**
  * Debugs the blocks

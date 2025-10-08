@@ -19,13 +19,13 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import static org.nuxeo.ai.transcribe.AudioTranscription.Type.PRONUNCIATION;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,16 +37,23 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
-import org.nuxeo.ecm.core.storage.sql.S3BinaryManager;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.transcribe.AmazonTranscribe;
-import com.amazonaws.services.transcribe.AmazonTranscribeClientBuilder;
-import com.amazonaws.services.transcribe.model.ConflictException;
-import com.amazonaws.services.transcribe.model.DeleteTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.Media;
-import com.amazonaws.services.transcribe.model.MediaFormat;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobRequest;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
+import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.DefaultComponent;
+
+import software.amazon.awssdk.services.transcribe.TranscribeClient;
+import software.amazon.awssdk.services.transcribe.model.ConflictException;
+import software.amazon.awssdk.services.transcribe.model.DeleteTranscriptionJobRequest;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobRequest;
+import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.JobExecutionSettings;
+import software.amazon.awssdk.services.transcribe.model.LanguageCode;
+import software.amazon.awssdk.services.transcribe.model.Media;
+import software.amazon.awssdk.services.transcribe.model.MediaFormat;
+import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobRequest;
+import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
 
 public class TranscribeServiceImpl implements TranscribeService {
 
@@ -56,7 +63,7 @@ public class TranscribeServiceImpl implements TranscribeService {
 
     private static final int DEFAULT_HZ = 16_000;
 
-    protected AmazonTranscribe client;
+    protected TranscribeClient client;
 
     public static URI getBlobURI(Blob blob, boolean signed) throws NuxeoException {
         BlobManager bm = Framework.getService(BlobManager.class);
@@ -79,20 +86,14 @@ public class TranscribeServiceImpl implements TranscribeService {
             throw new NuxeoException("Cannot set URI: provided Blob is null");
         }
 
-        if ((provider instanceof S3BinaryManager) || (provider instanceof S3BlobProvider)) {
+        if (provider instanceof S3BlobProvider) {
 
             String bucket;
             String prefix;
 
-            if (provider instanceof S3BinaryManager) {
-                S3BinaryManager s3bm = (S3BinaryManager) provider;
-                bucket = s3bm.getBucketName();
-                prefix = s3bm.getBucketPrefix();
-            } else {
-                S3BlobProvider s3bp = (S3BlobProvider) provider;
-                bucket = s3bp.config.bucketName;
-                prefix = s3bp.config.bucketPrefix;
-            }
+            S3BlobProvider s3bp = (S3BlobProvider) provider;
+            bucket = s3bp.config.bucketName;
+            prefix = s3bp.config.bucketPrefix;
 
             try {
                 return new URI("s3://" + bucket + "/" + StringUtils.defaultString(prefix) + blob.getDigest());
@@ -113,30 +114,34 @@ public class TranscribeServiceImpl implements TranscribeService {
     }
 
     @Override
-    public StartTranscriptionJobResult requestTranscription(Blob blob, String... languages) {
+    public StartTranscriptionJobResponse requestTranscription(Blob blob, String... languages) {
         URI blobURI = getBlobURI(blob, false);
-        Media media = new Media().withMediaFileUri(blobURI.toString());
-        StartTranscriptionJobRequest request = new StartTranscriptionJobRequest().withIdentifyLanguage(true)
-                                                                                 .withMedia(media)
-                                                                                 .withTranscriptionJobName(
-                                                                                         getJobName(blob,
-                                                                                                 AUTOMATIC_LANG))
-                                                                                 .withMediaFormat(MediaFormat.Wav)
-                                                                                 .withMediaSampleRateHertz(DEFAULT_HZ);
+        Media media = Media.builder().mediaFileUri(blobURI.toString()).build();
+        StartTranscriptionJobRequest.Builder requestBuilder = StartTranscriptionJobRequest.builder()
+                                                                                         .identifyLanguage(true)
+                                                                                         .media(media)
+                                                                                         .transcriptionJobName(getJobName(blob, AUTOMATIC_LANG))
+                                                                                         .mediaFormat(MediaFormat.WAV)
+                                                                                         .mediaSampleRateHertz(DEFAULT_HZ);
 
         if (StringUtils.isNoneBlank(languages)) {
-            request = request.withLanguageOptions(languages);
+            requestBuilder.languageOptions(Arrays.stream(languages)
+                .map(LanguageCode::valueOf)
+                .collect(Collectors.toList()));
         }
 
-        StartTranscriptionJobResult result;
+        StartTranscriptionJobRequest request = requestBuilder.build();
+
+        StartTranscriptionJobResponse result;
         try {
             result = getClient().startTranscriptionJob(request);
             Framework.getService(AWSMetrics.class).getTranscribeGlobalCalls().inc();
         } catch (ConflictException e) {
             String jobName = getJobName(blob, AUTOMATIC_LANG);
             log.error("Job already exist {}; Deleting it", jobName);
-            DeleteTranscriptionJobRequest deleteReq = new DeleteTranscriptionJobRequest().withTranscriptionJobName(
-                    jobName).withSdkClientExecutionTimeout(5000);
+            DeleteTranscriptionJobRequest deleteReq = DeleteTranscriptionJobRequest.builder()
+                                                                                 .transcriptionJobName(jobName)
+                                                                                 .build();
             getClient().deleteTranscriptionJob(deleteReq);
 
             result = getClient().startTranscriptionJob(request);
@@ -148,7 +153,7 @@ public class TranscribeServiceImpl implements TranscribeService {
     @Override
     public List<AIMetadata.Label> asLabels(AudioTranscription transcription) {
         return transcription.results.items.stream()
-                                          .filter(item -> PRONUNCIATION.realName().equals(item.type))
+                                          .filter(item -> "pronunciation".equals(item.type))
                                           .map(item -> new AIMetadata.Label(item.getContent(), 0.f,
                                                   (long) (Float.parseFloat(item.startTime)) * 1000))
                                           .collect(Collectors.toList());
@@ -159,20 +164,17 @@ public class TranscribeServiceImpl implements TranscribeService {
         return code + "_" + blob.getDigest();
     }
 
-    @Override
-    public AmazonTranscribe getClient() {
-        if (client == null) {
-            synchronized (this) {
-                if (client == null) {
-                    client = AmazonTranscribeClientBuilder.standard()
-                                                          .withCredentials(
-                                                                  AWSHelper.getInstance().getCredentialsProvider())
-                                                          .withRegion(AWSHelper.getInstance().getRegion())
-                                                          .build();
-                }
-            }
+    public TranscribeClient getClient() {
+        if (client != null) {
+            return client;
         }
 
-        return client;
+        synchronized (this) {
+            client = TranscribeClient.builder()
+                                   .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                                   .region(AWSHelper.getInstance().getRegion())
+                                   .build();
+            return client;
+        }
     }
 }

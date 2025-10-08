@@ -1,5 +1,5 @@
 # Base image
-ARG PLATFORM_VERSION=2023
+ARG PLATFORM_VERSION=2025
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
 # Build arguments

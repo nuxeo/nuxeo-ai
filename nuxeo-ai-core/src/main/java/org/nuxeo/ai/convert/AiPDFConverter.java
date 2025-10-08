@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.util.Map;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.Loader;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
@@ -49,7 +50,7 @@ public class AiPDFConverter implements Converter {
     @Override
     public BlobHolder convert(BlobHolder blobHolder, Map<String, Serializable> map) throws ConversionException {
         try (InputStream is = blobHolder.getBlob().getStream(); //
-                PDDocument document = PDDocument.load(is)) {
+                PDDocument document = Loader.loadPDF(is.readAllBytes())) {
             PDFTextStripper textStripper = new PDFTextStripper();
             textStripper.setSortByPosition(true);
             String text = textStripper.getText(document);

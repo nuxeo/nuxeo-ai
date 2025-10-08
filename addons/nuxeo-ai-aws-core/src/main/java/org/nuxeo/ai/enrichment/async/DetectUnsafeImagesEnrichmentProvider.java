@@ -42,12 +42,12 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.ContentModerationDetection;
-import com.amazonaws.services.rekognition.model.ContentModerationSortBy;
-import com.amazonaws.services.rekognition.model.GetContentModerationRequest;
-import com.amazonaws.services.rekognition.model.GetContentModerationResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.rekognition.model.ContentModerationDetection;
+import software.amazon.awssdk.services.rekognition.model.ContentModerationSortBy;
+import software.amazon.awssdk.services.rekognition.model.GetContentModerationRequest;
+import software.amazon.awssdk.services.rekognition.model.GetContentModerationResponse;
+import software.amazon.awssdk.services.rekognition.model.ModerationLabel;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -67,8 +67,8 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
     protected float minConfidence;
 
     protected EnrichmentMetadata.Label newLabel(ModerationLabel l, long timestamp) {
-        if (l.getConfidence() >= minConfidence) {
-            return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100, timestamp);
+        if (l.confidence() >= minConfidence) {
+            return new EnrichmentMetadata.Label(l.name(), l.confidence() / 100, timestamp);
         } else {
             return null;
         }
@@ -86,7 +86,7 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         RekognitionService rs = Framework.getService(RekognitionService.class);
         KeyValueStore store = getStore();
         for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-            String jobId = rs.startDetectUnsafe(blob.getValue());
+            String jobId = rs.startDetectUnsafeImages(blob.getValue());
             HashMap<String, Serializable> params = new HashMap<>();
             params.put("doc", doc);
             params.put("key", blob.getKey());
@@ -108,25 +108,26 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         RekognitionService rs = Framework.getService(RekognitionService.class);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
         List<ContentModerationDetection> nativeLabelObjects = new ArrayList<>();
-        GetContentModerationResult result = null;
+        GetContentModerationResponse result = null;
         do {
-            GetContentModerationRequest request = new GetContentModerationRequest().withJobId(
-                    jobId).withSortBy(ContentModerationSortBy.TIMESTAMP);
+            GetContentModerationRequest.Builder requestBuilder = GetContentModerationRequest.builder()
+                    .jobId(jobId)
+                    .sortBy(ContentModerationSortBy.TIMESTAMP);
 
-            if (result != null && result.getNextToken() != null) {
-                request.withNextToken(result.getNextToken());
+            if (result != null && result.nextToken() != null) {
+                requestBuilder.nextToken(result.nextToken());
             }
-            result = rs.getClient().getContentModeration(request);
+            result = rs.getClient().getContentModeration(requestBuilder.build());
 
-            List<EnrichmentMetadata.Label> currentPageLabels = result.getModerationLabels()
+            List<EnrichmentMetadata.Label> currentPageLabels = result.moderationLabels()
                     .stream()
-                    .map(l -> newLabel(l.getModerationLabel(), l.getTimestamp()))
+                    .map(l -> newLabel(l.moderationLabel(), l.timestamp()))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             labels.addAll(currentPageLabels);
-            nativeLabelObjects.addAll(result.getModerationLabels());
-        } while (result.getNextToken() != null);
+            nativeLabelObjects.addAll(result.moderationLabels());
+        } while (result.nextToken() != null);
 
         String raw = toJsonString(jg -> jg.writeObjectField("labels", nativeLabelObjects));
 

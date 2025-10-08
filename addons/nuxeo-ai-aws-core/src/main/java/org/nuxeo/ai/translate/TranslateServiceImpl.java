@@ -25,10 +25,9 @@ import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.services.translate.AmazonTranslate;
-import com.amazonaws.services.translate.AmazonTranslateClientBuilder;
-import com.amazonaws.services.translate.model.TranslateTextRequest;
-import com.amazonaws.services.translate.model.TranslateTextResult;
+import software.amazon.awssdk.services.translate.TranslateClient;
+import software.amazon.awssdk.services.translate.model.TranslateTextRequest;
+import software.amazon.awssdk.services.translate.model.TranslateTextResponse;
 
 /**
  * Calls AWS translate
@@ -37,7 +36,7 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
 
     private static final Log log = LogFactory.getLog(TranslateServiceImpl.class);
 
-    protected volatile AmazonTranslate client;
+    protected volatile TranslateClient client;
 
     protected AWSMetrics awsMetrics;
 
@@ -53,20 +52,16 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
         client = null;
     }
 
-    protected AmazonTranslate getClient() {
-        AmazonTranslate localClient = client;
+    protected TranslateClient getClient() {
+        TranslateClient localClient = client;
         if (localClient == null) {
             synchronized (this) {
                 localClient = client;
                 if (localClient == null) {
-                    AmazonTranslateClientBuilder builder = AmazonTranslateClientBuilder.standard()
-                                                                                       .withCredentials(
-                                                                                               AWSHelper.getInstance()
-                                                                                                        .getCredentialsProvider())
-                                                                                       .withRegion(
-                                                                                               AWSHelper.getInstance()
-                                                                                                        .getRegion());
-                    client = localClient = builder.build();
+                    client = localClient = TranslateClient.builder()
+                                                        .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                                                        .region(AWSHelper.getInstance().getRegion())
+                                                        .build();
                 }
             }
         }
@@ -74,14 +69,20 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
     }
 
     @Override
-    public TranslateTextResult translateText(String text, String sourceLanguageCode, String targetLanguageCode) {
+    public TranslateTextResponse translateText(String text, String sourceLanguageCode, String targetLanguageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling Translate for " + text);
         }
-        TranslateTextRequest request = new TranslateTextRequest().withText(text)
-                                                                 .withSourceLanguageCode(sourceLanguageCode)
-                                                                 .withTargetLanguageCode(targetLanguageCode);
+        TranslateTextRequest request = TranslateTextRequest.builder()
+                                                         .text(text)
+                                                         .sourceLanguageCode(sourceLanguageCode)
+                                                         .targetLanguageCode(targetLanguageCode)
+                                                         .build();
+        TranslateTextResponse result = getClient().translateText(request);
         awsMetrics.getTranslateTotalChars().update(text.length());
-        return getClient().translateText(request);
+        if (log.isDebugEnabled()) {
+            log.debug("TranslateTextResponse is " + result);
+        }
+        return result;
     }
 }

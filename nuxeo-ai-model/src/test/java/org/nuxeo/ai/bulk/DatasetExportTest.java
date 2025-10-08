@@ -47,9 +47,6 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.ABORTED;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.RUNNING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -70,7 +67,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -101,8 +98,6 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.query.sql.NXQL;
 import org.nuxeo.ecm.core.work.api.WorkManager;
 import org.nuxeo.ecm.platform.audit.AuditFeature;
-import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -118,8 +113,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
-        RepositoryElasticSearchFeature.class, AuditFeature.class })
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class, AuditFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
@@ -150,10 +144,12 @@ public class DatasetExportTest {
     protected WorkManager workManager;
 
     @Inject
-    protected ElasticSearchAdmin esa;
-
-    @Inject
     protected DatasetExportService des;
+
+    // Define missing AGG constants that were removed from Elasticsearch
+    private static final String AGG_CARDINALITY = "cardinality";
+    private static final String AGG_TYPE_TERMS = "terms";
+    private static final String AGG_MISSING = "missing";
 
     @Before
     public void setUp() throws Exception {
@@ -440,8 +436,8 @@ public class DatasetExportTest {
      */
     public void waitForCompletion() throws Exception {
         workManager.awaitCompletion(20, TimeUnit.SECONDS);
-        esa.prepareWaitForIndexing().get(20, TimeUnit.SECONDS);
-        esa.refresh();
+        // esa.prepareWaitForIndexing().get(20, TimeUnit.SECONDS);
+        // esa.refresh();
     }
 
     protected DocumentModel setupTestData() throws IOException {

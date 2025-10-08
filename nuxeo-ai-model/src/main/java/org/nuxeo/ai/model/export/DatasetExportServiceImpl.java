@@ -36,10 +36,6 @@ import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
 import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -55,8 +51,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,26 +84,19 @@ import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.core.schema.types.Field;
+import org.nuxeo.ecm.core.search.SearchQuery;
+import org.nuxeo.ecm.core.search.SearchResponse;
+import org.nuxeo.ecm.core.search.SearchService;
 import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
 import org.nuxeo.ecm.platform.query.api.PageProviderService;
-import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
-import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
-import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
-import org.nuxeo.elasticsearch.aggregate.MultiBucketAggregate;
-import org.nuxeo.elasticsearch.aggregate.SingleBucketAggregate;
-import org.nuxeo.elasticsearch.aggregate.SingleValueMetricAggregate;
-import org.nuxeo.elasticsearch.api.ElasticSearchService;
-import org.nuxeo.elasticsearch.api.EsResult;
-import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.kv.KeyValueStoreProvider;
 import org.nuxeo.runtime.model.DefaultComponent;
-import org.opensearch.search.aggregations.Aggregation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 
@@ -136,12 +125,6 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     protected static final Set<String> VALID_DOC_TYPES = Sets.newHashSet(DataType.IMAGE.shorten(),
             DataType.TEXT.shorten(), DataType.CATEGORY.shorten(), null);
 
-    protected static final Properties TERM_PROPS;
-
-    protected static final Properties EMPTY_PROPS = new Properties();
-
-    public static final String DEFAULT_NUM_TERMS = "200";
-
     public static final String QUERY_PARAM = "query";
 
     public static final String INPUT_PARAMETERS = "inputParameters";
@@ -159,23 +142,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public static final String QUERY_FOR_BATCH =
             BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
 
-    static {
-        TERM_PROPS = new Properties();
-        TERM_PROPS.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
-    }
 
-    /**
-     * Make an Aggregate using AggregateFactory.
-     */
-    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
-            Properties properties) {
-        AggregateDescriptor descriptor = new AggregateDescriptor();
-        descriptor.setId(aggKey(field, type));
-        descriptor.setDocumentField(field);
-        descriptor.setType(type);
-        properties.forEach((key, value) -> descriptor.setProperty((String) key, (String) value));
-        return AggregateFactory.create(descriptor, null);
-    }
 
     protected static String aggKey(String propName, String s) {
         return s + "_" + propName;
@@ -411,97 +378,26 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         featuresList.addAll(outputProperties.stream().map(ExportHelper::addTypeIfNull).collect(Collectors.toList()));
 
         List<Statistic> stats = new ArrayList<>();
-        NxQueryBuilder qb = new NxQueryBuilder(session).nxql(nxql).limit(0);
-        long total = getOverallStats(featuresList, stats, qb);
+
+        // Use SearchService for basic document count statistics
+        String countQuery = notNullNxql(nxql, featuresList);
+        SearchQuery searchQuery = SearchQuery.builder(countQuery, session)
+            .index("enhanced")
+            .limit(0)
+            .build();
+
+        SearchResponse response = Framework.getService(SearchService.class).search(searchQuery);
+        long total = response.getTotal();
+
         if (total < 1) {
             return emptyList();
         }
-        qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
-        addCount(stats, qb);
-        return stats;
-    }
 
-    /**
-     * Get the stats for the smaller dataset of valid values.
-     */
-    protected void addCount(List<Statistic> stats, NxQueryBuilder qb) {
-        EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT,
-                esResult.getElasticsearchResponse().getHits().getTotalHits().value));
-    }
-
-    /**
-     * Gets the overall stats for the dataset, before considering if the fields are valid.
-     */
-    protected Long getOverallStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
-        for (PropertyType prop : featuresWithType) {
-            String propName = prop.getName();
-            if (prop.getType() != null) {
-                switch (prop.getType()) {
-                case CATEGORY_TYPE:
-                case TEXT_TYPE:
-                    // TODO assuming that text is a property ! could be a blob
-                    qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
-                    qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, TERM_PROPS));
-                    qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
-                    break;
-                case IMAGE_TYPE:
-                    qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
-                    break;
-                default:
-                    // Only 3 types at the moment, we would need numeric type in the future. //
-                }
-            } else {
-                // Assuming without type it is text or category !
-                qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
-            }
-        }
-        EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.addAll(esResult.getAggregates()
-                             .stream()
-                             .map(agg -> (Aggregate<?>) agg)
-                             .map(this::getStatistic)
-                             .collect(Collectors.toList()));
-        long total = esResult.getElasticsearchResponse().getHits().getTotalHits().value;
+        // Add basic statistics
         stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, total));
+        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT, response.getHitsCount()));
 
-        return total;
-    }
-
-    protected Statistic getStatistic(Aggregate<?> agg) {
-        return Statistic.from(() -> {
-            Number numericValue = null;
-            List<org.nuxeo.ai.sdk.objects.Bucket> value = null;
-            if (agg instanceof SingleValueMetricAggregate) {
-                Double val = ((SingleValueMetricAggregate) agg).getValue();
-                numericValue = Double.isFinite(val) ? val : -1;
-            } else if (agg instanceof SingleBucketAggregate) {
-                numericValue = ((SingleBucketAggregate) agg).getDocCount();
-            } else if (agg instanceof MultiBucketAggregate) {
-                List<? extends Bucket> buckets = agg.getBuckets();
-                value = buckets.stream()
-                               .map(bucket -> new org.nuxeo.ai.sdk.objects.Bucket(bucket.getKey(),
-                                       bucket.getDocCount()))
-                               .collect(Collectors.toList());
-            } else {
-                throw new UnsupportedOperationException("Unable to create a statistic for " + agg.getType());
-            }
-
-            String fieldName = agg.getField();
-            if (fieldName.endsWith("/length") || fieldName.endsWith(".length")) {
-                fieldName = fieldName.substring(0, fieldName.length() - "/length".length());
-            }
-
-            SchemaManager ts = Framework.getService(SchemaManager.class);
-            Field field = ts.getField(fieldName);
-
-            String type = DatasetStatsService.getInputType(field);
-
-            Statistic statistic = new Statistic(agg.getId(), fieldName, type, agg.getType(), numericValue);
-            statistic.setValue(value);
-
-            return statistic;
-        });
+        return stats;
     }
 
     protected String contentProperty(String propName) {

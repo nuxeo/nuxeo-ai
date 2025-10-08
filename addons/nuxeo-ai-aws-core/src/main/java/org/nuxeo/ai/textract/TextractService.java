@@ -20,8 +20,8 @@ package org.nuxeo.ai.textract;
 
 import java.util.List;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.DetectDocumentTextResult;
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
+import software.amazon.awssdk.services.textract.model.DetectDocumentTextResponse;
 
 /**
  * Works with AWS Textract
@@ -33,12 +33,12 @@ public interface TextractService {
     /**
      * Detect text for the provided blob
      */
-    DetectDocumentTextResult detectText(ManagedBlob blob);
+    DetectDocumentTextResponse detectText(ManagedBlob blob);
 
     /**
      * Analyzes the provided blob as a text document
      */
-    AnalyzeDocumentResult analyzeDocument(ManagedBlob blob, String... features);
+    AnalyzeDocumentResponse analyzeDocument(ManagedBlob blob, String... features);
 
     /**
      * Return any processors that act on the specified service

@@ -25,7 +25,6 @@ import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import javax.inject.Inject;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,9 +35,9 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.GetTopicAttributesRequest;
-import com.amazonaws.services.sns.model.GetTopicAttributesResult;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest;
+import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse;
 
 @RunWith(FeaturesRunner.class)
 @Features({ RuntimeFeature.class, PlatformFeature.class })
@@ -46,7 +45,7 @@ import com.amazonaws.services.sns.model.GetTopicAttributesResult;
 @Deploy("org.nuxeo.ai.aws.aws-core")
 public class TestNotificationService {
 
-    @Inject
+    @jakarta.inject.Inject
     protected NotificationService ns;
 
     @Test
@@ -58,7 +57,7 @@ public class TestNotificationService {
         String arn = ns.getTopicArnFor(DETECT_SNS_TOPIC);
         assertNotNull(arn);
 
-        AmazonSNS client = ns.getClient();
+        SnsClient client = ns.getClient();
         assertNotNull(client);
 
         URI uri = new URI("https://not_a_path.net");
@@ -66,9 +65,9 @@ public class TestNotificationService {
         String subArn = ns.subscribe(arn, uri);
         assertThat(subArn).isNotBlank();
 
-        GetTopicAttributesRequest topicRequest = new GetTopicAttributesRequest(arn);
-        GetTopicAttributesResult result = client.getTopicAttributes(topicRequest);
-        assertThat(result.getAttributes()).isNotEmpty();
+        GetTopicAttributesRequest topicRequest = GetTopicAttributesRequest.builder().topicArn(arn).build();
+        GetTopicAttributesResponse result = client.getTopicAttributes(topicRequest);
+        assertThat(result.attributes()).isNotEmpty();
     }
 
     @Test

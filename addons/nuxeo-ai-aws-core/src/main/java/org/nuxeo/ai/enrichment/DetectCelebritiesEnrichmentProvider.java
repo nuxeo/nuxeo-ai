@@ -37,10 +37,10 @@ import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.rekognition.model.BoundingBox;
-import com.amazonaws.services.rekognition.model.Celebrity;
-import com.amazonaws.services.rekognition.model.ComparedFace;
-import com.amazonaws.services.rekognition.model.RecognizeCelebritiesResult;
+import software.amazon.awssdk.services.rekognition.model.BoundingBox;
+import software.amazon.awssdk.services.rekognition.model.Celebrity;
+import software.amazon.awssdk.services.rekognition.model.ComparedFace;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesResponse;
 
 /**
  * Detects celebrity faces in an image
@@ -63,8 +63,8 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-                RecognizeCelebritiesResult result = rs.detectCelebrityFaces(blob.getValue());
-                if (result != null && (!result.getCelebrityFaces().isEmpty() || !result.getUnrecognizedFaces()
+                RecognizeCelebritiesResponse result = rs.detectCelebrities(blob.getValue());
+                if (result != null && (!result.celebrityFaces().isEmpty() || !result.unrecognizedFaces()
                                                                                        .isEmpty())) {
                     enriched.addAll(processResults(doc, blob.getKey(), result));
                 }
@@ -77,16 +77,16 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
-            RecognizeCelebritiesResult result) {
-        List<AIMetadata.Tag> tags = Stream.concat(result.getCelebrityFaces().stream().map(this::newCelebrityTag),
-                result.getUnrecognizedFaces().stream().map(this::newFaceTag))
+            RecognizeCelebritiesResponse result) {
+        List<AIMetadata.Tag> tags = Stream.concat(result.celebrityFaces().stream().map(this::newCelebrityTag),
+                result.unrecognizedFaces().stream().map(this::newFaceTag))
                                           .filter(Objects::nonNull)
                                           .collect(Collectors.toList());
 
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("celebrityFaces", result.getCelebrityFaces());
-            jg.writeObjectField("unrecognizedFaces", result.getUnrecognizedFaces());
-            jg.writeStringField("orientationCorrection", result.getOrientationCorrection());
+            jg.writeObjectField("celebrityFaces", result.celebrityFaces());
+            jg.writeObjectField("unrecognizedFaces", result.unrecognizedFaces());
+            jg.writeStringField("orientationCorrection", result.orientationCorrection().toString());
         });
 
         String rawKey = saveJsonAsRawBlob(raw);
@@ -101,11 +101,11 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
      * Create a AI Tag based on the celebrity face.
      */
     protected AIMetadata.Tag newCelebrityTag(Celebrity celebrity) {
-        BoundingBox box = celebrity.getFace().getBoundingBox();
-        if (celebrity.getMatchConfidence() >= minConfidence) {
-            return new AIMetadata.Tag(celebrity.getName(), kind, celebrity.getId(),
-                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), null,
-                    celebrity.getMatchConfidence() / 100);
+        BoundingBox box = celebrity.face().boundingBox();
+        if (celebrity.matchConfidence() >= minConfidence) {
+            return new AIMetadata.Tag(celebrity.name(), kind, celebrity.id(),
+                    new AIMetadata.Box(box.width(), box.height(), box.left(), box.top()), null,
+                    celebrity.matchConfidence() / 100);
         }
         return null;
     }
@@ -114,11 +114,11 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
      * Create a AI Tag based on the unrecognized face.
      */
     protected AIMetadata.Tag newFaceTag(ComparedFace faceDetail) {
-        BoundingBox box = faceDetail.getBoundingBox();
-        if (faceDetail.getConfidence() >= minConfidence) {
+        BoundingBox box = faceDetail.boundingBox();
+        if (faceDetail.confidence() >= minConfidence) {
             return new AIMetadata.Tag("face", "/tagging/face", null,
-                    new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop()), null,
-                    faceDetail.getConfidence() / 100);
+                    new AIMetadata.Box(box.width(), box.height(), box.left(), box.top()), null,
+                    faceDetail.confidence() / 100);
         }
         return null;
     }

@@ -26,7 +26,7 @@ import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentRef;
-import com.amazonaws.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.Block;
 
 public class CountingTextractProcessor implements TextractProcessor {
 

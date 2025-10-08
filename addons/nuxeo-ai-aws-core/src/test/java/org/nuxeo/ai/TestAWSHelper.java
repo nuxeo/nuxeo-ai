@@ -36,10 +36,10 @@ public class TestAWSHelper {
 
     @Test
     public void testCustomCredentials() {
-        assertEquals("MY_REGION", AWSHelper.getInstance().getRegion());
+        assertEquals("MY_REGION", AWSHelper.getInstance().getRegion().id());
         assertEquals("MY_XML_ACCESS_KEY_ID",
-                AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSAccessKeyId());
+                AWSHelper.getInstance().getCredentialsProvider().resolveCredentials().accessKeyId());
         assertEquals("MY_XML_SECRET_KEY",
-                AWSHelper.getInstance().getCredentialsProvider().getCredentials().getAWSSecretKey());
+                AWSHelper.getInstance().getCredentialsProvider().resolveCredentials().secretAccessKey());
     }
 }

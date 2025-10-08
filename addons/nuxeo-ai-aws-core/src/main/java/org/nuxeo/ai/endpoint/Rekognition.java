@@ -27,13 +27,13 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,10 +56,9 @@ import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
 
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sns.model.ConfirmSubscriptionRequest;
-import com.amazonaws.services.sns.model.ConfirmSubscriptionResult;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.ConfirmSubscriptionRequest;
+import software.amazon.awssdk.services.sns.model.ConfirmSubscriptionResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -78,11 +77,11 @@ public class Rekognition {
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private AmazonSNS snsClient;
+    private SnsClient snsClient;
 
-    private AmazonSNS getSnsClient() {
+    private SnsClient getSnsClient() {
         if (snsClient == null) {
-            snsClient = AmazonSNSClientBuilder.defaultClient();
+            snsClient = SnsClient.builder().build();
         }
         return snsClient;
     }
@@ -170,11 +169,13 @@ public class Rekognition {
                 String topicArn = (String) confirmation.get("TopicArn");
 
                 if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(topicArn)) {
-                    ConfirmSubscriptionRequest request = new ConfirmSubscriptionRequest().withToken(token)
-                                                                                         .withTopicArn(topicArn);
+                    ConfirmSubscriptionRequest request = ConfirmSubscriptionRequest.builder()
+                            .token(token)
+                            .topicArn(topicArn)
+                            .build();
 
-                    ConfirmSubscriptionResult result = getSnsClient().confirmSubscription(request);
-                    String subscriptionArn = result.getSubscriptionArn();
+                    ConfirmSubscriptionResponse result = getSnsClient().confirmSubscription(request);
+                    String subscriptionArn = result.subscriptionArn();
 
                     if (StringUtils.isNotBlank(subscriptionArn)) {
                         log.debug("SNS subscription confirmed with ARN: {}", subscriptionArn);

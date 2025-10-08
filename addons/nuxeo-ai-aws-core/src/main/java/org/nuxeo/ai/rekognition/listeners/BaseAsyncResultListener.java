@@ -40,7 +40,8 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import com.amazonaws.services.rekognition.model.AmazonRekognitionException;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.services.rekognition.model.VideoJobStatus;
 
 /**
  * Base class for listening notifications on detect results
@@ -87,7 +88,7 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
             enrichment.forEach(this::saveMetadata);
         } catch (IOException | ClassNotFoundException e) {
             log.error("An error occurred during event process {}, for event {}", e.getMessage(), event.getName());
-        } catch (AmazonRekognitionException e) {
+        } catch (SdkServiceException e) {
             log.error("An error occurred at AWS Rekognition {}, for event {}", e.getMessage(), event.getName());
         }
     }
