@@ -22,6 +22,10 @@ updates:
           "version-update:semver-minor"
         ]
 
+      # Nuxeo parent POM
+      - dependency-name: "org.nuxeo:nuxeo-parent"
+        update-types: ["version-update:semver-patch"]
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -52,6 +56,13 @@ updates:
       # Major version updates
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+
+      # Nuxeo parent POM
+      - dependency-name: "org.nuxeo:nuxeo-parent"
+        update-types: [
+          "version-update:semver-minor",
+          "version-update:semver-patch"
+        ]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
