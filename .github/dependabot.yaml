@@ -1,0 +1,66 @@
+version: 2
+updates:
+  # Default branch: 2023
+  # Maven
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Limit version updates to 10 to prevent CI overload
+    open-pull-requests-limit: 10
+    # Group all version updates (patch only)
+    groups:
+      version-updates:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+    ignore:
+      # Major and minor version updates
+      - dependency-name: "*"
+        update-types: [
+          "version-update:semver-major",
+          "version-update:semver-minor"
+        ]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Group all version updates (major, minor and patch)
+    groups:
+      version-updates:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+
+  # Branch 2025
+  # Maven
+  - package-ecosystem: "maven"
+    target-branch: "2025"
+    directory: "/"
+    schedule:
+        interval: "daily"
+    # Limit version updates to 10 to prevent CI overload
+    open-pull-requests-limit: 10
+    # Group all version updates (minor and patch)
+    groups:
+      version-updates:
+        patterns:
+          - "*"
+    ignore:
+      # Major version updates
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    target-branch: "2025"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Group all version updates (major, minor and patch)
+    groups:
+      version-updates:
+        patterns:
+          - "*"
