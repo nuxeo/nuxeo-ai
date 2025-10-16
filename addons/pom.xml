@@ -12,8 +12,8 @@
   <description>Nuxeo AI Addons parent POM</description>
 
   <properties>
-    <wiremock.version>2.18.0</wiremock.version>
-    <gcp.version>26.62.0</gcp.version>
+    <wiremock.version>2.27.2</wiremock.version>
+    <gcp.version>26.70.0</gcp.version>
   </properties>
 
   <modules>
