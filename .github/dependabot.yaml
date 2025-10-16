@@ -10,8 +10,7 @@ updates:
   # Maven
   - package-ecosystem: "maven"
     directory: "/"
-    registries:
-      - connect-studio
+    registries: "*"
     schedule:
       interval: "daily"
     # Limit version updates to 10 to prevent CI overload
@@ -51,8 +50,7 @@ updates:
   - package-ecosystem: "maven"
     target-branch: "2025"
     directory: "/"
-    registries:
-      - connect-studio
+    registries: "*"
     schedule:
         interval: "daily"
     # Limit version updates to 10 to prevent CI overload
