@@ -1,9 +1,17 @@
 version: 2
+registries:
+  connect-studio:
+    type: maven-repository
+    url: https://connect.nuxeo.com/nuxeo/site/studio/maven/
+    username: ${{ secrets.CONNECT_USERNAME }}
+    password: ${{ secrets.CONNECT_PASSWORD }}
 updates:
   # Default branch: 2023
   # Maven
   - package-ecosystem: "maven"
     directory: "/"
+    registries:
+      - connect-studio
     schedule:
       interval: "daily"
     # Limit version updates to 10 to prevent CI overload
@@ -43,6 +51,8 @@ updates:
   - package-ecosystem: "maven"
     target-branch: "2025"
     directory: "/"
+    registries:
+      - connect-studio
     schedule:
         interval: "daily"
     # Limit version updates to 10 to prevent CI overload
