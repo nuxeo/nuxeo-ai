@@ -1,5 +1,10 @@
 version: 2
 registries:
+  packages:
+    type: maven-repository
+    url: https://packages.nuxeo.com/repository/maven-internal-build/
+    username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+    password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
   connect-studio:
     type: maven-repository
     url: https://connect.nuxeo.com/nuxeo/site/studio/maven/
