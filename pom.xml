@@ -54,41 +54,8 @@
       </snapshots>
     </repository>
     <repository>
-      <id>maven-public-releases</id>
-      <url>https://packages.nuxeo.com/repository/maven-public-releases</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>nuxeo-studio</id>
-      <url>https://connect.nuxeo.com/nuxeo/site/studio/maven</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-    <repository>
       <id>maven-internal</id>
       <url>https://packages.nuxeo.com/repository/maven-internal</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>maven-team-platform-private</id>
-      <url>https://packages.nuxeo.com/repository/maven-team-platform-private</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -103,17 +70,6 @@
     <pluginRepository>
       <id>maven-public</id>
       <url>https://packages.nuxeo.com/repository/maven-public</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
-      <id>maven-internal</id>
-      <url>https://packages.nuxeo.com/repository/maven-internal</url>
       <releases>
         <enabled>true</enabled>
       </releases>
