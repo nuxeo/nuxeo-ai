@@ -101,29 +101,9 @@ jobs:
                   <password>${{ secrets.packages-auth-token }}</password>
                 </server>
                 <server>
-                  <id>maven-team-platform-private</id>
-                  <username>${{ secrets.packages-auth-user }}</username>
-                  <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-                <server>
-                  <id>maven-private</id>
-                  <username>${{ secrets.packages-auth-user }}</username>
-                  <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-                <server>
                   <id>maven-public-snapshots</id>
                   <username>${{ secrets.packages-auth-user }}</username>
                   <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-                <server>
-                  <id>maven-public-releases</id>
-                  <username>${{ secrets.packages-auth-user }}</username>
-                  <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-                <server>
-                  <id>nuxeo-studio</id>
-                  <username>${{ secrets.connect-auth-user }}</username>
-                  <password>${{ secrets.connect-auth-token }}</password>
                 </server>
               </servers>
               </settings>' > ~/.m2/settings.xml
