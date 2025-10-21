@@ -100,6 +100,11 @@ jobs:
                   <username>${{ secrets.packages-auth-user }}</username>
                   <password>${{ secrets.packages-auth-token }}</password>
                 </server>
+                <server>
+                  <id>maven-public-snapshots</id>
+                  <username>${{ secrets.packages-auth-user }}</username>
+                  <password>${{ secrets.packages-auth-token }}</password>
+                </server>
               </servers>
               </settings>' > ~/.m2/settings.xml
       - name: Clean stale Maven locks
