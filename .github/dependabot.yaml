@@ -1,9 +1,17 @@
 version: 2
+registries:
+  maven-internal:
+    type: maven-repository
+    url: https://packages.nuxeo.com/repository/maven-internal/
+    replaces-base: true
+    username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+    password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
 updates:
   # Default branch: 2023
   # Maven
   - package-ecosystem: "maven"
     directory: "/"
+    registries: "*"
     schedule:
       interval: "daily"
     # Limit version updates to 10 to prevent CI overload
@@ -43,6 +51,7 @@ updates:
   - package-ecosystem: "maven"
     target-branch: "2025"
     directory: "/"
+    registries: "*"
     schedule:
         interval: "daily"
     # Limit version updates to 10 to prevent CI overload
