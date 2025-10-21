@@ -43,8 +43,8 @@
 
   <repositories>
     <repository>
-      <id>maven-public</id>
-      <url>https://packages.nuxeo.com/repository/maven-public</url>
+      <id>maven-public-lts</id>
+      <url>https://packages.nuxeo.com/repository/maven-public-lts</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -53,6 +53,7 @@
         <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
+    <!-- Still needed for parent of org.nuxeo.ai:nuxeo-jwt-authenticator-core -->
     <repository>
       <id>maven-internal</id>
       <url>https://packages.nuxeo.com/repository/maven-internal</url>
@@ -68,8 +69,8 @@
 
   <pluginRepositories>
     <pluginRepository>
-      <id>maven-public</id>
-      <url>https://packages.nuxeo.com/repository/maven-public</url>
+      <id>maven-public-lts</id>
+      <url>https://packages.nuxeo.com/repository/maven-public-lts</url>
       <releases>
         <enabled>true</enabled>
       </releases>
