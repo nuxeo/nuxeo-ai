@@ -34,7 +34,7 @@ import software.amazon.awssdk.services.textract.model.Block;
 /**
  * Debugs the blocks
  */
-public class DebuggingTextractProcessor implements TextractProcessor, Initializable {
+public class DebuggingTextractProcessor implements TextractProcessor<Object>, Initializable {
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
@@ -48,13 +48,16 @@ public class DebuggingTextractProcessor implements TextractProcessor, Initializa
     }
 
     @Override
-    public void process(List<Block> blocks, CoreSession session, DocumentRef docRef,
+    public Object process(List<Object> blocks, CoreSession session, DocumentRef docRef,
             EnrichmentMetadata.Builder builder) {
-        blocks.forEach(block -> {
-            if (log.isDebugEnabled()) {
-                log.debug(AWSHelper.getInstance().debugTextractBlock(block));
-            }
-        });
+        if (blocks != null) {
+            blocks.forEach(block -> {
+                if (block instanceof Block && log.isDebugEnabled()) {
+                    log.debug(AWSHelper.getInstance().debugTextractBlock((Block) block));
+                }
+            });
+        }
+        return null; // Nothing to return for tests
     }
 
 }

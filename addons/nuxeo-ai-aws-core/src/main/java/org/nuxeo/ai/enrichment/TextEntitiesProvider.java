@@ -39,6 +39,7 @@ import org.nuxeo.runtime.api.Framework;
 import software.amazon.awssdk.services.comprehend.model.DetectEntitiesResponse;
 
 import net.jodah.failsafe.RetryPolicy;
+import org.nuxeo.ai.aws.dto.EntitiesResult;
 
 public class TextEntitiesProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
@@ -62,6 +63,27 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
         maxSize = ENTITY_MAX_SIZE;
     }
 
+    /**
+     * Processes the result of the call to AWS
+     */
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
+            EntitiesResult result) {
+        List<AIMetadata.Label> labels = result.getEntities()
+                                              .stream()
+                                              .map(e -> new AIMetadata.Label(e.getText(), e.getScore()))
+                                              .collect(Collectors.toList());
+        String raw = toJsonString(jg -> jg.writeObjectField(ENTITIES_KEY, result.getEntities()));
+
+        String rawKey = saveJsonAsRawBlob(raw);
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
+                                                                                     .withRawKey(rawKey)
+                                                                                     .withDocumentProperties(
+                                                                                             Collections.singleton(
+                                                                                                     xPath))
+                                                                                     .build();
+        return Collections.singletonList(metadata);
+    }
+
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
@@ -72,37 +94,14 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
                             + prop.getValue().length());
                     continue;
                 }
-                DetectEntitiesResponse result = Framework.getService(ComprehendService.class)
-                                                       .detectEntities(prop.getValue(), languageCode);
-                if (result != null && !result.entities().isEmpty()) {
+                EntitiesResult result = Framework.getService(ComprehendService.class)
+                        .detectEntities(prop.getValue(), languageCode);
+                if (result != null && !result.getEntities().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
             return enriched;
         });
-    }
-
-    /**
-     * Processes the result of the call to AWS
-     */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            DetectEntitiesResponse result) {
-        List<AIMetadata.Label> labels = result.entities()
-                                              .stream()
-                                              .map(kp -> new AIMetadata.Label(kp.text(), kp.score()))
-                                              .collect(Collectors.toList());
-        String raw = toJsonString(jg -> {
-            jg.writeObjectField(ENTITIES_KEY, result.entities());
-        });
-
-        String rawKey = saveJsonAsRawBlob(raw);
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
-                                                                                     .withRawKey(rawKey)
-                                                                                     .withDocumentProperties(
-                                                                                             Collections.singleton(
-                                                                                                     xPath))
-                                                                                     .build();
-        return Collections.singletonList(metadata);
     }
 
     @Override

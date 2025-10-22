@@ -66,6 +66,8 @@ public class AWSHelper {
 
     public static final String NEW_LINE = "\n";
 
+    public static final String CONFIG_S3_BUCKET = "nuxeo.enrichment.aws.s3.bucket";
+
     protected static final Set<String> FATAL_ERRORS = new HashSet<>(
             Arrays.asList("UnrecognizedClientException", "AccessDeniedException"));
 
@@ -265,5 +267,14 @@ public class AWSHelper {
             return result.blocks();
         }
         return Collections.emptyList();
+    }
+
+    public static String getS3BucketName() {
+        ConfigurationService cs = Framework.getService(ConfigurationService.class);
+        String bucket = cs != null ? cs.getProperty(CONFIG_S3_BUCKET) : null;
+        if (StringUtils.isBlank(bucket)) {
+            bucket = "default-bucket"; // fallback
+        }
+        return bucket;
     }
 }

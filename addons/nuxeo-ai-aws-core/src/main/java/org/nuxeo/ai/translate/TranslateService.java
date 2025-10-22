@@ -18,15 +18,16 @@
  */
 package org.nuxeo.ai.translate;
 
-import software.amazon.awssdk.services.translate.model.TranslateTextResponse;
+import org.nuxeo.ai.aws.dto.TranslationResult;
 
 /**
- * Works with AWS Translate.
+ * Works with AWS Translate - Now using domain DTOs instead of AWS SDK models
+ * This interface is completely independent of AWS SDK implementation details
  */
 public interface TranslateService {
 
     /**
      * Translates text from source to target language.
      */
-    TranslateTextResponse translateText(String text, String sourceLanguageCode, String targetLanguageCode);
+    TranslationResult translateText(String text, String sourceLanguageCode, String targetLanguageCode);
 }

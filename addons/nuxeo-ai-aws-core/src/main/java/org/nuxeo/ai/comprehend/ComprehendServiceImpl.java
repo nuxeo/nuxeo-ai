@@ -20,112 +20,111 @@ package org.nuxeo.ai.comprehend;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.abstraction.AWSServiceRegistry;
+import org.nuxeo.ai.aws.abstraction.ComprehendServiceFacade;
+import org.nuxeo.ai.aws.abstraction.dto.ComprehendRequest;
+import org.nuxeo.ai.aws.dto.SentimentResult;
+import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
+import org.nuxeo.ai.aws.dto.EntitiesResult;
 import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.comprehend.ComprehendClient;
-import software.amazon.awssdk.services.comprehend.model.DetectEntitiesRequest;
-import software.amazon.awssdk.services.comprehend.model.DetectEntitiesResponse;
-import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesRequest;
-import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesResponse;
-import software.amazon.awssdk.services.comprehend.model.DetectSentimentRequest;
-import software.amazon.awssdk.services.comprehend.model.DetectSentimentResponse;
 
 /**
- * Calls AWS Comprehend apis
+ * Calls AWS Comprehend APIs via abstraction layer - NO AWS SDK IMPORTS!
+ * All AWS SDK dependencies are completely isolated in the facade layer.
+ * This service now only depends on our abstraction DTOs and interfaces.
  */
 public class ComprehendServiceImpl extends DefaultComponent implements ComprehendService {
 
     private static final Log log = LogFactory.getLog(ComprehendServiceImpl.class);
 
-    protected volatile ComprehendClient client;
-
+    protected ComprehendServiceFacade comprehendFacade;
     protected AWSMetrics awsMetrics;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        // Get facade through registry - no AWS SDK dependencies
+        AWSServiceRegistry registry = Framework.getService(AWSServiceRegistry.class);
+        comprehendFacade = registry.getComprehendService();
         awsMetrics = Framework.getService(AWSMetrics.class);
     }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
         super.stop(context);
-        client = null;
+        comprehendFacade = null;
+        awsMetrics = null;
     }
 
     @Override
-    public DetectSentimentResponse detectSentiment(String text, String languageCode) {
+    public SentimentResult detectSentiment(String text, String languageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling DetectSentiment for " + text);
         }
 
-        DetectSentimentRequest request = DetectSentimentRequest.builder()
-                .text(text)
-                .languageCode(languageCode)
-                .build();
+        // Create abstraction DTO instead of AWS SDK request
+        ComprehendRequest.DetectSentiment request = new ComprehendRequest.DetectSentiment(text, languageCode);
 
-        DetectSentimentResponse result = getClient().detectSentiment(request);
+        // Call through facade - no AWS SDK objects involved
+        SentimentResult result = comprehendFacade.detectSentiment(request);
+
         if (log.isDebugEnabled()) {
             log.debug("DetectSentimentResult is " + result);
         }
-        awsMetrics.updateComprehendSentimentUnits(text.length() / 100L);
+
+        if (awsMetrics != null) {
+            awsMetrics.updateComprehendSentimentUnits(text.length() / 100L);
+        }
+
         return result;
     }
 
     @Override
-    public DetectKeyPhrasesResponse detectKeyPhrases(String text, String languageCode) {
+    public KeyPhrasesResult detectKeyPhrases(String text, String languageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling DetectKeyPhrases for " + text);
         }
 
-        DetectKeyPhrasesRequest request = DetectKeyPhrasesRequest.builder()
-                .text(text)
-                .languageCode(languageCode)
-                .build();
+        // Create abstraction DTO instead of AWS SDK request
+        ComprehendRequest.DetectKeyPhrases request = new ComprehendRequest.DetectKeyPhrases(text, languageCode);
 
-        DetectKeyPhrasesResponse result = getClient().detectKeyPhrases(request);
+        // Call through facade - no AWS SDK objects involved
+        KeyPhrasesResult result = comprehendFacade.detectKeyPhrases(request);
+
         if (log.isDebugEnabled()) {
             log.debug("DetectKeyPhrasesResult is " + result);
         }
-        awsMetrics.updateComprehendKeyphraseUnits(text.length() / 100L);
+
+        if (awsMetrics != null) {
+            awsMetrics.updateComprehendKeyphraseUnits(text.length() / 100L);
+        }
+
         return result;
     }
 
     @Override
-    public DetectEntitiesResponse detectEntities(String text, String languageCode) {
+    public EntitiesResult detectEntities(String text, String languageCode) {
         if (log.isDebugEnabled()) {
             log.debug("Calling DetectEntities for " + text);
         }
 
-        DetectEntitiesRequest request = DetectEntitiesRequest.builder()
-                .text(text)
-                .languageCode(languageCode)
-                .build();
-        DetectEntitiesResponse result = getClient().detectEntities(request);
+        // Create abstraction DTO instead of AWS SDK request
+        ComprehendRequest.DetectEntities request = new ComprehendRequest.DetectEntities(text, languageCode);
+
+        // Call through facade - no AWS SDK objects involved
+        EntitiesResult result = comprehendFacade.detectEntities(request);
+
         if (log.isDebugEnabled()) {
             log.debug("DetectEntitiesResult is " + result);
         }
-        awsMetrics.updateComprehendEntitiesUnits(text.length() / 100L);
-        return result;
-    }
 
-    protected ComprehendClient getClient() {
-        ComprehendClient result = client;
-        if (result == null) {
-            synchronized (this) {
-                result = client;
-                if (result == null) {
-                    client = result = ComprehendClient.builder()
-                            .region(AWSHelper.getInstance().getRegion())
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
-                }
-            }
+        if (awsMetrics != null) {
+            awsMetrics.updateComprehendEntitiesUnits(text.length() / 100L);
         }
+
         return result;
     }
 }

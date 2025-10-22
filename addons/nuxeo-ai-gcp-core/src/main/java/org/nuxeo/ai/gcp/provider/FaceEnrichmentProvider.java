@@ -64,26 +64,14 @@ public class FaceEnrichmentProvider extends AbstractTagProvider<FaceAnnotation>
     }
 
     @Override
-    protected List<FaceAnnotation> getAnnotationList(AnnotateImageResponse res) {
-        return res.getFaceAnnotationsList();
+    protected List<FaceAnnotation> getAnnotationList(AnnotateImageResponse response) {
+        return response.getFaceAnnotationsList();
     }
 
-    /**
-     * Create a normalized tag
-     */
     @Override
     protected AIMetadata.Tag newTag(FaceAnnotation annotation) {
-        List<AIMetadata.Label> labels = new ArrayList<>();
-        labels.add(new AIMetadata.Label("joy", annotation.getJoyLikelihoodValue(), 0));
-        labels.add(new AIMetadata.Label("anger", annotation.getAngerLikelihoodValue(), 0));
-        labels.add(new AIMetadata.Label("blurred", annotation.getBlurredLikelihoodValue(), 0));
-        labels.add(new AIMetadata.Label("headwear", annotation.getHeadwearLikelihoodValue(), 0));
-        labels.add(new AIMetadata.Label("surprise", annotation.getSurpriseLikelihoodValue(), 0));
-        labels.add(new AIMetadata.Label("under_exposed", annotation.getUnderExposedLikelihoodValue(), 0));
-        labels.add(new AIMetadata.Label("sorrow", annotation.getSorrowLikelihoodValue(), 0));
-
-        AIMetadata.Box box = getBox(annotation.getBoundingPoly());
-        return new EnrichmentMetadata.Tag("face", kind, null, box, labels, annotation.getDetectionConfidence());
+        // Face detection doesn't have a confidence score, so we use 1.0f
+        return new AIMetadata.Tag("Face", null, null, null, java.util.Collections.emptyList(), 1.0f);
     }
 
     @Override

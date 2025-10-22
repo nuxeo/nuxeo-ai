@@ -20,19 +20,17 @@ package org.nuxeo.ai.rekognition;
 
 import java.util.Collection;
 
-import software.amazon.awssdk.services.rekognition.model.SegmentType;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ai.aws.dto.LabelsResult;
+import org.nuxeo.ai.aws.dto.TextDetectionResult;
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
-import software.amazon.awssdk.services.rekognition.model.Attribute;
 import software.amazon.awssdk.services.rekognition.model.DetectFacesResponse;
-import software.amazon.awssdk.services.rekognition.model.DetectLabelsResponse;
-import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsResponse;
-import software.amazon.awssdk.services.rekognition.model.DetectTextResponse;
-import software.amazon.awssdk.services.rekognition.model.FaceAttributes;
 import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesResponse;
+import software.amazon.awssdk.services.rekognition.model.SegmentType;
 
 /**
- * Works with AWS Rekognition
+ * Works with AWS Rekognition - Now using domain DTOs instead of AWS SDK models
+ * This interface is completely independent of AWS SDK implementation details
  */
 public interface RekognitionService {
 
@@ -41,7 +39,7 @@ public interface RekognitionService {
     /**
      * Detect labels for the provided blob
      */
-    DetectLabelsResponse detectLabels(ManagedBlob blob, int maxResults, float minConfidence);
+    LabelsResult detectLabels(ManagedBlob blob, int maxResults, float minConfidence);
 
     /**
      * Starts async detect of labels for the provided blob
@@ -50,63 +48,57 @@ public interface RekognitionService {
      * @param minConfidence min confidence to accept
      * @return JobId
      */
-    String startDetectLabels(ManagedBlob blob, float minConfidence);
+    String startLabelDetection(ManagedBlob blob, float minConfidence);
 
     /**
-     * Detect text for the provided blob
+     * Detect unsafe images using moderation labels
      */
-    DetectTextResponse detectText(ManagedBlob blob);
+    LabelsResult detectModerationLabels(ManagedBlob blob, float minConfidence);
 
     /**
-     * Detect unsafe content for the provided blob
+     * Detect text in images
      */
-    DetectModerationLabelsResponse detectUnsafeImages(ManagedBlob blob);
+    TextDetectionResult detectText(ManagedBlob blob);
 
     /**
-     * Starts async detect of unsafe content for the provided blob
-     *
-     * @param blob a blob reference to a video
-     * @return JobId
+     * Detect faces in images
      */
-    String startDetectUnsafeImages(ManagedBlob blob);
+    LabelsResult detectFaces(ManagedBlob blob, Collection<String> attributes);
 
     /**
-     * Detect faces for the provided blob
+     * Recognize celebrities in images
      */
-    DetectFacesResponse detectFaces(ManagedBlob blob);
+    LabelsResult recognizeCelebrities(ManagedBlob blob);
 
-    /**
-     * Starts async detect of faces for the provided blob
-     *
-     * @param blob a blob reference to a video
-     * @return JobId
-     */
+    // -----------------------------------------------------------------------
+    // Legacy / AWS-specific methods kept for backward compatibility with
+    // existing enrichment providers. These will be phased out once providers
+    // are migrated to the abstraction DTOs entirely.
+    // -----------------------------------------------------------------------
+
+    /** Backward compatible alias for startLabelDetection */
+    default String startDetectLabels(ManagedBlob blob, float minConfidence) {
+        return startLabelDetection(blob, minConfidence);
+    }
+
+    /** Start async face detection on a video blob */
     String startDetectFaces(ManagedBlob blob);
 
-    /**
-     * Detect celebrities
-     */
-    RecognizeCelebritiesResponse detectCelebrities(ManagedBlob blob);
-
-    /**
-     * Starts async detect of celebrities for the provided blob
-     *
-     * @param blob a blob reference to a video
-     * @return JobId
-     */
+    /** Start async celebrity recognition on a video blob */
     String startDetectCelebrities(ManagedBlob blob);
 
-    /**
-     * Starts async detect of video segments for the provided blob
-     *
-     * @param blob a blob reference to a video
-     * @param segmentType segment type to detect
-     * @return JobId
-     */
+    /** Start async unsafe image (content moderation) detection on a video blob */
+    String startDetectUnsafeImages(ManagedBlob blob);
+
+    /** Start async segment detection (SHOT / TECHNICAL_CUE) on a video blob */
     String startVideoSegmentDetection(ManagedBlob blob, SegmentType segmentType);
 
-    /**
-     * @return the AWS client
-     */
-    public RekognitionClient getClient();
+    /** Synchronous face detection returning AWS SDK model (image use-case) */
+    DetectFacesResponse detectFaces(ManagedBlob blob);
+
+    /** Synchronous celebrity recognition returning AWS SDK model */
+    RecognizeCelebritiesResponse detectCelebrities(ManagedBlob blob);
+
+    /** Expose underlying client for legacy async polling code */
+    RekognitionClient getClient();
 }

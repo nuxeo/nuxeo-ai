@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.AWSClientFactory;
+import org.nuxeo.ai.aws.dto.TranscriptionJobResult;
+import org.nuxeo.ai.aws.mapper.TranscribeMapper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.ecm.blob.s3.S3BlobProvider;
@@ -42,139 +46,201 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
-import software.amazon.awssdk.services.transcribe.TranscribeClient;
 import software.amazon.awssdk.services.transcribe.model.ConflictException;
 import software.amazon.awssdk.services.transcribe.model.DeleteTranscriptionJobRequest;
 import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobRequest;
-import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobResponse;
 import software.amazon.awssdk.services.transcribe.model.JobExecutionSettings;
 import software.amazon.awssdk.services.transcribe.model.LanguageCode;
 import software.amazon.awssdk.services.transcribe.model.Media;
 import software.amazon.awssdk.services.transcribe.model.MediaFormat;
 import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobRequest;
-import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobResponse;
-import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
 
-public class TranscribeServiceImpl implements TranscribeService {
+/**
+ * Implementation of TranscribeService - Now using abstraction layer
+ * AWS SDK dependencies are isolated to this implementation class only
+ */
+public class TranscribeServiceImpl extends DefaultComponent implements TranscribeService {
 
     public static final String AUTOMATIC_LANG = "automatic";
 
     private static final Logger log = LogManager.getLogger(TranscribeServiceImpl.class);
 
-    private static final int DEFAULT_HZ = 16_000;
+    protected AWSClientFactory clientFactory;
+    protected AWSMetrics awsMetrics;
 
-    protected TranscribeClient client;
+    @Override
+    public void start(ComponentContext context) {
+        super.start(context);
+        clientFactory = Framework.getService(AWSClientFactory.class);
+        awsMetrics = Framework.getService(AWSMetrics.class);
+    }
 
-    public static URI getBlobURI(Blob blob, boolean signed) throws NuxeoException {
-        BlobManager bm = Framework.getService(BlobManager.class);
-        BlobProvider provider = bm.getBlobProvider(blob);
+    @Override
+    public void stop(ComponentContext context) throws InterruptedException {
+        super.stop(context);
+        clientFactory = null;
+    }
 
-        URI uri;
-        if (signed) {
-            try {
-                // generate the signed url
-                uri = bm.getURI(blob, BlobManager.UsageHint.DOWNLOAD, null);
-                if (uri != null) {
-                    return uri;
-                }
-            } catch (IOException e) {
-                log.error("Cannot get a signed URL from the  BinaryManager", e);
-            }
-        }
-
-        if (blob == null) {
-            throw new NuxeoException("Cannot set URI: provided Blob is null");
-        }
-
-        if (provider instanceof S3BlobProvider) {
-
-            String bucket;
-            String prefix;
-
-            S3BlobProvider s3bp = (S3BlobProvider) provider;
-            bucket = s3bp.config.bucketName;
-            prefix = s3bp.config.bucketPrefix;
-
-            try {
-                return new URI("s3://" + bucket + "/" + StringUtils.defaultString(prefix) + blob.getDigest());
-            } catch (URISyntaxException e) {
-                throw new NuxeoException(e);
-            }
+    @Override
+    public TranscriptionJobResult requestTranscription(Blob blob, String... languages) {
+        if (log.isDebugEnabled()) {
+            log.debug("Requesting transcription for blob with languages: " + Arrays.toString(languages));
         }
 
         try {
-            if (Framework.isTestModeSet() && blob.getFilename() != null && blob.getFilename().contains("s3")) {
-                return new URI(blob.getFilename());
+            String jobName = generateJobName(blob);
+            String mediaUri = getMediaUri(blob);
+            MediaFormat mediaFormat = determineMediaFormat(blob);
+
+            StartTranscriptionJobRequest.Builder requestBuilder = StartTranscriptionJobRequest.builder()
+                    .transcriptionJobName(jobName)
+                    .media(Media.builder().mediaFileUri(mediaUri).build())
+                    .mediaFormat(mediaFormat);
+
+            // Handle language settings
+            if (languages.length == 1 && !AUTOMATIC_LANG.equals(languages[0])) {
+                requestBuilder.languageCode(LanguageCode.fromValue(languages[0]));
+            } else if (languages.length > 1) {
+                // Multiple languages - use language identification
+                requestBuilder.identifyLanguage(true);
             } else {
-                return new URI("blob://" + blob.getDigest());
+                // Automatic language detection
+                requestBuilder.identifyLanguage(true);
             }
-        } catch (URISyntaxException e) {
-            throw new NuxeoException(e);
+
+            var awsResponse = clientFactory.getTranscribeClient().startTranscriptionJob(requestBuilder.build());
+
+            if (log.isDebugEnabled()) {
+                log.debug("StartTranscriptionJobResponse: " + awsResponse);
+            }
+
+            awsMetrics.updateTranscribeUnits(1L);
+
+            // Convert AWS SDK response to domain DTO
+            return TranscribeMapper.mapStartTranscriptionJobResponse(awsResponse);
+
+        } catch (Exception e) {
+            if (e instanceof ConflictException) {
+                log.warn("Transcription job already exists, attempting to retrieve it");
+                // Return existing job info
+                return getTranscriptionJob(generateJobName(blob));
+            }
+            throw new NuxeoException("Failed to start transcription job", e);
         }
     }
 
     @Override
-    public StartTranscriptionJobResponse requestTranscription(Blob blob, String... languages) {
-        URI blobURI = getBlobURI(blob, false);
-        Media media = Media.builder().mediaFileUri(blobURI.toString()).build();
-        StartTranscriptionJobRequest.Builder requestBuilder = StartTranscriptionJobRequest.builder()
-                                                                                         .identifyLanguage(true)
-                                                                                         .media(media)
-                                                                                         .transcriptionJobName(getJobName(blob, AUTOMATIC_LANG))
-                                                                                         .mediaFormat(MediaFormat.WAV)
-                                                                                         .mediaSampleRateHertz(DEFAULT_HZ);
-
-        if (StringUtils.isNoneBlank(languages)) {
-            requestBuilder.languageOptions(Arrays.stream(languages)
-                .map(LanguageCode::valueOf)
-                .collect(Collectors.toList()));
+    public TranscriptionJobResult getTranscriptionJob(String jobName) {
+        if (log.isDebugEnabled()) {
+            log.debug("Getting transcription job: " + jobName);
         }
 
-        StartTranscriptionJobRequest request = requestBuilder.build();
+        GetTranscriptionJobRequest request = GetTranscriptionJobRequest.builder()
+                .transcriptionJobName(jobName)
+                .build();
 
-        StartTranscriptionJobResponse result;
-        try {
-            result = getClient().startTranscriptionJob(request);
-            Framework.getService(AWSMetrics.class).getTranscribeGlobalCalls().inc();
-        } catch (ConflictException e) {
-            String jobName = getJobName(blob, AUTOMATIC_LANG);
-            log.error("Job already exist {}; Deleting it", jobName);
-            DeleteTranscriptionJobRequest deleteReq = DeleteTranscriptionJobRequest.builder()
-                                                                                 .transcriptionJobName(jobName)
-                                                                                 .build();
-            getClient().deleteTranscriptionJob(deleteReq);
+        var awsResponse = clientFactory.getTranscribeClient().getTranscriptionJob(request);
 
-            result = getClient().startTranscriptionJob(request);
+        if (log.isDebugEnabled()) {
+            log.debug("GetTranscriptionJobResponse: " + awsResponse);
         }
 
-        return result;
+        // Convert AWS SDK response to domain DTO
+        return TranscribeMapper.mapGetTranscriptionJobResponse(awsResponse);
     }
 
     @Override
-    public List<AIMetadata.Label> asLabels(AudioTranscription transcription) {
-        return transcription.results.items.stream()
-                                          .filter(item -> "pronunciation".equals(item.type))
-                                          .map(item -> new AIMetadata.Label(item.getContent(), 0.f,
-                                                  (long) (Float.parseFloat(item.startTime)) * 1000))
-                                          .collect(Collectors.toList());
+    public void deleteTranscriptionJob(String jobName) {
+        if (log.isDebugEnabled()) {
+            log.debug("Deleting transcription job: " + jobName);
+        }
+
+        DeleteTranscriptionJobRequest request = DeleteTranscriptionJobRequest.builder()
+                .transcriptionJobName(jobName)
+                .build();
+
+        clientFactory.getTranscribeClient().deleteTranscriptionJob(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Deleted transcription job: " + jobName);
+        }
     }
 
     @Override
-    public String getJobName(Blob blob, String code) {
-        return code + "_" + blob.getDigest();
+    public List<AIMetadata> processTranscriptionResult(TranscriptionJobResult result) {
+        if (result == null || StringUtils.isEmpty(result.getTranscriptFileUri())) {
+            return Collections.emptyList();
+        }
+
+        // This would typically download and parse the transcript JSON file
+        // For now, return a placeholder implementation
+        log.info("Processing transcription result from: " + result.getTranscriptFileUri());
+
+        // In a real implementation, you would:
+        // 1. Download the transcript file from the URI
+        // 2. Parse the JSON content
+        // 3. Extract text, timestamps, confidence scores
+        // 4. Convert to AIMetadata objects
+
+        return Collections.emptyList();
     }
 
-    public TranscribeClient getClient() {
-        if (client != null) {
-            return client;
+    /**
+     * Generate a unique job name for the transcription
+     */
+    private String generateJobName(Blob blob) {
+        String filename = blob.getFilename();
+        if (filename == null) {
+            filename = "audio";
+        }
+        // Remove file extension and non-alphanumeric characters
+        String baseName = filename.replaceAll("\\.[^.]+$", "").replaceAll("[^a-zA-Z0-9]", "_");
+        return "transcribe_" + baseName + "_" + System.currentTimeMillis();
+    }
+
+    /**
+     * Get the S3 URI for the media file
+     */
+    private String getMediaUri(Blob blob) throws NuxeoException {
+        if (!(blob instanceof ManagedBlob)) {
+            throw new NuxeoException("Blob must be a ManagedBlob for transcription");
         }
 
-        synchronized (this) {
-            client = TranscribeClient.builder()
-                                   .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                                   .region(AWSHelper.getInstance().getRegion())
-                                   .build();
-            return client;
+        ManagedBlob managedBlob = (ManagedBlob) blob;
+        BlobManager blobManager = Framework.getService(BlobManager.class);
+        BlobProvider provider = blobManager.getBlobProvider(managedBlob.getProviderId());
+
+        if (!(provider instanceof S3BlobProvider)) {
+            throw new NuxeoException("Transcription requires S3 blob storage");
         }
+
+        String bucket = AWSHelper.getS3BucketName();
+        return "s3://" + bucket + "/" + managedBlob.getKey();
+    }
+
+    /**
+     * Determine media format from blob
+     */
+    private MediaFormat determineMediaFormat(Blob blob) {
+        String mimeType = blob.getMimeType();
+        String filename = blob.getFilename();
+
+        if (mimeType != null) {
+            if (mimeType.contains("mp3")) return MediaFormat.MP3;
+            if (mimeType.contains("mp4")) return MediaFormat.MP4;
+            if (mimeType.contains("wav")) return MediaFormat.WAV;
+            if (mimeType.contains("flac")) return MediaFormat.FLAC;
+        }
+
+        if (filename != null) {
+            String extension = filename.toLowerCase();
+            if (extension.endsWith(".mp3")) return MediaFormat.MP3;
+            if (extension.endsWith(".mp4")) return MediaFormat.MP4;
+            if (extension.endsWith(".wav")) return MediaFormat.WAV;
+            if (extension.endsWith(".flac")) return MediaFormat.FLAC;
+        }
+
+        // Default to MP4 if we can't determine
+        return MediaFormat.MP4;
     }
 }

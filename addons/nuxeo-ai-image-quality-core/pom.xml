@@ -20,6 +20,10 @@
       <artifactId>nuxeo-ai-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.nuxeo.ai</groupId>
+      <artifactId>nuxeo-ai-aws-core</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.nuxeo.ecm.core</groupId>
       <artifactId>nuxeo-core-api</artifactId>
     </dependency>

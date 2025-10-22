@@ -39,6 +39,7 @@ import org.nuxeo.runtime.api.Framework;
 import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesResponse;
 
 import net.jodah.failsafe.RetryPolicy;
+import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
 
 public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
@@ -62,6 +63,26 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
         maxSize = KEYPHRASE_MAX_SIZE;
     }
 
+    /**
+     * Processes the result of the call to AWS
+     */
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
+            KeyPhrasesResult result) {
+        List<AIMetadata.Label> labels = result.getKeyPhrases()
+                                              .stream()
+                                              .map(kp -> new AIMetadata.Label(kp.getText(), kp.getScore()))
+                                              .collect(Collectors.toList());
+        String raw = toJsonString(jg -> jg.writeObjectField(KEYPHRASE_KEY, result.getKeyPhrases()));
+
+        String rawKey = saveJsonAsRawBlob(raw);
+        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
+                                                                                        .withRawKey(rawKey)
+                                                                                        .withDocumentProperties(
+                                                                                                Collections.singleton(
+                                                                                                        xPath))
+                                                                                        .build());
+    }
+
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
@@ -72,36 +93,14 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
                             + prop.getValue().length());
                     continue;
                 }
-                DetectKeyPhrasesResponse result = Framework.getService(ComprehendService.class)
-                                                         .detectKeyPhrases(prop.getValue(), "en");
-                if (result != null && !result.keyPhrases().isEmpty()) {
+                KeyPhrasesResult result = Framework.getService(ComprehendService.class)
+                        .detectKeyPhrases(prop.getValue(), languageCode);
+                if (result != null && !result.getKeyPhrases().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
             return enriched;
         });
-    }
-
-    /**
-     * Processes the result of the call to AWS
-     */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            DetectKeyPhrasesResponse result) {
-        List<AIMetadata.Label> labels = result.keyPhrases()
-                                              .stream()
-                                              .map(kp -> new AIMetadata.Label(kp.text(), kp.score()))
-                                              .collect(Collectors.toList());
-        String raw = toJsonString(jg -> {
-            jg.writeObjectField(KEYPHRASE_KEY, result.keyPhrases());
-        });
-
-        String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
-                                                                                        .withRawKey(rawKey)
-                                                                                        .withDocumentProperties(
-                                                                                                Collections.singleton(
-                                                                                                        xPath))
-                                                                                        .build());
     }
 
     @Override

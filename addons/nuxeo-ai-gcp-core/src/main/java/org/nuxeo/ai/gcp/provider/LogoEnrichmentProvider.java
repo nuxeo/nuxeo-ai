@@ -64,8 +64,8 @@ public class LogoEnrichmentProvider extends AbstractTagProvider<EntityAnnotation
      */
     @Override
     protected AIMetadata.Tag newTag(EntityAnnotation annotation) {
-        AIMetadata.Box box = getBox(annotation.getBoundingPoly());
-        return new EnrichmentMetadata.Tag(annotation.getDescription(), kind, null, box, null, annotation.getScore());
+        return new AIMetadata.Tag(annotation.getDescription(), null, null, null, java.util.Collections.emptyList(),
+                annotation.getScore());
     }
 
     @Override

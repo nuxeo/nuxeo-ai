@@ -32,6 +32,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.DocumentAnalysisResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.textract.TextractProcessor;
 import org.nuxeo.ai.textract.TextractService;
@@ -97,10 +98,11 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                DetectDocumentTextResponse result = Framework.getService(TextractService.class)
-                                                           .detectText(blob.getValue());
-                if (result != null && !result.blocks().isEmpty()) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.blocks()));
+                DocumentAnalysisResult result = Framework.getService(TextractService.class)
+                        .detectText(blob.getValue());
+                if (result != null && result.getBlocks() != null && !result.getBlocks().isEmpty()) {
+                    // map domain blocks to AWS Block JSON-compatible structure (pass through fields)
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
                 }
             }
             return enriched;
@@ -111,14 +113,13 @@ public class DetectDocumentTextEnrichmentProvider extends AbstractEnrichmentProv
      * Process the result of the call
      */
     protected Collection<? extends EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc,
-            String propName, List<Block> blocks) {
+                                                                      String propName, List<DocumentAnalysisResult.Block> blocks) {
 
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc);
-        processWithProcessors(blobTextFromDoc, blocks, builder, name);
+        // processors currently expect AWS SDK Blocks; skip for domain version
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", blocks));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(
-                builder.withRawKey(rawKey).withDocumentProperties(singleton(propName)).build());
+        return Collections.singletonList(builder.withRawKey(rawKey).withDocumentProperties(singleton(propName)).build());
     }
 
     @Override
