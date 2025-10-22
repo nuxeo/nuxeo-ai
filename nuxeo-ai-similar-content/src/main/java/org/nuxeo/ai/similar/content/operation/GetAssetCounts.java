@@ -29,13 +29,13 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
+import org.nuxeo.ai.services.SearchAdapterService;
+import org.nuxeo.ai.services.SearchOptions;
+import org.nuxeo.ai.services.SearchSummary;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.search.SearchService;
-import org.nuxeo.ecm.core.search.SearchQuery;
-import org.nuxeo.ecm.core.search.SearchResponse;
 import org.nuxeo.runtime.api.Framework;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,9 +55,6 @@ public class GetAssetCounts {
 
     @Context
     protected SimilarContentService scs;
-
-    @Context
-    protected SearchService searchService;
 
     @OperationMethod
     public Response run() throws JsonProcessingException {
@@ -82,11 +79,11 @@ public class GetAssetCounts {
 
     protected long getTotalHits(String query) {
         try {
-            SearchQuery searchQuery = SearchQuery.builder(query, session).build();
-            SearchResponse response = searchService.search(searchQuery);
-            return response.getTotal();
+            SearchAdapterService adapter = Framework.getService(SearchAdapterService.class);
+            SearchSummary summary = adapter.search(session, query, SearchOptions.builder().limit(0).build());
+            return summary.getTotal();
         } catch (Exception e) {
-            // Fallback to a simple query if the search service fails
+            // Fallback to a simple query if the search adapter fails
             return session.query(query).size();
         }
     }

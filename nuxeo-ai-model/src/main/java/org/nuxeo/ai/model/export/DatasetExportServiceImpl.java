@@ -84,9 +84,9 @@ import org.nuxeo.ecm.core.query.sql.model.WhereClause;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.core.schema.types.Field;
-import org.nuxeo.ecm.core.search.SearchQuery;
-import org.nuxeo.ecm.core.search.SearchResponse;
-import org.nuxeo.ecm.core.search.SearchService;
+import org.nuxeo.ai.services.SearchAdapterService;
+import org.nuxeo.ai.services.SearchOptions;
+import org.nuxeo.ai.services.SearchSummary;
 import org.nuxeo.ecm.platform.query.api.Aggregate;
 import org.nuxeo.ecm.platform.query.api.Bucket;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
@@ -379,15 +379,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         List<Statistic> stats = new ArrayList<>();
 
-        // Use SearchService for basic document count statistics
+        // Use SearchAdapterService for basic document count statistics
         String countQuery = notNullNxql(nxql, featuresList);
-        SearchQuery searchQuery = SearchQuery.builder(countQuery, session)
-            .index("enhanced")
-            .limit(0)
-            .build();
-
-        SearchResponse response = Framework.getService(SearchService.class).search(searchQuery);
-        long total = response.getTotal();
+        SearchAdapterService adapter = Framework.getService(SearchAdapterService.class);
+        SearchSummary summary = adapter.search(session, countQuery, SearchOptions.builder()
+                                                                               .index(SearchAdapterService.DEFAULT_INDEX)
+                                                                               .limit(0)
+                                                                               .build());
+        long total = summary.getTotal();
 
         if (total < 1) {
             return emptyList();
@@ -395,7 +394,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
         // Add basic statistics
         stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, total));
-        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT, response.getHitsCount()));
+        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT, summary.getHitsCount()));
 
         return stats;
     }

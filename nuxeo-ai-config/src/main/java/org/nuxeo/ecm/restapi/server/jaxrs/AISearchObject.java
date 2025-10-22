@@ -41,9 +41,9 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.search.SearchQuery;
-import org.nuxeo.ecm.core.search.SearchResponse;
-import org.nuxeo.ecm.core.search.SearchService;
+import org.nuxeo.ai.services.SearchAdapterService;
+import org.nuxeo.ai.services.SearchOptions;
+import org.nuxeo.ai.services.SearchSummary;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.AbstractResource;
 import org.nuxeo.ecm.webengine.model.impl.ResourceTypeImpl;
@@ -155,26 +155,13 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
 
     protected String doSearchWithPayload(CoreSession session, String payload) {
         try {
-            // Use the new SearchService instead of direct OpenSearch client calls
-            // For now, convert the complex payload to a simple NXQL query
-            // In a full implementation, you might need to parse the payload and build appropriate NXQL
-
-            SearchService searchService = Framework.getService(SearchService.class);
-
-            // Basic audit query - this should be enhanced based on the payload content
+            SearchAdapterService adapter = Framework.getService(SearchAdapterService.class);
             String nxqlQuery = "SELECT * FROM LogEntry ORDER BY eventDate DESC";
-
-            SearchQuery query = SearchQuery.builder(nxqlQuery, session)
-                .index("enhanced") // Use enhanced index if available
-                .limit(100) // Reasonable default limit
-                .build();
-
-            SearchResponse response = searchService.search(query);
-
-            // Return a basic JSON response compatible with the expected format
-            return String.format("{\"total\": %d, \"hits\": %d}",
-                response.getTotal(), response.getHitsCount());
-
+            SearchSummary summary = adapter.search(session, nxqlQuery, SearchOptions.builder()
+                                                                                   .index(SearchAdapterService.DEFAULT_INDEX)
+                                                                                   .limit(100)
+                                                                                   .build());
+            return String.format("{\"total\": %d, \"hits\": %d}", summary.getTotal(), summary.getHitsCount());
         } catch (Exception e) {
             log.error("Error when trying to execute search request on audit index", e);
             return null;
