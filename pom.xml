@@ -20,6 +20,11 @@
     <nuxeo.target.version>2025.7</nuxeo.target.version>
     <wiremock.version>2.18.0</wiremock.version>
     <nuxeo.java.client.version>3.13.0</nuxeo.java.client.version>
+    <nuxeo.ai.version>4.0.3-SNAPSHOT</nuxeo.ai.version>
+    <dropwizard.version>4.2.37</dropwizard.version>
+    <nuxeo.target.version>2023.*</nuxeo.target.version>
+    <wiremock.version>2.27.2</wiremock.version>
+    <nuxeo.java.client.version>3.14.0</nuxeo.java.client.version>
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
     <nuxeo.webui.version>3.0.6</nuxeo.webui.version>
     <nuxeo.insight-demos.version>1.3.2-11</nuxeo.insight-demos.version>
@@ -29,6 +34,8 @@
     <google.protobuf.version>4.29.3</google.protobuf.version>
     <gcp.version>26.62.0</gcp.version>
     <aws.sdk.version>2.26.0</aws.sdk.version>
+    <grpc-netty.version>1.76.0</grpc-netty.version>
+    <google.protobuf.version>4.33.0</google.protobuf.version>
   </properties>
 
   <modules>
@@ -45,8 +52,8 @@
 
   <repositories>
     <repository>
-      <id>maven-public</id>
-      <url>https://packages.nuxeo.com/repository/maven-public</url>
+      <id>maven-public-lts</id>
+      <url>https://packages.nuxeo.com/repository/maven-public-lts</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -55,42 +62,10 @@
         <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
-    <repository>
-      <id>maven-public-releases</id>
-      <url>https://packages.nuxeo.com/repository/maven-public-releases</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>nuxeo-studio</id>
-      <url>https://connect.nuxeo.com/nuxeo/site/studio/maven</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
+    <!-- Still needed for parent of org.nuxeo.ai:nuxeo-jwt-authenticator-core -->
     <repository>
       <id>maven-internal</id>
       <url>https://packages.nuxeo.com/repository/maven-internal</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>maven-team-platform-private</id>
-      <url>https://packages.nuxeo.com/repository/maven-team-platform-private</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -103,19 +78,8 @@
 
   <pluginRepositories>
     <pluginRepository>
-      <id>maven-public</id>
-      <url>https://packages.nuxeo.com/repository/maven-public</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
-      <id>maven-internal</id>
-      <url>https://packages.nuxeo.com/repository/maven-internal</url>
+      <id>maven-public-lts</id>
+      <url>https://packages.nuxeo.com/repository/maven-public-lts</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -327,7 +291,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
-          <version>3.2.0</version>
+          <version>3.5.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
