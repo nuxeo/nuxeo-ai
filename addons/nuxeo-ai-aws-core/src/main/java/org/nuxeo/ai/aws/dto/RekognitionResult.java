@@ -17,69 +17,26 @@ import java.util.List;
  */
 public class RekognitionResult {
 
-    public static class Label {
-        private final String name;
-        private final float confidence;
-        private final List<String> categories;
-
-        public Label(String name, float confidence, List<String> categories) {
-            this.name = name;
-            this.confidence = confidence;
-            this.categories = categories;
-        }
-
+    public static record Label(String name, float confidence, List<String> categories) {
         public String getName() { return name; }
         public float getConfidence() { return confidence; }
         public List<String> getCategories() { return categories; }
     }
 
-    public static class Face {
-        private final float confidence;
-        private final BoundingBox boundingBox;
-        private final FaceAttributes attributes;
-
-        public Face(float confidence, BoundingBox boundingBox, FaceAttributes attributes) {
-            this.confidence = confidence;
-            this.boundingBox = boundingBox;
-            this.attributes = attributes;
-        }
-
+    public static record Face(float confidence, BoundingBox boundingBox, FaceAttributes attributes) {
         public float getConfidence() { return confidence; }
         public BoundingBox getBoundingBox() { return boundingBox; }
         public FaceAttributes getAttributes() { return attributes; }
     }
 
-    public static class BoundingBox {
-        private final float left, top, width, height;
-
-        public BoundingBox(float left, float top, float width, float height) {
-            this.left = left;
-            this.top = top;
-            this.width = width;
-            this.height = height;
-        }
-
+    public static record BoundingBox(float left, float top, float width, float height) {
         public float getLeft() { return left; }
         public float getTop() { return top; }
         public float getWidth() { return width; }
         public float getHeight() { return height; }
     }
 
-    public static class FaceAttributes {
-        private final Integer estimatedAge;
-        private final String gender;
-        private final boolean smile;
-        private final boolean eyeglasses;
-        private final boolean sunglasses;
-
-        public FaceAttributes(Integer estimatedAge, String gender, boolean smile, boolean eyeglasses, boolean sunglasses) {
-            this.estimatedAge = estimatedAge;
-            this.gender = gender;
-            this.smile = smile;
-            this.eyeglasses = eyeglasses;
-            this.sunglasses = sunglasses;
-        }
-
+    public static record FaceAttributes(Integer estimatedAge, String gender, boolean smile, boolean eyeglasses, boolean sunglasses) {
         public Integer getEstimatedAge() { return estimatedAge; }
         public String getGender() { return gender; }
         public boolean isSmile() { return smile; }
@@ -87,54 +44,20 @@ public class RekognitionResult {
         public boolean isSunglasses() { return sunglasses; }
     }
 
-    public static class TextDetection {
-        private final String detectedText;
-        private final String type;
-        private final float confidence;
-        private final BoundingBox boundingBox;
-
-        public TextDetection(String detectedText, String type, float confidence, BoundingBox boundingBox) {
-            this.detectedText = detectedText;
-            this.type = type;
-            this.confidence = confidence;
-            this.boundingBox = boundingBox;
-        }
-
+    public static record TextDetection(String detectedText, String type, float confidence, BoundingBox boundingBox) {
         public String getDetectedText() { return detectedText; }
         public String getType() { return type; }
         public float getConfidence() { return confidence; }
         public BoundingBox getBoundingBox() { return boundingBox; }
     }
 
-    public static class ModerationLabel {
-        private final String name;
-        private final float confidence;
-        private final String parentName;
-
-        public ModerationLabel(String name, float confidence, String parentName) {
-            this.name = name;
-            this.confidence = confidence;
-            this.parentName = parentName;
-        }
-
+    public static record ModerationLabel(String name, float confidence, String parentName) {
         public String getName() { return name; }
         public float getConfidence() { return confidence; }
         public String getParentName() { return parentName; }
     }
 
-    public static class Celebrity {
-        private final String name;
-        private final float confidence;
-        private final List<String> urls;
-        private final BoundingBox boundingBox;
-
-        public Celebrity(String name, float confidence, List<String> urls, BoundingBox boundingBox) {
-            this.name = name;
-            this.confidence = confidence;
-            this.urls = urls;
-            this.boundingBox = boundingBox;
-        }
-
+    public static record Celebrity(String name, float confidence, List<String> urls, BoundingBox boundingBox) {
         public String getName() { return name; }
         public float getConfidence() { return confidence; }
         public List<String> getUrls() { return urls; }

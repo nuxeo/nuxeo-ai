@@ -20,30 +20,19 @@
 package org.nuxeo.ai;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.nuxeo.ecm.restapi.server.jaxrs.AISearchObject.EVENT_IDS;
-import static org.nuxeo.ecm.restapi.server.jaxrs.AISearchObject.MODEL_NAME;
+import static org.nuxeo.ecm.restapi.server.AISearchObject.EVENT_IDS;
+import static org.nuxeo.ecm.restapi.server.AISearchObject.MODEL_NAME;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-import jakarta.ws.rs.core.Response;
+
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.ecm.restapi.server.jaxrs.AISearchObject;
-import org.nuxeo.ecm.restapi.test.RestServerFeature;
-import org.nuxeo.runtime.test.runner.Deploy;
-import org.nuxeo.runtime.test.runner.Features;
-import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.ecm.restapi.server.AISearchObject;
 
 import freemarker.template.TemplateException;
 
-@RunWith(FeaturesRunner.class)
-@Features({ RestServerFeature.class, EnrichmentTestFeature.class, PlatformFeature.class })
-@Deploy({ "org.nuxeo.ai.ai-core", "org.nuxeo.ai.ai-config", "org.nuxeo.ai.ai-model" })
-@Deploy({ "org.nuxeo.ai.ai-config.test:test-es-contrib.xml", "org.nuxeo.elasticsearch.http.readonly" })
 public class TestAISearchREST {
 
     @Test

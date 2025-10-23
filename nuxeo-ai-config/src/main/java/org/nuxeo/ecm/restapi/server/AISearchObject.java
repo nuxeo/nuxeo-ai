@@ -16,9 +16,8 @@
  * Contributors:
  *     Nuxeo
  */
-package org.nuxeo.ecm.restapi.server.jaxrs;
+package org.nuxeo.ecm.restapi.server;
 
-import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
 import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
 
 import java.io.IOException;
@@ -166,13 +165,6 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
             log.error("Error when trying to execute search request on audit index", e);
             return null;
         }
-    }
-
-    protected String getElasticsearchBaseUrl() {
-        if (esBaseUrl == null) {
-            esBaseUrl = Framework.getProperty(ES_BASE_URL_PROPERTY, DEFAULT_ES_BASE_URL);
-        }
-        return esBaseUrl;
     }
 
     protected Configuration initFreeMarker() {

@@ -43,6 +43,7 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.io.upload.batch.BatchManager;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
@@ -52,7 +53,6 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class })
-@Deploy("org.nuxeo.ecm.platform.tag")
 @Deploy("org.nuxeo.ai.similar-content")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
@@ -71,6 +71,9 @@ public class FindSimilarTest {
 
     @Inject
     protected AutomationService automationService;
+
+    @Inject
+    protected BatchManager batchManager;
 
     @Test
     public void shouldRunOperationOnDocument() throws OperationException {
@@ -109,4 +112,26 @@ public class FindSimilarTest {
         assertThat(response).isNotEmpty();
     }
 
+    @Test
+    public void shouldRunOperationOnBlobFromBatchUpload() throws OperationException, IOException {
+        Blob textBlob = Blobs.createBlob("this is a blob");
+        DocumentModel fileDoc = session.createDocumentModel("/", "TestFile", "File");
+        fileDoc.setPropertyValue(FILE_CONTENT, (Serializable) textBlob);
+        fileDoc = session.createDocument(fileDoc);
+        session.save();
+
+        String url = "/api/v1/ai/dedup/mockTestProject/find?distance=0&xpath=file:content";
+        stubFor(WireMock.post(url).willReturn(okJson("[\"" + fileDoc.getId() + "\"]")));
+
+        String batchId = batchManager.initBatch();
+        batchManager.addBlob(batchId, "0", textBlob, textBlob.getFilename(), textBlob.getEncoding());
+
+        // void input
+        OperationContext ctx = new OperationContext(session);
+        ctx.put("batchId", batchId);
+        ctx.put("fileId", "0");
+        @SuppressWarnings("unchecked")
+        List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
+        assertThat(response).isNotEmpty();
+    }
 }

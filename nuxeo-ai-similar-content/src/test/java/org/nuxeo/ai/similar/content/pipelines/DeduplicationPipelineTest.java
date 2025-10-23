@@ -61,7 +61,6 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.matching.EqualToPattern;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, CoreBulkFeature.class })
@@ -132,7 +131,7 @@ public class DeduplicationPipelineTest {
                 + "}");
 
         stubFor(WireMock.get("/api/v1/ai/dedup/mockTestProject/similars")
-                        .withHeader(SCROLL_ID_HEADER, StringValuePattern.ABSENT)
+                        .withHeader(SCROLL_ID_HEADER, WireMock.absent())
                         .willReturn(okJson(response.toString())));
         // Second stub is intended for mimicking the end of the scroller
         String emptyResponse = "{\n" //

@@ -114,7 +114,7 @@ jobs:
       - name: Build with Maven
         run: mvn install -fae -B -DskipTests
       - name: Run Tests with Maven
-        run: mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
+        run: mvn install --fail-never -nsu -B -Dnuxeo.test.search=opensearch1
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1

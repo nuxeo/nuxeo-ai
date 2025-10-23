@@ -50,8 +50,12 @@ public class EnrichmentTestFeature implements RunnerFeature {
 
     @Override
     public void beforeRun(FeaturesRunner runner) throws Exception {
+        // Runtime not yet initialized here; use system properties so they are picked up when runtime starts.
         Framework.getProperties().put(AUTOFILL_DEFAULT_VALUE, "0.2");
         Framework.getProperties().put(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
+        //System.setProperty(AUTOFILL_DEFAULT_VALUE, "0.2");
+        //System.setProperty(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
+        //System.setProperty("nuxeo.audit.storage", "sql"); // ensure SQL audit backend is selected for tests
     }
 
     /**

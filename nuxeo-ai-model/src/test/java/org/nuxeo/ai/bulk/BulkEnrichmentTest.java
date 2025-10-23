@@ -54,6 +54,7 @@ import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.sdk.objects.PropertyType;
+import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -64,7 +65,10 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
+import org.nuxeo.ecm.core.search.SearchService;
+import org.nuxeo.ecm.core.search.SearchQuery;
+import org.nuxeo.ecm.core.search.SearchResponse;
+import org.nuxeo.ecm.core.test.CoreSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
@@ -78,15 +82,14 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class })
+@Features({ EnrichmentTestFeature.class, AutomationFeature .class, CoreBulkFeature.class, CoreSearchFeature.class})
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
-//@Deploy("org.nuxeo.ecm.platform.audit.api")
+@Deploy("org.nuxeo.ecm.automation.core")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy({ "org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml", "org.nuxeo.ai.ai-model:OSGI-INF/bulk-test.xml" })
 @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
-@Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
 public class BulkEnrichmentTest {
 
@@ -110,6 +113,9 @@ public class BulkEnrichmentTest {
     @Inject
     protected TransactionalFeature txFeature;
 
+    @Inject
+    protected SearchService searchService;
+
 
     protected static final Pattern VALID_LOG_NAME_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_\\-]*");
 
@@ -131,7 +137,7 @@ public class BulkEnrichmentTest {
             if (i % 5 == 0) {
                 doc.setPropertyValue("dc:language", "en" + i);
             }
-            doc = session.createDocument(doc);
+            session.createDocument(doc);
         }
 
         txFeature.nextTransaction();
@@ -231,7 +237,8 @@ public class BulkEnrichmentTest {
         String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
                 testRoot);
-        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql).user(
+        // use non-deprecated BulkCommand builder signature with principal directly
+        BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
@@ -260,13 +267,10 @@ public class BulkEnrichmentTest {
         session.saveDocument(workingDoc);
         txFeature.nextTransaction();
 
-        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql).user(
-                session.getPrincipal().getName())
-                                                                                                   .repository(
-                                                                                                           session.getRepositoryName())
-                                                                                                   .param(PARAM_MODEL,
-                                                                                                           "descBulkModel")
-                                                                                                   .build();
+        BulkCommand removed = new BulkCommand.Builder(BulkRemoveEnrichmentAction.ACTION_NAME, nxql,
+                session.getPrincipal().getName()).repository(session.getRepositoryName())
+                                                 .param(PARAM_MODEL, "descBulkModel")
+                                                 .build();
         submitAndAssert(removed);
 
         txFeature.nextTransaction();
@@ -308,7 +312,9 @@ public class BulkEnrichmentTest {
         waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
         txFeature.nextTransaction();
 
-        DocumentModelList someDoc = session.query(nxql);
+        // replaced session.query(nxql) with SearchService usage
+        SearchResponse allResponse = searchService.search(SearchQuery.builder(nxql, session).limit(NUM_OF_DOCS).build());
+        DocumentModelList someDoc = allResponse.loadDocuments(session);
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);
 
@@ -338,8 +344,9 @@ public class BulkEnrichmentTest {
     }
 
     protected List<DocumentModel> getSomeDocuments(String nxql) {
+        //SearchResponse response = searchService.search(SearchQuery.builder(nxql, session).limit(NUM_OF_DOCS).build());
+        //DocumentModelList enriched = response.loadDocuments(session);
         DocumentModelList enriched = session.query(nxql, 20);
-        // Choose some random documents and confirm they are enriched.
         List<DocumentModel> docs = new ArrayList<>();
         docs.add(enriched.get(14));
         docs.add(enriched.get(1));

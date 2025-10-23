@@ -50,7 +50,6 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, CoreBulkFeature.class })
-@Deploy("org.nuxeo.ecm.platform.tag")
 @Deploy("org.nuxeo.ai.similar-content")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")

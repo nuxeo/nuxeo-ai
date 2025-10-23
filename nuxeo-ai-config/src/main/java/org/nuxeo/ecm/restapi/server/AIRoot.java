@@ -16,7 +16,7 @@
  * Contributors:
  *     Nuxeo
  */
-package org.nuxeo.ecm.restapi.server.jaxrs;
+package org.nuxeo.ecm.restapi.server;
 
 import static org.nuxeo.ai.AIConstants.INSIGHT_PREFIX;
 import static org.nuxeo.ai.AIConstants.LIBRARIANS_GROUP_SUFFIX;

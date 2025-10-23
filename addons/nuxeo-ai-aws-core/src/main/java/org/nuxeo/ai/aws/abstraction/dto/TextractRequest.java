@@ -16,49 +16,18 @@ import java.util.List;
  */
 public class TextractRequest {
 
-    public static class DetectDocumentText {
-        private final byte[] documentData;
-        private final String s3Bucket;
-        private final String s3Key;
-
-        public DetectDocumentText(byte[] documentData) {
-            this.documentData = documentData;
-            this.s3Bucket = null;
-            this.s3Key = null;
-        }
-
-        public DetectDocumentText(String s3Bucket, String s3Key) {
-            this.documentData = null;
-            this.s3Bucket = s3Bucket;
-            this.s3Key = s3Key;
-        }
-
+    public static record DetectDocumentText(byte[] documentData, String s3Bucket, String s3Key) {
+        public DetectDocumentText(byte[] documentData) { this(documentData, null, null); }
+        public DetectDocumentText(String s3Bucket, String s3Key) { this(null, s3Bucket, s3Key); }
         public byte[] getDocumentData() { return documentData; }
         public String getS3Bucket() { return s3Bucket; }
         public String getS3Key() { return s3Key; }
         public boolean isS3Reference() { return s3Bucket != null && s3Key != null; }
     }
 
-    public static class AnalyzeDocument {
-        private final byte[] documentData;
-        private final String s3Bucket;
-        private final String s3Key;
-        private final List<String> featureTypes;
-
-        public AnalyzeDocument(byte[] documentData, List<String> featureTypes) {
-            this.documentData = documentData;
-            this.s3Bucket = null;
-            this.s3Key = null;
-            this.featureTypes = featureTypes;
-        }
-
-        public AnalyzeDocument(String s3Bucket, String s3Key, List<String> featureTypes) {
-            this.documentData = null;
-            this.s3Bucket = s3Bucket;
-            this.s3Key = s3Key;
-            this.featureTypes = featureTypes;
-        }
-
+    public static record AnalyzeDocument(byte[] documentData, String s3Bucket, String s3Key, List<String> featureTypes) {
+        public AnalyzeDocument(byte[] documentData, List<String> featureTypes) { this(documentData, null, null, featureTypes); }
+        public AnalyzeDocument(String s3Bucket, String s3Key, List<String> featureTypes) { this(null, s3Bucket, s3Key, featureTypes); }
         public byte[] getDocumentData() { return documentData; }
         public String getS3Bucket() { return s3Bucket; }
         public String getS3Key() { return s3Key; }

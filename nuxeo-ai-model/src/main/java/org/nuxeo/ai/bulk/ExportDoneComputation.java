@@ -71,7 +71,13 @@ public class ExportDoneComputation extends AbstractComputation {
 
             AuditBackend logger = Framework.getService(AuditBackend.class);
             if (logger != null) {
-                LogEntry entry = LogEntry.builder(EXPORT_DONE_EVENT, new Date())
+                Instant endTime = status.getProcessingEndTime();
+                Date eventDate = new Date();
+                if (endTime != null) {
+                    long endMs = endTime.toEpochMilli();
+                    eventDate = new Date(endMs);
+                }
+                LogEntry entry = LogEntry.builder(EXPORT_DONE_EVENT, eventDate)
                                          .category(EXPORT_ACTION_NAME)
                                          .comment(message.getFormattedMessage())
                                          .build();

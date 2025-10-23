@@ -107,4 +107,8 @@ public interface DatasetExportService {
      * @return DatasetExport {@link DocumentModel}
      */
     DocumentModel getCorpusOfBatch(CoreSession session, String exportJobId, String batchId);
+
+    List<String> getRunningExports();
+
+    void markExportAsRunning(String id);
 }

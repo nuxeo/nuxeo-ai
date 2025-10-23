@@ -9,34 +9,14 @@
  */
 package org.nuxeo.ai.aws.abstraction.dto;
 
-import java.util.List;
-
 /**
  * AWS SDK-independent request DTOs for Transcribe service.
  */
 public class TranscribeRequest {
 
-    public static class StartTranscription {
-        private final String jobName;
-        private final String mediaFileUri;
-        private final String mediaFormat;
-        private final String languageCode;
-        private final String outputBucketName;
-        private final boolean enableSpeakerLabels;
-        private final int maxSpeakerLabels;
-
-        public StartTranscription(String jobName, String mediaFileUri, String mediaFormat,
-                                String languageCode, String outputBucketName,
-                                boolean enableSpeakerLabels, int maxSpeakerLabels) {
-            this.jobName = jobName;
-            this.mediaFileUri = mediaFileUri;
-            this.mediaFormat = mediaFormat;
-            this.languageCode = languageCode;
-            this.outputBucketName = outputBucketName;
-            this.enableSpeakerLabels = enableSpeakerLabels;
-            this.maxSpeakerLabels = maxSpeakerLabels;
-        }
-
+    public static record StartTranscription(String jobName, String mediaFileUri, String mediaFormat,
+                                             String languageCode, String outputBucketName,
+                                             boolean enableSpeakerLabels, int maxSpeakerLabels) {
         public String getJobName() { return jobName; }
         public String getMediaFileUri() { return mediaFileUri; }
         public String getMediaFormat() { return mediaFormat; }
@@ -46,23 +26,11 @@ public class TranscribeRequest {
         public int getMaxSpeakerLabels() { return maxSpeakerLabels; }
     }
 
-    public static class GetTranscriptionJob {
-        private final String jobName;
-
-        public GetTranscriptionJob(String jobName) {
-            this.jobName = jobName;
-        }
-
+    public static record GetTranscriptionJob(String jobName) {
         public String getJobName() { return jobName; }
     }
 
-    public static class DeleteTranscriptionJob {
-        private final String jobName;
-
-        public DeleteTranscriptionJob(String jobName) {
-            this.jobName = jobName;
-        }
-
+    public static record DeleteTranscriptionJob(String jobName) {
         public String getJobName() { return jobName; }
     }
 }

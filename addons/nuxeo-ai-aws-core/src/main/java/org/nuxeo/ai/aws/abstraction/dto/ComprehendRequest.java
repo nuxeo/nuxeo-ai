@@ -15,41 +15,17 @@ package org.nuxeo.ai.aws.abstraction.dto;
  */
 public class ComprehendRequest {
 
-    public static class DetectSentiment {
-        private final String text;
-        private final String languageCode;
-
-        public DetectSentiment(String text, String languageCode) {
-            this.text = text;
-            this.languageCode = languageCode;
-        }
-
+    public static record DetectSentiment(String text, String languageCode) {
         public String getText() { return text; }
         public String getLanguageCode() { return languageCode; }
     }
 
-    public static class DetectEntities {
-        private final String text;
-        private final String languageCode;
-
-        public DetectEntities(String text, String languageCode) {
-            this.text = text;
-            this.languageCode = languageCode;
-        }
-
+    public static record DetectEntities(String text, String languageCode) {
         public String getText() { return text; }
         public String getLanguageCode() { return languageCode; }
     }
 
-    public static class DetectKeyPhrases {
-        private final String text;
-        private final String languageCode;
-
-        public DetectKeyPhrases(String text, String languageCode) {
-            this.text = text;
-            this.languageCode = languageCode;
-        }
-
+    public static record DetectKeyPhrases(String text, String languageCode) {
         public String getText() { return text; }
         public String getLanguageCode() { return languageCode; }
     }

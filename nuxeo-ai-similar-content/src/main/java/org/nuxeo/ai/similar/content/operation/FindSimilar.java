@@ -37,6 +37,7 @@ import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
+import org.nuxeo.ecm.core.io.upload.batch.BatchManager;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -80,14 +81,8 @@ public class FindSimilar {
 
     @OperationMethod
     public List<DocumentModel> run() throws OperationException, IOException {
-        TransientStoreService transientStoreService = Framework.getService(TransientStoreService.class);
-        // Use getBlobs() method which returns List<Blob> and then get the specific blob by index
-        List<Blob> blobs = transientStoreService.getStore("default").getBlobs(batchId);
-        int fileIndex = Integer.parseInt(fileId);
-        if (blobs == null || blobs.isEmpty() || fileIndex >= blobs.size()) {
-            throw new OperationException("No blob found for batchId: " + batchId + " and fileId: " + fileId);
-        }
-        Blob blob = blobs.get(fileIndex);
+        BatchManager batchManager = Framework.getService(BatchManager.class);
+        Blob blob = batchManager.getBlob(batchId, fileId);
         return this.run(blob);
     }
 

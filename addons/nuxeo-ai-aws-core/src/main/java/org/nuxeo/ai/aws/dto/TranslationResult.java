@@ -20,51 +20,9 @@ import java.util.Objects;
 /**
  * Domain-specific DTO for AWS Translate results.
  */
-public class TranslationResult {
-
-    private final String translatedText;
-    private final String sourceLanguageCode;
-    private final String targetLanguageCode;
-
-    public TranslationResult(String translatedText, String sourceLanguageCode, String targetLanguageCode) {
-        this.translatedText = translatedText;
-        this.sourceLanguageCode = sourceLanguageCode;
-        this.targetLanguageCode = targetLanguageCode;
-    }
-
-    public String getTranslatedText() {
-        return translatedText;
-    }
-
-    public String getSourceLanguageCode() {
-        return sourceLanguageCode;
-    }
-
-    public String getTargetLanguageCode() {
-        return targetLanguageCode;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TranslationResult that = (TranslationResult) o;
-        return Objects.equals(translatedText, that.translatedText) &&
-               Objects.equals(sourceLanguageCode, that.sourceLanguageCode) &&
-               Objects.equals(targetLanguageCode, that.targetLanguageCode);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(translatedText, sourceLanguageCode, targetLanguageCode);
-    }
-
-    @Override
-    public String toString() {
-        return "TranslationResult{" +
-                "translatedText='" + translatedText + '\'' +
-                ", sourceLanguageCode='" + sourceLanguageCode + '\'' +
-                ", targetLanguageCode='" + targetLanguageCode + '\'' +
-                '}';
-    }
+public record TranslationResult(String translatedText, String sourceLanguageCode, String targetLanguageCode) {
+    public String getTranslatedText() { return translatedText; }
+    public String getSourceLanguageCode() { return sourceLanguageCode; }
+    public String getTargetLanguageCode() { return targetLanguageCode; }
+    @Override public String toString() { return "TranslationResult{" + "translatedText='" + translatedText + '\'' + ", sourceLanguageCode='" + sourceLanguageCode + '\'' + ", targetLanguageCode='" + targetLanguageCode + '\'' + '}'; }
 }

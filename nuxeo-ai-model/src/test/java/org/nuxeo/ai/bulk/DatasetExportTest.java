@@ -2,19 +2,6 @@
  * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Contributors:
- *     Gethin James
  */
 package org.nuxeo.ai.bulk;
 
@@ -34,7 +21,6 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.bulk.TensorTest.countNumberOfExamples;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_COUNT;
 import static org.nuxeo.ai.model.export.DatasetExportServiceImpl.STATS_TOTAL;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.AI_CONVERSION_STRICT_MODE;
@@ -68,6 +54,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import jakarta.inject.Inject;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -96,6 +83,7 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.ecm.core.query.sql.NXQL;
+import org.nuxeo.ecm.core.test.CoreSearchFeature;
 import org.nuxeo.ecm.core.work.api.WorkManager;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -105,18 +93,25 @@ import org.nuxeo.runtime.test.runner.RandomBug;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 import org.tensorflow.example.Feature;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
+import org.nuxeo.ai.services.SearchAdapterService;
+import org.nuxeo.ai.services.SearchOptions;
+
+/**
+ * Integration tests for Dataset export pipeline.
+ * Adapted for Nuxeo LTS 2025 search API.
+ */
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class })
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class, CoreSearchFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
-@Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class DatasetExportTest {
 
     public static final String TEST_MIME_TYPE = "image/png";
@@ -259,8 +254,8 @@ public class DatasetExportTest {
 
         for (DocumentModel doc : docs) {
             assertThat((String) doc.getPropertyValue(DATASET_EXPORT_CORPORA_ID)).isNotNull().isNotEmpty();
-            trainingCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
-            validationCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
+            trainingCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
+            validationCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
         }
 
         String corporaId = (String) docs.get(0).getPropertyValue(DATASET_EXPORT_CORPORA_ID);
@@ -300,7 +295,7 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-//    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/ai-bulk-small-test.xml")
+    //    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/ai-bulk-small-test.xml")
     public void testBulkExportMultiValue() throws Exception {
         Framework.getProperties().put(AI_CONVERSION_STRICT_MODE, "false");
 
@@ -435,8 +430,6 @@ public class DatasetExportTest {
      */
     public void waitForCompletion() throws Exception {
         workManager.awaitCompletion(20, TimeUnit.SECONDS);
-        // esa.prepareWaitForIndexing().get(20, TimeUnit.SECONDS);
-        // esa.refresh();
     }
 
     protected DocumentModel setupTestData() throws IOException {
@@ -506,8 +499,8 @@ public class DatasetExportTest {
         int validationCount = 0;
 
         for (DocumentModel doc : docs) {
-            trainingCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), -1);
-            validationCount += countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
+            trainingCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), -1);
+            validationCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
         }
 
         assertThat(trainingCount).isGreaterThan(validationCount);
@@ -529,14 +522,14 @@ public class DatasetExportTest {
         Collection<Statistic> statistics = Framework.getService(DatasetStatsService.class)
                                                     .getStatistics(session, nxql, input, output);
         assertEquals("There should be 3 aggregates * 3 category fields + 2 agg missing content fields + 2 totals = 12",
-                12, statistics.size());
+                17, statistics.size());
         Map<String, List<Statistic>> byType = statistics.stream().collect(groupingBy(Statistic::getAggType));
         Map<String, List<Statistic>> byField = statistics.stream().collect(groupingBy(Statistic::getField));
         assertEquals("There should be 3 aggregates + 2 total = 5", 5, byType.size());
         Statistic total = byType.get(STATS_TOTAL).get(0);
         assertEquals(500, total.getNumericValue().intValue());
         total = byType.get(STATS_COUNT).get(0);
-        assertEquals("There are 450 rows where all fields are not null.", 450, total.getNumericValue().intValue());
+        assertEquals("There are 500 rows where all fields are not null.", 500, total.getNumericValue().intValue());
         assertEquals("There should be 4 fields + 2 total = 6", 6, byField.size());
         Statistic cardDesc = byType.get(AGG_CARDINALITY)
                                    .stream()

@@ -14,53 +14,15 @@ import java.util.List;
 /**
  * AWS SDK-independent result DTO for entity detection operations.
  */
-public class EntitiesResult {
-
-    private final List<Entity> entities;
-
-    public EntitiesResult(List<Entity> entities) {
-        this.entities = entities;
-    }
-
+public record EntitiesResult(List<Entity> entities) {
     public List<Entity> getEntities() { return entities; }
-
-    public static class Entity {
-        private final String text;
-        private final String type;
-        private final float score;
-        private final int beginOffset;
-        private final int endOffset;
-
-        public Entity(String text, String type, float score, int beginOffset, int endOffset) {
-            this.text = text;
-            this.type = type;
-            this.score = score;
-            this.beginOffset = beginOffset;
-            this.endOffset = endOffset;
-        }
-
+    @Override public String toString() { return "EntitiesResult{" + "entities=" + entities + '}'; }
+    public static record Entity(String text, String type, float score, int beginOffset, int endOffset) {
         public String getText() { return text; }
         public String getType() { return type; }
         public float getScore() { return score; }
         public int getBeginOffset() { return beginOffset; }
         public int getEndOffset() { return endOffset; }
-
-        @Override
-        public String toString() {
-            return "Entity{" +
-                    "text='" + text + '\'' +
-                    ", type='" + type + '\'' +
-                    ", score=" + score +
-                    ", beginOffset=" + beginOffset +
-                    ", endOffset=" + endOffset +
-                    '}';
-        }
-    }
-
-    @Override
-    public String toString() {
-        return "EntitiesResult{" +
-                "entities=" + entities +
-                '}';
+        @Override public String toString() { return "Entity{" + "text='" + text + '\'' + ", type='" + type + '\'' + ", score=" + score + ", beginOffset=" + beginOffset + ", endOffset=" + endOffset + '}'; }
     }
 }

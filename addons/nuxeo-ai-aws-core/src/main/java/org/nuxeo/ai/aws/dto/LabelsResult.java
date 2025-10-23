@@ -21,84 +21,21 @@ import java.util.Objects;
 /**
  * Domain-specific DTO for Rekognition label detection results.
  */
-public class LabelsResult {
-
-    private final List<Label> labels;
-
-    public LabelsResult(List<Label> labels) {
-        this.labels = labels;
-    }
-
-    public List<Label> getLabels() {
-        return labels;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LabelsResult that = (LabelsResult) o;
-        return Objects.equals(labels, that.labels);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(labels);
-    }
-
+public record LabelsResult(List<Label> labels) {
+    public List<Label> getLabels() { return labels; }
+    // equals/hashCode retained via record; override if explicit behavior needed
+    @Override public boolean equals(Object o) { return o instanceof LabelsResult lr && Objects.equals(labels, lr.labels); }
+    @Override public int hashCode() { return Objects.hash(labels); }
     /**
      * Represents a detected label
      */
-    public static class Label {
-        private final String name;
-        private final Float confidence;
-        private final List<String> parents;
-
-        public Label(String name, Float confidence, List<String> parents) {
-            this.name = name;
-            this.confidence = confidence;
-            this.parents = parents;
-        }
-
-        // Overloaded constructor for backward compatibility
-        public Label(String name, float confidence) {
-            this(name, (Float) confidence, List.of());
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public Float getConfidence() {
-            return confidence;
-        }
-
-        public List<String> getParents() {
-            return parents;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Label label = (Label) o;
-            return Objects.equals(name, label.name) &&
-                   Objects.equals(confidence, label.confidence) &&
-                   Objects.equals(parents, label.parents);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(name, confidence, parents);
-        }
-
-        @Override
-        public String toString() {
-            return "Label{" +
-                    "name='" + name + '\'' +
-                    ", confidence=" + confidence +
-                    ", parents=" + parents +
-                    '}';
-        }
+    public static record Label(String name, Float confidence, List<String> parents) {
+        public Label(String name, float confidence) { this(name, (Float) confidence, List.of()); }
+        public String getName() { return name; }
+        public Float getConfidence() { return confidence; }
+        public List<String> getParents() { return parents; }
+        @Override public boolean equals(Object o) { return o instanceof Label l && Objects.equals(name, l.name) && Objects.equals(confidence, l.confidence) && Objects.equals(parents, l.parents); }
+        @Override public int hashCode() { return Objects.hash(name, confidence, parents); }
+        @Override public String toString() { return "Label{" + "name='" + name + '\'' + ", confidence=" + confidence + ", parents=" + parents + '}'; }
     }
 }
