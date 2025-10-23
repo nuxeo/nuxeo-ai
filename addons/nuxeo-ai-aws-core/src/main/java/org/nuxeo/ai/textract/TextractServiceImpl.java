@@ -38,6 +38,7 @@ import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 import software.amazon.awssdk.services.textract.model.AnalyzeDocumentRequest;
 import software.amazon.awssdk.services.textract.model.DetectDocumentTextRequest;
@@ -60,12 +61,28 @@ public class TextractServiceImpl extends DefaultComponent implements TextractSer
     protected AWSClientFactory clientFactory;
     protected Map<String, List<TextractProcessor>> processors;
     protected AWSMetrics awsMetrics;
+    protected final List<TextractProcessorDescriptor> processorDescriptors = new java.util.ArrayList<>();
+
+    @Override
+    public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
+        if (XP_CONFIG.equals(extensionPoint) && contribution instanceof TextractProcessorDescriptor) {
+            processorDescriptors.add((TextractProcessorDescriptor) contribution);
+            // Recompute processors map to include newly added descriptor in case it arrives post-start
+            processors = processorDescriptors.stream()
+                    .collect(groupingBy(TextractProcessorDescriptor::getServiceName,
+                            mapping(TextractProcessorDescriptor::getInstance, toList())));
+        }
+    }
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
         clientFactory = Framework.getService(AWSClientFactory.class);
         awsMetrics = Framework.getService(AWSMetrics.class);
+        // Build processors map from contributed descriptors grouped by serviceName
+        processors = processorDescriptors.stream()
+                .collect(groupingBy(TextractProcessorDescriptor::getServiceName,
+                        mapping(TextractProcessorDescriptor::getInstance, toList())));
     }
 
     @Override

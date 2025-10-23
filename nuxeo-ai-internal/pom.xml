@@ -69,7 +69,7 @@
     </dependency>
     <dependency>
       <groupId>org.nuxeo.ecm.platform</groupId>
-      <artifactId>nuxeo-platform-audit-core</artifactId>
+      <artifactId>nuxeo-platform-audit-test</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

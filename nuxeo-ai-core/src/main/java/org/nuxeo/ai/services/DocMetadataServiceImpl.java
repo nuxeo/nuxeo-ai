@@ -61,10 +61,8 @@ import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.ecm.platform.audit.api.AuditLogger;
-import org.nuxeo.ecm.platform.audit.api.ExtendedInfo;
-import org.nuxeo.ecm.platform.audit.api.LogEntry;
-import org.nuxeo.ecm.platform.audit.impl.ExtendedInfoImpl;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -238,24 +236,17 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     }
 
     protected void storeAudit(DocumentModel doc, AUTO autoField, String model, long value, String comment) {
-        AuditLogger audit = Framework.getService(AuditLogger.class);
+        AuditBackend audit = Framework.getService(AuditBackend.class);
         if (audit != null) {
-            LogEntry logEntry = audit.newLogEntry();
-            logEntry.setCategory("AI");
-            logEntry.setEventId(autoField.eventName());
-            logEntry.setComment(comment);
-            logEntry.setDocUUID(doc.getId());
-            logEntry.setDocPath(doc.getPathAsString());
-            logEntry.setEventDate(new Date());
-
-            ExtendedInfoImpl.StringInfo modelInfo = new ExtendedInfoImpl.StringInfo(model);
-            ExtendedInfoImpl.LongInfo one = new ExtendedInfoImpl.LongInfo(value);
-
-            HashMap<String, ExtendedInfo> infos = new HashMap<>();
-            infos.put("model", modelInfo);
-            infos.put("value", one);
-            logEntry.setExtendedInfos(infos);
-
+            LogEntry logEntry = LogEntry.builder(autoField.eventName(), new Date())
+                                        .category("AI")
+                                        .comment(comment)
+                                        .docUUID(doc.getId())
+                                        .docPath(doc.getPathAsString())
+                                        .repositoryId(doc.getRepositoryName())
+                                        .extended("model", model)
+                                        .extended("value", value)
+                                        .build();
             audit.addLogEntries(Collections.singletonList(logEntry));
         } else {
             log.warn("Audit Logger is not available");

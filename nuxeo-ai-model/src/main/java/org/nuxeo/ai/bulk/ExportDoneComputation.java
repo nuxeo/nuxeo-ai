@@ -35,13 +35,13 @@ import org.nuxeo.ecm.core.bulk.BulkCodecs;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.platform.audit.api.AuditLogger;
-import org.nuxeo.ecm.platform.audit.api.LogEntry;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 
 public class ExportDoneComputation extends AbstractComputation {
 
@@ -69,19 +69,12 @@ public class ExportDoneComputation extends AbstractComputation {
                                          cmd.getId(), status.getProcessed(), status.getErrorCount());
             log.warn(message.getFormattedMessage());
 
-            AuditLogger logger = Framework.getService(AuditLogger.class);
+            AuditBackend logger = Framework.getService(AuditBackend.class);
             if (logger != null) {
-                LogEntry entry = logger.newLogEntry();
-                entry.setCategory(EXPORT_ACTION_NAME);
-                entry.setComment(message.getFormattedMessage());
-                entry.setEventId(EXPORT_DONE_EVENT);
-
-                Instant endTime = status.getProcessingEndTime();
-                if (endTime != null) {
-                    long endMs = endTime.toEpochMilli();
-                    entry.setEventDate(new Date(endMs));
-                }
-
+                LogEntry entry = LogEntry.builder(EXPORT_DONE_EVENT, new Date())
+                                         .category(EXPORT_ACTION_NAME)
+                                         .comment(message.getFormattedMessage())
+                                         .build();
                 logger.addLogEntries(Collections.singletonList(entry));
             }
 

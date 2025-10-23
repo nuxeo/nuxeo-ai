@@ -28,8 +28,6 @@ import static org.nuxeo.ai.AIConstants.ENRICHMENT_SCHEMA_NAME;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.CORRECT;
 import static org.nuxeo.ai.auto.AutoService.AUTO_ACTION.FILL;
 import static org.nuxeo.ai.enrichment.TestDocMetadataService.setupTestEnrichmentMetadata;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -48,15 +46,14 @@ import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ai.services.ModelUsageService;
+import org.nuxeo.audit.api.LogEntry;
 import org.nuxeo.audit.api.AuditQueryBuilder;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.query.sql.model.Predicate;
 import org.nuxeo.ecm.core.query.sql.model.Predicates;
-import org.nuxeo.ecm.platform.audit.AuditFeature;
-import org.nuxeo.ecm.platform.audit.api.AuditReader;
-import org.nuxeo.ecm.platform.audit.api.LogEntry;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -66,7 +63,7 @@ import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
-@Features({EnrichmentTestFeature.class, AuditFeature.class})
+@Features({EnrichmentTestFeature.class})
 @Deploy({"org.nuxeo.ai.ai-core"})
 public class TestAutoServicesAudit {
 
@@ -83,10 +80,10 @@ public class TestAutoServicesAudit {
     protected TransactionalFeature txFeature;
 
     @Inject
-    protected AuditReader auditReader;
+    protected AuditBackend auditReader;
 
-    @Inject
-    protected AuditFeature auditFeature;
+    private static final String LOG_CATEGORY = "category";
+    private static final String LOG_EVENT_ID = "eventId";
 
     @Before
     public void reset() {
@@ -132,13 +129,10 @@ public class TestAutoServicesAudit {
         Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
         qb.predicate(predicate)
           .and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.FILLED.eventName()));
-        List<LogEntry> logEntries = auditReader.queryLogs(qb);
-        Set<LogEntry> perModelAudit = logEntries.stream()
-                                                .filter(entry -> entry.getExtendedInfos()
-                                                                      .get("model")
-                                                                      .getValue(String.class)
-                                                                      .equals("stest"))
-                                                .collect(Collectors.toSet());
+        List<?> logEntries = auditReader.queryLogs(qb);
+        Set<Object> perModelAudit = logEntries.stream()
+                                              .filter(entry -> ((LogEntry) entry).getExtended().get("model").equals("stest"))
+                                              .collect(Collectors.toSet());
         assertThat(perModelAudit).hasSize(6);
     }
 
@@ -187,17 +181,11 @@ public class TestAutoServicesAudit {
         Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
         qb.predicate(predicate)
           .and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.CORRECTED.eventName()));
-        List<LogEntry> logEntries = auditReader.queryLogs(qb);
-        Set<LogEntry> perModelAudit = logEntries.stream()
-                                                .filter(entry -> entry.getExtendedInfos()
-                                                                      .get("model")
-                                                                      .getValue(String.class)
-                                                                      .equals("stest"))
-                                                .filter(entry -> entry.getExtendedInfos()
-                                                                      .get("value")
-                                                                      .getValue(Long.class)
-                                                                      .equals(1L))
-                                                .collect(Collectors.toSet());
+        List<?> logEntries = auditReader.queryLogs(qb);
+        Set<Object> perModelAudit = logEntries.stream()
+                                              .filter(entry -> ((LogEntry) entry).getExtended().get("model").equals("stest"))
+                                              .filter(entry -> ((LogEntry) entry).getExtended().get("value").equals(1L))
+                                              .collect(Collectors.toSet());
         assertThat(perModelAudit).hasSize(1);
     }
 

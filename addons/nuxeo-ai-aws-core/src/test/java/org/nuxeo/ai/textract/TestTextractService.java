@@ -60,9 +60,9 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
-import software.amazon.awssdk.services.textract.model.DetectDocumentTextResponse;
 import software.amazon.awssdk.services.textract.model.Block;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })
@@ -114,17 +114,22 @@ public class TestTextractService {
 
     @Test
     public void testBlocks() throws URISyntaxException, IOException {
-        Block b = Block.builder().blockType("LINE").build();
-        String raw = toJsonString(jg -> jg.writeObjectField("blocks", Arrays.asList(b)));
-
-        AnalyzeDocumentResponse result = JacksonUtil.MAPPER.readValue(raw, AnalyzeDocumentResponse.class);
-        List<Block> rawBlock = result.blocks();
-        assertNotNull(rawBlock);
-
         File json = FileUtils.getResourceFileFromContext("files/textract.json");
-        AnalyzeDocumentResponse helper = JacksonUtil.MAPPER.readValue(json, AnalyzeDocumentResponse.class);
-        List<Block> blocks = helper.blocks();
+        assertNotNull(json);
+        JsonNode root = JacksonUtil.MAPPER.readTree(json);
+        assertNotNull(root);
+        JsonNode blocks = root.get("blocks");
         assertNotNull(blocks);
+        assertTrue(blocks.isArray());
+        assertTrue(blocks.size() > 0);
+        boolean hasPage = false;
+        for (JsonNode b : blocks) {
+            if (b.hasNonNull("blockType") && "PAGE".equalsIgnoreCase(b.get("blockType").asText())) {
+                hasPage = true;
+                break;
+            }
+        }
+        assertTrue("Expected at least one PAGE block", hasPage);
     }
 
     @Test

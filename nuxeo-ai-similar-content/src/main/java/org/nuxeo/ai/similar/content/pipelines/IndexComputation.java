@@ -41,14 +41,14 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.platform.audit.api.AuditLogger;
-import org.nuxeo.ecm.platform.audit.api.LogEntry;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.AbstractComputation;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 
 /**
  * Computation responsible for sending given document to index
@@ -107,20 +107,16 @@ public class IndexComputation extends AbstractComputation {
     }
 
     protected static void storeAudit(IndexRecord ir, String username, DocumentModel document) {
-        AuditLogger audit = Framework.getService(AuditLogger.class);
+        AuditBackend audit = Framework.getService(AuditBackend.class);
         if (audit != null) {
-            LogEntry logEntry = audit.newLogEntry();
-            logEntry.setCategory("AI");
-            logEntry.setEventId(INDEX_COMPUTATION_NAME);
-            logEntry.setComment(
-                    "Document " + document.getId() + " indexed for similar content; xpath: " + ir.getXpath() + "; user "
-                            + username);
-            logEntry.setDocUUID(document.getId());
-            logEntry.setDocPath(document.getPathAsString());
-            logEntry.setPrincipalName(username);
-            logEntry.setRepositoryId(document.getRepositoryName());
-            logEntry.setEventDate(new Date());
-
+            LogEntry logEntry = LogEntry.builder(INDEX_COMPUTATION_NAME, new Date())
+                                        .category("AI")
+                                        .comment("Document " + document.getId() + " indexed for similar content; xpath: " + ir.getXpath() + "; user " + username)
+                                        .docUUID(document.getId())
+                                        .docPath(document.getPathAsString())
+                                        .repositoryId(document.getRepositoryName())
+                                        .principalName(username)
+                                        .build();
             audit.addLogEntries(Collections.singletonList(logEntry));
         } else {
             log.warn("Audit Logger is not available");

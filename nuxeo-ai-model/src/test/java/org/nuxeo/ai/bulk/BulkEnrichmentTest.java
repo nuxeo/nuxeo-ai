@@ -64,7 +64,6 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.platform.audit.AuditFeature;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.Name;
@@ -79,7 +78,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class, AuditFeature.class })
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class, CoreBulkFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
