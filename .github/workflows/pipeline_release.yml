@@ -20,6 +20,7 @@ on:
           - "8"
           - "11"
           - "17"
+          - "21"
 
 jobs:
   release-publish:
