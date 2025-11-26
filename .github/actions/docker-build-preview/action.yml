@@ -53,7 +53,7 @@ runs:
         base-registry-password: ${{ inputs.docker-password }}
         nuxeo-connect-modules: nuxeo-web-ui replace-administrator-user-1.0.0
         nuxeo-clid: ${{ inputs.nuxeo-clid }}
-        local-addons-path: docker
+        nuxeo-local-modules-path: docker
         os-packages: |
           awscli
           ghostscript
