@@ -73,6 +73,7 @@ runs:
         os-packages-token: ${{ inputs.docker-password }}
         image-name: ${{ inputs.repository }}
         image-tag: ${{ inputs.version }}.${{ github.run_id }}
+        image-title: "Nuxeo AI Core"
         registry: ${{ inputs.registry }}
         registry-username: ${{ inputs.docker-username }}
         registry-password: ${{ inputs.docker-password }}
