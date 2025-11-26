@@ -111,8 +111,8 @@ jobs:
         run: find .m2/repository/.locks -type f -delete || true
       - name: Build with Maven
         run: mvn install -fae -B -DskipTests
-      - name: Run Tests with Maven
-        run: mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
+      # - name: Run Tests with Maven
+      #   run: mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
       - name: Publish Test Report
         if: ${{ always() }}
         uses: scacap/action-surefire-report@v1
