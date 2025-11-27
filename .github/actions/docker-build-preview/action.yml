@@ -30,6 +30,8 @@ runs:
         VERSION="${{ inputs.version }}"
         echo "Preparing Docker context with version: ${VERSION}"
 
+        mkdir -p docker
+
         # Core package (required)
         if [[ -f "nuxeo-ai-core-package/target/nuxeo-ai-core-${VERSION}.zip" ]]; then
           cp "nuxeo-ai-core-package/target/nuxeo-ai-core-${VERSION}.zip" docker/
