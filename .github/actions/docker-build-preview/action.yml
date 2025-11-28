@@ -49,7 +49,7 @@ runs:
         ls -al docker || true
 
     - name: Build Nuxeo image
-      uses: Alfresco/alfresco-build-tools/.github/actions/nuxeo/nuxeo-docker-build@OPSEXP-3635
+      uses: Alfresco/alfresco-build-tools/.github/actions/nuxeo/nuxeo-docker-build@v10.1.0
       with:
         base-registry-username: ${{ inputs.docker-username }}
         base-registry-password: ${{ inputs.docker-password }}
