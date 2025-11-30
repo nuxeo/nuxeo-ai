@@ -28,10 +28,7 @@ public class TranslateMapper {
      * Map AWS SDK TranslateTextResponse to our abstraction DTO
      */
     public static TranslateResult mapToTranslateResult(TranslateTextResponse response) {
-        return new TranslateResult(
-                response.translatedText(),
-                response.sourceLanguageCode(),
-                response.targetLanguageCode()
-        );
+        return new TranslateResult(response.translatedText(), response.sourceLanguageCode(),
+                response.targetLanguageCode());
     }
 }

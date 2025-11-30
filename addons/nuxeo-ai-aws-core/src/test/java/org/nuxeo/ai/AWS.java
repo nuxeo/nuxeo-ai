@@ -31,8 +31,7 @@ public class AWS {
      * Assume we have valid credentials
      */
     public static void assumeCredentials() {
-        String envId = StringUtils.defaultIfBlank(System.getenv("AWS_ACCESS_KEY_ID"),
-                System.getenv("AWS_ACCESS_KEY"));
+        String envId = StringUtils.defaultIfBlank(System.getenv("AWS_ACCESS_KEY_ID"), System.getenv("AWS_ACCESS_KEY"));
         String envSecret = StringUtils.defaultIfBlank(System.getenv("AWS_SECRET_ACCESS_KEY"),
                 System.getenv("AWS_SECRET_KEY"));
         assumeTrue("AWS Credentials not set in the environment variables", StringUtils.isNoneBlank(envId, envSecret));

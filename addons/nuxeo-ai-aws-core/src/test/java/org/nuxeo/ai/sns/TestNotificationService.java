@@ -25,6 +25,7 @@ import static org.nuxeo.ai.rekognition.RekognitionService.DETECT_SNS_TOPIC;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +36,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
+
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest;
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse;

@@ -54,8 +54,10 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,6 +87,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.auth0.jwt.RegisteredClaims;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -245,9 +248,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     public String initExport(CoreSession session, @Nullable String corporaId, CorporaParameters parameters) {
         try {
             InsightClient client = getClient(session).orElse(null);
-            return client == null ?
-                    null :
-                    client.api(API.Export.INIT).call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
+            return client == null ? null
+                    : client.api(API.Export.INIT)
+                            .call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
         } catch (IOException e) {
             log.error("User {} failed to initialize export", session.getPrincipal().getActingUser(), e);
             return null;
@@ -320,8 +323,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
         Blob statsData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_STATS);
 
-        if ((trainingData == null || trainingData.getLength() == 0 || trainingData.getFile() == null) && (
-                evalData == null || evalData.getLength() == 0 || evalData.getFile() == null)) {
+        if ((trainingData == null || trainingData.getLength() == 0 || trainingData.getFile() == null)
+                && (evalData == null || evalData.getLength() == 0 || evalData.getFile() == null)) {
             log.warn("Job/Command: {} has neither training nor evaluation data. Document {}", jobId, dataset.getId());
         } else if (statsData == null || statsData.getLength() == 0) {
             log.warn("Job/Command: {} has no statistics data.", jobId);

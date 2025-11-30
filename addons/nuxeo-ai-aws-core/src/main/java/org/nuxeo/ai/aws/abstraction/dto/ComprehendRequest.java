@@ -10,23 +10,17 @@
 package org.nuxeo.ai.aws.abstraction.dto;
 
 /**
- * AWS SDK-independent request DTOs for Comprehend service.
- * These DTOs isolate service implementations from AWS SDK model classes.
+ * AWS SDK-independent request DTOs for Comprehend service. These DTOs isolate service implementations from AWS SDK
+ * model classes.
  */
 public class ComprehendRequest {
 
     public static record DetectSentiment(String text, String languageCode) {
-        public String getText() { return text; }
-        public String getLanguageCode() { return languageCode; }
     }
 
     public static record DetectEntities(String text, String languageCode) {
-        public String getText() { return text; }
-        public String getLanguageCode() { return languageCode; }
     }
 
     public static record DetectKeyPhrases(String text, String languageCode) {
-        public String getText() { return text; }
-        public String getLanguageCode() { return languageCode; }
     }
 }

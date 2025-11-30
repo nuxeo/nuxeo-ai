@@ -25,7 +25,9 @@ import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+
 import jakarta.inject.Inject;
+
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,6 +41,7 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
@@ -47,7 +50,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
         "org.nuxeo.ai.nuxeo-ai-image-quality-core:OSGI-INF/test-image-quality.xml", "org.nuxeo.ecm.platform.video" })
 public class TestImageQualityService {
 
-    // This is used to mock the external service.  See mappings/check.json.
+    // This is used to mock the external service. See mappings/check.json.
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(5078);
 
@@ -82,10 +85,11 @@ public class TestImageQualityService {
     @Test
     @Ignore("must be run manually because it calls an external service")
     /**
-     *  Calls the real siteengine service instead of a mock. For this to work you will need to set your
-     *  service nuxeo.ai.sightengine.apiKey & nuxeo.ai.sightengine.apiSecret (see the bottom of test-image-quality.xml).
-     *  It is ignored so it doesn't run on Jenkins.
-     */ public void realServiceTest() throws IOException {
+     * Calls the real siteengine service instead of a mock. For this to work you will need to set your service
+     * nuxeo.ai.sightengine.apiKey & nuxeo.ai.sightengine.apiSecret (see the bottom of test-image-quality.xml). It is
+     * ignored so it doesn't run on Jenkins.
+     */
+    public void realServiceTest() throws IOException {
         EnrichmentProvider service = aiComponent.getEnrichmentProvider("ai.imagequality.real");
         assertNotNull(service);
 

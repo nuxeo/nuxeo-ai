@@ -43,10 +43,11 @@ public class ImageHelperWithS3 {
      */
     public Image getImage(ManagedBlob blob) {
         software.amazon.awssdk.services.rekognition.model.S3Object s3Object = getS3Object(blob,
-                (provider, key) -> software.amazon.awssdk.services.rekognition.model.S3Object.builder()
-                        .bucket(bucketName(provider))
-                        .name(key)
-                        .build());
+                (provider,
+                        key) -> software.amazon.awssdk.services.rekognition.model.S3Object.builder()
+                                                                                          .bucket(bucketName(provider))
+                                                                                          .name(key)
+                                                                                          .build());
         return s3Object != null ? Image.builder().s3Object(s3Object).build() : null;
     }
 
@@ -55,10 +56,11 @@ public class ImageHelperWithS3 {
      */
     public Video getVideo(ManagedBlob blob) {
         software.amazon.awssdk.services.rekognition.model.S3Object s3Object = getS3Object(blob,
-                (provider, key) -> software.amazon.awssdk.services.rekognition.model.S3Object.builder()
-                        .bucket(bucketName(provider))
-                        .name(key)
-                        .build());
+                (provider,
+                        key) -> software.amazon.awssdk.services.rekognition.model.S3Object.builder()
+                                                                                          .bucket(bucketName(provider))
+                                                                                          .name(key)
+                                                                                          .build());
         return s3Object != null ? Video.builder().s3Object(s3Object).build() : null;
     }
 
@@ -70,9 +72,9 @@ public class ImageHelperWithS3 {
     public Document getDocument(ManagedBlob blob) {
         software.amazon.awssdk.services.textract.model.S3Object s3Object = getS3Object(blob,
                 (provider, key) -> software.amazon.awssdk.services.textract.model.S3Object.builder()
-                        .bucket(bucketName(provider))
-                        .name(key)
-                        .build());
+                                                                                          .bucket(bucketName(provider))
+                                                                                          .name(key)
+                                                                                          .build());
         return s3Object != null ? Document.builder().s3Object(s3Object).build() : null;
     }
 

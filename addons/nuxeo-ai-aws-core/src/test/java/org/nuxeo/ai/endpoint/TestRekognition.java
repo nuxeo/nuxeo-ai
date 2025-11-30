@@ -9,7 +9,9 @@ import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
 import jakarta.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,6 +25,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.ServletContainerFeature;
+
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -60,10 +63,10 @@ public class TestRekognition {
         byte[] jsonData = Files.readAllBytes(Paths.get(jsonPayload.toURI()));
         String jsonPost = new String(jsonData, StandardCharsets.UTF_8);
         var request = java.net.http.HttpRequest.newBuilder()
-                                             .uri(URI.create(getBaseURL() + "/aiaddons/rekognition/callback/labels"))
-                                             .header("Content-Type", CONTENT_TYPE)
-                                             .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonPost))
-                                             .build();
+                                               .uri(URI.create(getBaseURL() + "/aiaddons/rekognition/callback/labels"))
+                                               .header("Content-Type", CONTENT_TYPE)
+                                               .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonPost))
+                                               .build();
         var response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
         assertEquals(200, response.statusCode());
 

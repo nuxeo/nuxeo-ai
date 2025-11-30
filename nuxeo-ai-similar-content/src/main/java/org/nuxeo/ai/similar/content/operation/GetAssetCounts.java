@@ -23,20 +23,18 @@ import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CON
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEFAULT_CONFIGURATION;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import jakarta.ws.rs.core.Response;
-import org.nuxeo.ai.similar.content.services.SimilarContentService;
+
 import org.nuxeo.ai.services.SearchAdapterService;
 import org.nuxeo.ai.services.SearchOptions;
 import org.nuxeo.ai.services.SearchSummary;
+import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -73,7 +71,7 @@ public class GetAssetCounts {
         long indexedAssetsCount = getTotalHits(facetFilterBuilder.toString());
         long nonIndexedAssetsCount = totalAssetsCount - indexedAssetsCount;
         return Response.ok(
-                               MAPPER.writeValueAsString(new Counts(totalAssetsCount, indexedAssetsCount, nonIndexedAssetsCount)))
+                MAPPER.writeValueAsString(new Counts(totalAssetsCount, indexedAssetsCount, nonIndexedAssetsCount)))
                        .build();
     }
 

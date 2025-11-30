@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -42,6 +43,7 @@ import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
+
 import software.amazon.awssdk.services.rekognition.model.BoundingBox;
 import software.amazon.awssdk.services.rekognition.model.CelebrityDetail;
 import software.amazon.awssdk.services.rekognition.model.CelebrityRecognition;
@@ -94,8 +96,8 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
         GetCelebrityRecognitionResponse result = null;
         do {
             GetCelebrityRecognitionRequest.Builder requestBuilder = GetCelebrityRecognitionRequest.builder()
-                    .jobId(jobId)
-                    .sortBy(CelebrityRecognitionSortBy.TIMESTAMP);
+                                                                                                  .jobId(jobId)
+                                                                                                  .sortBy(CelebrityRecognitionSortBy.TIMESTAMP);
 
             if (result != null && result.nextToken() != null) {
                 requestBuilder.nextToken(result.nextToken());
@@ -103,18 +105,18 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
             result = rs.getClient().getCelebrityRecognition(requestBuilder.build());
 
             List<AIMetadata.Tag> currentPageTags = result.celebrities()
-                                             .stream()
-                                             .map(c -> newCelebrityTag(c.celebrity(), c.timestamp()))
-                                             .filter(Objects::nonNull)
-                                             .toList();
+                                                         .stream()
+                                                         .map(c -> newCelebrityTag(c.celebrity(), c.timestamp()))
+                                                         .filter(Objects::nonNull)
+                                                         .toList();
 
             tags.addAll(currentPageTags);
             nativeCelebrityObjects.addAll(result.celebrities());
         } while (result.nextToken() != null);
 
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("celebrityFaces", nativeCelebrityObjects.stream().map(CelebrityRecognition::celebrity).collect(
-                    Collectors.toList()));
+            jg.writeObjectField("celebrityFaces",
+                    nativeCelebrityObjects.stream().map(CelebrityRecognition::celebrity).collect(Collectors.toList()));
             jg.writeObjectField("unrecognizedFaces", Collections.emptyList());
         });
 

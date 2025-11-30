@@ -29,7 +29,9 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import static org.nuxeo.ai.similar.content.DedupConstants.CONF_LISTENER_ENABLE;
 
 import java.io.Serializable;
+
 import jakarta.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,6 +48,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -74,7 +77,7 @@ public class DocumentIndexedListenerTest {
     protected EventService es;
 
     @Before
-    public void init(){
+    public void init() {
         Framework.getProperties().put(CONF_LISTENER_ENABLE, "true");
     }
 
@@ -90,8 +93,8 @@ public class DocumentIndexedListenerTest {
         String deleteURL = "/api/v1/ai/dedup/mockTestProject/index/" + fileDoc.getId();
         stubFor(WireMock.delete(deleteURL).willReturn(ok()));
 
-        String findURL =
-                "/api/v1/ai/dedup/mockTestProject/find/" + fileDoc.getId() + "/" + FILE_CONTENT + "?distance=0";
+        String findURL = "/api/v1/ai/dedup/mockTestProject/find/" + fileDoc.getId() + "/" + FILE_CONTENT
+                + "?distance=0";
         stubFor(WireMock.get(findURL).willReturn(okJson("[\"" + fileDoc.getId() + "\", \"" + fileDoc.getId() + "\"]")));
 
         txf.nextTransaction();

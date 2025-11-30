@@ -24,20 +24,15 @@ import org.nuxeo.runtime.model.DefaultComponent;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.comprehend.ComprehendClient;
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
-import software.amazon.awssdk.services.textract.TextractClient;
-import software.amazon.awssdk.services.translate.TranslateClient;
-import software.amazon.awssdk.services.transcribe.TranscribeClient;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.textract.TextractClient;
+import software.amazon.awssdk.services.transcribe.TranscribeClient;
+import software.amazon.awssdk.services.translate.TranslateClient;
 
 /**
- * Centralized AWS Client Factory - Single point of AWS SDK dependency management.
- * This factory isolates all AWS SDK client creation and configuration logic.
- *
- * Benefits:
- * - All AWS SDK dependencies are managed in one place
- * - Easy to upgrade AWS SDK versions
- * - Consistent client configuration across all services
- * - Easy to add new AWS services
+ * Centralized AWS Client Factory - Single point of AWS SDK dependency management. This factory isolates all AWS SDK
+ * client creation and configuration logic. Benefits: - All AWS SDK dependencies are managed in one place - Easy to
+ * upgrade AWS SDK versions - Consistent client configuration across all services - Easy to add new AWS services
  */
 public class AWSClientFactory extends DefaultComponent {
 
@@ -45,10 +40,15 @@ public class AWSClientFactory extends DefaultComponent {
 
     // Volatile for thread-safety with double-checked locking
     private volatile ComprehendClient comprehendClient;
+
     private volatile RekognitionClient rekognitionClient;
+
     private volatile TextractClient textractClient;
+
     private volatile TranslateClient translateClient;
+
     private volatile TranscribeClient transcribeClient;
+
     private volatile SnsClient snsClient;
 
     // Common configuration
@@ -90,9 +90,10 @@ public class AWSClientFactory extends DefaultComponent {
             synchronized (this) {
                 if (comprehendClient == null) {
                     comprehendClient = ComprehendClient.builder()
-                            .region(region)
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
+                                                       .region(region)
+                                                       .credentialsProvider(
+                                                               AWSHelper.getInstance().getCredentialsProvider())
+                                                       .build();
                     log.debug("Created new ComprehendClient");
                 }
             }
@@ -108,9 +109,10 @@ public class AWSClientFactory extends DefaultComponent {
             synchronized (this) {
                 if (rekognitionClient == null) {
                     rekognitionClient = RekognitionClient.builder()
-                            .region(region)
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
+                                                         .region(region)
+                                                         .credentialsProvider(
+                                                                 AWSHelper.getInstance().getCredentialsProvider())
+                                                         .build();
                     log.debug("Created new RekognitionClient");
                 }
             }
@@ -126,9 +128,10 @@ public class AWSClientFactory extends DefaultComponent {
             synchronized (this) {
                 if (textractClient == null) {
                     textractClient = TextractClient.builder()
-                            .region(region)
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
+                                                   .region(region)
+                                                   .credentialsProvider(
+                                                           AWSHelper.getInstance().getCredentialsProvider())
+                                                   .build();
                     log.debug("Created new TextractClient");
                 }
             }
@@ -144,9 +147,10 @@ public class AWSClientFactory extends DefaultComponent {
             synchronized (this) {
                 if (translateClient == null) {
                     translateClient = TranslateClient.builder()
-                            .region(region)
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
+                                                     .region(region)
+                                                     .credentialsProvider(
+                                                             AWSHelper.getInstance().getCredentialsProvider())
+                                                     .build();
                     log.debug("Created new TranslateClient");
                 }
             }
@@ -162,9 +166,10 @@ public class AWSClientFactory extends DefaultComponent {
             synchronized (this) {
                 if (transcribeClient == null) {
                     transcribeClient = TranscribeClient.builder()
-                            .region(region)
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
+                                                       .region(region)
+                                                       .credentialsProvider(
+                                                               AWSHelper.getInstance().getCredentialsProvider())
+                                                       .build();
                     log.debug("Created new TranscribeClient");
                 }
             }
@@ -180,9 +185,9 @@ public class AWSClientFactory extends DefaultComponent {
             synchronized (this) {
                 if (snsClient == null) {
                     snsClient = SnsClient.builder()
-                            .region(region)
-                            .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                            .build();
+                                         .region(region)
+                                         .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                                         .build();
                     log.debug("Created new SnsClient");
                 }
             }

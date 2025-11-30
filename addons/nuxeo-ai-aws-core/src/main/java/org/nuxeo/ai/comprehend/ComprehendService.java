@@ -23,8 +23,8 @@ import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
 import org.nuxeo.ai.aws.dto.SentimentResult;
 
 /**
- * Works with AWS Comprehend - Now using domain DTOs instead of AWS SDK models
- * This interface is completely independent of AWS SDK implementation details
+ * Works with AWS Comprehend - Now using domain DTOs instead of AWS SDK models This interface is completely independent
+ * of AWS SDK implementation details
  */
 public interface ComprehendService {
 
@@ -36,7 +36,7 @@ public interface ComprehendService {
     /**
      * Extract key phrases from the given text
      *
-     * @param text         provided for extraction
+     * @param text provided for extraction
      * @param languageCode code of the language to use for extraction (ie `en`)
      * @return {@link KeyPhrasesResult} as a response value of the service
      */
@@ -45,7 +45,7 @@ public interface ComprehendService {
     /**
      * Extract entities from the given text
      *
-     * @param text         provided for extraction
+     * @param text provided for extraction
      * @param languageCode code of the language to use for extraction (ie `en`)
      * @return {@link EntitiesResult} as a response value of the service
      */

@@ -17,12 +17,12 @@ package org.nuxeo.ai.aws.mapper;
 
 import org.nuxeo.ai.aws.dto.TranscriptionJobResult;
 
-import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobResponse;
 import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobResponse;
+import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobResponse;
 
 /**
- * Mapper utility class for converting AWS Transcribe SDK model objects to domain DTOs.
- * This class isolates all AWS SDK model dependencies for Transcribe service.
+ * Mapper utility class for converting AWS Transcribe SDK model objects to domain DTOs. This class isolates all AWS SDK
+ * model dependencies for Transcribe service.
  */
 public final class TranscribeMapper {
 
@@ -39,12 +39,13 @@ public final class TranscribeMapper {
         }
 
         var awsJob = awsResponse.transcriptionJob();
-        return new TranscriptionJobResult(
-                awsJob.transcriptionJobName(),
-                awsJob.transcriptionJobStatusAsString(),
-                null, // URI not available in start response
-                awsJob.languageCodeAsString(),
-                null  // Completion time not available in start response
+        return new TranscriptionJobResult(awsJob.transcriptionJobName(), awsJob.transcriptionJobStatusAsString(), null, // URI
+                                                                                                                        // not
+                                                                                                                        // available
+                                                                                                                        // in
+                                                                                                                        // start
+                                                                                                                        // response
+                awsJob.languageCodeAsString(), null // Completion time not available in start response
         );
     }
 
@@ -59,12 +60,8 @@ public final class TranscribeMapper {
         var awsJob = awsResponse.transcriptionJob();
         var transcript = awsJob.transcript();
 
-        return new TranscriptionJobResult(
-                awsJob.transcriptionJobName(),
-                awsJob.transcriptionJobStatusAsString(),
-                transcript != null ? transcript.transcriptFileUri() : null,
-                awsJob.languageCodeAsString(),
-                awsJob.completionTime() != null ? awsJob.completionTime().toEpochMilli() / 1000.0f : null
-        );
+        return new TranscriptionJobResult(awsJob.transcriptionJobName(), awsJob.transcriptionJobStatusAsString(),
+                transcript != null ? transcript.transcriptFileUri() : null, awsJob.languageCodeAsString(),
+                awsJob.completionTime() != null ? awsJob.completionTime().toEpochMilli() / 1000.0f : null);
     }
 }

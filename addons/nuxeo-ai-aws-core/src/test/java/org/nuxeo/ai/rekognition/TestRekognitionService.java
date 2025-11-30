@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+
 import jakarta.inject.Inject;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -124,8 +126,12 @@ public class TestRekognitionService {
         blobTextFromDoc = setupBlobTextFromDocument("creative_adults-beautiful-blue.jpg");
         metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        assertTrue(metadataCollection.iterator().next().getLabels().stream().mapToInt(l -> l.getValues().size()).sum()
-                >= 2);
+        assertTrue(metadataCollection.iterator()
+                                     .next()
+                                     .getLabels()
+                                     .stream()
+                                     .mapToInt(l -> l.getValues().size())
+                                     .sum() >= 2);
     }
 
     @Test

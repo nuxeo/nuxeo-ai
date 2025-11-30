@@ -20,9 +20,11 @@ package org.nuxeo.ai.cloud;
 
 import java.io.IOException;
 import java.util.Optional;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
+
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
 import org.nuxeo.ai.sdk.objects.TensorInstances;
 import org.nuxeo.ai.sdk.rest.ResponseHandler;
@@ -46,7 +48,7 @@ public interface CloudClient {
     /**
      * Creates AI_Corpora on Cloud
      *
-     * @param corporaId  {@link String} uuid to use
+     * @param corporaId {@link String} uuid to use
      * @param parameters {@link CorporaParameters} containing query and fields of the corpora
      * @return AI_Corpora uuid as {@link String}
      */
@@ -62,7 +64,7 @@ public interface CloudClient {
     /**
      * Bind model and corpora in the cloud
      *
-     * @param modelId   of AI_Model
+     * @param modelId of AI_Model
      * @param corporaId of AI_Corpora
      */
     boolean bind(CoreSession session, @Nonnull String modelId, @Nonnull String corporaId);
@@ -71,9 +73,8 @@ public interface CloudClient {
      * Notifies Cloud about completion of the Export pipeline
      *
      * @param exportId of BAF command used
-     * @return {@link Boolean} as the state of finalization of export on Cloud
-     * {@link Boolean#TRUE} if export was found on Cloud and evaluation (if needed) started
-     * {@link Boolean#FALSE} otherwise
+     * @return {@link Boolean} as the state of finalization of export on Cloud {@link Boolean#TRUE} if export was found
+     *         on Cloud and evaluation (if needed) started {@link Boolean#FALSE} otherwise
      */
     boolean notifyOnExportDone(CoreSession session, String exportId);
 

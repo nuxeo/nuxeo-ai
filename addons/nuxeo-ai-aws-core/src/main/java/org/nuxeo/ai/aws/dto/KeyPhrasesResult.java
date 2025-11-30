@@ -15,13 +15,12 @@ import java.util.List;
  * AWS SDK-independent result DTO for key phrase extraction operations.
  */
 public record KeyPhrasesResult(List<KeyPhrase> keyPhrases) {
-    public List<KeyPhrase> getKeyPhrases() { return keyPhrases; }
-    public static record KeyPhrase(String text, float score, int beginOffset, int endOffset) {
-        public String getText() { return text; }
-        public float getScore() { return score; }
-        public int getBeginOffset() { return beginOffset; }
-        public int getEndOffset() { return endOffset; }
-        @Override public String toString() { return "KeyPhrase{" + "text='" + text + '\'' + ", score=" + score + ", beginOffset=" + beginOffset + ", endOffset=" + endOffset + '}'; }
+
+    // Optional but recommended: enforce immutability
+    public KeyPhrasesResult {
+        keyPhrases = List.copyOf(keyPhrases);
     }
-    @Override public String toString() { return "KeyPhrasesResult{" + "keyPhrases=" + keyPhrases + '}'; }
+
+    public static record KeyPhrase(String text, float score, int beginOffset, int endOffset) {
+    }
 }

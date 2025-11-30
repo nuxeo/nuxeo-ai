@@ -9,6 +9,9 @@
  */
 package org.nuxeo.ai.aws.abstraction.impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.aws.AWSClientFactory;
@@ -23,12 +26,9 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
- * Implementation of TextractServiceFacade that isolates ALL AWS SDK dependencies.
- * This is the ONLY class that imports AWS SDK classes for Textract operations.
+ * Implementation of TextractServiceFacade that isolates ALL AWS SDK dependencies. This is the ONLY class that imports
+ * AWS SDK classes for Textract operations.
  */
 public class TextractServiceFacadeImpl extends DefaultComponent implements TextractServiceFacade {
 
@@ -40,11 +40,9 @@ public class TextractServiceFacadeImpl extends DefaultComponent implements Textr
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             TextractClient client = clientFactory.getTextractClient();
 
-            Document document = buildDocument(request.getDocumentData(), request.getS3Bucket(), request.getS3Key());
+            Document document = buildDocument(request.documentData(), request.s3Bucket(), request.s3Key());
 
-            DetectDocumentTextRequest awsRequest = DetectDocumentTextRequest.builder()
-                    .document(document)
-                    .build();
+            DetectDocumentTextRequest awsRequest = DetectDocumentTextRequest.builder().document(document).build();
 
             var response = client.detectDocumentText(awsRequest);
             return TextractMapper.mapToTextractResult(response);
@@ -60,16 +58,17 @@ public class TextractServiceFacadeImpl extends DefaultComponent implements Textr
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             TextractClient client = clientFactory.getTextractClient();
 
-            Document document = buildDocument(request.getDocumentData(), request.getS3Bucket(), request.getS3Key());
+            Document document = buildDocument(request.documentData(), request.s3Bucket(), request.s3Key());
 
-            List<FeatureType> featureTypes = request.getFeatureTypes().stream()
-                    .map(FeatureType::fromValue)
-                    .collect(Collectors.toList());
+            List<FeatureType> featureTypes = request.featureTypes()
+                                                    .stream()
+                                                    .map(FeatureType::fromValue)
+                                                    .collect(Collectors.toList());
 
             AnalyzeDocumentRequest awsRequest = AnalyzeDocumentRequest.builder()
-                    .document(document)
-                    .featureTypes(featureTypes)
-                    .build();
+                                                                      .document(document)
+                                                                      .featureTypes(featureTypes)
+                                                                      .build();
 
             var response = client.analyzeDocument(awsRequest);
             return TextractMapper.mapToTextractResult(response);
@@ -84,17 +83,10 @@ public class TextractServiceFacadeImpl extends DefaultComponent implements Textr
      */
     private Document buildDocument(byte[] documentData, String s3Bucket, String s3Key) {
         if (documentData != null) {
-            return Document.builder()
-                    .bytes(SdkBytes.fromByteArray(documentData))
-                    .build();
+            return Document.builder().bytes(SdkBytes.fromByteArray(documentData)).build();
         } else if (s3Bucket != null && s3Key != null) {
-            S3Object s3Object = S3Object.builder()
-                    .bucket(s3Bucket)
-                    .name(s3Key)
-                    .build();
-            return Document.builder()
-                    .s3Object(s3Object)
-                    .build();
+            S3Object s3Object = S3Object.builder().bucket(s3Bucket).name(s3Key).build();
+            return Document.builder().s3Object(s3Object).build();
         } else {
             throw new IllegalArgumentException("Either document data or S3 reference must be provided");
         }

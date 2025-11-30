@@ -9,62 +9,52 @@
  */
 package org.nuxeo.ai.aws.mapper;
 
-import org.nuxeo.ai.aws.dto.SentimentResult;
-import org.nuxeo.ai.aws.dto.EntitiesResult;
-import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
-import software.amazon.awssdk.services.comprehend.model.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.nuxeo.ai.aws.dto.EntitiesResult;
+import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
+import org.nuxeo.ai.aws.dto.SentimentResult;
+import software.amazon.awssdk.services.comprehend.model.*;
+
 /**
- * Maps AWS SDK Comprehend responses to our abstraction layer DTOs.
- * This is one of the few classes that imports AWS SDK classes.
+ * Maps AWS SDK Comprehend responses to our abstraction layer DTOs. This is one of the few classes that imports AWS SDK
+ * classes.
  */
 public class ComprehendMapper {
 
     public static SentimentResult mapToSentimentResult(DetectSentimentResponse response) {
-        return new SentimentResult(
-            response.sentiment().toString(),
-            response.sentimentScore().positive(),
-            response.sentimentScore().negative(),
-            response.sentimentScore().neutral(),
-            response.sentimentScore().mixed()
-        );
+        return new SentimentResult(response.sentiment().toString(), response.sentimentScore().positive(),
+                response.sentimentScore().negative(), response.sentimentScore().neutral(),
+                response.sentimentScore().mixed());
     }
 
     public static EntitiesResult mapToEntitiesResult(DetectEntitiesResponse response) {
-        List<EntitiesResult.Entity> entities = response.entities().stream()
-            .map(ComprehendMapper::mapToEntity)
-            .collect(Collectors.toList());
+        List<EntitiesResult.Entity> entities = response.entities()
+                                                       .stream()
+                                                       .map(ComprehendMapper::mapToEntity)
+                                                       .collect(Collectors.toList());
 
         return new EntitiesResult(entities);
     }
 
     private static EntitiesResult.Entity mapToEntity(Entity awsEntity) {
-        return new EntitiesResult.Entity(
-            awsEntity.text(),
-            awsEntity.type().toString(),
-            awsEntity.score(),
-            awsEntity.beginOffset(),
-            awsEntity.endOffset()
-        );
+        return new EntitiesResult.Entity(awsEntity.text(), awsEntity.type().toString(), awsEntity.score(),
+                awsEntity.beginOffset(), awsEntity.endOffset());
     }
 
     public static KeyPhrasesResult mapToKeyPhrasesResult(DetectKeyPhrasesResponse response) {
-        List<KeyPhrasesResult.KeyPhrase> keyPhrases = response.keyPhrases().stream()
-            .map(ComprehendMapper::mapToKeyPhrase)
-            .collect(Collectors.toList());
+        List<KeyPhrasesResult.KeyPhrase> keyPhrases = response.keyPhrases()
+                                                              .stream()
+                                                              .map(ComprehendMapper::mapToKeyPhrase)
+                                                              .collect(Collectors.toList());
 
         return new KeyPhrasesResult(keyPhrases);
     }
 
-    private static KeyPhrasesResult.KeyPhrase mapToKeyPhrase(software.amazon.awssdk.services.comprehend.model.KeyPhrase awsKeyPhrase) {
-        return new KeyPhrasesResult.KeyPhrase(
-            awsKeyPhrase.text(),
-            awsKeyPhrase.score(),
-            awsKeyPhrase.beginOffset(),
-            awsKeyPhrase.endOffset()
-        );
+    private static KeyPhrasesResult.KeyPhrase mapToKeyPhrase(
+            software.amazon.awssdk.services.comprehend.model.KeyPhrase awsKeyPhrase) {
+        return new KeyPhrasesResult.KeyPhrase(awsKeyPhrase.text(), awsKeyPhrase.score(), awsKeyPhrase.beginOffset(),
+                awsKeyPhrase.endOffset());
     }
 }

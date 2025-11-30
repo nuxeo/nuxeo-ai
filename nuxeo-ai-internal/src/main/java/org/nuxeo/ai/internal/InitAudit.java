@@ -14,12 +14,15 @@ import static org.nuxeo.ai.internal.InitAudit.ID;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
 import jakarta.ws.rs.core.Response;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
@@ -28,8 +31,6 @@ import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoPrincipal;
-import org.nuxeo.audit.api.LogEntry;
-import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.runtime.api.Framework;
 
 @Operation(id = ID, category = "AICore", label = "Init Audit", description = "Init audit for metrics")
@@ -71,7 +72,8 @@ public class InitAudit {
             Random rnd = ThreadLocalRandom.current();
             for (int i = 0; i < 5000; i++) {
                 Date randomDate = new Date(ThreadLocalRandom.current().nextLong(d1.getTime(), d2.getTime()));
-                storeAudit(audit, root, autos[rnd.nextInt(autos.length)], modelName, backtrack[rnd.nextInt(backtrack.length)], randomDate);
+                storeAudit(audit, root, autos[rnd.nextInt(autos.length)], modelName,
+                        backtrack[rnd.nextInt(backtrack.length)], randomDate);
             }
             for (int i = 0; i < 5000; i++) {
                 Date randomDate = new Date(ThreadLocalRandom.current().nextLong(d1.getTime(), d2.getTime()));
@@ -81,7 +83,8 @@ public class InitAudit {
         return Response.status(200).build();
     }
 
-    private void storeAudit(AuditBackend audit, DocumentModel doc, String eventName, String model, long value, Date date) {
+    private void storeAudit(AuditBackend audit, DocumentModel doc, String eventName, String model, long value,
+            Date date) {
         LogEntry logEntry = LogEntry.builder(eventName, date)
                                     .category("AI")
                                     .docUUID(doc.getId())

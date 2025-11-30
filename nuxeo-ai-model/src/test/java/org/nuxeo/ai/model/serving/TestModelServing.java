@@ -39,7 +39,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
 import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,6 +71,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -136,7 +139,7 @@ public class TestModelServing {
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
     @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })
     public void testPredict() throws IOException {
-        //Create a document
+        // Create a document
         DocumentModel testDoc = session.createDocumentModel("/", "My Special Doc", "FileRefDoc");
         testDoc.setPropertyValue("dc:title", "My document title");
         testDoc.setPropertyValue("dc:subjects", (Serializable) Arrays.asList("sciences", "art/cinema"));
@@ -149,7 +152,7 @@ public class TestModelServing {
         List<EnrichmentMetadata> suggestions = modelServingService.predict(testDoc);
         assertEquals(2, suggestions.size());
 
-        //Test serialize results
+        // Test serialize results
         EnrichmentMetadata andBackAgain = fromRecord(toRecord("t", suggestions.get(0)), EnrichmentMetadata.class);
         assertEquals(suggestions.get(0), andBackAgain);
     }

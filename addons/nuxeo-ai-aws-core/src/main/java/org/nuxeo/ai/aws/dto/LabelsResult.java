@@ -16,26 +16,22 @@
 package org.nuxeo.ai.aws.dto;
 
 import java.util.List;
-import java.util.Objects;
 
-/**
- * Domain-specific DTO for Rekognition label detection results.
- */
 public record LabelsResult(List<Label> labels) {
-    public List<Label> getLabels() { return labels; }
-    // equals/hashCode retained via record; override if explicit behavior needed
-    @Override public boolean equals(Object o) { return o instanceof LabelsResult lr && Objects.equals(labels, lr.labels); }
-    @Override public int hashCode() { return Objects.hash(labels); }
-    /**
-     * Represents a detected label
-     */
+
+    // Optional: enforce immutability
+    public LabelsResult {
+        labels = List.copyOf(labels);
+    }
+
     public static record Label(String name, Float confidence, List<String> parents) {
-        public Label(String name, float confidence) { this(name, (Float) confidence, List.of()); }
-        public String getName() { return name; }
-        public Float getConfidence() { return confidence; }
-        public List<String> getParents() { return parents; }
-        @Override public boolean equals(Object o) { return o instanceof Label l && Objects.equals(name, l.name) && Objects.equals(confidence, l.confidence) && Objects.equals(parents, l.parents); }
-        @Override public int hashCode() { return Objects.hash(name, confidence, parents); }
-        @Override public String toString() { return "Label{" + "name='" + name + '\'' + ", confidence=" + confidence + ", parents=" + parents + '}'; }
+
+        public Label(String name, float confidence) {
+            this(name, confidence, List.of());
+        }
+
+        public Label {
+            parents = List.copyOf(parents);
+        }
     }
 }

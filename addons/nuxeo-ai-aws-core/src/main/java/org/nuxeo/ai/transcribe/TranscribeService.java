@@ -21,20 +21,21 @@ package org.nuxeo.ai.transcribe;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.nuxeo.ai.aws.dto.TranscriptionJobResult;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ai.aws.dto.TranscriptionJobResult;
 
 /**
- * Service interface intended for Video/Audio transcription - Now using domain DTOs
- * This interface is completely independent of AWS SDK implementation details
+ * Service interface intended for Video/Audio transcription - Now using domain DTOs This interface is completely
+ * independent of AWS SDK implementation details
  */
 public interface TranscribeService {
 
     /**
      * Start transcription job for
      *
-     * @param blob      that contains Video/Audio
+     * @param blob that contains Video/Audio
      * @param languages an array of languages
      * @return {@link TranscriptionJobResult} of created request
      */
@@ -67,7 +68,8 @@ public interface TranscribeService {
      * New helper method used by tests to convert a transcription to labels (migrated from provider)
      */
     default List<AIMetadata.Label> asLabels(AudioTranscription transcription) {
-        if (transcription == null || transcription.getResults() == null || transcription.getResults().getItems() == null) {
+        if (transcription == null || transcription.getResults() == null
+                || transcription.getResults().getItems() == null) {
             return java.util.Collections.emptyList();
         }
         List<AIMetadata.Label> labels = new ArrayList<>();

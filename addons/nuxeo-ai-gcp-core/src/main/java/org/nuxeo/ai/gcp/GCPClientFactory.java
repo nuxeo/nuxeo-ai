@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,26 +30,23 @@ import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.cloud.vision.v1.ImageAnnotatorSettings;
 
 /**
- * Centralized GCP Client Factory - Single point of GCP SDK dependency management.
- * This factory isolates all GCP SDK client creation and configuration logic.
- *
- * Benefits:
- * - All GCP SDK dependencies are managed in one place
- * - Easy to upgrade GCP SDK versions
- * - Consistent client configuration across all services
- * - Easy to add new GCP services
+ * Centralized GCP Client Factory - Single point of GCP SDK dependency management. This factory isolates all GCP SDK
+ * client creation and configuration logic. Benefits: - All GCP SDK dependencies are managed in one place - Easy to
+ * upgrade GCP SDK versions - Consistent client configuration across all services - Easy to add new GCP services
  */
 public class GCPClientFactory extends DefaultComponent {
 
     private static final Logger log = LogManager.getLogger(GCPClientFactory.class);
 
     public static final String GOOGLE_CREDENTIALS_CONFIG = "nuxeo.ai.google.credentials";
+
     public static final String DEFAULT_CREDENTIALS_FILE = "gcp-credentials.json";
 
     // Volatile for thread-safety with double-checked locking
@@ -84,8 +82,10 @@ public class GCPClientFactory extends DefaultComponent {
                 if (imageAnnotatorClient == null) {
                     try {
                         ImageAnnotatorSettings settings = ImageAnnotatorSettings.newBuilder()
-                                .setCredentialsProvider(FixedCredentialsProvider.create(credentials))
-                                .build();
+                                                                                .setCredentialsProvider(
+                                                                                        FixedCredentialsProvider.create(
+                                                                                                credentials))
+                                                                                .build();
                         imageAnnotatorClient = ImageAnnotatorClient.create(settings);
                         log.debug("Created new ImageAnnotatorClient");
                     } catch (IOException e) {

@@ -29,7 +29,9 @@ import static org.nuxeo.ai.similar.content.pipelines.IndexAction.XPATH_PARAM;
 
 import java.io.Serializable;
 import java.time.Duration;
+
 import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +49,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -88,7 +91,7 @@ public class IndexActionTest {
 
         BulkCommand command = new BulkCommand.Builder(INDEX_ACTION_NAME,
                 "SELECT * FROM Document WHERE ecm:primaryType = 'File'", session.getPrincipal().getActingUser()).param(
-                XPATH_PARAM, FILE_CONTENT).build();
+                        XPATH_PARAM, FILE_CONTENT).build();
         String bafId = bs.submit(command);
 
         txf.nextTransaction();

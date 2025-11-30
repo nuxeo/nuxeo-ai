@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.translate.TranslateClient;
 import software.amazon.awssdk.services.translate.model.TranslateTextRequest;
 
 /**
- * Implementation of TranslateServiceFacade that isolates ALL AWS SDK dependencies.
- * This is the ONLY class that imports AWS SDK classes for Translate operations.
+ * Implementation of TranslateServiceFacade that isolates ALL AWS SDK dependencies. This is the ONLY class that imports
+ * AWS SDK classes for Translate operations.
  */
 public class TranslateServiceFacadeImpl extends DefaultComponent implements TranslateServiceFacade {
 
@@ -37,10 +37,10 @@ public class TranslateServiceFacadeImpl extends DefaultComponent implements Tran
             TranslateClient client = clientFactory.getTranslateClient();
 
             TranslateTextRequest awsRequest = TranslateTextRequest.builder()
-                    .text(request.getText())
-                    .sourceLanguageCode(request.getSourceLanguageCode())
-                    .targetLanguageCode(request.getTargetLanguageCode())
-                    .build();
+                                                                  .text(request.getText())
+                                                                  .sourceLanguageCode(request.getSourceLanguageCode())
+                                                                  .targetLanguageCode(request.getTargetLanguageCode())
+                                                                  .build();
 
             var response = client.translateText(awsRequest);
             return TranslateMapper.mapToTranslateResult(response);

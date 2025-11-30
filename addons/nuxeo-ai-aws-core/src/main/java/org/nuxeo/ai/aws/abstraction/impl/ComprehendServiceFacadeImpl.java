@@ -14,22 +14,21 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.aws.AWSClientFactory;
 import org.nuxeo.ai.aws.abstraction.ComprehendServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.ComprehendRequest;
-import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.aws.dto.EntitiesResult;
 import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
+import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.aws.mapper.ComprehendMapper;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 import software.amazon.awssdk.services.comprehend.ComprehendClient;
 import software.amazon.awssdk.services.comprehend.model.DetectEntitiesRequest;
-import software.amazon.awssdk.services.comprehend.model.DetectSentimentRequest;
 import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesRequest;
+import software.amazon.awssdk.services.comprehend.model.DetectSentimentRequest;
 
 /**
- * Implementation of ComprehendServiceFacade that isolates ALL AWS SDK dependencies.
- * This is the ONLY class that imports AWS SDK classes for Comprehend operations.
- * All service implementations use the facade interface instead.
+ * Implementation of ComprehendServiceFacade that isolates ALL AWS SDK dependencies. This is the ONLY class that imports
+ * AWS SDK classes for Comprehend operations. All service implementations use the facade interface instead.
  */
 public class ComprehendServiceFacadeImpl extends DefaultComponent implements ComprehendServiceFacade {
 
@@ -42,9 +41,9 @@ public class ComprehendServiceFacadeImpl extends DefaultComponent implements Com
             ComprehendClient client = clientFactory.getComprehendClient();
 
             DetectSentimentRequest awsRequest = DetectSentimentRequest.builder()
-                    .text(request.getText())
-                    .languageCode(request.getLanguageCode())
-                    .build();
+                                                                      .text(request.text())
+                                                                      .languageCode(request.languageCode())
+                                                                      .build();
 
             var response = client.detectSentiment(awsRequest);
             return ComprehendMapper.mapToSentimentResult(response);
@@ -61,9 +60,9 @@ public class ComprehendServiceFacadeImpl extends DefaultComponent implements Com
             ComprehendClient client = clientFactory.getComprehendClient();
 
             DetectEntitiesRequest awsRequest = DetectEntitiesRequest.builder()
-                    .text(request.getText())
-                    .languageCode(request.getLanguageCode())
-                    .build();
+                                                                    .text(request.text())
+                                                                    .languageCode(request.languageCode())
+                                                                    .build();
 
             var response = client.detectEntities(awsRequest);
             return ComprehendMapper.mapToEntitiesResult(response);
@@ -80,9 +79,9 @@ public class ComprehendServiceFacadeImpl extends DefaultComponent implements Com
             ComprehendClient client = clientFactory.getComprehendClient();
 
             DetectKeyPhrasesRequest awsRequest = DetectKeyPhrasesRequest.builder()
-                    .text(request.getText())
-                    .languageCode(request.getLanguageCode())
-                    .build();
+                                                                        .text(request.text())
+                                                                        .languageCode(request.languageCode())
+                                                                        .build();
 
             var response = client.detectKeyPhrases(awsRequest);
             return ComprehendMapper.mapToKeyPhrasesResult(response);

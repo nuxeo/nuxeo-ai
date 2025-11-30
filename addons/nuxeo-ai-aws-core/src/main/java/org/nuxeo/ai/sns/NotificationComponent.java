@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +32,7 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.SubscribeRequest;
 import software.amazon.awssdk.services.sns.model.SubscribeResponse;
@@ -87,10 +89,10 @@ public class NotificationComponent extends DefaultComponent implements Notificat
     @Override
     public String subscribe(String arn, URI uri) {
         SubscribeRequest request = SubscribeRequest.builder()
-                                                  .topicArn(arn)
-                                                  .protocol(uri.getScheme())
-                                                  .endpoint(uri.toString())
-                                                  .build();
+                                                   .topicArn(arn)
+                                                   .protocol(uri.getScheme())
+                                                   .endpoint(uri.toString())
+                                                   .build();
         SubscribeResponse result = client().subscribe(request);
         return result.subscriptionArn();
     }
@@ -116,9 +118,9 @@ public class NotificationComponent extends DefaultComponent implements Notificat
 
         synchronized (this) {
             amazonSNS = SnsClient.builder()
-                                .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                                .region(AWSHelper.getInstance().getRegion())
-                                .build();
+                                 .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
+                                 .region(AWSHelper.getInstance().getRegion())
+                                 .build();
             return amazonSNS;
         }
     }

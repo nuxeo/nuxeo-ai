@@ -15,14 +15,8 @@
  */
 package org.nuxeo.ai.aws.dto;
 
-import java.util.Objects;
-
 /**
  * Domain-specific DTO for AWS Translate results.
  */
 public record TranslationResult(String translatedText, String sourceLanguageCode, String targetLanguageCode) {
-    public String getTranslatedText() { return translatedText; }
-    public String getSourceLanguageCode() { return sourceLanguageCode; }
-    public String getTargetLanguageCode() { return targetLanguageCode; }
-    @Override public String toString() { return "TranslationResult{" + "translatedText='" + translatedText + '\'' + ", sourceLanguageCode='" + sourceLanguageCode + '\'' + ", targetLanguageCode='" + targetLanguageCode + '\'' + '}'; }
 }

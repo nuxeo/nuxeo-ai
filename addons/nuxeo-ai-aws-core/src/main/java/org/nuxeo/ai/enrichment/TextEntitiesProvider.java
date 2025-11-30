@@ -29,21 +29,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.EntitiesResult;
 import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.api.Framework;
-import software.amazon.awssdk.services.comprehend.model.DetectEntitiesResponse;
 
 import net.jodah.failsafe.RetryPolicy;
-import org.nuxeo.ai.aws.dto.EntitiesResult;
 
 public class TextEntitiesProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
-
-    private static final Log log = LogFactory.getLog(TextEntitiesProvider.class);
 
     // in bytes
     public static final long ENTITY_MAX_SIZE = 100_000;
@@ -54,6 +52,8 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
 
     public static final String ENTITIES_KEY = "Entities";
 
+    private static final Log log = LogFactory.getLog(TextEntitiesProvider.class);
+
     protected String languageCode;
 
     @Override
@@ -61,27 +61,6 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
         super.init(descriptor);
         languageCode = descriptor.options.getOrDefault(LANGUAGE_CODE, DEFAULT_LANGUAGE);
         maxSize = ENTITY_MAX_SIZE;
-    }
-
-    /**
-     * Processes the result of the call to AWS
-     */
-    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            EntitiesResult result) {
-        List<AIMetadata.Label> labels = result.getEntities()
-                                              .stream()
-                                              .map(e -> new AIMetadata.Label(e.getText(), e.getScore()))
-                                              .collect(Collectors.toList());
-        String raw = toJsonString(jg -> jg.writeObjectField(ENTITIES_KEY, result.getEntities()));
-
-        String rawKey = saveJsonAsRawBlob(raw);
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
-                                                                                     .withRawKey(rawKey)
-                                                                                     .withDocumentProperties(
-                                                                                             Collections.singleton(
-                                                                                                     xPath))
-                                                                                     .build();
-        return Collections.singletonList(metadata);
     }
 
     @Override
@@ -95,8 +74,8 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
                     continue;
                 }
                 EntitiesResult result = Framework.getService(ComprehendService.class)
-                        .detectEntities(prop.getValue(), languageCode);
-                if (result != null && !result.getEntities().isEmpty()) {
+                                                 .detectEntities(prop.getValue(), languageCode);
+                if (result != null && !result.entities().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -104,10 +83,31 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
         });
     }
 
+    /**
+     * Processes the result of the call to AWS
+     */
+    protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
+            EntitiesResult result) {
+        List<AIMetadata.Label> labels = result.entities()
+                                              .stream()
+                                              .map(e -> new AIMetadata.Label(e.text(), e.score()))
+                                              .collect(Collectors.toList());
+        String raw = toJsonString(jg -> jg.writeObjectField(ENTITIES_KEY, result.entities()));
+
+        String rawKey = saveJsonAsRawBlob(raw);
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
+                                                                                     .withRawKey(rawKey)
+                                                                                     .withDocumentProperties(
+                                                                                             Collections.singleton(
+                                                                                                     xPath))
+                                                                                     .build();
+        return Collections.singletonList(metadata);
+    }
+
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(
+                throwable -> (throwable).getMessage().contains("is not authorized to perform"));
     }
 
     @Override

@@ -39,7 +39,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -63,6 +65,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.tensorflow.example.Feature;
+
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)

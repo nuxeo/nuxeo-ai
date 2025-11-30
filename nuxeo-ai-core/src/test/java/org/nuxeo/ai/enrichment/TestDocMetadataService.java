@@ -40,7 +40,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import jakarta.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -174,7 +176,7 @@ public class TestDocMetadataService {
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
 
-        //Lets save the same data again so we can check we don't duplicate it.
+        // Lets save the same data again so we can check we don't duplicate it.
         testDoc = docMetadataService.saveEnrichment(session, suggestionMetadata);
         session.saveDocument(testDoc);
         txFeature.nextTransaction();
@@ -190,47 +192,53 @@ public class TestDocMetadataService {
         SuggestionMetadataWrapper wrapper = new SuggestionMetadataWrapper(testDoc);
         assertTrue(wrapper.getModels().contains("stest"));
 
-        assertEquals(2, wrapper.getSuggestionsByProperty("dc:title")
-                               .stream()
-                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
-                               .mapToLong(Collection::size)
-                               .sum());
-        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format")
-                               .stream()
-                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
-                               .mapToLong(Collection::size)
-                               .sum());
+        assertEquals(2,
+                wrapper.getSuggestionsByProperty("dc:title")
+                       .stream()
+                       .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                       .mapToLong(Collection::size)
+                       .sum());
+        assertEquals(1,
+                wrapper.getSuggestionsByProperty("dc:format")
+                       .stream()
+                       .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                       .mapToLong(Collection::size)
+                       .sum());
         assertEquals(7, wrapper.getSuggestionsByModel("stest").stream().mapToInt(l -> l.getValues().size()).sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:title");
         wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertEquals(0, wrapper.getSuggestionsByProperty("dc:title")
-                               .stream()
-                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
-                               .mapToLong(Collection::size)
-                               .sum());
-        assertEquals(1, wrapper.getSuggestionsByProperty("dc:format")
-                               .stream()
-                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
-                               .mapToLong(Collection::size)
-                               .sum());
+        assertEquals(0,
+                wrapper.getSuggestionsByProperty("dc:title")
+                       .stream()
+                       .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                       .mapToLong(Collection::size)
+                       .sum());
+        assertEquals(1,
+                wrapper.getSuggestionsByProperty("dc:format")
+                       .stream()
+                       .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                       .mapToLong(Collection::size)
+                       .sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "dc:format");
         wrapper = new SuggestionMetadataWrapper(testDoc);
         classProp = testDoc.getPropertyObject(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS);
-        assertEquals(0, wrapper.getSuggestionsByProperty("dc:format")
-                               .stream()
-                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
-                               .mapToLong(Collection::size)
-                               .sum());
+        assertEquals(0,
+                wrapper.getSuggestionsByProperty("dc:format")
+                       .stream()
+                       .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                       .mapToLong(Collection::size)
+                       .sum());
 
         testDoc = docMetadataService.removeSuggestionsForTargetProperty(testDoc, "complexTest:testList");
         wrapper = new SuggestionMetadataWrapper(testDoc);
-        assertEquals(0, wrapper.getSuggestionsByProperty("complexTest:testList")
-                               .stream()
-                               .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
-                               .mapToLong(Collection::size)
-                               .sum());
+        assertEquals(0,
+                wrapper.getSuggestionsByProperty("complexTest:testList")
+                       .stream()
+                       .map(SuggestionMetadataWrapper.PropertyHolder::getLabels)
+                       .mapToLong(Collection::size)
+                       .sum());
 
         suggested = classProp.getValue(List.class);
         assertTrue("No longer any suggestions.", suggested.isEmpty());

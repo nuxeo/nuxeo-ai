@@ -46,7 +46,6 @@ import org.nuxeo.runtime.kv.KeyValueStore;
 
 import software.amazon.awssdk.services.rekognition.model.Attribute;
 import software.amazon.awssdk.services.rekognition.model.BoundingBox;
-import software.amazon.awssdk.services.rekognition.model.FaceAttributes;
 import software.amazon.awssdk.services.rekognition.model.FaceDetail;
 import software.amazon.awssdk.services.rekognition.model.FaceDetection;
 import software.amazon.awssdk.services.rekognition.model.GetFaceDetectionRequest;
@@ -97,7 +96,8 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
     /**
      * Processes the result of the call to AWS.
      */
-    public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName, String jobId) {
+    public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
+            String jobId) {
 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         List<AIMetadata.Tag> tags = new ArrayList<>();
@@ -112,15 +112,14 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
             result = rs.getClient().getFaceDetection(requestBuilder.build());
 
             List<AIMetadata.Tag> currentPageTags = result.faces()
-                    .stream()
-                    .map(c -> newFaceTag(c.face(), c.timestamp()))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                                                         .stream()
+                                                         .map(c -> newFaceTag(c.face(), c.timestamp()))
+                                                         .filter(Objects::nonNull)
+                                                         .collect(Collectors.toList());
 
             tags.addAll(currentPageTags);
             nativeFaceObjects.addAll(result.faces());
         } while (result.nextToken() != null);
-
 
         List<EnrichmentMetadata> metadata = new ArrayList<>();
         String raw = toJsonString(jg -> {
@@ -128,11 +127,11 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
         });
         String rawKey = saveJsonAsRawBlob(raw);
 
-        metadata.add(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
-                                                                                .withRawKey(rawKey)
-                                                                                .withDocumentProperties(
-                                                                                        singleton(propName))
-                                                                                .build());
+        metadata.add(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
         return metadata;
     }
 

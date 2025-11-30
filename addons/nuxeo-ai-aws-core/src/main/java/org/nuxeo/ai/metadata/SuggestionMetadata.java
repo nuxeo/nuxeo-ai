@@ -12,19 +12,5 @@ package org.nuxeo.ai.metadata;
 /**
  * Minimal stub implementation of SuggestionMetadata for compilation.
  */
-public class SuggestionMetadata {
-
-    private final String key;
-    private final Object value;
-    private final float confidence;
-
-    public SuggestionMetadata(String key, Object value, float confidence) {
-        this.key = key;
-        this.value = value;
-        this.confidence = confidence;
-    }
-
-    public String getKey() { return key; }
-    public Object getValue() { return value; }
-    public float getConfidence() { return confidence; }
+public record SuggestionMetadata(String key, Object value, float confidence) {
 }

@@ -16,35 +16,21 @@
 package org.nuxeo.ai.aws.dto;
 
 import java.util.List;
-import java.util.Objects;
 
-/**
- * Domain-specific DTO for Rekognition text detection results.
- */
 public record TextDetectionResult(List<TextDetection> textDetections) {
-    public List<TextDetection> getTextDetections() { return textDetections; }
-    // equals/hashCode from record ok; keep explicit if desired
-    @Override public boolean equals(Object o) { return o instanceof TextDetectionResult that && Objects.equals(textDetections, that.textDetections); }
-    @Override public int hashCode() { return Objects.hash(textDetections); }
 
-    /**
-     * Represents detected text
-     */
+    // Optional but recommended: enforce immutability
+    public TextDetectionResult {
+        textDetections = List.copyOf(textDetections);
+    }
+
     public static record TextDetection(String detectedText, String type, Float confidence, BoundingBox boundingBox) {
         // backward compatible overloaded constructor
-        public TextDetection(String detectedText, String type, float confidence) { this(detectedText, type, (Float) confidence, null); }
-        public String getDetectedText() { return detectedText; }
-        public String getType() { return type; }
-        public Float getConfidence() { return confidence; }
-        public BoundingBox getBoundingBox() { return boundingBox; }
+        public TextDetection(String detectedText, String type, float confidence) {
+            this(detectedText, type, confidence, null);
+        }
     }
-    /**
-     * Represents a bounding box for detected text
-     */
+
     public static record BoundingBox(Float width, Float height, Float left, Float top) {
-        public Float getWidth() { return width; }
-        public Float getHeight() { return height; }
-        public Float getLeft() { return left; }
-        public Float getTop() { return top; }
     }
 }

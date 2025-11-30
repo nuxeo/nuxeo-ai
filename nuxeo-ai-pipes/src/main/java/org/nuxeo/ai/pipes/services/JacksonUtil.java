@@ -28,24 +28,26 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.lib.stream.computation.Record;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Utilities for use with Jackson
@@ -53,6 +55,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class JacksonUtil {
 
     public static final ObjectMapper MAPPER = new ObjectMapper();
+
     private static final AtomicBoolean AWS_SERIALIZERS_ADDED = new AtomicBoolean(false);
 
     static {
@@ -92,8 +95,9 @@ public class JacksonUtil {
                 sdkPojoClass = Class.forName("software.amazon.awssdk.core.SdkPojo");
             } catch (ClassNotFoundException primary) {
                 try {
-                    sdkPojoClass = Thread.currentThread().getContextClassLoader()
-                            .loadClass("software.amazon.awssdk.core.SdkPojo");
+                    sdkPojoClass = Thread.currentThread()
+                                         .getContextClassLoader()
+                                         .loadClass("software.amazon.awssdk.core.SdkPojo");
                 } catch (Exception secondary) {
                     sdkPojoClass = null;
                 }
@@ -114,7 +118,8 @@ public class JacksonUtil {
             // Fallback MixIn to ensure serializer selection when dynamic proxies / different CLs
             try {
                 @com.fasterxml.jackson.databind.annotation.JsonSerialize(using = JacksonUtil.SdkPojoFallbackSerializer.class)
-                abstract class SdkPojoMixin { }
+                abstract class SdkPojoMixin {
+                }
                 JacksonUtil.SdkPojoFallbackSerializer.setDelegate(sdkPojoSerializer);
                 MAPPER.addMixIn(sdkPojoClass, SdkPojoMixin.class);
             } catch (Exception ignore) {
@@ -140,12 +145,14 @@ public class JacksonUtil {
                         continue;
                     }
                     String name = m.getName();
-                    if (name.equals("getClass") || name.equals("sdkFields") || name.equals("toBuilder") || name.equals("builder")) {
+                    if (name.equals("getClass") || name.equals("sdkFields") || name.equals("toBuilder")
+                            || name.equals("builder")) {
                         continue;
                     }
                     if (name.startsWith("get") && name.length() > 3) {
                         name = Character.toLowerCase(name.charAt(3)) + name.substring(4);
-                    } else if (name.startsWith("is") && name.length() > 2 && (m.getReturnType() == boolean.class || m.getReturnType() == Boolean.class)) {
+                    } else if (name.startsWith("is") && name.length() > 2
+                            && (m.getReturnType() == boolean.class || m.getReturnType() == Boolean.class)) {
                         name = Character.toLowerCase(name.charAt(2)) + name.substring(3);
                     } else {
                         // skip non bean-style accessors
@@ -156,7 +163,8 @@ public class JacksonUtil {
                         if (fieldVal == null) {
                             continue;
                         }
-                        if (fieldVal instanceof java.util.Collection && ((java.util.Collection<?>) fieldVal).isEmpty()) {
+                        if (fieldVal instanceof java.util.Collection
+                                && ((java.util.Collection<?>) fieldVal).isEmpty()) {
                             continue;
                         }
                         if (fieldVal instanceof CharSequence cs) {
@@ -215,7 +223,7 @@ public class JacksonUtil {
     }
 
     /**
-     * Gets the DocumentModel from an Event.  Returns null if that's not possible
+     * Gets the DocumentModel from an Event. Returns null if that's not possible
      */
     public static DocumentModel toDoc(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
@@ -306,39 +314,40 @@ public class JacksonUtil {
             final long length = longVal(node, "length");
             InvocationHandler handler = (proxy, method, args) -> {
                 switch (method.getName()) {
-                case "getMimeType":
-                    return mimeType;
-                case "getEncoding":
-                    return encoding;
-                case "getDigest":
-                    return digest;
-                case "getProviderId":
-                    return providerId;
-                case "getKey":
-                    return key;
-                case "getLength":
-                    return length;
-                case "toString":
-                    return "ManagedBlob{" + key + "," + mimeType + "," + length + "}";
-                case "equals":
-                    if (args != null && args.length == 1 && args[0] != null && Proxy.isProxyClass(args[0].getClass())) {
-                        // Compare metadata of other proxy
-                        Object other = args[0];
-                        try {
-                            String otherKey = (String) other.getClass().getMethod("getKey").invoke(other);
-                            String otherDigest = (String) other.getClass().getMethod("getDigest").invoke(other);
-                            Long otherLength = (Long) other.getClass().getMethod("getLength").invoke(other);
-                            return Objects.equals(key, otherKey) && Objects.equals(digest, otherDigest)
-                                    && Objects.equals(length, otherLength);
-                        } catch (Exception ignore) {
+                    case "getMimeType":
+                        return mimeType;
+                    case "getEncoding":
+                        return encoding;
+                    case "getDigest":
+                        return digest;
+                    case "getProviderId":
+                        return providerId;
+                    case "getKey":
+                        return key;
+                    case "getLength":
+                        return length;
+                    case "toString":
+                        return "ManagedBlob{" + key + "," + mimeType + "," + length + "}";
+                    case "equals":
+                        if (args != null && args.length == 1 && args[0] != null
+                                && Proxy.isProxyClass(args[0].getClass())) {
+                            // Compare metadata of other proxy
+                            Object other = args[0];
+                            try {
+                                String otherKey = (String) other.getClass().getMethod("getKey").invoke(other);
+                                String otherDigest = (String) other.getClass().getMethod("getDigest").invoke(other);
+                                Long otherLength = (Long) other.getClass().getMethod("getLength").invoke(other);
+                                return Objects.equals(key, otherKey) && Objects.equals(digest, otherDigest)
+                                        && Objects.equals(length, otherLength);
+                            } catch (Exception ignore) {
+                            }
                         }
-                    }
-                    return proxy == args[0];
-                case "hashCode":
-                    return Objects.hash(key, digest, length);
-                default:
-                    // Unsupported operations return null
-                    return null;
+                        return proxy == args[0];
+                    case "hashCode":
+                        return Objects.hash(key, digest, length);
+                    default:
+                        // Unsupported operations return null
+                        return null;
                 }
             };
             return (ManagedBlob) Proxy.newProxyInstance(ManagedBlob.class.getClassLoader(),
@@ -372,7 +381,11 @@ public class JacksonUtil {
     // Fallback serializer used by MixIn to delegate to runtime-created sdkPojoSerializer
     public static class SdkPojoFallbackSerializer extends JsonSerializer<Object> {
         private static JsonSerializer<Object> DELEGATE;
-        public static void setDelegate(JsonSerializer<Object> delegate) { DELEGATE = delegate; }
+
+        public static void setDelegate(JsonSerializer<Object> delegate) {
+            DELEGATE = delegate;
+        }
+
         @Override
         public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             if (DELEGATE != null) {

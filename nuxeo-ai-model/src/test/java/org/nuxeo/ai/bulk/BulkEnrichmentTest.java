@@ -43,7 +43,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import jakarta.inject.Inject;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -65,9 +67,9 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.search.SearchService;
 import org.nuxeo.ecm.core.search.SearchQuery;
 import org.nuxeo.ecm.core.search.SearchResponse;
+import org.nuxeo.ecm.core.search.SearchService;
 import org.nuxeo.ecm.core.test.CoreSearchFeature;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.Name;
@@ -77,12 +79,13 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature .class, CoreBulkFeature.class, CoreSearchFeature.class})
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class, CoreSearchFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
@@ -116,12 +119,11 @@ public class BulkEnrichmentTest {
     @Inject
     protected SearchService searchService;
 
-
     protected static final Pattern VALID_LOG_NAME_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_\\-]*");
 
     @Before
     public void setup() {
-        String name  = ENRICHMENT_IN.getName();
+        String name = ENRICHMENT_IN.getName();
         if (!VALID_LOG_NAME_PATTERN.matcher(name).matches()) {
             throw new IllegalArgumentException("Invalid name: '" + name + "'.");
         }
@@ -313,7 +315,8 @@ public class BulkEnrichmentTest {
         txFeature.nextTransaction();
 
         // replaced session.query(nxql) with SearchService usage
-        SearchResponse allResponse = searchService.search(SearchQuery.builder(nxql, session).limit(NUM_OF_DOCS).build());
+        SearchResponse allResponse = searchService.search(
+                SearchQuery.builder(nxql, session).limit(NUM_OF_DOCS).build());
         DocumentModelList someDoc = allResponse.loadDocuments(session);
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);
@@ -344,8 +347,9 @@ public class BulkEnrichmentTest {
     }
 
     protected List<DocumentModel> getSomeDocuments(String nxql) {
-        //SearchResponse response = searchService.search(SearchQuery.builder(nxql, session).limit(NUM_OF_DOCS).build());
-        //DocumentModelList enriched = response.loadDocuments(session);
+        // SearchResponse response = searchService.search(SearchQuery.builder(nxql,
+        // session).limit(NUM_OF_DOCS).build());
+        // DocumentModelList enriched = response.loadDocuments(session);
         DocumentModelList enriched = session.query(nxql, 20);
         List<DocumentModel> docs = new ArrayList<>();
         docs.add(enriched.get(14));

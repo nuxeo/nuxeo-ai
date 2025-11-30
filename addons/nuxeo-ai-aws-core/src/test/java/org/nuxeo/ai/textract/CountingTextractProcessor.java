@@ -21,6 +21,7 @@ package org.nuxeo.ai.textract;
 import static java.util.Collections.singletonList;
 
 import java.util.List;
+
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;

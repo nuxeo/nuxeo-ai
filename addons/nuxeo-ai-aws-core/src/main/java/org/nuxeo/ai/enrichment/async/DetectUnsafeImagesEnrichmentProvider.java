@@ -42,14 +42,13 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
+import net.jodah.failsafe.RetryPolicy;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.rekognition.model.ContentModerationDetection;
 import software.amazon.awssdk.services.rekognition.model.ContentModerationSortBy;
 import software.amazon.awssdk.services.rekognition.model.GetContentModerationRequest;
 import software.amazon.awssdk.services.rekognition.model.GetContentModerationResponse;
 import software.amazon.awssdk.services.rekognition.model.ModerationLabel;
-
-import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Detect unsafe content in images.
@@ -103,7 +102,8 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         return super.getRetryPolicy().abortOn(SdkClientException.class);
     }
 
-    public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName, String jobId) {
+    public Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
+            String jobId) {
 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
@@ -111,8 +111,8 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         GetContentModerationResponse result = null;
         do {
             GetContentModerationRequest.Builder requestBuilder = GetContentModerationRequest.builder()
-                    .jobId(jobId)
-                    .sortBy(ContentModerationSortBy.TIMESTAMP);
+                                                                                            .jobId(jobId)
+                                                                                            .sortBy(ContentModerationSortBy.TIMESTAMP);
 
             if (result != null && result.nextToken() != null) {
                 requestBuilder.nextToken(result.nextToken());
@@ -120,10 +120,11 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
             result = rs.getClient().getContentModeration(requestBuilder.build());
 
             List<EnrichmentMetadata.Label> currentPageLabels = result.moderationLabels()
-                    .stream()
-                    .map(l -> newLabel(l.moderationLabel(), l.timestamp()))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                                                                     .stream()
+                                                                     .map(l -> newLabel(l.moderationLabel(),
+                                                                             l.timestamp()))
+                                                                     .filter(Objects::nonNull)
+                                                                     .collect(Collectors.toList());
 
             labels.addAll(currentPageLabels);
             nativeLabelObjects.addAll(result.moderationLabels());

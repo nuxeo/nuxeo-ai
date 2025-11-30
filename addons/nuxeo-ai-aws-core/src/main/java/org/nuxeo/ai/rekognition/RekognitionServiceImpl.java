@@ -20,7 +20,7 @@ package org.nuxeo.ai.rekognition;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
@@ -28,21 +28,21 @@ import org.nuxeo.ai.aws.abstraction.AWSServiceRegistry;
 import org.nuxeo.ai.aws.abstraction.RekognitionServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.RekognitionRequest;
 import org.nuxeo.ai.aws.dto.LabelsResult;
-import org.nuxeo.ai.aws.dto.TextDetectionResult;
 import org.nuxeo.ai.aws.dto.RekognitionResult;
+import org.nuxeo.ai.aws.dto.TextDetectionResult;
 import org.nuxeo.ai.metrics.AWSMetrics;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
 import software.amazon.awssdk.services.rekognition.model.*;
 
 /**
- * Rekognition Service Implementation - NOW USES ABSTRACTION LAYER!
- * NO AWS SDK IMPORTS! All AWS SDK dependencies are completely isolated in the facade layer.
- * This service now only depends on our abstraction DTOs and interfaces.
+ * Rekognition Service Implementation - NOW USES ABSTRACTION LAYER! NO AWS SDK IMPORTS! All AWS SDK dependencies are
+ * completely isolated in the facade layer. This service now only depends on our abstraction DTOs and interfaces.
  *
  * @since 2.1.2
  */
@@ -51,7 +51,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     private static final Log log = LogFactory.getLog(RekognitionServiceImpl.class);
 
     protected RekognitionServiceFacade rekognitionFacade;
+
     protected AWSMetrics awsMetrics;
+
     protected RekognitionClient rekognitionClient; // underlying AWS client for legacy operations
 
     @Override
@@ -112,9 +114,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             throw new NuxeoException("Blob is not a video (no video reference available)");
         }
         StartLabelDetectionRequest request = StartLabelDetectionRequest.builder()
-                .video(video)
-                .minConfidence(minConfidence)
-                .build();
+                                                                       .video(video)
+                                                                       .minConfidence(minConfidence)
+                                                                       .build();
         StartLabelDetectionResponse response = rekognitionClient.startLabelDetection(request);
         return response.jobId();
     }
@@ -130,7 +132,8 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             RekognitionRequest.DetectLabels request = createDetectLabelsRequest(blob, 1000, minConfidence);
 
             // Call through facade - no AWS SDK objects involved
-            List<RekognitionResult.ModerationLabel> moderationLabels = rekognitionFacade.detectModerationLabels(request);
+            List<RekognitionResult.ModerationLabel> moderationLabels = rekognitionFacade.detectModerationLabels(
+                    request);
 
             if (log.isDebugEnabled()) {
                 log.debug("DetectModerationLabelsResult: " + moderationLabels.size() + " moderation labels detected");
@@ -190,9 +193,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
                 awsMetrics.updateRekognitionImageUnits(1L);
             }
             // Convert faces to simple LabelsResult (each face as label "face")
-            return new LabelsResult(faces.stream()
-                    .map(f -> new LabelsResult.Label("face", f.getConfidence()))
-                    .collect(Collectors.toList()));
+            return new LabelsResult(faces.stream().map(f -> new LabelsResult.Label("face", f.confidence())).toList());
         } catch (Exception e) {
             throw new NuxeoException("Failed to detect faces (DTO)", e);
         }
@@ -219,9 +220,8 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             if (awsMetrics != null) {
                 awsMetrics.updateRekognitionImageUnits(1L);
             }
-            return new LabelsResult(celebs.stream()
-                    .map(c -> new LabelsResult.Label(c.getName(), c.getConfidence()))
-                    .collect(Collectors.toList()));
+            return new LabelsResult(
+                    celebs.stream().map(c -> new LabelsResult.Label(c.name(), c.confidence())).toList());
         } catch (Exception e) {
             throw new NuxeoException("Failed to recognize celebrities (DTO)", e);
         }
@@ -279,9 +279,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             throw new NuxeoException("Blob is not a video");
         }
         StartSegmentDetectionRequest request = StartSegmentDetectionRequest.builder()
-                .video(video)
-                .segmentTypes(segmentType)
-                .build();
+                                                                           .video(video)
+                                                                           .segmentTypes(segmentType)
+                                                                           .build();
         StartSegmentDetectionResponse resp = rekognitionClient.startSegmentDetection(request);
         return resp.jobId();
     }
@@ -301,7 +301,8 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     }
 
     // Helper methods to create abstraction DTOs from ManagedBlob
-    private RekognitionRequest.DetectLabels createDetectLabelsRequest(ManagedBlob blob, int maxLabels, float minConfidence) {
+    private RekognitionRequest.DetectLabels createDetectLabelsRequest(ManagedBlob blob, int maxLabels,
+            float minConfidence) {
         if (isS3Blob(blob)) {
             String[] s3Info = extractS3Info(blob);
             return new RekognitionRequest.DetectLabels(s3Info[0], s3Info[1], maxLabels, minConfidence);
@@ -332,10 +333,10 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         String key = blob.getKey();
         if (key.startsWith("s3://")) {
             String[] parts = key.substring(5).split("/", 2);
-            return new String[]{parts[0], parts.length > 1 ? parts[1] : ""};
+            return new String[] { parts[0], parts.length > 1 ? parts[1] : "" };
         }
         // Fallback logic for other S3 blob formats
-        return new String[]{"default-bucket", key};
+        return new String[] { "default-bucket", key };
     }
 
     private byte[] getBlobBytes(ManagedBlob blob) {
@@ -350,24 +351,23 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     private LabelsResult convertToLabelsResult(List<RekognitionResult.Label> labels) {
         // Convert our abstraction DTOs back to existing LabelsResult format
         // This maintains backward compatibility with existing code
-        return new LabelsResult(labels.stream()
-                .map(label -> new LabelsResult.Label(label.getName(), label.getConfidence()))
-                .collect(java.util.stream.Collectors.toList()));
+        return new LabelsResult(
+                labels.stream().map(label -> new LabelsResult.Label(label.name(), label.confidence())).toList());
     }
 
-    private LabelsResult convertModerationLabelsToLabelsResult(List<RekognitionResult.ModerationLabel> moderationLabels) {
+    private LabelsResult convertModerationLabelsToLabelsResult(
+            List<RekognitionResult.ModerationLabel> moderationLabels) {
         return new LabelsResult(moderationLabels.stream()
-                .map(label -> new LabelsResult.Label(label.getName(), label.getConfidence()))
-                .collect(java.util.stream.Collectors.toList()));
+                                                .map(label -> new LabelsResult.Label(label.name(), label.confidence()))
+                                                .toList());
     }
 
     private TextDetectionResult convertToTextDetectionResult(List<RekognitionResult.TextDetection> textDetections) {
-        return new TextDetectionResult(textDetections.stream()
-                .map(detection -> new TextDetectionResult.TextDetection(
-                        detection.getDetectedText(),
-                        detection.getType(),
-                        detection.getConfidence()))
-                .collect(java.util.stream.Collectors.toList()));
+        return new TextDetectionResult(
+                textDetections.stream()
+                              .map(detection -> new TextDetectionResult.TextDetection(detection.detectedText(),
+                                      detection.type(), detection.confidence()))
+                              .toList());
     }
 
     // ...existing code for other methods...

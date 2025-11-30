@@ -9,24 +9,24 @@
  */
 package org.nuxeo.ai.aws.abstraction;
 
-import org.nuxeo.ai.aws.abstraction.impl.*;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
+import org.nuxeo.ai.aws.abstraction.impl.*;
 
 /**
- * Central registry for all AWS service facades.
- * This is the single entry point for accessing AWS services without any SDK dependencies.
- *
- * Service implementations only need to inject this registry and access facades through it.
- * All AWS SDK dependencies are completely isolated in facade implementations.
+ * Central registry for all AWS service facades. This is the single entry point for accessing AWS services without any
+ * SDK dependencies. Service implementations only need to inject this registry and access facades through it. All AWS
+ * SDK dependencies are completely isolated in facade implementations.
  */
 public class AWSServiceRegistry extends DefaultComponent {
 
     private ComprehendServiceFacade comprehendFacade;
+
     private RekognitionServiceFacade rekognitionFacade;
+
     private TextractServiceFacade textractFacade;
-    // private TranscribeServiceFacade transcribeFacade; // Temporarily commented out
+
     private TranslateServiceFacade translateFacade;
 
     @Override
@@ -38,7 +38,6 @@ public class AWSServiceRegistry extends DefaultComponent {
         rekognitionFacade = new RekognitionServiceFacadeImpl();
         textractFacade = new TextractServiceFacadeImpl();
         translateFacade = new TranslateServiceFacadeImpl();
-        // TODO: Add transcribeFacade = new TranscribeServiceFacadeImpl();
 
         // Start facade components
         startFacadeComponent(comprehendFacade, context);
@@ -84,14 +83,6 @@ public class AWSServiceRegistry extends DefaultComponent {
      */
     public TextractServiceFacade getTextractService() {
         return textractFacade;
-    }
-
-    /**
-     * Get Transcribe service facade - no AWS SDK imports needed
-     */
-    public TranscribeServiceFacade getTranscribeService() {
-        // return transcribeFacade; // Temporarily return null
-        return null;
     }
 
     /**

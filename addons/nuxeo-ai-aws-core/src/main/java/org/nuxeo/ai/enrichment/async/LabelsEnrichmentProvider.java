@@ -43,14 +43,13 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
+import net.jodah.failsafe.RetryPolicy;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.rekognition.model.GetLabelDetectionRequest;
 import software.amazon.awssdk.services.rekognition.model.GetLabelDetectionResponse;
 import software.amazon.awssdk.services.rekognition.model.Label;
 import software.amazon.awssdk.services.rekognition.model.LabelDetection;
 import software.amazon.awssdk.services.rekognition.model.LabelDetectionSortBy;
-
-import net.jodah.failsafe.RetryPolicy;
 
 /**
  * Finds items in an image and labels them
@@ -118,8 +117,8 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
         GetLabelDetectionResponse result = null;
         do {
             GetLabelDetectionRequest.Builder requestBuilder = GetLabelDetectionRequest.builder()
-                    .jobId(jobId)
-                    .sortBy(LabelDetectionSortBy.TIMESTAMP);
+                                                                                      .jobId(jobId)
+                                                                                      .sortBy(LabelDetectionSortBy.TIMESTAMP);
 
             if (result != null && result.nextToken() != null) {
                 requestBuilder.nextToken(result.nextToken());
@@ -128,14 +127,13 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
             result = rs.getClient().getLabelDetection(request);
 
             List<EnrichmentMetadata.Label> currentPageLabels = result.labels()
-                    .stream()
-                    .map(l -> newLabel(l.label(), l.timestamp()))
-                    .collect(Collectors.toList());
+                                                                     .stream()
+                                                                     .map(l -> newLabel(l.label(), l.timestamp()))
+                                                                     .collect(Collectors.toList());
 
             labels.addAll(currentPageLabels);
             nativeLabelObjects.addAll(result.labels());
         } while (result.nextToken() != null);
-
 
         String raw = toJsonString(jg -> jg.writeObjectField("labels", nativeLabelObjects));
 

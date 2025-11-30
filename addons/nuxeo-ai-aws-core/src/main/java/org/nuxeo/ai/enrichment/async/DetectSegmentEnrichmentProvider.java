@@ -145,12 +145,10 @@ public class DetectSegmentEnrichmentProvider extends AbstractEnrichmentProvider 
     protected EnrichmentMetadata.Label newLabel(SegmentDetection segmentDetection) {
         if (SegmentType.SHOT.toString().equals(segmentDetection.type().toString())) {
             return new EnrichmentMetadata.Label(segmentDetection.type().toString(),
-                    segmentDetection.shotSegment().confidence() / 100,
-                    segmentDetection.startTimestampMillis());
+                    segmentDetection.shotSegment().confidence() / 100, segmentDetection.startTimestampMillis());
         } else if (SegmentType.TECHNICAL_CUE.toString().equals(segmentDetection.type().toString())) {
             return new EnrichmentMetadata.Label(segmentDetection.technicalCueSegment().type().toString(),
-                    segmentDetection.technicalCueSegment().confidence() / 100,
-                    segmentDetection.startTimestampMillis());
+                    segmentDetection.technicalCueSegment().confidence() / 100, segmentDetection.startTimestampMillis());
         } else {
             throw new NuxeoException("Unknown video segment type: " + segmentDetection.type());
         }

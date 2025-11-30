@@ -56,11 +56,12 @@ import org.nuxeo.ecm.core.event.impl.EventContextImpl;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.runtime.api.Framework;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.ConfirmSubscriptionRequest;
 import software.amazon.awssdk.services.sns.model.ConfirmSubscriptionResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Endpoints responsible for listening notifications from external services such as AWS SNS
@@ -170,9 +171,9 @@ public class Rekognition {
 
                 if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(topicArn)) {
                     ConfirmSubscriptionRequest request = ConfirmSubscriptionRequest.builder()
-                            .token(token)
-                            .topicArn(topicArn)
-                            .build();
+                                                                                   .token(token)
+                                                                                   .topicArn(topicArn)
+                                                                                   .build();
 
                     ConfirmSubscriptionResponse result = getSnsClient().confirmSubscription(request);
                     String subscriptionArn = result.subscriptionArn();

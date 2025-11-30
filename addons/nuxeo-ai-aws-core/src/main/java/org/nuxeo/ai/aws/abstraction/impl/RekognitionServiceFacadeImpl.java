@@ -9,6 +9,8 @@
  */
 package org.nuxeo.ai.aws.abstraction.impl;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.aws.AWSClientFactory;
@@ -23,11 +25,9 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
 import software.amazon.awssdk.services.rekognition.model.*;
 
-import java.util.List;
-
 /**
- * Implementation of RekognitionServiceFacade that isolates ALL AWS SDK dependencies.
- * This is the ONLY class that imports AWS SDK classes for Rekognition operations.
+ * Implementation of RekognitionServiceFacade that isolates ALL AWS SDK dependencies. This is the ONLY class that
+ * imports AWS SDK classes for Rekognition operations.
  */
 public class RekognitionServiceFacadeImpl extends DefaultComponent implements RekognitionServiceFacade {
 
@@ -39,13 +39,13 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.getImageData(), request.getS3Bucket(), request.getS3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
 
             DetectLabelsRequest awsRequest = DetectLabelsRequest.builder()
-                    .image(image)
-                    .maxLabels(request.getMaxLabels())
-                    .minConfidence(request.getMinConfidence())
-                    .build();
+                                                                .image(image)
+                                                                .maxLabels(request.maxLabels())
+                                                                .minConfidence(request.minConfidence())
+                                                                .build();
 
             var response = client.detectLabels(awsRequest);
             return RekognitionMapper.mapToLabels(response.labels());
@@ -61,12 +61,11 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.getImageData(), request.getS3Bucket(), request.getS3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
 
-            DetectFacesRequest.Builder awsRequestBuilder = DetectFacesRequest.builder()
-                    .image(image);
+            DetectFacesRequest.Builder awsRequestBuilder = DetectFacesRequest.builder().image(image);
 
-            if (request.isIncludeAttributes()) {
+            if (request.includeAttributes()) {
                 awsRequestBuilder.attributes(Attribute.ALL);
             }
 
@@ -84,11 +83,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.getImageData(), request.getS3Bucket(), request.getS3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
 
-            DetectTextRequest awsRequest = DetectTextRequest.builder()
-                    .image(image)
-                    .build();
+            DetectTextRequest awsRequest = DetectTextRequest.builder().image(image).build();
 
             var response = client.detectText(awsRequest);
             return RekognitionMapper.mapToTextDetections(response.textDetections());
@@ -104,12 +101,13 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.getImageData(), request.getS3Bucket(), request.getS3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
 
             DetectModerationLabelsRequest awsRequest = DetectModerationLabelsRequest.builder()
-                    .image(image)
-                    .minConfidence(request.getMinConfidence())
-                    .build();
+                                                                                    .image(image)
+                                                                                    .minConfidence(
+                                                                                            request.minConfidence())
+                                                                                    .build();
 
             var response = client.detectModerationLabels(awsRequest);
             return RekognitionMapper.mapToModerationLabels(response.moderationLabels());
@@ -125,11 +123,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.getImageData(), request.getS3Bucket(), request.getS3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
 
-            RecognizeCelebritiesRequest awsRequest = RecognizeCelebritiesRequest.builder()
-                    .image(image)
-                    .build();
+            RecognizeCelebritiesRequest awsRequest = RecognizeCelebritiesRequest.builder().image(image).build();
 
             var response = client.recognizeCelebrities(awsRequest);
             return RekognitionMapper.mapToCelebrities(response.celebrityFaces());
@@ -144,17 +140,10 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
      */
     private Image buildImage(byte[] imageData, String s3Bucket, String s3Key) {
         if (imageData != null) {
-            return Image.builder()
-                    .bytes(SdkBytes.fromByteArray(imageData))
-                    .build();
+            return Image.builder().bytes(SdkBytes.fromByteArray(imageData)).build();
         } else if (s3Bucket != null && s3Key != null) {
-            S3Object s3Object = S3Object.builder()
-                    .bucket(s3Bucket)
-                    .name(s3Key)
-                    .build();
-            return Image.builder()
-                    .s3Object(s3Object)
-                    .build();
+            S3Object s3Object = S3Object.builder().bucket(s3Bucket).name(s3Key).build();
+            return Image.builder().s3Object(s3Object).build();
         } else {
             throw new IllegalArgumentException("Either image data or S3 reference must be provided");
         }

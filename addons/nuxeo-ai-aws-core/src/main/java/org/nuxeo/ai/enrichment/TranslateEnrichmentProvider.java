@@ -28,15 +28,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.TranslationResult;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.translate.TranslateService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
-import software.amazon.awssdk.core.exception.SdkClientException;
-import org.nuxeo.ai.aws.dto.TranslationResult;
 
 /**
  * An enrichment provider using AWS Translate.
@@ -84,9 +84,10 @@ public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider impl
         for (Map.Entry<String, String> textEntry : blobTextFromDoc.getProperties().entrySet()) {
             try {
                 TranslationResult result = Framework.getService(TranslateService.class)
-                        .translateText(textEntry.getValue(), sourceLanguageCode, targetLanguageCode);
-                if (result != null && StringUtils.isNotEmpty(result.getTranslatedText())) {
-                    labels.add(new AIMetadata.Label(result.getTranslatedText(), CONFIDENCE));
+                                                    .translateText(textEntry.getValue(), sourceLanguageCode,
+                                                            targetLanguageCode);
+                if (result != null && StringUtils.isNotEmpty(result.translatedText())) {
+                    labels.add(new AIMetadata.Label(result.translatedText(), CONFIDENCE));
                     raw.add(processRaw(textEntry.getValue(), result));
                 }
             } catch (software.amazon.awssdk.core.exception.SdkServiceException e) {
@@ -113,10 +114,10 @@ public class TranslateEnrichmentProvider extends AbstractEnrichmentProvider impl
      */
     protected String processRaw(String text, TranslationResult result) {
         return toJsonString(jg -> {
-            jg.writeStringField("source", result.getSourceLanguageCode());
-            jg.writeStringField("target", result.getTargetLanguageCode());
+            jg.writeStringField("source", result.sourceLanguageCode());
+            jg.writeStringField("target", result.targetLanguageCode());
             jg.writeStringField("text", text);
-            jg.writeStringField("translated", result.getTranslatedText());
+            jg.writeStringField("translated", result.translatedText());
         });
     }
 

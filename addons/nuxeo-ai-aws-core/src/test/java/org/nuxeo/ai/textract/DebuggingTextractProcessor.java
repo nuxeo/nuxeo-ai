@@ -22,6 +22,7 @@ import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENC
 
 import java.util.List;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
@@ -29,6 +30,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentRef;
+
 import software.amazon.awssdk.services.textract.model.Block;
 
 /**

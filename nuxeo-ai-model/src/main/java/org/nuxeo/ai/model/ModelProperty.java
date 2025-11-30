@@ -19,7 +19,9 @@
 package org.nuxeo.ai.model;
 
 import java.util.Objects;
+
 import jakarta.annotation.Nonnull;
+
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;

@@ -15,14 +15,7 @@ import java.util.List;
  * AWS SDK-independent result DTO for entity detection operations.
  */
 public record EntitiesResult(List<Entity> entities) {
-    public List<Entity> getEntities() { return entities; }
-    @Override public String toString() { return "EntitiesResult{" + "entities=" + entities + '}'; }
-    public static record Entity(String text, String type, float score, int beginOffset, int endOffset) {
-        public String getText() { return text; }
-        public String getType() { return type; }
-        public float getScore() { return score; }
-        public int getBeginOffset() { return beginOffset; }
-        public int getEndOffset() { return endOffset; }
-        @Override public String toString() { return "Entity{" + "text='" + text + '\'' + ", type='" + type + '\'' + ", score=" + score + ", beginOffset=" + beginOffset + ", endOffset=" + endOffset + '}'; }
+
+    public record Entity(String text, String type, float score, int beginOffset, int endOffset) {
     }
 }

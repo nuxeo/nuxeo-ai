@@ -25,10 +25,13 @@ import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.Message;
 import org.nuxeo.ai.cloud.CloudClient;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.bulk.BulkCodecs;
@@ -40,8 +43,6 @@ import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import org.nuxeo.audit.api.LogEntry;
-import org.nuxeo.audit.service.AuditBackend;
 
 public class ExportDoneComputation extends AbstractComputation {
 
@@ -65,7 +66,7 @@ public class ExportDoneComputation extends AbstractComputation {
 
             Message message = log.getMessageFactory()
                                  .newMessage(EXPORT_ACTION_NAME
-                                                 + " for commandId {} has completed.\nProcessed {} records with {} errors",
+                                         + " for commandId {} has completed.\nProcessed {} records with {} errors",
                                          cmd.getId(), status.getProcessed(), status.getErrorCount());
             log.warn(message.getFormattedMessage());
 

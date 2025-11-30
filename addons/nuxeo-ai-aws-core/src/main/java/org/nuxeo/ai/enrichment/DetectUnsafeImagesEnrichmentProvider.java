@@ -27,15 +27,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import software.amazon.awssdk.core.exception.SdkClientException;
 
 import net.jodah.failsafe.RetryPolicy;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * An enrichment provider for unsafe image detection - Now using domain DTOs
@@ -43,6 +44,7 @@ import net.jodah.failsafe.RetryPolicy;
 public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
+
     public static final String DEFAULT_CONFIDENCE = "50";
 
     protected float minConfidence = Float.parseFloat(DEFAULT_CONFIDENCE);
@@ -60,7 +62,7 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
             RekognitionService rs = Framework.getService(RekognitionService.class);
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 LabelsResult result = rs.detectModerationLabels(blob.getValue(), minConfidence);
-                if (result != null && result.getLabels() != null && !result.getLabels().isEmpty()) {
+                if (result != null && result.labels() != null && !result.labels().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
                 }
             }
@@ -73,27 +75,28 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
             LabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getLabels().stream()
-                .filter(label -> label.getConfidence() >= minConfidence)
-                .map(label -> new EnrichmentMetadata.Label(label.getName(), label.getConfidence() / 100))
-                .collect(Collectors.toList());
+        List<EnrichmentMetadata.Label> labels = result.labels()
+                                                      .stream()
+                                                      .filter(label -> label.confidence() >= minConfidence)
+                                                      .map(label -> new EnrichmentMetadata.Label(label.name(),
+                                                              label.confidence() / 100))
+                                                      .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("moderationLabels", result.getLabels()));
+        String raw = toJsonString(jg -> jg.writeObjectField("moderationLabels", result.labels()));
         String rawKey = saveJsonAsRawBlob(raw);
 
         return Collections.singletonList(
-                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                        .withLabels(asLabels(labels))
-                        .withRawKey(rawKey)
-                        .withDocumentProperties(Collections.singleton(propName))
-                        .build());
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(
+                                                                                   Collections.singleton(propName))
+                                                                           .build());
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> throwable instanceof SdkClientException &&
-                            throwable.getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(throwable -> throwable instanceof SdkClientException
+                && throwable.getMessage().contains("is not authorized to perform"));
     }
 
     @Override

@@ -13,17 +13,12 @@ package org.nuxeo.ai.aws.dto;
  * AWS SDK-independent result DTO for sentiment analysis operations.
  */
 public record SentimentResult(String sentiment, float positive, float negative, float neutral, float mixed) {
-    public String getSentiment() { return sentiment; }
-    public float getPositive() { return positive; }
-    public float getNegative() { return negative; }
-    public float getNeutral() { return neutral; }
-    public float getMixed() { return mixed; }
-    public SentimentScore getScores() { return new SentimentScore(positive, negative, neutral, mixed); }
-    @Override public String toString() { return "SentimentResult{" + "sentiment='" + sentiment + '\'' + ", positive=" + positive + ", negative=" + negative + ", neutral=" + neutral + ", mixed=" + mixed + '}'; }
+
+    // This method is meaningful, so we keep it
+    public SentimentScore getScores() {
+        return new SentimentScore(positive, negative, neutral, mixed);
+    }
+
     public static record SentimentScore(float positive, float negative, float neutral, float mixed) {
-        public float getPositive() { return positive; }
-        public float getNegative() { return negative; }
-        public float getNeutral() { return neutral; }
-        public float getMixed() { return mixed; }
     }
 }

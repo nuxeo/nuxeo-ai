@@ -10,13 +10,13 @@
 package org.nuxeo.ai.aws.abstraction;
 
 import org.nuxeo.ai.aws.abstraction.dto.ComprehendRequest;
-import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.aws.dto.EntitiesResult;
 import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
+import org.nuxeo.ai.aws.dto.SentimentResult;
 
 /**
- * AWS SDK-independent facade for Comprehend operations.
- * Service implementations use this interface instead of importing AWS SDK classes.
+ * AWS SDK-independent facade for Comprehend operations. Service implementations use this interface instead of importing
+ * AWS SDK classes.
  */
 public interface ComprehendServiceFacade {
 

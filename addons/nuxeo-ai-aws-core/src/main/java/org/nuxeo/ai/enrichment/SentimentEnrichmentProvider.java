@@ -26,12 +26,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.aws.dto.SentimentResult;
+import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
@@ -72,8 +73,8 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
                     continue;
                 }
                 SentimentResult result = Framework.getService(ComprehendService.class)
-                                                        .detectSentiment(prop.getValue(), languageCode);
-                if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {
+                                                  .detectSentiment(prop.getValue(), languageCode);
+                if (result != null && StringUtils.isNotEmpty(result.sentiment())) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -89,7 +90,7 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
         List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
         String raw = toJsonString(jg -> {
             jg.writeObjectField("sentimentScore", result.getScores());
-            jg.writeStringField("sentiment", result.getSentiment());
+            jg.writeStringField("sentiment", result.sentiment());
         });
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(
@@ -106,30 +107,15 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
     public List<EnrichmentMetadata.Label> getSentimentLabel(SentimentResult result) {
         List<EnrichmentMetadata.Label> labels = new ArrayList<>(1);
         SentimentResult.SentimentScore sentimentScore = result.getScores();
-        String sentiment = result.getSentiment();
+        String sentiment = result.sentiment();
 
-        Float confidence;
-        switch (sentiment.toUpperCase()) {
-        case "POSITIVE":
-            confidence = sentimentScore.getPositive();
-            break;
-        case "NEGATIVE":
-            confidence = sentimentScore.getNegative();
-            break;
-        case "MIXED":
-            confidence = sentimentScore.getMixed();
-            break;
-        case "NEUTRAL":
-            confidence = sentimentScore.getNeutral();
-            break;
-        default:
-            throw new NuxeoException("Invalid sentiment: " + sentiment);
-        }
-
-        if (confidence == null) {
-            throw new NuxeoException(
-                    String.format("A %s sentiment has been returned without any confidence score", sentiment));
-        }
+        Float confidence = switch (sentiment.toUpperCase()) {
+            case "POSITIVE" -> sentimentScore.positive();
+            case "NEGATIVE" -> sentimentScore.negative();
+            case "MIXED" -> sentimentScore.mixed();
+            case "NEUTRAL" -> sentimentScore.neutral();
+            default -> throw new NuxeoException("Invalid sentiment: " + sentiment);
+        };
 
         labels.add(new EnrichmentMetadata.Label(sentiment.toLowerCase(), confidence / 100));
         return labels;
@@ -137,8 +123,8 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(
+                throwable -> (throwable).getMessage().contains("is not authorized to perform"));
     }
 
     @Override

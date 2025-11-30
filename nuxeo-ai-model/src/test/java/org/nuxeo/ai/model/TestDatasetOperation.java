@@ -28,22 +28,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.Serializable;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import jakarta.inject.Inject;
-import org.junit.Before;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
 import org.nuxeo.ai.model.export.DatasetExportUpdaterOperation;
 import org.nuxeo.ai.model.export.DatasetGetModelOperation;
 import org.nuxeo.ai.model.export.ExportProgressOperation;
-import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -61,10 +61,12 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({ CoreSearchFeature.class, CoreFeature.class, EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class })
+@Features({ CoreSearchFeature.class, CoreFeature.class, EnrichmentTestFeature.class, AutomationFeature.class,
+        CoreBulkFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
@@ -214,7 +216,7 @@ public class TestDatasetOperation {
 
         ctx = new OperationContext(session);
         params = new HashMap<>();
-//        params.put("commandId", returned);
+        // params.put("commandId", returned);
 
         @SuppressWarnings("unchecked")
         List<BulkProgressStatus> result = (List<BulkProgressStatus>) automationService.run(ctx,
@@ -240,8 +242,8 @@ public class TestDatasetOperation {
 
         Map<String, Object> statusParams = new HashMap<>();
         statusParams.put("modelId", "e67ee0e8-1bef-4fb7-9966-1d14081221");
-        BulkProgressStatus progressStatus = (BulkProgressStatus) automationService.run(ctx,
-                ExportProgressOperation.ID, statusParams);
+        BulkProgressStatus progressStatus = (BulkProgressStatus) automationService.run(ctx, ExportProgressOperation.ID,
+                statusParams);
         assertNotNull(progressStatus);
         assertThat(progressStatus.getId()).isEqualTo(returned);
 

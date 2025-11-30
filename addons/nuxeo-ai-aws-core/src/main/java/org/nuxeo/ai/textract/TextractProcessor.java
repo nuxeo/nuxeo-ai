@@ -19,6 +19,7 @@
 package org.nuxeo.ai.textract;
 
 import java.util.List;
+
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -32,14 +33,13 @@ import org.nuxeo.ecm.core.api.DocumentRef;
 public interface TextractProcessor<T> {
 
     /**
-     * Process Textract blocks and return processed results.
-     * You can optionally call addTag() or addLabel() to add to the normalized AI metadata.
+     * Process Textract blocks and return processed results. You can optionally call addTag() or addLabel() to add to
+     * the normalized AI metadata.
      */
     T process(List<Object> blocks, CoreSession session, DocumentRef docRef, EnrichmentMetadata.Builder builder);
 
     /*
-     * Turn a block geometry into a normalized AIMetadata.Box
-     * Default implementation for backward compatibility
+     * Turn a block geometry into a normalized AIMetadata.Box Default implementation for backward compatibility
      */
     default AIMetadata.Box asBox(Object block) {
         // Default implementation - subclasses should override if needed
@@ -47,8 +47,7 @@ public interface TextractProcessor<T> {
     }
 
     /**
-     * Gets the normalized confidence from the block
-     * Default implementation for backward compatibility
+     * Gets the normalized confidence from the block Default implementation for backward compatibility
      */
     default float normalizeConfidence(Object block) {
         // Default implementation - subclasses should override if needed

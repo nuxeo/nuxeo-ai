@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,9 +83,9 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 DocumentAnalysisResult result = Framework.getService(TextractService.class)
-                        .analyzeDocument(blob.getValue(), features);
-                if (result != null && result.getBlocks() != null && !result.getBlocks().isEmpty()) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
+                                                         .analyzeDocument(blob.getValue(), features);
+                if (result != null && result.blocks() != null && !result.blocks().isEmpty()) {
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.blocks()));
                 }
             }
             return enriched;
@@ -95,12 +96,13 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
      * Process the result of the call
      */
     protected Collection<? extends EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc,
-                                                                      String propName, List<DocumentAnalysisResult.Block> blocks) {
+            String propName, List<DocumentAnalysisResult.Block> blocks) {
 
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc);
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", blocks));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(builder.withRawKey(rawKey).withDocumentProperties(singleton(propName)).build());
+        return Collections.singletonList(
+                builder.withRawKey(rawKey).withDocumentProperties(singleton(propName)).build());
     }
 
     @Override

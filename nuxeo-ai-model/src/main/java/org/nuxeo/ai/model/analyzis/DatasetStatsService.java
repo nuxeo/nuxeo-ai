@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.sdk.objects.FieldStatistics;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.Statistic;
@@ -116,7 +117,9 @@ public interface DatasetStatsService {
                                                         .flatMap(entry -> entry.getValue().stream())
                                                         .collect(Collectors.toMap(Statistic::getField,
                                                                 stat -> FieldStatistics.from(stat, total.longValue()),
-                                                                FieldStatistics::merge)) // merge all stats to include different aggregates terms|missing|cardinality
+                                                                FieldStatistics::merge)) // merge all stats to include
+                                                                                         // different aggregates
+                                                                                         // terms|missing|cardinality
                                                         .values();
             result.addAll(values);
         }

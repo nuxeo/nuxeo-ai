@@ -11,12 +11,9 @@ package org.nuxeo.ai.aws.dto;
 /**
  * AWS SDK-independent result DTO for transcription job operations.
  */
-public record TranscriptionJobResult(String jobName, String jobStatus, String transcriptFileUri, String languageCode, Float completionTime) {
-    public TranscriptionJobResult(String jobName, String jobStatus, String transcriptFileUri, String languageCode) { this(jobName, jobStatus, transcriptFileUri, languageCode, null); }
-    public String getJobName() { return jobName; }
-    public String getJobStatus() { return jobStatus; }
-    public String getTranscriptFileUri() { return transcriptFileUri; }
-    public String getLanguageCode() { return languageCode; }
-    public Float getCompletionTime() { return completionTime; }
-    @Override public String toString() { return "TranscriptionJobResult{" + "jobName='" + jobName + '\'' + ", jobStatus='" + jobStatus + '\'' + ", languageCode='" + languageCode + '\'' + '}'; }
+public record TranscriptionJobResult(String jobName, String jobStatus, String transcriptFileUri, String languageCode,
+        Float completionTime) {
+    public TranscriptionJobResult(String jobName, String jobStatus, String transcriptFileUri, String languageCode) {
+        this(jobName, jobStatus, transcriptFileUri, languageCode, null);
+    }
 }

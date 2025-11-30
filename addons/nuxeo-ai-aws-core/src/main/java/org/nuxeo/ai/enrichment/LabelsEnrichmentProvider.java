@@ -26,15 +26,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import software.amazon.awssdk.core.exception.SdkClientException;
 
 import net.jodah.failsafe.RetryPolicy;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * Finds items in an image and labels them - Now using domain DTOs
@@ -65,7 +66,7 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
             RekognitionService rs = Framework.getService(RekognitionService.class);
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 LabelsResult result = rs.detectLabels(blob.getValue(), maxResults, minConfidence);
-                if (result != null && result.getLabels() != null && !result.getLabels().isEmpty()) {
+                if (result != null && result.labels() != null && !result.labels().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
                 }
             }
@@ -78,26 +79,28 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
             LabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getLabels().stream()
-                .map(awsLabel -> new EnrichmentMetadata.Label(awsLabel.getName(), awsLabel.getConfidence() / 100))
-                .collect(Collectors.toList());
+        List<EnrichmentMetadata.Label> labels = result.labels()
+                                                      .stream()
+                                                      .map(awsLabel -> new EnrichmentMetadata.Label(awsLabel.name(),
+                                                              awsLabel.confidence() / 100))
+                                                      .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getLabels()));
+        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.labels()));
         String rawKey = saveJsonAsRawBlob(raw);
 
         return java.util.Collections.singletonList(
-                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                        .withLabels(asLabels(labels))
-                        .withRawKey(rawKey)
-                        .withDocumentProperties(java.util.Collections.singleton(propName))
-                        .build());
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(
+                                                                                   java.util.Collections.singleton(
+                                                                                           propName))
+                                                                           .build());
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> throwable instanceof SdkClientException &&
-                            throwable.getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(throwable -> throwable instanceof SdkClientException
+                && throwable.getMessage().contains("is not authorized to perform"));
     }
 
     @Override

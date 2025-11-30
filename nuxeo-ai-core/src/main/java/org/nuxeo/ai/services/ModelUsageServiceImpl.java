@@ -18,8 +18,7 @@ public class ModelUsageServiceImpl implements ModelUsageService {
                 return "{\"total\":0,\"hits\":0}";
             }
 
-            String nxql = String.format(
-                    "SELECT ecm:uuid FROM LogEntry WHERE eventId = '%s' AND extended.model = '%s'",
+            String nxql = String.format("SELECT ecm:uuid FROM LogEntry WHERE eventId = '%s' AND extended.model = '%s'",
                     type.eventName(), modelId);
 
             DocumentModelList docs = session.query(nxql);

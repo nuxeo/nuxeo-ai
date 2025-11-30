@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +41,9 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
 import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
 import org.nuxeo.runtime.services.config.ConfigurationService;
+
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.services.rekognition.model.Image;
@@ -49,7 +52,6 @@ import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
 import software.amazon.awssdk.services.textract.model.Block;
 import software.amazon.awssdk.services.textract.model.Document;
 import software.amazon.awssdk.services.textract.model.Relationship;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 /**
  * Helps with S3 images and AWS credentials
@@ -88,9 +90,8 @@ public class AWSHelper {
         ImageHelperWithS3 imageHelperWithS3;
         try {
             Class.forName(S3_MANAGER_NAME);
-            imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ?
-                    null :
-                    new ImageHelperWithS3();
+            imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ? null
+                    : new ImageHelperWithS3();
         } catch (ClassNotFoundException e) {
             imageHelperWithS3 = null;
         }

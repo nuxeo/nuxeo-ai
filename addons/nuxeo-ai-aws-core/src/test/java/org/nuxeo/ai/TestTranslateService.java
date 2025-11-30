@@ -21,11 +21,12 @@ package org.nuxeo.ai;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Collection;
+
 import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -37,6 +38,7 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import software.amazon.awssdk.services.translate.model.UnsupportedLanguagePairException;
 
 @RunWith(FeaturesRunner.class)

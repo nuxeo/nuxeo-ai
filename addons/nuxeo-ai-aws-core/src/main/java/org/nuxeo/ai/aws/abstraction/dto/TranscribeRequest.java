@@ -15,22 +15,12 @@ package org.nuxeo.ai.aws.abstraction.dto;
 public class TranscribeRequest {
 
     public static record StartTranscription(String jobName, String mediaFileUri, String mediaFormat,
-                                             String languageCode, String outputBucketName,
-                                             boolean enableSpeakerLabels, int maxSpeakerLabels) {
-        public String getJobName() { return jobName; }
-        public String getMediaFileUri() { return mediaFileUri; }
-        public String getMediaFormat() { return mediaFormat; }
-        public String getLanguageCode() { return languageCode; }
-        public String getOutputBucketName() { return outputBucketName; }
-        public boolean isEnableSpeakerLabels() { return enableSpeakerLabels; }
-        public int getMaxSpeakerLabels() { return maxSpeakerLabels; }
+            String languageCode, String outputBucketName, boolean enableSpeakerLabels, int maxSpeakerLabels) {
     }
 
     public static record GetTranscriptionJob(String jobName) {
-        public String getJobName() { return jobName; }
     }
 
     public static record DeleteTranscriptionJob(String jobName) {
-        public String getJobName() { return jobName; }
     }
 }

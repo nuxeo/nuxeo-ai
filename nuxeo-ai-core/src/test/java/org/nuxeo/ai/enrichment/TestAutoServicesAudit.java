@@ -18,8 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import jakarta.inject.Inject;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,6 +35,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,26 +46,26 @@ import org.nuxeo.ai.auto.AutoService;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.services.DocMetadataService;
 import org.nuxeo.ai.services.ModelUsageService;
-import org.nuxeo.audit.api.LogEntry;
 import org.nuxeo.audit.api.AuditQueryBuilder;
+import org.nuxeo.audit.api.LogEntry;
 import org.nuxeo.audit.service.AuditBackend;
+import org.nuxeo.audit.test.AuditFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.query.sql.model.Predicate;
 import org.nuxeo.ecm.core.query.sql.model.Predicates;
+import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.audit.test.AuditFeature; // ✅ new import for LTS 2025
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AuditFeature.class, PlatformFeature.class}) // ✅ include new AuditFeature
+@Features({ EnrichmentTestFeature.class, AuditFeature.class, PlatformFeature.class }) // ✅ include new AuditFeature
 @Deploy({ "org.nuxeo.ecm.platform.audit", "org.nuxeo.ai.ai-core" })
 public class TestAutoServicesAudit {
 
@@ -82,6 +82,7 @@ public class TestAutoServicesAudit {
     protected TransactionalFeature txFeature;
 
     private static final String LOG_CATEGORY = "category";
+
     private static final String LOG_EVENT_ID = "eventId";
 
     @Before
@@ -101,8 +102,8 @@ public class TestAutoServicesAudit {
 
         for (String schema : testDoc.getSchemas()) {
             for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
-                System.out.println(schema + " prop " + entry.getKey() + " is list " +
-                        testDoc.getPropertyObject(schema, entry.getKey()).isList());
+                System.out.println(schema + " prop " + entry.getKey() + " is list "
+                        + testDoc.getPropertyObject(schema, entry.getKey()).isList());
             }
         }
 
@@ -126,18 +127,19 @@ public class TestAutoServicesAudit {
         try {
             auditReader = Framework.getService(AuditBackend.class);
         } catch (Exception e) {
-            System.out.println("AuditBackend service unavailable (" + e.getMessage() +
-                    "), skipping audit assertions for testAutofill.");
+            System.out.println("AuditBackend service unavailable (" + e.getMessage()
+                    + "), skipping audit assertions for testAutofill.");
         }
 
         if (auditReader != null) {
             AuditQueryBuilder qb = new AuditQueryBuilder();
             Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
-            qb.predicate(predicate)
-              .and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.FILLED.eventName()));
+            qb.predicate(predicate).and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.FILLED.eventName()));
             List<?> logEntries = auditReader.queryLogs(qb);
             Set<Object> perModelAudit = logEntries.stream()
-                                                  .filter(entry -> ((LogEntry) entry).getExtended().get("model").equals("stest"))
+                                                  .filter(entry -> ((LogEntry) entry).getExtended()
+                                                                                     .get("model")
+                                                                                     .equals("stest"))
                                                   .collect(Collectors.toSet());
             assertThat(perModelAudit).hasSize(6);
         } else {
@@ -189,19 +191,22 @@ public class TestAutoServicesAudit {
         try {
             auditReader2 = Framework.getService(AuditBackend.class);
         } catch (Exception e) {
-            System.out.println("AuditBackend service unavailable (" + e.getMessage() +
-                    "), skipping audit assertions for testAutoCorrect.");
+            System.out.println("AuditBackend service unavailable (" + e.getMessage()
+                    + "), skipping audit assertions for testAutoCorrect.");
         }
 
         if (auditReader2 != null) {
             AuditQueryBuilder qb = new AuditQueryBuilder();
             Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
-            qb.predicate(predicate)
-              .and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.CORRECTED.eventName()));
+            qb.predicate(predicate).and(Predicates.eq(LOG_EVENT_ID, AIConstants.AUTO.CORRECTED.eventName()));
             List<?> logEntries = auditReader2.queryLogs(qb);
             Set<Object> perModelAudit = logEntries.stream()
-                                                  .filter(entry -> ((LogEntry) entry).getExtended().get("model").equals("stest"))
-                                                  .filter(entry -> ((LogEntry) entry).getExtended().get("value").equals(1L))
+                                                  .filter(entry -> ((LogEntry) entry).getExtended()
+                                                                                     .get("model")
+                                                                                     .equals("stest"))
+                                                  .filter(entry -> ((LogEntry) entry).getExtended()
+                                                                                     .get("value")
+                                                                                     .equals(1L))
                                                   .collect(Collectors.toSet());
             assertThat(perModelAudit).hasSize(1);
         } else {

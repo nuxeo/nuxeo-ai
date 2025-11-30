@@ -9,60 +9,45 @@
  */
 package org.nuxeo.ai.aws.mapper;
 
-import org.nuxeo.ai.aws.dto.RekognitionResult;
-import software.amazon.awssdk.services.rekognition.model.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.nuxeo.ai.aws.dto.RekognitionResult;
+import software.amazon.awssdk.services.rekognition.model.*;
+
 /**
- * Maps AWS SDK Rekognition responses to our abstraction layer DTOs.
- * This is one of the few classes that imports AWS SDK classes.
+ * Maps AWS SDK Rekognition responses to our abstraction layer DTOs. This is one of the few classes that imports AWS SDK
+ * classes.
  */
 public class RekognitionMapper {
 
     public static List<RekognitionResult.Label> mapToLabels(List<Label> awsLabels) {
-        return awsLabels.stream()
-                .map(RekognitionMapper::mapToLabel)
-                .collect(Collectors.toList());
+        return awsLabels.stream().map(RekognitionMapper::mapToLabel).collect(Collectors.toList());
     }
 
     public static RekognitionResult.Label mapToLabel(Label awsLabel) {
-        List<String> categories = awsLabel.categories().stream()
-                .map(category -> category.name())
-                .collect(Collectors.toList());
+        List<String> categories = awsLabel.categories()
+                                          .stream()
+                                          .map(category -> category.name())
+                                          .collect(Collectors.toList());
 
-        return new RekognitionResult.Label(
-                awsLabel.name(),
-                awsLabel.confidence(),
-                categories
-        );
+        return new RekognitionResult.Label(awsLabel.name(), awsLabel.confidence(), categories);
     }
 
     public static List<RekognitionResult.Face> mapToFaces(List<FaceDetail> awsFaces) {
-        return awsFaces.stream()
-                .map(RekognitionMapper::mapToFace)
-                .collect(Collectors.toList());
+        return awsFaces.stream().map(RekognitionMapper::mapToFace).collect(Collectors.toList());
     }
 
     public static RekognitionResult.Face mapToFace(FaceDetail awsFace) {
         RekognitionResult.BoundingBox boundingBox = mapToBoundingBox(awsFace.boundingBox());
         RekognitionResult.FaceAttributes attributes = mapToFaceAttributes(awsFace);
 
-        return new RekognitionResult.Face(
-                awsFace.confidence(),
-                boundingBox,
-                attributes
-        );
+        return new RekognitionResult.Face(awsFace.confidence(), boundingBox, attributes);
     }
 
     public static RekognitionResult.BoundingBox mapToBoundingBox(BoundingBox awsBoundingBox) {
-        return new RekognitionResult.BoundingBox(
-                awsBoundingBox.left(),
-                awsBoundingBox.top(),
-                awsBoundingBox.width(),
-                awsBoundingBox.height()
-        );
+        return new RekognitionResult.BoundingBox(awsBoundingBox.left(), awsBoundingBox.top(), awsBoundingBox.width(),
+                awsBoundingBox.height());
     }
 
     public static RekognitionResult.FaceAttributes mapToFaceAttributes(FaceDetail awsFace) {
@@ -80,9 +65,7 @@ public class RekognitionMapper {
     }
 
     public static List<RekognitionResult.TextDetection> mapToTextDetections(List<TextDetection> awsTextDetections) {
-        return awsTextDetections.stream()
-                .map(RekognitionMapper::mapToTextDetection)
-                .collect(Collectors.toList());
+        return awsTextDetections.stream().map(RekognitionMapper::mapToTextDetection).collect(Collectors.toList());
     }
 
     public static RekognitionResult.TextDetection mapToTextDetection(TextDetection awsTextDetection) {
@@ -91,32 +74,20 @@ public class RekognitionMapper {
             boundingBox = mapToBoundingBox(awsTextDetection.geometry().boundingBox());
         }
 
-        return new RekognitionResult.TextDetection(
-                awsTextDetection.detectedText(),
-                awsTextDetection.type().toString(),
-                awsTextDetection.confidence(),
-                boundingBox
-        );
+        return new RekognitionResult.TextDetection(awsTextDetection.detectedText(), awsTextDetection.type().toString(),
+                awsTextDetection.confidence(), boundingBox);
     }
 
     public static List<RekognitionResult.ModerationLabel> mapToModerationLabels(List<ModerationLabel> awsLabels) {
-        return awsLabels.stream()
-                .map(RekognitionMapper::mapToModerationLabel)
-                .collect(Collectors.toList());
+        return awsLabels.stream().map(RekognitionMapper::mapToModerationLabel).collect(Collectors.toList());
     }
 
     public static RekognitionResult.ModerationLabel mapToModerationLabel(ModerationLabel awsLabel) {
-        return new RekognitionResult.ModerationLabel(
-                awsLabel.name(),
-                awsLabel.confidence(),
-                awsLabel.parentName()
-        );
+        return new RekognitionResult.ModerationLabel(awsLabel.name(), awsLabel.confidence(), awsLabel.parentName());
     }
 
     public static List<RekognitionResult.Celebrity> mapToCelebrities(List<Celebrity> awsCelebrities) {
-        return awsCelebrities.stream()
-                .map(RekognitionMapper::mapToCelebrity)
-                .collect(Collectors.toList());
+        return awsCelebrities.stream().map(RekognitionMapper::mapToCelebrity).collect(Collectors.toList());
     }
 
     public static RekognitionResult.Celebrity mapToCelebrity(Celebrity awsCelebrity) {
@@ -125,11 +96,7 @@ public class RekognitionMapper {
             boundingBox = mapToBoundingBox(awsCelebrity.face().boundingBox());
         }
 
-        return new RekognitionResult.Celebrity(
-                awsCelebrity.name(),
-                awsCelebrity.matchConfidence(),
-                awsCelebrity.urls(),
-                boundingBox
-        );
+        return new RekognitionResult.Celebrity(awsCelebrity.name(), awsCelebrity.matchConfidence(), awsCelebrity.urls(),
+                boundingBox);
     }
 }

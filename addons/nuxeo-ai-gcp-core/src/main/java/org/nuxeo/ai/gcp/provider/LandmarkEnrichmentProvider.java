@@ -24,10 +24,12 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
+
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.EntityAnnotation;
 import com.google.cloud.vision.v1.Feature;
@@ -47,9 +49,10 @@ public class LandmarkEnrichmentProvider extends AbstractTagProvider<EntityAnnota
 
     @Override
     protected List<EntityAnnotation> getAnnotationList(AnnotateImageResponse response) {
-        return response.getLandmarkAnnotationsList().stream()
-                .filter(annotation -> annotation.getScore() >= minConfidence)
-                .collect(Collectors.toList());
+        return response.getLandmarkAnnotationsList()
+                       .stream()
+                       .filter(annotation -> annotation.getScore() >= minConfidence)
+                       .collect(Collectors.toList());
     }
 
     @Override

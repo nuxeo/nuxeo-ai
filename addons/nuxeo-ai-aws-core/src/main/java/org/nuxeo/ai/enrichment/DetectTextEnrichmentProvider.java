@@ -26,16 +26,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.aws.dto.TextDetectionResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import software.amazon.awssdk.core.exception.SdkClientException;
 
 import net.jodah.failsafe.RetryPolicy;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * An enrichment provider for text detection in images - Now using domain DTOs
@@ -43,6 +43,7 @@ import net.jodah.failsafe.RetryPolicy;
 public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
+
     public static final String DEFAULT_CONFIDENCE = "80";
 
     protected float minConfidence = Float.parseFloat(DEFAULT_CONFIDENCE);
@@ -60,7 +61,7 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
             RekognitionService rs = Framework.getService(RekognitionService.class);
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
                 TextDetectionResult result = rs.detectText(blob.getValue());
-                if (result != null && result.getTextDetections() != null && !result.getTextDetections().isEmpty()) {
+                if (result != null && result.textDetections() != null && !result.textDetections().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
                 }
             }
@@ -73,35 +74,36 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
             TextDetectionResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getTextDetections().stream()
-                .filter(textD -> textD.getConfidence() >= minConfidence)
-                .map(textD -> {
-                    var box = textD.getBoundingBox();
-                    String labelText = textD.getDetectedText();
-                    if (box != null) {
-                        labelText += String.format(" [%.3f,%.3f,%.3f,%.3f]",
-                                box.getLeft(), box.getTop(), box.getWidth(), box.getHeight());
-                    }
-                    return new EnrichmentMetadata.Label(labelText, textD.getConfidence() / 100);
-                })
-                .collect(Collectors.toList());
+        List<EnrichmentMetadata.Label> labels = result.textDetections()
+                                                      .stream()
+                                                      .filter(textD -> textD.confidence() >= minConfidence)
+                                                      .map(textD -> {
+                                                          var box = textD.boundingBox();
+                                                          String labelText = textD.detectedText();
+                                                          if (box != null) {
+                                                              labelText += String.format(" [%.3f,%.3f,%.3f,%.3f]",
+                                                                      box.left(), box.top(), box.width(), box.height());
+                                                          }
+                                                          return new EnrichmentMetadata.Label(labelText,
+                                                                  textD.confidence() / 100);
+                                                      })
+                                                      .toList();
 
-        String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.getTextDetections()));
+        String raw = toJsonString(jg -> jg.writeObjectField("textDetections", result.textDetections()));
         String rawKey = saveJsonAsRawBlob(raw);
 
         return Collections.singletonList(
-                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc)
-                        .withLabels(asLabels(labels))
-                        .withRawKey(rawKey)
-                        .withDocumentProperties(Collections.singleton(propName))
-                        .build());
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(
+                                                                                   Collections.singleton(propName))
+                                                                           .build());
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> throwable instanceof SdkClientException &&
-                            throwable.getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(throwable -> throwable instanceof SdkClientException
+                && throwable.getMessage().contains("is not authorized to perform"));
     }
 
     @Override

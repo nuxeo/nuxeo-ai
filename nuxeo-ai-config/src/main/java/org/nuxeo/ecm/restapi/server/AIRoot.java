@@ -25,6 +25,7 @@ import static org.nuxeo.ai.listeners.ContinuousExportListener.NUXEO_AI_CONTINUOU
 
 import java.io.IOException;
 import java.util.Map;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -35,6 +36,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.configuration.ThresholdConfiguratorDescriptor;
@@ -45,6 +47,7 @@ import org.nuxeo.ecm.webengine.model.Resource;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.DefaultObject;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -189,8 +192,8 @@ public class AIRoot extends DefaultObject {
     @Consumes(MediaType.APPLICATION_XML)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setModelFromXML(@PathParam("modelId") String modelId, String modelXML) {
-        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX) || ctx.getPrincipal()
-                                                                                          .isAdministrator())) {
+        if (!(ctx.getPrincipal().isMemberOf(INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX)
+                || ctx.getPrincipal().isAdministrator())) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         try {

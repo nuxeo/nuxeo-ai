@@ -23,23 +23,23 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.aws.abstraction.AWSServiceRegistry;
 import org.nuxeo.ai.aws.abstraction.TranslateServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.TranslateRequest;
-import org.nuxeo.ai.aws.dto.TranslationResult;
 import org.nuxeo.ai.aws.dto.TranslateResult;
+import org.nuxeo.ai.aws.dto.TranslationResult;
 import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
- * Calls AWS Translate via abstraction layer - NO AWS SDK IMPORTS!
- * All AWS SDK dependencies are completely isolated in the facade layer.
- * This service now only depends on our abstraction DTOs and interfaces.
+ * Calls AWS Translate via abstraction layer - NO AWS SDK IMPORTS! All AWS SDK dependencies are completely isolated in
+ * the facade layer. This service now only depends on our abstraction DTOs and interfaces.
  */
 public class TranslateServiceImpl extends DefaultComponent implements TranslateService {
 
     private static final Log log = LogFactory.getLog(TranslateServiceImpl.class);
 
     protected TranslateServiceFacade translateFacade;
+
     protected AWSMetrics awsMetrics;
 
     @Override
@@ -65,8 +65,8 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
         }
 
         // Create abstraction DTO instead of AWS SDK request
-        TranslateRequest.TranslateText request = new TranslateRequest.TranslateText(
-                text, sourceLanguageCode, targetLanguageCode);
+        TranslateRequest.TranslateText request = new TranslateRequest.TranslateText(text, sourceLanguageCode,
+                targetLanguageCode);
 
         // Call through facade - no AWS SDK objects involved
         TranslateResult result = translateFacade.translateText(request);
@@ -76,7 +76,7 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
         }
 
         if (awsMetrics != null) {
-            awsMetrics.updateTranslateCharacterUnits((long) text.length());
+            awsMetrics.updateTranslateCharacterUnits(text.length());
         }
 
         // Convert to existing DTO format for backward compatibility
@@ -87,10 +87,6 @@ public class TranslateServiceImpl extends DefaultComponent implements TranslateS
      * Helper method to maintain backward compatibility with existing TranslationResult DTO
      */
     private TranslationResult convertToTranslationResult(TranslateResult result) {
-        return new TranslationResult(
-                result.getTranslatedText(),
-                result.getSourceLanguageCode(),
-                result.getTargetLanguageCode()
-        );
+        return new TranslationResult(result.translatedText(), result.sourceLanguageCode(), result.targetLanguageCode());
     }
 }

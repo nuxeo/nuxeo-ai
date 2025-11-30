@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 import jakarta.inject.Inject;
 
 import org.junit.After;
@@ -100,12 +101,8 @@ import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemp
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
-import org.nuxeo.ai.services.SearchAdapterService;
-import org.nuxeo.ai.services.SearchOptions;
-
 /**
- * Integration tests for Dataset export pipeline.
- * Adapted for Nuxeo LTS 2025 search API.
+ * Integration tests for Dataset export pipeline. Adapted for Nuxeo LTS 2025 search API.
  */
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class, CoreSearchFeature.class })
@@ -142,7 +139,9 @@ public class DatasetExportTest {
 
     // Define missing AGG constants that were removed from Elasticsearch
     private static final String AGG_CARDINALITY = "cardinality";
+
     private static final String AGG_TYPE_TERMS = "terms";
+
     private static final String AGG_MISSING = "missing";
 
     @Before
@@ -254,8 +253,10 @@ public class DatasetExportTest {
 
         for (DocumentModel doc : docs) {
             assertThat((String) doc.getPropertyValue(DATASET_EXPORT_CORPORA_ID)).isNotNull().isNotEmpty();
-            trainingCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), 3);
-            validationCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
+            trainingCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA),
+                    3);
+            validationCount += TensorTest.countNumberOfExamples(
+                    (Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), 3);
         }
 
         String corporaId = (String) docs.get(0).getPropertyValue(DATASET_EXPORT_CORPORA_ID);
@@ -295,7 +296,7 @@ public class DatasetExportTest {
 
     @Test
     @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    //    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/ai-bulk-small-test.xml")
+    // @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/ai-bulk-small-test.xml")
     public void testBulkExportMultiValue() throws Exception {
         Framework.getProperties().put(AI_CONVERSION_STRICT_MODE, "false");
 
@@ -406,9 +407,9 @@ public class DatasetExportTest {
         List<Map<String, Serializable>> inputs = (List<Map<String, Serializable>>) doc.getPropertyValue(
                 DATASET_EXPORT_INPUTS);
         assertEquals(2, inputs.size());
-        assertTrue(inputs.stream()
-                         .anyMatch(
-                                 p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
+        assertTrue(
+                inputs.stream()
+                      .anyMatch(p -> "file:content".equals(p.get(NAME_PROP)) && IMAGE_TYPE.equals(p.get(TYPE_PROP))));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Serializable>> outputs = (List<Map<String, Serializable>>) doc.getPropertyValue(
@@ -499,8 +500,10 @@ public class DatasetExportTest {
         int validationCount = 0;
 
         for (DocumentModel doc : docs) {
-            trainingCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA), -1);
-            validationCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
+            trainingCount += TensorTest.countNumberOfExamples((Blob) doc.getPropertyValue(DATASET_EXPORT_TRAINING_DATA),
+                    -1);
+            validationCount += TensorTest.countNumberOfExamples(
+                    (Blob) doc.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA), -1);
         }
 
         assertThat(trainingCount).isGreaterThan(validationCount);

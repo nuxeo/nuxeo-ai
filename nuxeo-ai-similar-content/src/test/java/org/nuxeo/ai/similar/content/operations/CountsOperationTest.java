@@ -32,8 +32,10 @@ import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CON
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,6 +54,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;

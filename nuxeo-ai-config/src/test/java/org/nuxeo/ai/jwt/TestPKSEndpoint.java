@@ -1,6 +1,9 @@
 package org.nuxeo.ai.jwt;
 
+import java.security.PublicKey;
+
 import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.keystore.JWKService;
@@ -10,8 +13,6 @@ import org.nuxeo.ecm.restapi.test.RestServerFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-
-import java.security.PublicKey;
 
 import static org.junit.Assert.*;
 

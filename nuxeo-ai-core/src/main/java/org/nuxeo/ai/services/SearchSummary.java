@@ -4,6 +4,7 @@ package org.nuxeo.ai.services;
 public class SearchSummary {
 
     protected final long total;
+
     protected final long hitsCount;
 
     public SearchSummary(long total, long hitsCount) {
@@ -23,4 +24,3 @@ public class SearchSummary {
         return hitsCount;
     }
 }
-

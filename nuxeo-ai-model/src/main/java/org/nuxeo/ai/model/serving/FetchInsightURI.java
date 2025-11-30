@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.cloud.CloudClient;
 import org.nuxeo.ai.cloud.CloudConfigDescriptor;
@@ -36,6 +37,7 @@ import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.runtime.api.Framework;
+
 import com.auth0.jwt.RegisteredClaims;
 
 /**

@@ -33,10 +33,15 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import jakarta.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
+import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
+import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.enrichment.EnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
@@ -51,13 +56,12 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import jakarta.inject.Inject;
-import org.nuxeo.ai.aws.dto.SentimentResult;
-import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })
 @Deploy({ "org.nuxeo.ai.aws.aws-core" })
+@Deploy({ "org.nuxeo.ai.aws.aws-core:OSGI-INF/test-blob-provider.xml" })
+@Deploy({ "org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-config.xml" })
 public class TestComprehendService {
 
     @Inject
@@ -78,7 +82,7 @@ public class TestComprehendService {
         assertNotNull(service);
         SentimentResult results = Framework.getService(ComprehendService.class).detectSentiment("I am happy", "en");
         assertNotNull(results);
-        assertEquals("POSITIVE", results.getSentiment());
+        assertEquals("POSITIVE", results.sentiment());
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
@@ -117,7 +121,7 @@ public class TestComprehendService {
         KeyPhrasesResult results = Framework.getService(ComprehendService.class)
                                             .detectKeyPhrases("power and convenience", "en");
         assertNotNull(results);
-        assertThat(results.getKeyPhrases()).isNotEmpty();
+        assertThat(results.keyPhrases()).isNotEmpty();
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.setId("docId");
@@ -143,7 +147,7 @@ public class TestComprehendService {
         KeyPhrasesResult results = Framework.getService(ComprehendService.class)
                                             .detectKeyPhrases("power and convenience", "en");
         assertNotNull(results);
-        assertThat(results.getKeyPhrases()).isNotEmpty();
+        assertThat(results.keyPhrases()).isNotEmpty();
 
         BlobTextFromDocument textStream = new BlobTextFromDocument();
         textStream.addProperty("dc:title", "Instagram and Facebook " + loremIpsum);

@@ -4,6 +4,7 @@ package org.nuxeo.ai.services;
 public class SearchOptions {
 
     protected String index;
+
     protected int limit = -1; // -1 means default
 
     public String getIndex() {
@@ -36,4 +37,3 @@ public class SearchOptions {
         }
     }
 }
-

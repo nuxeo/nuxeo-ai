@@ -32,14 +32,9 @@ public class SearchAdapterServiceImpl extends DefaultComponent implements Search
             String index = options.getIndex() != null ? options.getIndex() : DEFAULT_INDEX;
             SearchQuery query;
             if (options.getLimit() > -1) {
-                query = SearchQuery.builder(nxql, session)
-                                   .index(index)
-                                   .limit(options.getLimit())
-                                   .build();
+                query = SearchQuery.builder(nxql, session).index(index).limit(options.getLimit()).build();
             } else {
-                query = SearchQuery.builder(nxql, session)
-                                   .index(index)
-                                   .build();
+                query = SearchQuery.builder(nxql, session).index(index).build();
             }
             SearchResponse resp = ss.search(query);
             return SearchSummary.of(resp.getTotal(), resp.getHitsCount());
@@ -57,10 +52,7 @@ public class SearchAdapterServiceImpl extends DefaultComponent implements Search
             if (ss == null) {
                 return session.query(nxql).size();
             }
-            SearchQuery query = SearchQuery.builder(nxql, session)
-                                           .index(DEFAULT_INDEX)
-                                           .limit(0)
-                                           .build();
+            SearchQuery query = SearchQuery.builder(nxql, session).index(DEFAULT_INDEX).limit(0).build();
             SearchResponse resp = ss.search(query);
             return resp.getTotal();
         } catch (Exception e) {

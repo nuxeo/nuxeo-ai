@@ -21,8 +21,8 @@ package org.nuxeo.ai.translate;
 import org.nuxeo.ai.aws.dto.TranslationResult;
 
 /**
- * Works with AWS Translate - Now using domain DTOs instead of AWS SDK models
- * This interface is completely independent of AWS SDK implementation details
+ * Works with AWS Translate - Now using domain DTOs instead of AWS SDK models This interface is completely independent
+ * of AWS SDK implementation details
  */
 public interface TranslateService {
 

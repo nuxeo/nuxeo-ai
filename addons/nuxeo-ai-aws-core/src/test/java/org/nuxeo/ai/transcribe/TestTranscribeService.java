@@ -59,6 +59,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(FeaturesRunner.class)
@@ -69,44 +70,44 @@ public class TestTranscribeService {
 
     protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    protected static final String json = "{\n" +//
-            "    \"jobName\": \"EnUS_033178297efa75a1b0add2acaea8639e\",\n" +//
+    protected static final String json = "{\n" + //
+            "    \"jobName\": \"EnUS_033178297efa75a1b0add2acaea8639e\",\n" + //
             "    \"accountId\": \"783725821734\",\n" + //
-            "    \"results\": {\n" +//
+            "    \"results\": {\n" + //
             "        \"language_code\": \"en-US\",\n" + //
-            "        \"transcripts\": [\n" +//
-            "            {\n" +//
-            "                \"transcript\": \"this guy. I really familiar. He was a long time.\",\n" +//
+            "        \"transcripts\": [\n" + //
+            "            {\n" + //
+            "                \"transcript\": \"this guy. I really familiar. He was a long time.\",\n" + //
             "                \"language_identification\": [{\"score\":\"0.829\", \"ode\":\"es-ES\"},{\"score\":\"0.0729\",\"code\":\"it-IT\"}]\n"
-            +//
-            "            }\n" +//
-            "        ],\n" +//
-            "        \"items\": [\n" +//
-            "            {\n" +//
-            "                \"start_time\": \"0.62\",\n" +//
-            "                \"end_time\": \"0.88\",\n" +//
-            "                \"alternatives\": [\n" +//
-            "                    {\n" +//
-            "                        \"confidence\": \"0.9542\",\n" +//
-            "                        \"content\": \"this\"\n" +//
-            "                    }\n" +//
-            "                ],\n" +//
-            "                \"type\": \"pronunciation\"\n" +//
-            "            },\n" +//
-            "            {\n" +//
-            "                \"start_time\": \"0.88\",\n" +//
-            "                \"end_time\": \"1.32\",\n" +//
-            "                \"alternatives\": [\n" +//
-            "                    {\n" +//
-            "                        \"confidence\": \"0.956\",\n" +//
-            "                        \"content\": \"guy\"\n" +//
-            "                    }\n" +//
-            "                ],\n" +//
-            "                \"type\": \"pronunciation\"\n" +//
-            "            }\n" +//
-            "        ]\n" +//
-            "    },\n" +//
-            "    \"status\": \"COMPLETED\"\n" +//
+            + //
+            "            }\n" + //
+            "        ],\n" + //
+            "        \"items\": [\n" + //
+            "            {\n" + //
+            "                \"start_time\": \"0.62\",\n" + //
+            "                \"end_time\": \"0.88\",\n" + //
+            "                \"alternatives\": [\n" + //
+            "                    {\n" + //
+            "                        \"confidence\": \"0.9542\",\n" + //
+            "                        \"content\": \"this\"\n" + //
+            "                    }\n" + //
+            "                ],\n" + //
+            "                \"type\": \"pronunciation\"\n" + //
+            "            },\n" + //
+            "            {\n" + //
+            "                \"start_time\": \"0.88\",\n" + //
+            "                \"end_time\": \"1.32\",\n" + //
+            "                \"alternatives\": [\n" + //
+            "                    {\n" + //
+            "                        \"confidence\": \"0.956\",\n" + //
+            "                        \"content\": \"guy\"\n" + //
+            "                    }\n" + //
+            "                ],\n" + //
+            "                \"type\": \"pronunciation\"\n" + //
+            "            }\n" + //
+            "        ]\n" + //
+            "    },\n" + //
+            "    \"status\": \"COMPLETED\"\n" + //
             "}";
 
     @Inject
@@ -160,7 +161,7 @@ public class TestTranscribeService {
         btfd.addBlob("file:content", "img", managedBlob);
         AIMetadata metadata = new EnrichmentMetadata.Builder(PROVIDER_KIND, PROVIDER_NAME,
                 new BlobTextFromDocument(doc)).withLabels(
-                Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
+                        Collections.singletonList(new LabelSuggestion(UNSET + PROVIDER_NAME, labels)))
                                               .withRawKey(rawKey)
                                               .build();
 

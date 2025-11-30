@@ -9,11 +9,11 @@
  */
 package org.nuxeo.ai.aws.mapper;
 
-import org.nuxeo.ai.aws.dto.TextractResult;
-import software.amazon.awssdk.services.textract.model.*;
-
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.nuxeo.ai.aws.dto.TextractResult;
+import software.amazon.awssdk.services.textract.model.*;
 
 /**
  * Mapper for AWS Textract service responses.
@@ -24,9 +24,10 @@ public class TextractMapper {
      * Map AWS SDK DetectDocumentTextResponse to our abstraction DTO
      */
     public static TextractResult mapToTextractResult(DetectDocumentTextResponse response) {
-        List<TextractResult.Block> blocks = response.blocks().stream()
-                .map(TextractMapper::mapToBlock)
-                .collect(Collectors.toList());
+        List<TextractResult.Block> blocks = response.blocks()
+                                                    .stream()
+                                                    .map(TextractMapper::mapToBlock)
+                                                    .collect(Collectors.toList());
 
         return new TextractResult(blocks, "Document processed", "COMPLETED");
     }
@@ -35,9 +36,10 @@ public class TextractMapper {
      * Map AWS SDK AnalyzeDocumentResponse to our abstraction DTO
      */
     public static TextractResult mapToTextractResult(AnalyzeDocumentResponse response) {
-        List<TextractResult.Block> blocks = response.blocks().stream()
-                .map(TextractMapper::mapToBlock)
-                .collect(Collectors.toList());
+        List<TextractResult.Block> blocks = response.blocks()
+                                                    .stream()
+                                                    .map(TextractMapper::mapToBlock)
+                                                    .collect(Collectors.toList());
 
         return new TextractResult(blocks, "Document analyzed", "COMPLETED");
     }
@@ -63,19 +65,12 @@ public class TextractMapper {
         TextractResult.BoundingBox boundingBox = null;
         if (awsBlock.geometry() != null && awsBlock.geometry().boundingBox() != null) {
             BoundingBox awsBoundingBox = awsBlock.geometry().boundingBox();
-            boundingBox = new TextractResult.BoundingBox(
-                    awsBoundingBox.left(),
-                    awsBoundingBox.top(),
-                    awsBoundingBox.width(),
-                    awsBoundingBox.height()
-            );
+            boundingBox = new TextractResult.BoundingBox(awsBoundingBox.left(), awsBoundingBox.top(),
+                    awsBoundingBox.width(), awsBoundingBox.height());
         }
 
-        return new TextractResult.Block(
-                awsBlock.blockType() != null ? awsBlock.blockType().toString() : "UNKNOWN",
+        return new TextractResult.Block(awsBlock.blockType() != null ? awsBlock.blockType().toString() : "UNKNOWN",
                 awsBlock.text() != null ? awsBlock.text() : "",
-                awsBlock.confidence() != null ? awsBlock.confidence() : 0.0f,
-                boundingBox
-        );
+                awsBlock.confidence() != null ? awsBlock.confidence() : 0.0f, boundingBox);
     }
 }

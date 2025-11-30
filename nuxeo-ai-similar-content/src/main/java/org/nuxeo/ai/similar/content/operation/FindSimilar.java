@@ -28,7 +28,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
@@ -37,11 +37,10 @@ import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.automation.core.annotations.Param;
-import org.nuxeo.ecm.core.io.upload.batch.BatchManager;
-import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.io.upload.batch.BatchManager;
 import org.nuxeo.runtime.api.Framework;
 
 @Operation(id = FindSimilar.ID, category = "AI", label = "Find duplicate documents")

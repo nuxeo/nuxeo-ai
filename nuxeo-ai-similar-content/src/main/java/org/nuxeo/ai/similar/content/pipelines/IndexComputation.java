@@ -28,11 +28,14 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.sdk.rest.exception.InvalidParametersException;
 import org.nuxeo.ai.similar.content.pipelines.objects.IndexRecord;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -47,8 +50,6 @@ import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import org.nuxeo.audit.api.LogEntry;
-import org.nuxeo.audit.service.AuditBackend;
 
 /**
  * Computation responsible for sending given document to index
@@ -111,7 +112,9 @@ public class IndexComputation extends AbstractComputation {
         if (audit != null) {
             LogEntry logEntry = LogEntry.builder(INDEX_COMPUTATION_NAME, new Date())
                                         .category("AI")
-                                        .comment("Document " + document.getId() + " indexed for similar content; xpath: " + ir.getXpath() + "; user " + username)
+                                        .comment(
+                                                "Document " + document.getId() + " indexed for similar content; xpath: "
+                                                        + ir.getXpath() + "; user " + username)
                                         .docUUID(document.getId())
                                         .docPath(document.getPathAsString())
                                         .repositoryId(document.getRepositoryName())

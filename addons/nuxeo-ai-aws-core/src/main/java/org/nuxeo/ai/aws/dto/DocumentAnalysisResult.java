@@ -16,26 +16,16 @@
 package org.nuxeo.ai.aws.dto;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Domain-specific DTO for Textract document analysis results.
  */
 public record DocumentAnalysisResult(List<Block> blocks) {
-    public List<Block> getBlocks() { return blocks; }
 
-    // equals/hashCode from record sufficient
-    public static record Block(String blockType, Float confidence, String text, BoundingBox boundingBox, List<String> relationships) {
-        public String getBlockType() { return blockType; }
-        public Float getConfidence() { return confidence; }
-        public String getText() { return text; }
-        public BoundingBox getBoundingBox() { return boundingBox; }
-        public List<String> getRelationships() { return relationships; }
+    public record Block(String blockType, Float confidence, String text, BoundingBox boundingBox,
+            List<String> relationships) {
     }
-    public static record BoundingBox(Float width, Float height, Float left, Float top) {
-        public Float getWidth() { return width; }
-        public Float getHeight() { return height; }
-        public Float getLeft() { return left; }
-        public Float getTop() { return top; }
+
+    public record BoundingBox(Float width, Float height, Float left, Float top) {
     }
 }

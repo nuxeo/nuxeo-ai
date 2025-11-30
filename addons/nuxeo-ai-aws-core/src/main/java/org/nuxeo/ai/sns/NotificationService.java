@@ -21,6 +21,7 @@ package org.nuxeo.ai.sns;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+
 import software.amazon.awssdk.services.sns.SnsClient;
 
 /**

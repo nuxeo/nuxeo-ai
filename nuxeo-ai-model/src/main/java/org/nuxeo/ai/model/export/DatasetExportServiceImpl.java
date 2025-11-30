@@ -60,47 +60,54 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 
 /**
- * DatasetExportServiceImpl — rewritten to avoid Elasticsearch/internal APIs.
- * - Uses CoreSession + NXQL and in-memory aggregation for stats.
- * - Compatible with Nuxeo 2025.3 without protected builders.
- *
- * Notes:
- * - For very large datasets, stats() is potentially expensive (it fetches documents).
- * - If you have a search backend with aggregation support, we can later swap to that.
+ * DatasetExportServiceImpl — rewritten to avoid Elasticsearch/internal APIs. - Uses CoreSession + NXQL and in-memory
+ * aggregation for stats. - Compatible with Nuxeo 2025.3 without protected builders. Notes: - For very large datasets,
+ * stats() is potentially expensive (it fetches documents). - If you have a search backend with aggregation support, we
+ * can later swap to that.
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private static final Logger log = LogManager.getLogger(DatasetExportServiceImpl.class);
 
     private static final String IS_VERSION_PROP = "ecm:isVersion";
+
     private static final long TWO_DAYS_IN_SEC = TimeUnit.DAYS.toSeconds(2);
+
     private static final String AI_RUNNING_EXPORTS_KVS = "aiRunningExports";
 
     private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ,
             new IntegerLiteral(0));
 
-    protected static final String BASE_QUERY =
-            "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
-                    + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
+    protected static final String BASE_QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
 
-    protected static final Set<String> VALID_DOC_TYPES = Sets.newHashSet(
-            DataType.IMAGE.shorten(), DataType.TEXT.shorten(), DataType.CATEGORY.shorten(), null);
+    protected static final Set<String> VALID_DOC_TYPES = Sets.newHashSet(DataType.IMAGE.shorten(),
+            DataType.TEXT.shorten(), DataType.CATEGORY.shorten(), null);
 
     protected static final Properties TERM_PROPS;
+
     protected static final Properties EMPTY_PROPS = new Properties();
 
     public static final String DEFAULT_NUM_TERMS = "200";
+
     public static final String QUERY_PARAM = "query";
+
     public static final String INPUT_PARAMETERS = "inputParameters";
+
     public static final String OUTPUT_PARAMETERS = "outputParameters";
+
     public static final String MODEL_PARAMETERS = "modelParameters";
+
     public static final String STATS_TOTAL = "total";
+
     public static final String STATS_COUNT = "count";
 
     public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
-    public static final String QUERY_FOR_BATCH =
-            BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
+
+    public static final String QUERY_FOR_BATCH = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND "
+            + DATASET_EXPORT_BATCH_ID + " = %s";
 
     static {
         TERM_PROPS = new Properties();
@@ -118,8 +125,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
-    public String export(CoreSession session, String nxql, Set<PropertyType> inputs,
-            Set<PropertyType> outputs, int split, Map<String, Serializable> modelParams) {
+    public String export(CoreSession session, String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs,
+            int split, Map<String, Serializable> modelParams) {
         validate(nxql, inputs, outputs);
         if (split < 1 || split > 100) {
             throw new IllegalArgumentException("Dataset split value is a percentage between 1 and 100");
@@ -133,14 +140,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         List<Map<String, String>> inputAsParameter = inputs.stream().map(this::toMap).collect(Collectors.toList());
         List<Map<String, String>> outputAsParameter = outputs.stream().map(this::toMap).collect(Collectors.toList());
 
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL, username)
-                .repository(session.getRepositoryName())
-                .param(QUERY_PARAM, nxql)
-                .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
-                .param(OUTPUT_PARAMETERS, (Serializable) outputAsParameter)
-                .param(MODEL_PARAMETERS, (Serializable) modelParams)
-                .param(EXPORT_SPLIT_PARAM, split)
-                .build();
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL,
+                username).repository(session.getRepositoryName())
+                         .param(QUERY_PARAM, nxql)
+                         .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
+                         .param(OUTPUT_PARAMETERS, (Serializable) outputAsParameter)
+                         .param(MODEL_PARAMETERS, (Serializable) modelParams)
+                         .param(EXPORT_SPLIT_PARAM, split)
+                         .build();
 
         if (log.isDebugEnabled()) {
             log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());
@@ -384,7 +391,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         // produce statistics from accumulators
         for (PropertyAccumulator acc : accumulators.values()) {
             // missing stat
-            Statistic missing = Statistic.of(acc.missingId(), acc.fieldName, acc.inputType(), "missing", acc.missingCount());
+            Statistic missing = Statistic.of(acc.missingId(), acc.fieldName, acc.inputType(), "missing",
+                    acc.missingCount());
             stats.add(missing);
 
             // count stat (non-null)
@@ -392,13 +400,15 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             stats.add(count);
 
             // cardinality stat
-            Statistic card = Statistic.of(acc.cardId(), acc.fieldName, acc.inputType(), "cardinality", acc.cardinality());
+            Statistic card = Statistic.of(acc.cardId(), acc.fieldName, acc.inputType(), "cardinality",
+                    acc.cardinality());
             stats.add(card);
 
             // top terms as buckets
             List<org.nuxeo.ai.sdk.objects.Bucket> buckets = acc.topTermsAsBuckets();
             if (!buckets.isEmpty()) {
-                Statistic termsStat = Statistic.of(acc.termsId(), acc.fieldName, acc.inputType(), "terms", (Number) buckets.size());
+                Statistic termsStat = Statistic.of(acc.termsId(), acc.fieldName, acc.inputType(), "terms",
+                        (Number) buckets.size());
                 termsStat.setValue(buckets);
                 stats.add(termsStat);
             }
@@ -416,10 +426,15 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     /** Very small helper to accumulate property metrics while scanning documents */
     protected static class PropertyAccumulator {
         final String fieldName;
+
         final PropertyType propType;
+
         final String inputType; // derived type name for Statistic
+
         long missing = 0;
+
         long count = 0;
+
         final Map<String, Long> termCounts = new HashMap<>();
 
         PropertyAccumulator(String fieldName, PropertyType propType, SchemaManager sm) {
@@ -463,7 +478,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                                     any = true;
                                 }
                             }
-                            if (any) count++; else missing++;
+                            if (any)
+                                count++;
+                            else
+                                missing++;
                         } else if (v instanceof Collection) {
                             Collection<?> c = (Collection<?>) v;
                             boolean any = false;
@@ -474,7 +492,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
                                     any = true;
                                 }
                             }
-                            if (any) count++; else missing++;
+                            if (any)
+                                count++;
+                            else
+                                missing++;
                         } else {
                             // other types: count as present and index value string
                             count++;
@@ -521,9 +542,11 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
 
         List<org.nuxeo.ai.sdk.objects.Bucket> topTermsAsBuckets() {
-            if (termCounts.isEmpty()) return Collections.emptyList();
-            int size =  Integer.parseInt(Optional.ofNullable(System.getProperty("nuxeo.ai.terms.size")).orElse("200"));
-            return termCounts.entrySet().stream()
+            if (termCounts.isEmpty())
+                return Collections.emptyList();
+            int size = Integer.parseInt(Optional.ofNullable(System.getProperty("nuxeo.ai.terms.size")).orElse("200"));
+            return termCounts.entrySet()
+                             .stream()
                              .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
                              .limit(size)
                              .map(e -> new org.nuxeo.ai.sdk.objects.Bucket(e.getKey(), e.getValue()))

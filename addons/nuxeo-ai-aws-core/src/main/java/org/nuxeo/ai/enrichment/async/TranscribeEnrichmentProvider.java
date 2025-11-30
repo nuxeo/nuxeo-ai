@@ -21,13 +21,13 @@ package org.nuxeo.ai.enrichment.async;
 
 import static org.nuxeo.ecm.platform.video.VideoConstants.VIDEO_FACET;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -37,7 +37,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.nuxeo.ai.aws.dto.TranscriptionJobResult;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -58,6 +57,8 @@ import org.nuxeo.ecm.platform.video.TranscodedVideo;
 import org.nuxeo.ecm.platform.video.VideoDocument;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
 
@@ -110,13 +111,13 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
 
         TranscribeService ts = Framework.getService(TranscribeService.class);
         TranscriptionJobResult startResult = ts.requestTranscription(blob, languages);
-        String jobName = startResult.getJobName();
+        String jobName = startResult.jobName();
         TranscriptionJobResult finalResult = awaitJob(docId, ts, jobName);
-        if ("FAILED".equalsIgnoreCase(finalResult.getJobStatus())) {
+        if ("FAILED".equalsIgnoreCase(finalResult.jobStatus())) {
             throw new NuxeoException("Transcribe job failed; Job: " + jobName + " Document Id: " + docId);
         }
 
-        String json = getResponse(docId, finalResult.getTranscriptFileUri());
+        String json = getResponse(docId, finalResult.transcriptFileUri());
         AudioTranscription transcription = getAudioTranscription(docId, json);
         List<AIMetadata.Label> labels = toLabels(transcription);
 
@@ -138,15 +139,15 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
             return Collections.emptyList();
         }
         return texts.stream()
-                .filter(StringUtils::isNotBlank)
-                .map(t -> new AIMetadata.Label(t, 0.99f))
-                .collect(Collectors.toList());
+                    .filter(StringUtils::isNotBlank)
+                    .map(t -> new AIMetadata.Label(t, 0.99f))
+                    .collect(Collectors.toList());
     }
 
     private TranscriptionJobResult awaitJob(String docId, TranscribeService ts, String jobName) {
         long timeSpent = 0;
         TranscriptionJobResult jobResult = ts.getTranscriptionJob(jobName);
-        while ("IN_PROGRESS".equalsIgnoreCase(jobResult.getJobStatus())) {
+        while ("IN_PROGRESS".equalsIgnoreCase(jobResult.jobStatus())) {
             if (timeSpent > TIMEOUT) {
                 throw new NuxeoException("Work reached timeout; Job name: " + jobName + " Document Id: " + docId);
             }

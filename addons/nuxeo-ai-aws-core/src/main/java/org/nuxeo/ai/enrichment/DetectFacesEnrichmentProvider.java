@@ -29,12 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
+
 import software.amazon.awssdk.services.rekognition.model.Attribute;
 import software.amazon.awssdk.services.rekognition.model.DetectFacesResponse;
 import software.amazon.awssdk.services.rekognition.model.FaceDetail;
@@ -94,11 +96,11 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
                                           .filter(Objects::nonNull)
                                           .collect(Collectors.toList());
 
-        metadata.add(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
-                                                                                .withRawKey(rawKey)
-                                                                                .withDocumentProperties(
-                                                                                        singleton(propName))
-                                                                                .build());
+        metadata.add(
+                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withTags(asTags(tags))
+                                                                           .withRawKey(rawKey)
+                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .build());
         return metadata;
     }
 

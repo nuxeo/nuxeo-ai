@@ -20,17 +20,18 @@ package org.nuxeo.ai.rekognition;
 
 import java.util.Collection;
 
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.aws.dto.TextDetectionResult;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
 import software.amazon.awssdk.services.rekognition.model.DetectFacesResponse;
 import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesResponse;
 import software.amazon.awssdk.services.rekognition.model.SegmentType;
 
 /**
- * Works with AWS Rekognition - Now using domain DTOs instead of AWS SDK models
- * This interface is completely independent of AWS SDK implementation details
+ * Works with AWS Rekognition - Now using domain DTOs instead of AWS SDK models This interface is completely independent
+ * of AWS SDK implementation details
  */
 public interface RekognitionService {
 

@@ -13,8 +13,4 @@ package org.nuxeo.ai.aws.dto;
  * AWS SDK-independent result DTO for Translate operations.
  */
 public record TranslateResult(String translatedText, String sourceLanguageCode, String targetLanguageCode) {
-    public String getTranslatedText() { return translatedText; }
-    public String getSourceLanguageCode() { return sourceLanguageCode; }
-    public String getTargetLanguageCode() { return targetLanguageCode; }
-    @Override public String toString() { return "TranslateResult{" + "translatedText='" + translatedText + '\'' + ", sourceLanguageCode='" + sourceLanguageCode + '\'' + ", targetLanguageCode='" + targetLanguageCode + '\'' + '}'; }
 }

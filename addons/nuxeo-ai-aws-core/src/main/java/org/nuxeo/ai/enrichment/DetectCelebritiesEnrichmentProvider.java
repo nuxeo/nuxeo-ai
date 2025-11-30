@@ -31,12 +31,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
+
 import software.amazon.awssdk.services.rekognition.model.BoundingBox;
 import software.amazon.awssdk.services.rekognition.model.Celebrity;
 import software.amazon.awssdk.services.rekognition.model.ComparedFace;
@@ -64,8 +66,7 @@ public class DetectCelebritiesEnrichmentProvider extends AbstractEnrichmentProvi
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
                 RecognizeCelebritiesResponse result = rs.detectCelebrities(blob.getValue());
-                if (result != null && (!result.celebrityFaces().isEmpty() || !result.unrecognizedFaces()
-                                                                                       .isEmpty())) {
+                if (result != null && (!result.celebrityFaces().isEmpty() || !result.unrecognizedFaces().isEmpty())) {
                     enriched.addAll(processResults(doc, blob.getKey(), result));
                 }
             }

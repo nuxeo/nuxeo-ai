@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -34,15 +35,16 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ai.services.SearchAdapterService;
 import org.nuxeo.ai.services.SearchOptions;
 import org.nuxeo.ai.services.SearchSummary;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.AbstractResource;
 import org.nuxeo.ecm.webengine.model.impl.ResourceTypeImpl;
@@ -156,10 +158,8 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
         try {
             SearchAdapterService adapter = Framework.getService(SearchAdapterService.class);
             String nxqlQuery = "SELECT * FROM LogEntry ORDER BY eventDate DESC";
-            SearchSummary summary = adapter.search(session, nxqlQuery, SearchOptions.builder()
-                                                                                   .index(SearchAdapterService.DEFAULT_INDEX)
-                                                                                   .limit(100)
-                                                                                   .build());
+            SearchSummary summary = adapter.search(session, nxqlQuery,
+                    SearchOptions.builder().index(SearchAdapterService.DEFAULT_INDEX).limit(100).build());
             return String.format("{\"total\": %d, \"hits\": %d}", summary.getTotal(), summary.getHitsCount());
         } catch (Exception e) {
             log.error("Error when trying to execute search request on audit index", e);

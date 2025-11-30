@@ -21,19 +21,14 @@ package org.nuxeo.ai.textract;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.setupBlobForStream;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
 
@@ -48,21 +43,16 @@ import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.common.utils.FileUtils;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.blob.BlobManager;
-import org.nuxeo.ecm.core.blob.BlobMetaImpl;
-import org.nuxeo.ecm.core.blob.BlobProvider;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
-import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import software.amazon.awssdk.services.textract.model.Block;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import software.amazon.awssdk.services.textract.model.Block;
 
 @RunWith(FeaturesRunner.class)
 @Features({ EnrichmentTestFeature.class, PlatformFeature.class })

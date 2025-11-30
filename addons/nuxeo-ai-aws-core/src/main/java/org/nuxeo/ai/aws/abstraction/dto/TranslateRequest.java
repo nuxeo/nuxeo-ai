@@ -15,8 +15,16 @@ package org.nuxeo.ai.aws.abstraction.dto;
 public class TranslateRequest {
 
     public static record TranslateText(String text, String sourceLanguageCode, String targetLanguageCode) {
-        public String getText() { return text; }
-        public String getSourceLanguageCode() { return sourceLanguageCode; }
-        public String getTargetLanguageCode() { return targetLanguageCode; }
+        public String getText() {
+            return text;
+        }
+
+        public String getSourceLanguageCode() {
+            return sourceLanguageCode;
+        }
+
+        public String getTargetLanguageCode() {
+            return targetLanguageCode;
+        }
     }
 }

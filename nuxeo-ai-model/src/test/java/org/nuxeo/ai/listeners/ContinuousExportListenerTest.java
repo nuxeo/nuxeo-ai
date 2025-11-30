@@ -25,7 +25,9 @@ import static org.nuxeo.ai.listeners.ContinuousExportListener.FORCE_EXPORT;
 import static org.nuxeo.ai.listeners.ContinuousExportListener.START_CONTINUOUS_EXPORT;
 
 import java.util.List;
+
 import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,11 +49,13 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({ CoreSearchFeature.class, EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class, CoreBulkFeature.class })
+@Features({ CoreSearchFeature.class, EnrichmentTestFeature.class, AutomationFeature.class, PlatformFeature.class,
+        CoreBulkFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy({ "org.nuxeo.ai.ai-model:OSGI-INF/disable-ai-listeners.xml" })

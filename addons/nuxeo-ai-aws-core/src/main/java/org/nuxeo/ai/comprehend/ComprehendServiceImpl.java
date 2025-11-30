@@ -23,24 +23,24 @@ import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.aws.abstraction.AWSServiceRegistry;
 import org.nuxeo.ai.aws.abstraction.ComprehendServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.ComprehendRequest;
-import org.nuxeo.ai.aws.dto.SentimentResult;
-import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
 import org.nuxeo.ai.aws.dto.EntitiesResult;
+import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
+import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
- * Calls AWS Comprehend APIs via abstraction layer - NO AWS SDK IMPORTS!
- * All AWS SDK dependencies are completely isolated in the facade layer.
- * This service now only depends on our abstraction DTOs and interfaces.
+ * Calls AWS Comprehend APIs via abstraction layer - NO AWS SDK IMPORTS! All AWS SDK dependencies are completely
+ * isolated in the facade layer. This service now only depends on our abstraction DTOs and interfaces.
  */
 public class ComprehendServiceImpl extends DefaultComponent implements ComprehendService {
 
     private static final Log log = LogFactory.getLog(ComprehendServiceImpl.class);
 
     protected ComprehendServiceFacade comprehendFacade;
+
     protected AWSMetrics awsMetrics;
 
     @Override

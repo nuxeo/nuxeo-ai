@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +51,8 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -61,10 +64,9 @@ import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.audit.api.LogEntry;
-import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -206,7 +208,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                 history.remove(previous.get());
                 setAutoHistory(doc, history);
             }
-            //Set the value
+            // Set the value
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), noOldXpath);
             String comment = "Resetting " + xPath + " property";
             toReset.forEach(map -> {
@@ -325,7 +327,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             }
         });
         if (cleanItemsList.size() != itemsList.size()) {
-            //We made some changes lets update
+            // We made some changes lets update
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, cleanItemsList);
             raiseEvent(doc, ENRICHMENT_MODIFIED, removedTargetProperties, "Dirty inputs");
         }

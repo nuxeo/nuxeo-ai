@@ -26,6 +26,7 @@ import static org.nuxeo.ai.similar.content.utils.PictureUtils.HEADER_OFFSET;
 
 import java.io.File;
 import java.io.IOException;
+
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -39,6 +39,7 @@ import javax.imageio.ImageIO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.convert.api.ConversionException;
 import org.nuxeo.ecm.core.convert.cache.SimpleCachableBlobHolder;
@@ -47,7 +48,6 @@ import org.nuxeo.ecm.core.convert.extension.ConverterDescriptor;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandException;
 import org.nuxeo.ecm.platform.commandline.executor.api.CommandNotAvailable;
 import org.nuxeo.ecm.platform.picture.core.im.IMImageUtils;
-import org.nuxeo.ecm.core.api.Blobs;
 
 /**
  * Image Converter optimized for AI purposes
@@ -90,7 +90,8 @@ public class AiResizePictureConverter implements Converter {
                 if (result != null && result.getLength() > 0) {
                     results.add(result);
                 } else {
-                    log.warn("Could not resize blob {} with digest {} via ImageMagick, attempting Java fallback", source.getFilename(), source.getDigest());
+                    log.warn("Could not resize blob {} with digest {} via ImageMagick, attempting Java fallback",
+                            source.getFilename(), source.getDigest());
                     // Fallback: attempt in-JVM resize & JPEG conversion so tests don't get null.
                     try {
                         BufferedImage inputImg = ImageIO.read(source.getStream());
@@ -111,7 +112,8 @@ public class AiResizePictureConverter implements Converter {
                             log.error("Java fallback failed to read image data for blob {}", source.getFilename());
                         }
                     } catch (IOException ioe) {
-                        log.error("Java fallback resize failed for blob {}: {}", source.getFilename(), ioe.getMessage());
+                        log.error("Java fallback resize failed for blob {}: {}", source.getFilename(),
+                                ioe.getMessage());
                     }
                 }
             }

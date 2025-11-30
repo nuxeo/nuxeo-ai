@@ -25,13 +25,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.nuxeo.ai.pipes.services.JacksonUtil;
 
 /**
  * A POJO representation used to transfer data in a stream. The main subject of this class is usually either a blob or a
@@ -159,9 +161,10 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
             return false;
         }
         BlobTextFromDocument that = (BlobTextFromDocument) o;
-        if (!Objects.equals(id, that.id) || !Objects.equals(repositoryName, that.repositoryName) || !Objects.equals(parentId, that.parentId)
-                || !Objects.equals(primaryType, that.primaryType) || !Objects.equals(facets, that.facets)
-                || !Objects.equals(blobTypes, that.blobTypes) || !Objects.equals(properties, that.properties)) {
+        if (!Objects.equals(id, that.id) || !Objects.equals(repositoryName, that.repositoryName)
+                || !Objects.equals(parentId, that.parentId) || !Objects.equals(primaryType, that.primaryType)
+                || !Objects.equals(facets, that.facets) || !Objects.equals(blobTypes, that.blobTypes)
+                || !Objects.equals(properties, that.properties)) {
             return false;
         }
         // Compare blobs by metadata rather than relying on ManagedBlob.equals (proxy vs concrete)
@@ -187,7 +190,8 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
         }
         try {
             return Objects.equals(a.getKey(), b.getKey()) && Objects.equals(a.getDigest(), b.getDigest())
-                    && Objects.equals(a.getMimeType(), b.getMimeType()) && Objects.equals(a.getEncoding(), b.getEncoding())
+                    && Objects.equals(a.getMimeType(), b.getMimeType())
+                    && Objects.equals(a.getEncoding(), b.getEncoding())
                     && Objects.equals(a.getProviderId(), b.getProviderId()) && a.getLength() == b.getLength();
         } catch (Exception e) {
             return false;
@@ -209,7 +213,9 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
         return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobsHash, blobTypes, properties);
     }
 
-    private Object safe(Object v) { return v; }
+    private Object safe(Object v) {
+        return v;
+    }
 
     @Override
     public String toString() {

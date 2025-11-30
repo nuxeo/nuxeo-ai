@@ -21,14 +21,15 @@ package org.nuxeo.ai.conversions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ecm.platform.video.VideoConstants.INFO_PROPERTY;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import jakarta.inject.Inject;
+
 import org.assertj.core.api.Condition;
 import org.junit.Assume;
 import org.junit.Test;
@@ -92,7 +93,8 @@ public class TestVideoConversions {
     @SuppressWarnings("unchecked")
     public void shouldRetrieveAudio() throws InterruptedException {
         // Skip if converter not actually available (ffmpeg missing in environment)
-        Assume.assumeTrue("Skipping audio extraction test: ffmpeg converter not available", cs.isConverterAvailable("convertToWAV16K").isAvailable());
+        Assume.assumeTrue("Skipping audio extraction test: ffmpeg converter not available",
+                cs.isConverterAvailable("convertToWAV16K").isAvailable());
         File vf = FileUtils.getResourceFileFromContext("files/video240_short.mp4");
         DocumentModel dm = session.createDocumentModel("/", "testVideo", "Video");
         dm.setPropertyValue("dc:title", "testVideo");

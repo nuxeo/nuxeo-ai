@@ -17,8 +17,8 @@ import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 /**
- * Image Quality Service - Simplified implementation without AWS SDK dependencies.
- * This is a working implementation that doesn't depend on the problematic AWS abstraction layer.
+ * Image Quality Service - Simplified implementation without AWS SDK dependencies. This is a working implementation that
+ * doesn't depend on the problematic AWS abstraction layer.
  */
 public class ImageQualityService extends DefaultComponent {
 
@@ -83,12 +83,17 @@ public class ImageQualityService extends DefaultComponent {
      * Get quality score based on image type
      */
     private float getTypeScore(String mimeType) {
-        if (mimeType == null) return 0.3f;
+        if (mimeType == null)
+            return 0.3f;
 
-        if (mimeType.contains("png")) return 0.9f;
-        if (mimeType.contains("jpeg") || mimeType.contains("jpg")) return 0.8f;
-        if (mimeType.contains("gif")) return 0.6f;
-        if (mimeType.contains("bmp")) return 0.4f;
+        if (mimeType.contains("png"))
+            return 0.9f;
+        if (mimeType.contains("jpeg") || mimeType.contains("jpg"))
+            return 0.8f;
+        if (mimeType.contains("gif"))
+            return 0.6f;
+        if (mimeType.contains("bmp"))
+            return 0.4f;
 
         return 0.5f; // Default for unknown types
     }
@@ -118,7 +123,9 @@ public class ImageQualityService extends DefaultComponent {
      */
     public static class ImageQualityResult {
         private final float qualityScore;
+
         private final int faceCount;
+
         private final String sharpness;
 
         public ImageQualityResult(float qualityScore, int faceCount, String sharpness) {
@@ -127,18 +134,26 @@ public class ImageQualityService extends DefaultComponent {
             this.sharpness = sharpness;
         }
 
-        public float getQualityScore() { return qualityScore; }
-        public int getFaceCount() { return faceCount; }
-        public String getSharpness() { return sharpness; }
-        public boolean hasIssues() { return qualityScore < 0.5f; }
+        public float getQualityScore() {
+            return qualityScore;
+        }
+
+        public int getFaceCount() {
+            return faceCount;
+        }
+
+        public String getSharpness() {
+            return sharpness;
+        }
+
+        public boolean hasIssues() {
+            return qualityScore < 0.5f;
+        }
 
         @Override
         public String toString() {
-            return "ImageQualityResult{" +
-                    "qualityScore=" + qualityScore +
-                    ", faceCount=" + faceCount +
-                    ", sharpness='" + sharpness + '\'' +
-                    '}';
+            return "ImageQualityResult{" + "qualityScore=" + qualityScore + ", faceCount=" + faceCount + ", sharpness='"
+                    + sharpness + '\'' + '}';
         }
     }
 }

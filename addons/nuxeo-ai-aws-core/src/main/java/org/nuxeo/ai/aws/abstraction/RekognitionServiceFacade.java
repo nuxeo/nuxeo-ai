@@ -9,10 +9,10 @@
  */
 package org.nuxeo.ai.aws.abstraction;
 
+import java.util.List;
+
 import org.nuxeo.ai.aws.abstraction.dto.RekognitionRequest;
 import org.nuxeo.ai.aws.dto.RekognitionResult;
-
-import java.util.List;
 
 /**
  * AWS SDK-independent facade for Rekognition operations.

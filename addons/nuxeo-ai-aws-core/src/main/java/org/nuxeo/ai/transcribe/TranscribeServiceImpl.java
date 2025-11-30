@@ -19,13 +19,9 @@
  */
 package org.nuxeo.ai.transcribe;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -49,15 +45,14 @@ import org.nuxeo.runtime.model.DefaultComponent;
 import software.amazon.awssdk.services.transcribe.model.ConflictException;
 import software.amazon.awssdk.services.transcribe.model.DeleteTranscriptionJobRequest;
 import software.amazon.awssdk.services.transcribe.model.GetTranscriptionJobRequest;
-import software.amazon.awssdk.services.transcribe.model.JobExecutionSettings;
 import software.amazon.awssdk.services.transcribe.model.LanguageCode;
 import software.amazon.awssdk.services.transcribe.model.Media;
 import software.amazon.awssdk.services.transcribe.model.MediaFormat;
 import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobRequest;
 
 /**
- * Implementation of TranscribeService - Now using abstraction layer
- * AWS SDK dependencies are isolated to this implementation class only
+ * Implementation of TranscribeService - Now using abstraction layer AWS SDK dependencies are isolated to this
+ * implementation class only
  */
 public class TranscribeServiceImpl extends DefaultComponent implements TranscribeService {
 
@@ -66,6 +61,7 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
     private static final Logger log = LogManager.getLogger(TranscribeServiceImpl.class);
 
     protected AWSClientFactory clientFactory;
+
     protected AWSMetrics awsMetrics;
 
     @Override
@@ -93,9 +89,13 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
             MediaFormat mediaFormat = determineMediaFormat(blob);
 
             StartTranscriptionJobRequest.Builder requestBuilder = StartTranscriptionJobRequest.builder()
-                    .transcriptionJobName(jobName)
-                    .media(Media.builder().mediaFileUri(mediaUri).build())
-                    .mediaFormat(mediaFormat);
+                                                                                              .transcriptionJobName(
+                                                                                                      jobName)
+                                                                                              .media(Media.builder()
+                                                                                                          .mediaFileUri(
+                                                                                                                  mediaUri)
+                                                                                                          .build())
+                                                                                              .mediaFormat(mediaFormat);
 
             // Handle language settings
             if (languages.length == 1 && !AUTOMATIC_LANG.equals(languages[0])) {
@@ -135,9 +135,7 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
             log.debug("Getting transcription job: " + jobName);
         }
 
-        GetTranscriptionJobRequest request = GetTranscriptionJobRequest.builder()
-                .transcriptionJobName(jobName)
-                .build();
+        GetTranscriptionJobRequest request = GetTranscriptionJobRequest.builder().transcriptionJobName(jobName).build();
 
         var awsResponse = clientFactory.getTranscribeClient().getTranscriptionJob(request);
 
@@ -156,8 +154,8 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
         }
 
         DeleteTranscriptionJobRequest request = DeleteTranscriptionJobRequest.builder()
-                .transcriptionJobName(jobName)
-                .build();
+                                                                             .transcriptionJobName(jobName)
+                                                                             .build();
 
         clientFactory.getTranscribeClient().deleteTranscriptionJob(request);
 
@@ -168,13 +166,13 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
 
     @Override
     public List<AIMetadata> processTranscriptionResult(TranscriptionJobResult result) {
-        if (result == null || StringUtils.isEmpty(result.getTranscriptFileUri())) {
+        if (result == null || StringUtils.isEmpty(result.transcriptFileUri())) {
             return Collections.emptyList();
         }
 
         // This would typically download and parse the transcript JSON file
         // For now, return a placeholder implementation
-        log.info("Processing transcription result from: " + result.getTranscriptFileUri());
+        log.info("Processing transcription result from: " + result.transcriptFileUri());
 
         // In a real implementation, you would:
         // 1. Download the transcript file from the URI
@@ -226,18 +224,26 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
         String filename = blob.getFilename();
 
         if (mimeType != null) {
-            if (mimeType.contains("mp3")) return MediaFormat.MP3;
-            if (mimeType.contains("mp4")) return MediaFormat.MP4;
-            if (mimeType.contains("wav")) return MediaFormat.WAV;
-            if (mimeType.contains("flac")) return MediaFormat.FLAC;
+            if (mimeType.contains("mp3"))
+                return MediaFormat.MP3;
+            if (mimeType.contains("mp4"))
+                return MediaFormat.MP4;
+            if (mimeType.contains("wav"))
+                return MediaFormat.WAV;
+            if (mimeType.contains("flac"))
+                return MediaFormat.FLAC;
         }
 
         if (filename != null) {
             String extension = filename.toLowerCase();
-            if (extension.endsWith(".mp3")) return MediaFormat.MP3;
-            if (extension.endsWith(".mp4")) return MediaFormat.MP4;
-            if (extension.endsWith(".wav")) return MediaFormat.WAV;
-            if (extension.endsWith(".flac")) return MediaFormat.FLAC;
+            if (extension.endsWith(".mp3"))
+                return MediaFormat.MP3;
+            if (extension.endsWith(".mp4"))
+                return MediaFormat.MP4;
+            if (extension.endsWith(".wav"))
+                return MediaFormat.WAV;
+            if (extension.endsWith(".flac"))
+                return MediaFormat.FLAC;
         }
 
         // Default to MP4 if we can't determine

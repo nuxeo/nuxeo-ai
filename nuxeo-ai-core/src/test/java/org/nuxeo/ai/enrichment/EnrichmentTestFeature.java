@@ -23,6 +23,7 @@ import static org.nuxeo.ai.configuration.ThresholdComponent.AUTO_CORRECT_DEFAULT
 
 import java.io.IOException;
 import java.util.UUID;
+
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
@@ -53,9 +54,9 @@ public class EnrichmentTestFeature implements RunnerFeature {
         // Runtime not yet initialized here; use system properties so they are picked up when runtime starts.
         Framework.getProperties().put(AUTOFILL_DEFAULT_VALUE, "0.2");
         Framework.getProperties().put(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
-        //System.setProperty(AUTOFILL_DEFAULT_VALUE, "0.2");
-        //System.setProperty(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
-        //System.setProperty("nuxeo.audit.storage", "sql"); // ensure SQL audit backend is selected for tests
+        // System.setProperty(AUTOFILL_DEFAULT_VALUE, "0.2");
+        // System.setProperty(AUTO_CORRECT_DEFAULT_VALUE, "0.4");
+        // System.setProperty("nuxeo.audit.storage", "sql"); // ensure SQL audit backend is selected for tests
     }
 
     /**

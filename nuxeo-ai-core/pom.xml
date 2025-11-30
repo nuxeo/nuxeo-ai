@@ -13,7 +13,7 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>4.29.3</version>
+            <version>4.29.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>

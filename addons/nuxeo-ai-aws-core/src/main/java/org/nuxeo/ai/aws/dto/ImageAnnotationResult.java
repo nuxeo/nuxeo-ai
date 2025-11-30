@@ -15,22 +15,15 @@ import java.util.List;
  * AWS SDK-independent result DTO for image annotation operations.
  */
 public record ImageAnnotationResult(List<Annotation> annotations, String imageId, float confidence) {
-    public List<Annotation> getAnnotations() { return annotations; }
-    public String getImageId() { return imageId; }
-    public float getConfidence() { return confidence; }
-    @Override public String toString() { return "ImageAnnotationResult{" + "annotations=" + annotations + ", imageId='" + imageId + '\'' + ", confidence=" + confidence + '}'; }
-    public static record Annotation(String category, String description, float score, BoundingBox boundingBox) {
-        public String getCategory() { return category; }
-        public String getDescription() { return description; }
-        public float getScore() { return score; }
-        public BoundingBox getBoundingBox() { return boundingBox; }
-        @Override public String toString() { return "Annotation{" + "category='" + category + '\'' + ", description='" + description + '\'' + ", score=" + score + ", boundingBox=" + boundingBox + '}'; }
+
+    // Optional: enforce immutability of the list
+    public ImageAnnotationResult {
+        annotations = List.copyOf(annotations);
     }
+
+    public static record Annotation(String category, String description, float score, BoundingBox boundingBox) {
+    }
+
     public static record BoundingBox(float left, float top, float width, float height) {
-        public float getLeft() { return left; }
-        public float getTop() { return top; }
-        public float getWidth() { return width; }
-        public float getHeight() { return height; }
-        @Override public String toString() { return "BoundingBox{" + "left=" + left + ", top=" + top + ", width=" + width + ", height=" + height + '}'; }
     }
 }
