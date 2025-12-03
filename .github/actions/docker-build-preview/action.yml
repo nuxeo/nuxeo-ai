@@ -51,6 +51,7 @@ runs:
     - name: Build Nuxeo image
       uses: Alfresco/alfresco-build-tools/.github/actions/nuxeo/nuxeo-docker-build@v10.1.0
       with:
+        base-image-tag: 2025
         base-registry-username: ${{ inputs.docker-username }}
         base-registry-password: ${{ inputs.docker-password }}
         nuxeo-connect-modules: nuxeo-web-ui replace-administrator-user-1.0.0
