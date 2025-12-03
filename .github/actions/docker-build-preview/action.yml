@@ -30,6 +30,8 @@ runs:
         VERSION="${{ inputs.version }}"
         echo "Preparing Docker context with version: ${VERSION}"
 
+        mkdir -p docker
+
         # Core package (required)
         if [[ -f "nuxeo-ai-core-package/target/nuxeo-ai-core-${VERSION}.zip" ]]; then
           cp "nuxeo-ai-core-package/target/nuxeo-ai-core-${VERSION}.zip" docker/
@@ -46,49 +48,35 @@ runs:
         echo "Docker context contents:"
         ls -al docker || true
 
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Build Nuxeo image
+      uses: Alfresco/alfresco-build-tools/.github/actions/nuxeo/nuxeo-docker-build@v10.1.0
       with:
-        driver: docker
-
-    - name: Login to Nuxeo private registry (FROM)
-      uses: docker/login-action@v3
-      with:
-        registry: docker-private.packages.nuxeo.com
-        username: ${{ inputs.docker-username }}
-        password: ${{ inputs.docker-password }}
-
-    - name: Login to destination registry ${{ inputs.registry }}
-      uses: docker/login-action@v3
-      with:
+        base-registry-username: ${{ inputs.docker-username }}
+        base-registry-password: ${{ inputs.docker-password }}
+        nuxeo-connect-modules: nuxeo-web-ui replace-administrator-user-1.0.0
+        nuxeo-clid: ${{ inputs.nuxeo-clid }}
+        nuxeo-local-modules-path: docker
+        os-packages: |
+          awscli
+          ghostscript
+          libwpd-tools
+          perl-Archive-Zip
+          perl-Image-ExifTool
+          poppler-utils
+          libreoffice-calc
+          libreoffice-headless
+          libreoffice-impress
+          curl
+          unzip
+          zip
+          ffmpeg-nuxeo
+          ccextractor-nuxeo
+        os-packages-user: ${{ inputs.docker-username }}
+        os-packages-token: ${{ inputs.docker-password }}
+        image-name: ${{ inputs.repository }}
+        image-tag: ${{ inputs.version }}.${{ github.run_id }}
+        image-title: "Nuxeo AI Core"
         registry: ${{ inputs.registry }}
-        username: ${{ inputs.docker-username }}
-        password: ${{ inputs.docker-password }}
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      env:
-        NUXEO_CLID: ${{ inputs.nuxeo-clid }}
-      with:
-        platforms: linux/amd64,linux/arm64
-        context: ./docker
-        file: ./docker/Dockerfile
-        secret-envs: |
-          NUXEO_CLID=NUXEO_CLID
-        secret-files: |
-          nuxeo-private=docker/nuxeo-private.repo
-        build-args: |
-          VERSION=${{ inputs.version }}
-          SCM_REF=${{ github.sha }}
-          BUILD_TAG=${{ github.run_id }}
-          PACKAGES_AUTH_USER=${{ inputs.docker-username }}
-          PACKAGES_AUTH_TOKEN=${{ inputs.docker-password }}
-        tags: |
-          ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}.${{ github.run_id }}
-        push: true
+        registry-username: ${{ inputs.docker-username }}
+        registry-password: ${{ inputs.docker-password }}
+        push-image: "true"
