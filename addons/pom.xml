@@ -14,7 +14,7 @@
   <properties>
     <aws.sdk.version>2.26.0</aws.sdk.version>
     <wiremock.version>2.27.2</wiremock.version>
-    <gcp.version>26.70.0</gcp.version>
+    <gcp.version>26.72.0</gcp.version>
   </properties>
 
   <modules>
