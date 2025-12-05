@@ -62,22 +62,10 @@ jobs:
       version: ${{ steps.project.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      - name: 'Set java version'
-        id: java-version
-        run: |
-          if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
-            echo "java-version=11" >> $GITHUB_OUTPUT
-          elif [[ "${{github.base_ref}}" == "master-10.10" || "${{github.ref}}" == "refs/heads/master-10.10" ]]; then
-              echo "java-version=8" >> $GITHUB_OUTPUT
-          elif [[ "${{github.base_ref}}" == "2023" || "${{github.ref}}" == "refs/heads/2023" ]]; then
-              echo "java-version=17" >> $GITHUB_OUTPUT
-          else
-              echo "java-version=21" >> $GITHUB_OUTPUT
-          fi
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version:  ${{ steps.java-version.outputs.java-version }}
+          java-version: "21"
           distribution: "zulu"
           cache: maven
       - name: "Install dependencies"

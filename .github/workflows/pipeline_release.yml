@@ -13,14 +13,6 @@ on:
           - bug
           - feature
           - major
-      jdk:
-        type: string
-        description: JDK Version
-        options:
-          - "8"
-          - "11"
-          - "17"
-          - "21"
 
 jobs:
   release-publish:
@@ -34,7 +26,7 @@ jobs:
 
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ github.event.inputs.jdk }}
+          java-version: "21"
           distribution: "zulu"
           cache: maven
 
