@@ -544,13 +544,24 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         List<org.nuxeo.ai.sdk.objects.Bucket> topTermsAsBuckets() {
             if (termCounts.isEmpty())
                 return Collections.emptyList();
-            int size = Integer.parseInt(Optional.ofNullable(System.getProperty("nuxeo.ai.terms.size")).orElse("200"));
+            int size = parseTermsSize(Optional.ofNullable(System.getProperty("nuxeo.ai.terms.size")).orElse("200"));
             return termCounts.entrySet()
                              .stream()
                              .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
                              .limit(size)
                              .map(e -> new org.nuxeo.ai.sdk.objects.Bucket(e.getKey(), e.getValue()))
                              .collect(Collectors.toList());
+        }
+
+        /**
+         * Safely parses the terms size value, returning a default value on error.
+         */
+        private int parseTermsSize(String value) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                return Integer.parseInt(DEFAULT_NUM_TERMS);
+            }
         }
     }
 

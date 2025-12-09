@@ -46,17 +46,41 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
 
     public static final String DEFAULT_MAX_RESULTS = "200";
 
+    private static final int DEFAULT_MAX_RESULTS_INT = 200;
+
     public static final String DEFAULT_CONFIDENCE = "70";
 
-    protected int maxResults = Integer.parseInt(DEFAULT_MAX_RESULTS);
+    protected int maxResults = parseMaxResults(DEFAULT_MAX_RESULTS);
 
-    protected float minConfidence = Float.parseFloat(DEFAULT_CONFIDENCE);
+    protected float minConfidence = parseConfidence(DEFAULT_CONFIDENCE);
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        maxResults = Integer.parseInt(descriptor.options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
-        minConfidence = Float.parseFloat(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+        maxResults = parseMaxResults(descriptor.options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
+        minConfidence = parseConfidence(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+    }
+
+    /**
+     * Safely parses a max results value string to int, returning a default value on error.
+     */
+    private int parseMaxResults(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return DEFAULT_MAX_RESULTS_INT;
+        }
+    }
+
+    /**
+     * Safely parses a confidence value string to float, returning a default value on error.
+     */
+    private float parseConfidence(String value) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException e) {
+            return Float.parseFloat(DEFAULT_CONFIDENCE);
+        }
     }
 
     @Override

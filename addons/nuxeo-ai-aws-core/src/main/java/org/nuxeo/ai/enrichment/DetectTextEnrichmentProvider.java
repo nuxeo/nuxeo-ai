@@ -46,12 +46,25 @@ public class DetectTextEnrichmentProvider extends AbstractEnrichmentProvider imp
 
     public static final String DEFAULT_CONFIDENCE = "80";
 
-    protected float minConfidence = Float.parseFloat(DEFAULT_CONFIDENCE);
+    private static final float DEFAULT_CONFIDENCE_FLOAT = 80f;
+
+    protected float minConfidence = parseConfidence(DEFAULT_CONFIDENCE);
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        minConfidence = Float.parseFloat(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+        minConfidence = parseConfidence(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+    }
+
+    /**
+     * Safely parses a confidence value string to float, returning a default value on error.
+     */
+    private float parseConfidence(String value) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException e) {
+            return DEFAULT_CONFIDENCE_FLOAT;
+        }
     }
 
     @Override

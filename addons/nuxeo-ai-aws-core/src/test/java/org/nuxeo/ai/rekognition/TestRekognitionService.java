@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import jakarta.inject.Inject;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -155,7 +154,6 @@ public class TestRekognitionService {
         assertNotNull(metadata.getLabels());
     }
 
-    @NotNull
     protected BlobTextFromDocument setupBlobTextFromDocument(String name) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/" + name).getPath()), "image/jpeg");

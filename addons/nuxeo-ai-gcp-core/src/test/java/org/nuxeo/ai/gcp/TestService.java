@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -265,7 +264,6 @@ public class TestService {
         assertThat(tags).contains("Bicycle");
     }
 
-    @NotNull
     protected BlobTextFromDocument setupBlobTextFromDocument(String name) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         File file = FileUtils.getResourceFileFromContext("files/" + name);
