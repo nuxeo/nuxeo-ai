@@ -11,7 +11,6 @@ Nuxeo-WebModule: org.nuxeo.ecm.webengine.app.WebEngineModule;name=aiaddons;packa
 Nuxeo-Component: OSGI-INF/aws-service-config.xml,
  OSGI-INF/aws-client-factory.xml,
  OSGI-INF/aws-service-registry.xml,
- OSGI-INF/aws-service-config.xml,
  OSGI-INF/rekognition-service.xml,
  OSGI-INF/comprehend-service.xml,
  OSGI-INF/textract-service.xml,

@@ -44,7 +44,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -61,8 +63,6 @@ import jakarta.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.Seconds;
 import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
@@ -337,7 +337,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
 
             try {
-                DateTime start = DateTime.now();
+                Instant start = Instant.now();
 
                 String batch1 = createTrainingDataBatch(client, trainingData, jobId);
 
@@ -353,8 +353,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 String batch3 = batchUpload.getBatchId();
                 batch3 = createBatch(batchUpload, "statistics", "2", statsData) ? batch3 : null;
 
-                DateTime end = DateTime.now();
-                log.info("Dataset upload took {} seconds", Seconds.secondsBetween(start, end).getSeconds());
+                Instant end = Instant.now();
+                log.info("Dataset upload took {} seconds", Duration.between(start, end).getSeconds());
 
                 AICorpus corpus = createCorpus(dataset, batch1, batch2, batch3, start, end);
                 String corporaId = (String) dataset.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
@@ -424,8 +424,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Nonnull
-    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start,
-            DateTime end) {
+    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, Instant start,
+            Instant end) {
         String jobId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_JOB_ID);
         String batchId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_BATCH_ID);
         String query = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_QUERY);
@@ -460,8 +460,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                                      .setEvalData(new AICorpus.Batch("1", batch2))
                                                                      .setStats(new AICorpus.Batch("2", batch3))
                                                                      .setInfo(new AICorpus.Info(
-                                                                             dateFormat.format(start.toDate()),
-                                                                             dateFormat.format(end.toDate())))
+                                                                             dateFormat.format(Date.from(start)),
+                                                                             dateFormat.format(Date.from(end))))
                                                                      .setJobId(jobId)
                                                                      .setBatchId(batchId)
                                                                      .build();
