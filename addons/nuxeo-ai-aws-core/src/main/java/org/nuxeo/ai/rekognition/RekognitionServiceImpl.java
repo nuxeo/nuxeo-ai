@@ -293,57 +293,76 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     // Helper to create faces request for facade
     private RekognitionRequest.DetectFaces createDetectFacesRequest(ManagedBlob blob, boolean includeAttributes) {
-        if (isS3Blob(blob)) {
-            String[] s3 = extractS3Info(blob);
-            return new RekognitionRequest.DetectFaces(s3[0], s3[1], includeAttributes);
+        // Use AWSHelper to properly handle both S3 and direct blobs
+        Image image = AWSHelper.getInstance().getImage(blob);
+        if (image == null) {
+            throw new NuxeoException("Unable to create image from blob: " + blob.getKey());
         }
-        return new RekognitionRequest.DetectFaces(getBlobBytes(blob), includeAttributes);
+
+        // Check if it's an S3 reference
+        if (image.s3Object() != null) {
+            return new RekognitionRequest.DetectFaces(
+                image.s3Object().bucket(),
+                image.s3Object().name(),
+                includeAttributes
+            );
+        } else if (image.bytes() != null) {
+            return new RekognitionRequest.DetectFaces(
+                image.bytes().asByteArray(),
+                includeAttributes
+            );
+        } else {
+            throw new NuxeoException("Image has neither S3 reference nor bytes data");
+        }
     }
 
     // Helper methods to create abstraction DTOs from ManagedBlob
     private RekognitionRequest.DetectLabels createDetectLabelsRequest(ManagedBlob blob, int maxLabels,
             float minConfidence) {
-        if (isS3Blob(blob)) {
-            String[] s3Info = extractS3Info(blob);
-            return new RekognitionRequest.DetectLabels(s3Info[0], s3Info[1], maxLabels, minConfidence);
+        // Use AWSHelper to properly handle both S3 and direct blobs
+        Image image = AWSHelper.getInstance().getImage(blob);
+        if (image == null) {
+            throw new NuxeoException("Unable to create image from blob: " + blob.getKey());
+        }
+
+        // Check if it's an S3 reference
+        if (image.s3Object() != null) {
+            return new RekognitionRequest.DetectLabels(
+                image.s3Object().bucket(),
+                image.s3Object().name(),
+                maxLabels,
+                minConfidence
+            );
+        } else if (image.bytes() != null) {
+            return new RekognitionRequest.DetectLabels(
+                image.bytes().asByteArray(),
+                maxLabels,
+                minConfidence
+            );
         } else {
-            byte[] imageData = getBlobBytes(blob);
-            return new RekognitionRequest.DetectLabels(imageData, maxLabels, minConfidence);
+            throw new NuxeoException("Image has neither S3 reference nor bytes data");
         }
     }
 
     private RekognitionRequest.DetectText createDetectTextRequest(ManagedBlob blob) {
-        if (isS3Blob(blob)) {
-            String[] s3Info = extractS3Info(blob);
-            return new RekognitionRequest.DetectText(s3Info[0], s3Info[1]);
+        // Use AWSHelper to properly handle both S3 and direct blobs
+        Image image = AWSHelper.getInstance().getImage(blob);
+        if (image == null) {
+            throw new NuxeoException("Unable to create image from blob: " + blob.getKey());
+        }
+
+        // Check if it's an S3 reference
+        if (image.s3Object() != null) {
+            return new RekognitionRequest.DetectText(
+                image.s3Object().bucket(),
+                image.s3Object().name()
+            );
+        } else if (image.bytes() != null) {
+            return new RekognitionRequest.DetectText(
+                image.bytes().asByteArray()
+            );
         } else {
-            byte[] imageData = getBlobBytes(blob);
-            return new RekognitionRequest.DetectText(imageData);
-        }
-    }
-
-    // Helper methods for blob handling (no AWS SDK imports!)
-    private boolean isS3Blob(ManagedBlob blob) {
-        // Logic to determine if blob is stored in S3
-        return blob.getProviderId().contains("s3") || blob.getKey().startsWith("s3://");
-    }
-
-    private String[] extractS3Info(ManagedBlob blob) {
-        // Extract S3 bucket and key from blob
-        String key = blob.getKey();
-        if (key.startsWith("s3://")) {
-            String[] parts = key.substring(5).split("/", 2);
-            return new String[] { parts[0], parts.length > 1 ? parts[1] : "" };
-        }
-        // Fallback logic for other S3 blob formats
-        return new String[] { "default-bucket", key };
-    }
-
-    private byte[] getBlobBytes(ManagedBlob blob) {
-        try {
-            return blob.getByteArray();
-        } catch (Exception e) {
-            throw new NuxeoException("Failed to read blob data", e);
+            throw new NuxeoException("Image has neither S3 reference nor bytes data");
         }
     }
 
