@@ -347,7 +347,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     @Override
     public void markExportAsRunning(String id) {
-
+        // This method is intentionally empty - marking exports as running is handled by the bulk framework
     }
 
     // ---------------------------
@@ -391,23 +391,23 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         // produce statistics from accumulators
         for (PropertyAccumulator acc : accumulators.values()) {
             // missing stat
-            Statistic missing = Statistic.of(acc.missingId(), acc.fieldName, acc.inputType(), "missing",
+            Statistic missing = Statistic.of(acc.missingId(), acc.fieldName, acc.getInputType(), "missing",
                     acc.missingCount());
             stats.add(missing);
 
             // count stat (non-null)
-            Statistic count = Statistic.of(acc.countId(), acc.fieldName, acc.inputType(), "count", acc.count());
+            Statistic count = Statistic.of(acc.countId(), acc.fieldName, acc.getInputType(), "count", acc.count());
             stats.add(count);
 
             // cardinality stat
-            Statistic card = Statistic.of(acc.cardId(), acc.fieldName, acc.inputType(), "cardinality",
+            Statistic card = Statistic.of(acc.cardId(), acc.fieldName, acc.getInputType(), "cardinality",
                     acc.cardinality());
             stats.add(card);
 
             // top terms as buckets
             List<org.nuxeo.ai.sdk.objects.Bucket> buckets = acc.topTermsAsBuckets();
             if (!buckets.isEmpty()) {
-                Statistic termsStat = Statistic.of(acc.termsId(), acc.fieldName, acc.inputType(), "terms",
+                Statistic termsStat = Statistic.of(acc.termsId(), acc.fieldName, acc.getInputType(), "terms",
                         (Number) buckets.size());
                 termsStat.setValue(buckets);
                 stats.add(termsStat);
@@ -418,7 +418,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         String notNullNXQL = notNullNxql(nxql, featuresList);
         DocumentModelList validDocs = session.query(notNullNXQL);
         long validCount = validDocs.size();
-        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT, validCount));
+        stats.add(Statistic.of("dataset_count", "dataset", "dataset", STATS_COUNT, validCount));
 
         return stats;
     }
@@ -448,63 +448,79 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             try {
                 // For blobs (images/text as blob) check .length property if exists
                 if (IMAGE_TYPE.equals(propType.getType())) {
-                    Serializable len = (Serializable) dm.getPropertyValue(fieldName + "/length");
-                    Long l = (len instanceof Number) ? ((Number) len).longValue() : null;
-                    if (l == null || l <= 0) {
-                        missing++;
-                    } else {
-                        count++;
-                    }
+                    consumeBlobProperty(dm);
                 } else {
-                    Serializable v = (Serializable) dm.getPropertyValue(fieldName);
-                    if (v == null) {
-                        missing++;
-                    } else {
-                        // treat arrays / lists and single values
-                        if (v instanceof String) {
-                            String s = (String) v;
-                            if (s.trim().isEmpty()) {
-                                missing++;
-                            } else {
-                                count++;
-                                termCounts.merge(s, 1L, Long::sum);
-                            }
-                        } else if (v instanceof String[]) {
-                            String[] arr = (String[]) v;
-                            boolean any = false;
-                            for (String s : arr) {
-                                if (s != null && !s.trim().isEmpty()) {
-                                    termCounts.merge(s, 1L, Long::sum);
-                                    any = true;
-                                }
-                            }
-                            if (any)
-                                count++;
-                            else
-                                missing++;
-                        } else if (v instanceof Collection) {
-                            Collection<?> c = (Collection<?>) v;
-                            boolean any = false;
-                            for (Object o : c) {
-                                if (o != null) {
-                                    String key = String.valueOf(o);
-                                    termCounts.merge(key, 1L, Long::sum);
-                                    any = true;
-                                }
-                            }
-                            if (any)
-                                count++;
-                            else
-                                missing++;
-                        } else {
-                            // other types: count as present and index value string
-                            count++;
-                            termCounts.merge(String.valueOf(v), 1L, Long::sum);
-                        }
-                    }
+                    consumeRegularProperty(dm);
                 }
             } catch (Exception e) {
                 // property missing or not accessible; treat as missing
+                missing++;
+            }
+        }
+
+        private void consumeBlobProperty(DocumentModel dm) throws Exception {
+            Serializable len = (Serializable) dm.getPropertyValue(fieldName + "/length");
+            Long l = (len instanceof Number) ? ((Number) len).longValue() : null;
+            if (l == null || l <= 0) {
+                missing++;
+            } else {
+                count++;
+            }
+        }
+
+        private void consumeRegularProperty(DocumentModel dm) throws Exception {
+            Serializable v = (Serializable) dm.getPropertyValue(fieldName);
+            if (v == null) {
+                missing++;
+            } else if (v instanceof String) {
+                consumeStringValue((String) v);
+            } else if (v instanceof String[]) {
+                consumeStringArray((String[]) v);
+            } else if (v instanceof Collection) {
+                consumeCollection((Collection<?>) v);
+            } else {
+                // other types: count as present and index value string
+                count++;
+                termCounts.merge(String.valueOf(v), 1L, Long::sum);
+            }
+        }
+
+        private void consumeStringValue(String s) {
+            if (s.trim().isEmpty()) {
+                missing++;
+            } else {
+                count++;
+                termCounts.merge(s, 1L, Long::sum);
+            }
+        }
+
+        private void consumeStringArray(String[] arr) {
+            boolean any = false;
+            for (String s : arr) {
+                if (s != null && !s.trim().isEmpty()) {
+                    termCounts.merge(s, 1L, Long::sum);
+                    any = true;
+                }
+            }
+            if (any) {
+                count++;
+            } else {
+                missing++;
+            }
+        }
+
+        private void consumeCollection(Collection<?> c) {
+            boolean any = false;
+            for (Object o : c) {
+                if (o != null) {
+                    String key = String.valueOf(o);
+                    termCounts.merge(key, 1L, Long::sum);
+                    any = true;
+                }
+            }
+            if (any) {
+                count++;
+            } else {
                 missing++;
             }
         }
@@ -537,7 +553,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             return "terms_" + fieldName;
         }
 
-        String inputType() {
+        String getInputType() {
             return inputType == null ? "unknown" : inputType;
         }
 

@@ -347,9 +347,6 @@ public class BulkEnrichmentTest {
     }
 
     protected List<DocumentModel> getSomeDocuments(String nxql) {
-        // SearchResponse response = searchService.search(SearchQuery.builder(nxql,
-        // session).limit(NUM_OF_DOCS).build());
-        // DocumentModelList enriched = response.loadDocuments(session);
         DocumentModelList enriched = session.query(nxql, 20);
         List<DocumentModel> docs = new ArrayList<>();
         docs.add(enriched.get(14));

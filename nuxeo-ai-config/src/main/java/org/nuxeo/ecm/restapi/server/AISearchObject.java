@@ -170,15 +170,15 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
     protected Configuration initFreeMarker() {
         try (InputStream stream = this.getClass().getResourceAsStream(TEMPLATE_FILE_NAME)) {
             String content = IOUtils.toString(stream, StandardCharsets.UTF_8);
-            Configuration cfg = new Configuration(Configuration.VERSION_2_3_0);
-            cfg.setClassForTemplateLoading(AISearchObject.class, "org.nuxeo.ai");
-            cfg.setDefaultEncoding("UTF-8");
-            cfg.setLocale(Locale.US);
+            Configuration config = new Configuration(Configuration.VERSION_2_3_0);
+            config.setClassForTemplateLoading(AISearchObject.class, "org.nuxeo.ai");
+            config.setDefaultEncoding("UTF-8");
+            config.setLocale(Locale.US);
             StringTemplateLoader stringLoader = new StringTemplateLoader();
             stringLoader.putTemplate(AUDIT, content);
-            cfg.setTemplateLoader(stringLoader);
-            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-            return cfg;
+            config.setTemplateLoader(stringLoader);
+            config.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+            return config;
         } catch (IOException e) {
             throw new NuxeoException(e);
         }

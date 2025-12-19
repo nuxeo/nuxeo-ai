@@ -18,9 +18,11 @@ import org.nuxeo.ai.aws.dto.EntitiesResult;
 import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
 import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.aws.mapper.ComprehendMapper;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.comprehend.ComprehendClient;
 import software.amazon.awssdk.services.comprehend.model.DetectEntitiesRequest;
 import software.amazon.awssdk.services.comprehend.model.DetectKeyPhrasesRequest;
@@ -47,9 +49,9 @@ public class ComprehendServiceFacadeImpl extends DefaultComponent implements Com
 
             var response = client.detectSentiment(awsRequest);
             return ComprehendMapper.mapToSentimentResult(response);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting sentiment", e);
-            throw new RuntimeException("Failed to detect sentiment", e);
+            throw new NuxeoException("Failed to detect sentiment", e);
         }
     }
 
@@ -66,9 +68,9 @@ public class ComprehendServiceFacadeImpl extends DefaultComponent implements Com
 
             var response = client.detectEntities(awsRequest);
             return ComprehendMapper.mapToEntitiesResult(response);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting entities", e);
-            throw new RuntimeException("Failed to detect entities", e);
+            throw new NuxeoException("Failed to detect entities", e);
         }
     }
 
@@ -85,9 +87,9 @@ public class ComprehendServiceFacadeImpl extends DefaultComponent implements Com
 
             var response = client.detectKeyPhrases(awsRequest);
             return ComprehendMapper.mapToKeyPhrasesResult(response);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting key phrases", e);
-            throw new RuntimeException("Failed to detect key phrases", e);
+            throw new NuxeoException("Failed to detect key phrases", e);
         }
     }
 }

@@ -23,6 +23,10 @@ import software.amazon.awssdk.services.comprehend.model.*;
  */
 public class ComprehendMapper {
 
+    private ComprehendMapper() {
+        // Utility class, hide constructor
+    }
+
     public static SentimentResult mapToSentimentResult(DetectSentimentResponse response) {
         return new SentimentResult(response.sentiment().toString(), response.sentimentScore().positive(),
                 response.sentimentScore().negative(), response.sentimentScore().neutral(),

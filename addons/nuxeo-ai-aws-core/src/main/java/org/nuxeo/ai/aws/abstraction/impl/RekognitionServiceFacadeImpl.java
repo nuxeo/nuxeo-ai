@@ -18,10 +18,12 @@ import org.nuxeo.ai.aws.abstraction.RekognitionServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.RekognitionRequest;
 import org.nuxeo.ai.aws.dto.RekognitionResult;
 import org.nuxeo.ai.aws.mapper.RekognitionMapper;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
 import software.amazon.awssdk.services.rekognition.model.*;
 
@@ -49,9 +51,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
 
             var response = client.detectLabels(awsRequest);
             return RekognitionMapper.mapToLabels(response.labels());
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting labels", e);
-            throw new RuntimeException("Failed to detect labels", e);
+            throw new NuxeoException("Failed to detect labels", e);
         }
     }
 
@@ -71,9 +73,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
 
             var response = client.detectFaces(awsRequestBuilder.build());
             return RekognitionMapper.mapToFaces(response.faceDetails());
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting faces", e);
-            throw new RuntimeException("Failed to detect faces", e);
+            throw new NuxeoException("Failed to detect faces", e);
         }
     }
 
@@ -89,9 +91,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
 
             var response = client.detectText(awsRequest);
             return RekognitionMapper.mapToTextDetections(response.textDetections());
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting text", e);
-            throw new RuntimeException("Failed to detect text", e);
+            throw new NuxeoException("Failed to detect text", e);
         }
     }
 
@@ -111,9 +113,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
 
             var response = client.detectModerationLabels(awsRequest);
             return RekognitionMapper.mapToModerationLabels(response.moderationLabels());
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting moderation labels", e);
-            throw new RuntimeException("Failed to detect moderation labels", e);
+            throw new NuxeoException("Failed to detect moderation labels", e);
         }
     }
 
@@ -129,9 +131,9 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
 
             var response = client.recognizeCelebrities(awsRequest);
             return RekognitionMapper.mapToCelebrities(response.celebrityFaces());
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error recognizing celebrities", e);
-            throw new RuntimeException("Failed to recognize celebrities", e);
+            throw new NuxeoException("Failed to recognize celebrities", e);
         }
     }
 
@@ -145,7 +147,7 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             S3Object s3Object = S3Object.builder().bucket(s3Bucket).name(s3Key).build();
             return Image.builder().s3Object(s3Object).build();
         } else {
-            throw new IllegalArgumentException("Either image data or S3 reference must be provided");
+            throw new NuxeoException("Either image data or S3 reference must be provided");
         }
     }
 }

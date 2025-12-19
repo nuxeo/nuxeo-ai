@@ -15,12 +15,13 @@ package org.nuxeo.ai.aws.abstraction.dto;
  */
 public class ComprehendRequest {
 
-    public static record DetectSentiment(String text, String languageCode) {
+    private ComprehendRequest() {
+        // Utility class, hide constructor
     }
 
-    public static record DetectEntities(String text, String languageCode) {
-    }
+    public static record DetectSentiment(String text, String languageCode) {}
 
-    public static record DetectKeyPhrases(String text, String languageCode) {
-    }
+    public static record DetectEntities(String text, String languageCode) {}
+
+    public static record DetectKeyPhrases(String text, String languageCode) {}
 }

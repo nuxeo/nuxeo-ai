@@ -19,10 +19,12 @@ import org.nuxeo.ai.aws.abstraction.TextractServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.TextractRequest;
 import org.nuxeo.ai.aws.dto.TextractResult;
 import org.nuxeo.ai.aws.mapper.TextractMapper;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.*;
 
@@ -46,9 +48,9 @@ public class TextractServiceFacadeImpl extends DefaultComponent implements Textr
 
             var response = client.detectDocumentText(awsRequest);
             return TextractMapper.mapToTextractResult(response);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error detecting document text", e);
-            throw new RuntimeException("Failed to detect document text", e);
+            throw new NuxeoException("Failed to detect document text", e);
         }
     }
 
@@ -72,9 +74,9 @@ public class TextractServiceFacadeImpl extends DefaultComponent implements Textr
 
             var response = client.analyzeDocument(awsRequest);
             return TextractMapper.mapToTextractResult(response);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error analyzing document", e);
-            throw new RuntimeException("Failed to analyze document", e);
+            throw new NuxeoException("Failed to analyze document", e);
         }
     }
 
@@ -88,7 +90,7 @@ public class TextractServiceFacadeImpl extends DefaultComponent implements Textr
             S3Object s3Object = S3Object.builder().bucket(s3Bucket).name(s3Key).build();
             return Document.builder().s3Object(s3Object).build();
         } else {
-            throw new IllegalArgumentException("Either document data or S3 reference must be provided");
+            throw new NuxeoException("Either document data or S3 reference must be provided");
         }
     }
 }

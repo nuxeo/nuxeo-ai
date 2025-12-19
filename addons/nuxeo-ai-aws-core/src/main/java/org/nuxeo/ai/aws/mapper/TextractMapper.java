@@ -20,6 +20,10 @@ import software.amazon.awssdk.services.textract.model.*;
  */
 public class TextractMapper {
 
+    private TextractMapper() {
+        // Utility class, hide constructor
+    }
+
     /**
      * Map AWS SDK DetectDocumentTextResponse to our abstraction DTO
      */

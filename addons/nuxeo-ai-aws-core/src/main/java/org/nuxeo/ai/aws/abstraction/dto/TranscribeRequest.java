@@ -14,13 +14,14 @@ package org.nuxeo.ai.aws.abstraction.dto;
  */
 public class TranscribeRequest {
 
+    private TranscribeRequest() {
+        // Utility class, hide constructor
+    }
+
     public static record StartTranscription(String jobName, String mediaFileUri, String mediaFormat,
-            String languageCode, String outputBucketName, boolean enableSpeakerLabels, int maxSpeakerLabels) {
-    }
+            String languageCode, String outputBucketName, boolean enableSpeakerLabels, int maxSpeakerLabels) {}
 
-    public static record GetTranscriptionJob(String jobName) {
-    }
+    public static record GetTranscriptionJob(String jobName) {}
 
-    public static record DeleteTranscriptionJob(String jobName) {
-    }
+    public static record DeleteTranscriptionJob(String jobName) {}
 }

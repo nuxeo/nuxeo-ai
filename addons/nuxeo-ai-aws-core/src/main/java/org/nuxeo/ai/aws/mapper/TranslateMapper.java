@@ -24,6 +24,10 @@ import software.amazon.awssdk.services.translate.model.TranslateTextResponse;
  */
 public class TranslateMapper {
 
+    private TranslateMapper() {
+        // Utility class, hide constructor
+    }
+
     /**
      * Map AWS SDK TranslateTextResponse to our abstraction DTO
      */

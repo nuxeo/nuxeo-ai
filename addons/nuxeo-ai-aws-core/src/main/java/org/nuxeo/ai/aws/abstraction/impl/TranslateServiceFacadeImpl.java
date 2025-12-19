@@ -16,9 +16,11 @@ import org.nuxeo.ai.aws.abstraction.TranslateServiceFacade;
 import org.nuxeo.ai.aws.abstraction.dto.TranslateRequest;
 import org.nuxeo.ai.aws.dto.TranslateResult;
 import org.nuxeo.ai.aws.mapper.TranslateMapper;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
 
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.translate.TranslateClient;
 import software.amazon.awssdk.services.translate.model.TranslateTextRequest;
 
@@ -44,9 +46,9 @@ public class TranslateServiceFacadeImpl extends DefaultComponent implements Tran
 
             var response = client.translateText(awsRequest);
             return TranslateMapper.mapToTranslateResult(response);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             log.error("Error translating text", e);
-            throw new RuntimeException("Failed to translate text", e);
+            throw new NuxeoException("Failed to translate text", e);
         }
     }
 }

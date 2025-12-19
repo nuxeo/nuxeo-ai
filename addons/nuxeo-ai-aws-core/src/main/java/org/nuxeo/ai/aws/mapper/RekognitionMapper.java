@@ -21,6 +21,10 @@ import software.amazon.awssdk.services.rekognition.model.*;
  */
 public class RekognitionMapper {
 
+    private RekognitionMapper() {
+        // Utility class, hide constructor
+    }
+
     public static List<RekognitionResult.Label> mapToLabels(List<Label> awsLabels) {
         return awsLabels.stream().map(RekognitionMapper::mapToLabel).collect(Collectors.toList());
     }

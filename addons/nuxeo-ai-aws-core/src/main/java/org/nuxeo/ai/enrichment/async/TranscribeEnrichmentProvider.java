@@ -155,6 +155,7 @@ public class TranscribeEnrichmentProvider extends AbstractEnrichmentProvider {
                 Thread.sleep(WAIT_TIME);
                 timeSpent += WAIT_TIME;
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new NuxeoException("Transcribe was interrupted; Job: " + jobName + " Document Id: " + docId, e);
             }
             jobResult = ts.getTranscriptionJob(jobName);

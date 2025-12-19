@@ -100,11 +100,8 @@ public class TranscribeServiceImpl extends DefaultComponent implements Transcrib
             // Handle language settings
             if (languages.length == 1 && !AUTOMATIC_LANG.equals(languages[0])) {
                 requestBuilder.languageCode(LanguageCode.fromValue(languages[0]));
-            } else if (languages.length > 1) {
-                // Multiple languages - use language identification
-                requestBuilder.identifyLanguage(true);
             } else {
-                // Automatic language detection
+                // Multiple languages or automatic language detection - use language identification
                 requestBuilder.identifyLanguage(true);
             }
 

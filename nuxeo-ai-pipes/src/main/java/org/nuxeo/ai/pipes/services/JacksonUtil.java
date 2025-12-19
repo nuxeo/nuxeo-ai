@@ -29,6 +29,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -54,6 +56,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
  */
 public class JacksonUtil {
 
+    private static final Logger log = LogManager.getLogger(JacksonUtil.class);
+
     public static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final AtomicBoolean AWS_SERIALIZERS_ADDED = new AtomicBoolean(false);
@@ -76,6 +80,7 @@ public class JacksonUtil {
             module.addSerializer((Class) smb, managedBlobSerializer);
             module.addDeserializer((Class) smb, managedBlobDeserializer);
         } catch (ClassNotFoundException ignore) {
+            // SimpleManagedBlob class not available in this context - this is expected and safe to ignore
         }
         try {
             registerAwsSerializers(module); // ignore return here, static init
@@ -90,18 +95,7 @@ public class JacksonUtil {
     private static boolean registerAwsSerializers(SimpleModule module) {
         boolean added = false;
         try {
-            Class<?> sdkPojoClass;
-            try {
-                sdkPojoClass = Class.forName("software.amazon.awssdk.core.SdkPojo");
-            } catch (ClassNotFoundException primary) {
-                try {
-                    sdkPojoClass = Thread.currentThread()
-                                         .getContextClassLoader()
-                                         .loadClass("software.amazon.awssdk.core.SdkPojo");
-                } catch (Exception secondary) {
-                    sdkPojoClass = null;
-                }
-            }
+            Class<?> sdkPojoClass = loadSdkPojoClass();
             if (sdkPojoClass == null) {
                 return false;
             }
@@ -109,26 +103,59 @@ public class JacksonUtil {
             module.addSerializer((Class) sdkPojoClass, sdkPojoSerializer);
             added = true;
             // Attempt textract Block specifically (some SDK versions create subclasses)
-            try {
-                Class<?> blockClass = Class.forName("software.amazon.awssdk.services.textract.model.Block");
-                module.addSerializer((Class) blockClass, sdkPojoSerializer);
-            } catch (Exception ignore) {
-                // ignore missing Block class
-            }
+            registerTextractBlockSerializer(module, sdkPojoSerializer);
             // Fallback MixIn to ensure serializer selection when dynamic proxies / different CLs
-            try {
-                @com.fasterxml.jackson.databind.annotation.JsonSerialize(using = JacksonUtil.SdkPojoFallbackSerializer.class)
-                abstract class SdkPojoMixin {
-                }
-                JacksonUtil.SdkPojoFallbackSerializer.setDelegate(sdkPojoSerializer);
-                MAPPER.addMixIn(sdkPojoClass, SdkPojoMixin.class);
-            } catch (Exception ignore) {
-                // ignore any mixin issues
-            }
+            registerSdkPojoMixin(sdkPojoClass, sdkPojoSerializer);
         } catch (Exception ignore) {
             // swallow
         }
         return added;
+    }
+
+    /**
+     * Attempts to load the AWS SDK SdkPojo class using multiple strategies.
+     *
+     * @return the SdkPojo class if found, null otherwise
+     */
+    private static Class<?> loadSdkPojoClass() {
+        try {
+            return Class.forName("software.amazon.awssdk.core.SdkPojo");
+        } catch (ClassNotFoundException primary) {
+            try {
+                return Thread.currentThread()
+                             .getContextClassLoader()
+                             .loadClass("software.amazon.awssdk.core.SdkPojo");
+            } catch (Exception secondary) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Attempts to register the Textract Block class serializer.
+     */
+    private static void registerTextractBlockSerializer(SimpleModule module, JsonSerializer<Object> serializer) {
+        try {
+            Class<?> blockClass = Class.forName("software.amazon.awssdk.services.textract.model.Block");
+            module.addSerializer((Class) blockClass, serializer);
+        } catch (Exception ignore) {
+            // ignore missing Block class
+        }
+    }
+
+    /**
+     * Attempts to register a MixIn for SdkPojo to ensure proper serializer selection.
+     */
+    private static void registerSdkPojoMixin(Class<?> sdkPojoClass, JsonSerializer<Object> serializer) {
+        try {
+            @com.fasterxml.jackson.databind.annotation.JsonSerialize(using = JacksonUtil.SdkPojoFallbackSerializer.class)
+            abstract class SdkPojoMixin {
+            }
+            JacksonUtil.SdkPojoFallbackSerializer.setDelegate(serializer);
+            MAPPER.addMixIn(sdkPojoClass, SdkPojoMixin.class);
+        } catch (Exception ignore) {
+            // ignore any mixin issues
+        }
     }
 
     // Re-added method: builds a reflective JsonSerializer for AWS SdkPojo objects
@@ -258,8 +285,9 @@ public class JacksonUtil {
         } catch (IOException e) {
             try {
                 String raw = new String(record.getData(), StandardCharsets.UTF_8);
-                System.out.println("JacksonUtil.fromRecord DEBUG raw json for key=" + record.getKey() + " => " + raw);
+                log.debug("JacksonUtil.fromRecord DEBUG raw json for key={} => {}", record.getKey(), raw);
             } catch (Exception ignored) {
+                // Intentionally ignore exceptions during debug output - the original IOException will be thrown below
             }
             throw new NuxeoException("Unable to read record data for : " + record.getKey(), e);
         }
@@ -340,6 +368,7 @@ public class JacksonUtil {
                                 return Objects.equals(key, otherKey) && Objects.equals(digest, otherDigest)
                                         && Objects.equals(length, otherLength);
                             } catch (Exception ignore) {
+                                // Ignore reflection exceptions - fall through to standard equals comparison
                             }
                         }
                         return proxy == args[0];
@@ -380,16 +409,16 @@ public class JacksonUtil {
 
     // Fallback serializer used by MixIn to delegate to runtime-created sdkPojoSerializer
     public static class SdkPojoFallbackSerializer extends JsonSerializer<Object> {
-        private static JsonSerializer<Object> DELEGATE;
+        private static JsonSerializer<Object> delegate;
 
-        public static void setDelegate(JsonSerializer<Object> delegate) {
-            DELEGATE = delegate;
+        public static void setDelegate(JsonSerializer<Object> delegateSerializer) {
+            delegate = delegateSerializer;
         }
 
         @Override
         public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            if (DELEGATE != null) {
-                DELEGATE.serialize(value, gen, serializers);
+            if (delegate != null) {
+                delegate.serialize(value, gen, serializers);
             } else {
                 gen.writeStartObject();
                 gen.writeEndObject();

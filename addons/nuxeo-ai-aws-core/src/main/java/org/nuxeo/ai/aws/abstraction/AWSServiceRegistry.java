@@ -60,7 +60,6 @@ public class AWSServiceRegistry extends DefaultComponent {
         comprehendFacade = null;
         rekognitionFacade = null;
         textractFacade = null;
-        // transcribeFacade = null;
         translateFacade = null;
     }
 
