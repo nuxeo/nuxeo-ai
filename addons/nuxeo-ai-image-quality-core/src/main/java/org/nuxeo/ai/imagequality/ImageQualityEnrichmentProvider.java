@@ -148,6 +148,9 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
             builder.addBinaryBody(PARAM_MEDIA, file, ContentType.DEFAULT_BINARY, file.getName());
         });
 
+        log.warn("file == " + file.getAbsolutePath());
+        log.warn("file == " + file);
+
         // Add request header
         requestBuilder.addHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
 

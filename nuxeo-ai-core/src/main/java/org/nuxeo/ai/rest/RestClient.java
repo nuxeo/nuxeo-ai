@@ -148,7 +148,9 @@ public class RestClient implements AutoCloseable {
         headers.forEach(requestBuilder::addHeader);
         HttpUriRequest request =
                 requestBuilderFunc != null ? requestBuilderFunc.apply(requestBuilder) : requestBuilder.build();
-
+        log.warn("=================== REST CALL REQUEST START==================");
+        log.warn(request.toString());
+        log.warn("=================== REST CALL REQUEST END==================");
         try (CloseableHttpResponse response = getClient().execute(request)) {
             if (response != null && handler != null) {
                 return handler.handleResponse(response);
