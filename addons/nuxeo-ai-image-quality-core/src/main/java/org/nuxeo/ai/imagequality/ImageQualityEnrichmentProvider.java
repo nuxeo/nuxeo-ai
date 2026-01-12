@@ -148,6 +148,13 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
             builder.addBinaryBody(PARAM_MEDIA, file, ContentType.DEFAULT_BINARY, file.getName());
         });
 
+        log.warn("=================== SIGHTENGINE REQUEST DATA ===================");
+        log.warn(String.format("Text Body - %s: %s", PARAM_MODELS, models));
+        log.warn(String.format("Text Body - %s: %s", PARAM_API_USER, apiKey));
+        log.warn(String.format("Text Body - %s: %s", PARAM_API_SECRET, apiSecret));
+        log.warn(String.format("Binary Body - %s: %s (path: %s)", PARAM_MEDIA, file.getName(), file.getAbsolutePath()));
+        log.warn("================================================================");
+
         log.warn("file == " + file.getAbsolutePath());
         log.warn("file == " + file);
 
