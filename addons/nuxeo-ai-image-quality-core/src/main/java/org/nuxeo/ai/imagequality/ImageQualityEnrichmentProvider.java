@@ -142,9 +142,9 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
 
         // Use the multipart builder
         setMultipart(requestBuilder, builder -> {
-            builder.addTextBody(PARAM_MODELS, models, ContentType.DEFAULT_BINARY);
-            builder.addTextBody(PARAM_API_USER, apiKey, ContentType.DEFAULT_BINARY);
-            builder.addTextBody(PARAM_API_SECRET, apiSecret, ContentType.DEFAULT_BINARY);
+            builder.addTextBody(PARAM_MODELS, models, ContentType.TEXT_PLAIN);
+            builder.addTextBody(PARAM_API_USER, apiKey, ContentType.TEXT_PLAIN);
+            builder.addTextBody(PARAM_API_SECRET, apiSecret, ContentType.TEXT_PLAIN);
             builder.addBinaryBody(PARAM_MEDIA, file, ContentType.DEFAULT_BINARY, file.getName());
         });
 
