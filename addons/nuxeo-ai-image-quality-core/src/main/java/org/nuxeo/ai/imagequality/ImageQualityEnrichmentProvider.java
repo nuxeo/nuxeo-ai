@@ -155,9 +155,6 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
         log.warn(String.format("Binary Body - %s: %s (path: %s)", PARAM_MEDIA, file.getName(), file.getAbsolutePath()));
         log.warn("================================================================");
 
-        log.warn("file == " + file.getAbsolutePath());
-        log.warn("file == " + file);
-
         // Add request header
         requestBuilder.addHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
 
