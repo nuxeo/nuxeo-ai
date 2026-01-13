@@ -1,0 +1,38 @@
+name: Bump nuxeo-parent version
+
+on:
+  # Check for updates every day
+  schedule:
+    # Every day at 13:15
+    - cron: '15 13 * * *'
+  # Manually trigger Updatecli via GitHub UI
+  workflow_dispatch:
+
+permissions:
+  # Required by Updatecli to create Git Commit(s)
+  contents: write
+  # Required by Updatecli to open GitHub pull request
+  pull-requests: write
+  # Required by Updatecli to update GitHub action workflows
+  actions: write
+
+jobs:
+  bump-nuxeo-parent:
+    runs-on: ubuntu-latest
+    name: Check updates for ${{ matrix.lts.base-branch }}
+    strategy:
+      matrix:
+        lts:
+          - base-branch: '2023'
+            java-version: '17'
+          - base-branch: '2025'
+            java-version: '21'
+    steps:
+      - uses: nuxeo/gh-build-tools/.github/actions/update-nuxeo-parent@043703b3cfd1ef90ef4e1cff120f290c9e32819f # v0.5.0
+        with:
+          base-branch: ${{ matrix.lts.base-branch }}
+          java-version: ${{ matrix.lts.java-version }}
+          github-actor: ${{ secrets.PLATFORM_BOT_USERNAME }}
+          github-token: ${{ secrets.PLATFORM_BOT_TOKEN }}
+          mvn-repo-username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          mvn-repo-password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
