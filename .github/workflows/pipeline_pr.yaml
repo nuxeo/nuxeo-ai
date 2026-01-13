@@ -8,9 +8,9 @@ permissions:
 
 on:
   pull_request:
-    branches: [master, master-10.10, release-*, '2023']
+    branches: ['2025']
   push:
-    branches: [master, master-10.10, '2023']
+    branches: ['2025']
 
 jobs:
   build-and-test:
