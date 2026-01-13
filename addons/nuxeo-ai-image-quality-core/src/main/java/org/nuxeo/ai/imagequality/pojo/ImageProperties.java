@@ -19,6 +19,8 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
@@ -290,6 +292,12 @@ public class ImageProperties {
     private float weapon;
 
     /**
+     * Probability that it contains a firearm weapon
+     */
+    @JsonProperty("weapon_firearm")
+    private float weaponFirearm;
+
+    /**
      * Probability that it contains alcohol
      */
     private float alcohol;
@@ -421,6 +429,14 @@ public class ImageProperties {
 
     public void setWeapon(float weapon) {
         this.weapon = weapon;
+    }
+
+    public float getWeaponFirearm() {
+        return weaponFirearm;
+    }
+
+    public void setWeaponFirearm(float weaponFirearm) {
+        this.weaponFirearm = weaponFirearm;
     }
 
     public float getAlcohol() {
