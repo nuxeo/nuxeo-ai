@@ -19,7 +19,6 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -76,7 +75,7 @@ import java.util.List;
  * https://sightengine.com/docs/reference#image-properties
  * https://sightengine.com/docs/getstarted?signup=1
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class ImageProperties {
     /**
      * Below 0.4: Very blurry
