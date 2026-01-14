@@ -20,10 +20,22 @@
 package org.nuxeo.ai.imagequality.pojo;
 
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Offensive {
 
     private float prob;
+
+    private float nazi;
+
+    private float confederate;
+
+    private float supremacist;
+
+    private float terrorist;
+
+    @JsonProperty("middle_finger")
+    private float middleFinger;
 
     private List<Box> boxes = null;
 
@@ -33,6 +45,46 @@ public class Offensive {
 
     public void setProb(float prob) {
         this.prob = prob;
+    }
+
+    public float getNazi() {
+        return nazi;
+    }
+
+    public void setNazi(float nazi) {
+        this.nazi = nazi;
+    }
+
+    public float getConfederate() {
+        return confederate;
+    }
+
+    public void setConfederate(float confederate) {
+        this.confederate = confederate;
+    }
+
+    public float getSupremacist() {
+        return supremacist;
+    }
+
+    public void setSupremacist(float supremacist) {
+        this.supremacist = supremacist;
+    }
+
+    public float getTerrorist() {
+        return terrorist;
+    }
+
+    public void setTerrorist(float terrorist) {
+        this.terrorist = terrorist;
+    }
+
+    public float getMiddleFinger() {
+        return middleFinger;
+    }
+
+    public void setMiddleFinger(float middleFinger) {
+        this.middleFinger = middleFinger;
     }
 
     public List<Box> getBoxes() {
