@@ -314,6 +314,18 @@ public class ImageProperties {
      */
     private float drugs;
 
+    /**
+     * Probability that it contains medical drugs
+     */
+    @JsonProperty("medical_drugs")
+    private float medicalDrugs;
+
+    /**
+     * Probability that it contains recreational drugs
+     */
+    @JsonProperty("recreational_drugs")
+    private float recreationalDrugs;
+
     private Nudity nudity;
 
     public Nudity getNudity() {
@@ -468,6 +480,22 @@ public class ImageProperties {
 
     public void setDrugs(float drugs) {
         this.drugs = drugs;
+    }
+
+    public float getMedicalDrugs() {
+        return medicalDrugs;
+    }
+
+    public void setMedicalDrugs(float medicalDrugs) {
+        this.medicalDrugs = medicalDrugs;
+    }
+
+    public float getRecreationalDrugs() {
+        return recreationalDrugs;
+    }
+
+    public void setRecreationalDrugs(float recreationalDrugs) {
+        this.recreationalDrugs = recreationalDrugs;
     }
 
     /**
