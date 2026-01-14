@@ -33,6 +33,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +51,7 @@ public class JacksonUtil {
 
     static {
         MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Instant.class, new InstantDeserializer());
         module.addSerializer(Instant.class, new InstantSerializer());
