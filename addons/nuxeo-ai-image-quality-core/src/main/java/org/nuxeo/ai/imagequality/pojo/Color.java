@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
+import java.util.List;
+
 /**
  * The RGB color model is an additive color model in which red, green and blue light are
  * added together in various ways to reproduce a broad array of colors. The name of the
@@ -46,6 +48,11 @@ public class Color {
      * Color in hexadecimal
      */
     private String hex;
+
+    /**
+     * HSV (Hue, Saturation, Value) color representation
+     */
+    private List<Float> hsv;
 
     public int getR() {
         return r;
@@ -77,5 +84,13 @@ public class Color {
 
     public void setHex(String hex) {
         this.hex = hex;
+    }
+
+    public List<Float> getHsv() {
+        return hsv;
+    }
+
+    public void setHsv(List<Float> hsv) {
+        this.hsv = hsv;
     }
 }
