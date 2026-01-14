@@ -299,6 +299,12 @@ public class ImageProperties {
     private float weaponFirearm;
 
     /**
+     * Probability that it contains a knife weapon
+     */
+    @JsonProperty("weapon_knife")
+    private float weaponKnife;
+
+    /**
      * Probability that it contains alcohol
      */
     private float alcohol;
@@ -438,6 +444,14 @@ public class ImageProperties {
 
     public void setWeaponFirearm(float weaponFirearm) {
         this.weaponFirearm = weaponFirearm;
+    }
+
+    public float getWeaponKnife() {
+        return weaponKnife;
+    }
+
+    public void setWeaponKnife(float weaponKnife) {
+        this.weaponKnife = weaponKnife;
     }
 
     public float getAlcohol() {
