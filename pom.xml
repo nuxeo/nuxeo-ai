@@ -15,7 +15,7 @@
 
   <properties>
     <nuxeo.ai.version>4.0.3-SNAPSHOT</nuxeo.ai.version>
-    <dropwizard.version>4.2.37</dropwizard.version>
+    <dropwizard.version>4.2.38</dropwizard.version>
     <nuxeo.target.version>2023.*</nuxeo.target.version>
     <wiremock.version>2.27.2</wiremock.version>
     <nuxeo.java.client.version>3.14.0</nuxeo.java.client.version>
