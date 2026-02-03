@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>2023.41</version>
+    <version>2023.42</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
