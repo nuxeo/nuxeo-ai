@@ -18,6 +18,10 @@
  */
 package org.nuxeo.ai.imagequality.pojo;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * The RGB color model is an additive color model in which red, green and blue light are
  * added together in various ways to reproduce a broad array of colors. The name of the
@@ -46,6 +50,79 @@ public class Color {
      * Color in hexadecimal
      */
     private String hex;
+
+    /**
+     * Internal HSV representation using a dedicated value object to avoid index-order misuse.
+     */
+    @JsonIgnore
+    private Hsv hsvObj;
+
+    /**
+     * HSV (Hue, Saturation, Value) color representation.
+     * <p>
+     * Ordering and ranges:
+     * <ul>
+     *   <li>Index 0: Hue (H) in degrees, expected range 0–360.</li>
+     *   <li>Index 1: Saturation (S) as a normalized float, expected range 0.0–1.0.</li>
+     *   <li>Index 2: Value (V) as a normalized float, expected range 0.0–1.0.</li>
+     * </ul>
+     * Consumers should read values in this exact order. Values outside these ranges are not expected
+     * from the provider and should be treated cautiously.
+     * </p>
+     */
+    public List<Float> getHsv() {
+        return hsvObj == null ? null : hsvObj.toList();
+    }
+
+    /**
+     * Sets HSV components in the order [H, S, V]. See field Javadoc for ranges.
+     * <p>
+     * Passing {@code null} clears/unsets the HSV value.
+     * </p>
+     *
+     * @param hsv the HSV components as a list [H, S, V]
+     * @throws IllegalArgumentException if {@code hsv} is non-null but does not contain exactly three
+     *                                  non-null elements in the expected order
+     */
+    public void setHsv(List<Float> hsv) {
+        if (hsv == null) {
+            // Explicitly clear HSV when no data is provided
+            this.hsvObj = null;
+            return;
+        }
+        if (hsv.size() != 3) {
+            throw new IllegalArgumentException(
+                    "HSV list must contain exactly 3 elements (H, S, V); got size=" + hsv.size());
+        }
+        // Defensive null checks on elements
+        if (hsv.get(0) == null || hsv.get(1) == null || hsv.get(2) == null) {
+            throw new IllegalArgumentException("HSV list elements must be non-null (expected [H, S, V]).");
+        }
+
+        // Use lenient construction with clamping setters to preserve data
+        // even when values have minor drift outside expected ranges
+        Hsv hsvValue = new Hsv();
+        hsvValue.setH(hsv.get(0));
+        hsvValue.setS(hsv.get(1));
+        hsvValue.setV(hsv.get(2));
+        this.hsvObj = hsvValue;
+    }
+
+    /**
+     * Returns the structured HSV value object (h,s,v). Preferred for internal use.
+     */
+    @JsonIgnore
+    public Hsv getHsvObject() {
+        return hsvObj;
+    }
+
+    /**
+     * Sets the structured HSV value object (h,s,v). Preferred for internal use.
+     */
+    @JsonIgnore
+    public void setHsvObject(Hsv hsv) {
+        this.hsvObj = hsv;
+    }
 
     public int getR() {
         return r;
