@@ -30,7 +30,9 @@
           <option name="uri">https://api.sightengine.com/1.0/check.json</option>
           <option name="headers.default">false</option>
           <option name="minConfidence">0.75</option>
-          <option name="models">nudity,wad,properties,face,type,celebrities,face-attributes,scam,text,offensive</option>
+          <!-- Note: Sightengine /1.0/check.json requires the plural "faces" model name.
+               Using "face" instead of "faces" causes HTTP 400 responses; do not change back. -->
+          <option name="models">nudity,wad,properties,faces,type,celebrities,face-attributes,scam,text,offensive</option>
           <option name="nuxeo.ai.sightengine.apiKey">${nuxeo.ai.sightengine.apiKey}</option>
           <option name="nuxeo.ai.sightengine.apiSecret">${nuxeo.ai.sightengine.apiSecret}</option>
         </enrichment>
