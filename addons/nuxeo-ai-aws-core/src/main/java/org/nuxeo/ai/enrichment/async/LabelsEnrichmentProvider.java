@@ -43,14 +43,13 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.GetLabelDetectionRequest;
-import com.amazonaws.services.rekognition.model.GetLabelDetectionResult;
-import com.amazonaws.services.rekognition.model.Label;
-import com.amazonaws.services.rekognition.model.LabelDetection;
-import com.amazonaws.services.rekognition.model.LabelDetectionSortBy;
-
 import net.jodah.failsafe.RetryPolicy;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.rekognition.model.GetLabelDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.GetLabelDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.Label;
+import software.amazon.awssdk.services.rekognition.model.LabelDetection;
+import software.amazon.awssdk.services.rekognition.model.LabelDetectionSortBy;
 
 /**
  * Finds items in an image and labels them
@@ -74,7 +73,7 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
     protected float minConfidence;
 
     protected static EnrichmentMetadata.Label newLabel(Label l, long timestamp) {
-        return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100, timestamp);
+        return new EnrichmentMetadata.Label(l.name(), l.confidence() / 100, timestamp);
     }
 
     @Override
@@ -115,25 +114,26 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
         RekognitionService rs = Framework.getService(RekognitionService.class);
         List<EnrichmentMetadata.Label> labels = new ArrayList<>();
         List<LabelDetection> nativeLabelObjects = new ArrayList<>();
-        GetLabelDetectionResult result = null;
+        GetLabelDetectionResponse result = null;
         do {
-            GetLabelDetectionRequest request = new GetLabelDetectionRequest().withJobId(
-                    jobId).withSortBy(LabelDetectionSortBy.TIMESTAMP);
+            GetLabelDetectionRequest.Builder requestBuilder = GetLabelDetectionRequest.builder()
+                                                                                      .jobId(jobId)
+                                                                                      .sortBy(LabelDetectionSortBy.TIMESTAMP);
 
-            if (result != null && result.getNextToken() != null) {
-                request.withNextToken(result.getNextToken());
+            if (result != null && result.nextToken() != null) {
+                requestBuilder.nextToken(result.nextToken());
             }
+            GetLabelDetectionRequest request = requestBuilder.build();
             result = rs.getClient().getLabelDetection(request);
 
-            List<EnrichmentMetadata.Label> currentPageLabels = result.getLabels()
-                    .stream()
-                    .map(l -> newLabel(l.getLabel(), l.getTimestamp()))
-                    .collect(Collectors.toList());
+            List<EnrichmentMetadata.Label> currentPageLabels = result.labels()
+                                                                     .stream()
+                                                                     .map(l -> newLabel(l.label(), l.timestamp()))
+                                                                     .collect(Collectors.toList());
 
             labels.addAll(currentPageLabels);
-            nativeLabelObjects.addAll(result.getLabels());
-        } while (result.getNextToken() != null);
-
+            nativeLabelObjects.addAll(result.labels());
+        } while (result.nextToken() != null);
 
         String raw = toJsonString(jg -> jg.writeObjectField("labels", nativeLabelObjects));
 

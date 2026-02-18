@@ -1,21 +1,3 @@
-/*
- * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Contributors:
- *     Gethin James
- */
 package org.nuxeo.ai.model.export;
 
 import static java.util.Collections.emptyList;
@@ -36,27 +18,17 @@ import static org.nuxeo.ecm.core.query.sql.model.Operator.AND;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.EQ;
 import static org.nuxeo.ecm.core.query.sql.model.Operator.GT;
 import static org.nuxeo.ecm.core.storage.BaseDocument.DC_MODIFIED;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_CARDINALITY;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_MISSING;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_SIZE_PROP;
-import static org.nuxeo.elasticsearch.ElasticSearchConstants.AGG_TYPE_TERMS;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,52 +39,31 @@ import org.nuxeo.ai.sdk.objects.DataType;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ai.sdk.objects.Statistic;
 import org.nuxeo.ai.utils.DateUtils;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
-import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.*;
 import org.nuxeo.ecm.core.api.impl.DocumentModelListImpl;
 import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
-import org.nuxeo.ecm.core.bulk.BulkCodecs;
-import org.nuxeo.ecm.core.bulk.BulkService;
-import org.nuxeo.ecm.core.bulk.message.BulkCommand;
-import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.query.sql.NXQL;
-import org.nuxeo.ecm.core.query.sql.SQLQueryParser;
-import org.nuxeo.ecm.core.query.sql.model.DateLiteral;
-import org.nuxeo.ecm.core.query.sql.model.IntegerLiteral;
-import org.nuxeo.ecm.core.query.sql.model.Predicate;
-import org.nuxeo.ecm.core.query.sql.model.Reference;
-import org.nuxeo.ecm.core.query.sql.model.SQLQuery;
-import org.nuxeo.ecm.core.query.sql.model.WhereClause;
-import org.nuxeo.ecm.core.schema.SchemaManager;
-import org.nuxeo.ecm.core.schema.TypeConstants;
+import org.nuxeo.ecm.core.bulk.*;
+import org.nuxeo.ecm.core.bulk.message.*;
+import org.nuxeo.ecm.core.query.sql.*;
+import org.nuxeo.ecm.core.query.sql.model.*;
+import org.nuxeo.ecm.core.schema.*;
 import org.nuxeo.ecm.core.schema.types.Field;
-import org.nuxeo.ecm.platform.query.api.Aggregate;
-import org.nuxeo.ecm.platform.query.api.Bucket;
+import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
 import org.nuxeo.ecm.platform.query.api.PageProviderService;
-import org.nuxeo.ecm.platform.query.core.AggregateDescriptor;
 import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
-import org.nuxeo.elasticsearch.aggregate.AggregateEsBase;
-import org.nuxeo.elasticsearch.aggregate.AggregateFactory;
-import org.nuxeo.elasticsearch.aggregate.MultiBucketAggregate;
-import org.nuxeo.elasticsearch.aggregate.SingleBucketAggregate;
-import org.nuxeo.elasticsearch.aggregate.SingleValueMetricAggregate;
-import org.nuxeo.elasticsearch.api.ElasticSearchService;
-import org.nuxeo.elasticsearch.api.EsResult;
-import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.kv.KeyValueService;
-import org.nuxeo.runtime.kv.KeyValueStore;
-import org.nuxeo.runtime.kv.KeyValueStoreProvider;
+import org.nuxeo.runtime.kv.*;
 import org.nuxeo.runtime.model.DefaultComponent;
-import org.opensearch.search.aggregations.Aggregation;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 
 /**
- * Exports data
+ * DatasetExportServiceImpl — rewritten to avoid Elasticsearch/internal APIs. - Uses CoreSession + NXQL and in-memory
+ * aggregation for stats. - Compatible with Nuxeo 2025.3 without protected builders. Notes: - For very large datasets,
+ * stats() is potentially expensive (it fetches documents). - If you have a search backend with aggregation support, we
+ * can later swap to that.
  */
 public class DatasetExportServiceImpl extends DefaultComponent implements DatasetExportService, DatasetStatsService {
 
@@ -129,9 +80,8 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     private static final Predicate NOT_VERSION_PRED = new Predicate(new Reference(IS_VERSION_PROP), EQ,
             new IntegerLiteral(0));
 
-    protected static final String BASE_QUERY =
-            "SELECT * FROM Document WHERE ecm:primaryType = " + NXQL.escapeString(DATASET_EXPORT_TYPE)
-                    + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
+    protected static final String BASE_QUERY = "SELECT * FROM Document WHERE ecm:primaryType = "
+            + NXQL.escapeString(DATASET_EXPORT_TYPE) + " AND ecm:isVersion = 0 AND ecm:isTrashed = 0 AND ";
 
     protected static final Set<String> VALID_DOC_TYPES = Sets.newHashSet(DataType.IMAGE.shorten(),
             DataType.TEXT.shorten(), DataType.CATEGORY.shorten(), null);
@@ -156,30 +106,17 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
 
     public static final String QUERY = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = ";
 
-    public static final String QUERY_FOR_BATCH =
-            BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND " + DATASET_EXPORT_BATCH_ID + " = %s";
+    public static final String QUERY_FOR_BATCH = BASE_QUERY + DATASET_EXPORT_JOB_ID + " = %s AND "
+            + DATASET_EXPORT_BATCH_ID + " = %s";
 
     static {
         TERM_PROPS = new Properties();
-        TERM_PROPS.setProperty(AGG_SIZE_PROP, DEFAULT_NUM_TERMS);
+        TERM_PROPS.setProperty("size", DEFAULT_NUM_TERMS);
     }
 
-    /**
-     * Make an Aggregate using AggregateFactory.
-     */
-    protected static AggregateEsBase<? extends Aggregation, ? extends Bucket> makeAggregate(String type, String field,
-            Properties properties) {
-        AggregateDescriptor descriptor = new AggregateDescriptor();
-        descriptor.setId(aggKey(field, type));
-        descriptor.setDocumentField(field);
-        descriptor.setType(type);
-        properties.forEach((key, value) -> descriptor.setProperty((String) key, (String) value));
-        return AggregateFactory.create(descriptor, null);
-    }
-
-    protected static String aggKey(String propName, String s) {
-        return s + "_" + propName;
-    }
+    // ---------------------------
+    // EXPORT: submit/export-by-ids, tracking, statuses
+    // ---------------------------
 
     @Override
     public String export(CoreSession session, String nxql, Set<PropertyType> inputProperties,
@@ -203,19 +140,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         List<Map<String, String>> inputAsParameter = inputs.stream().map(this::toMap).collect(Collectors.toList());
         List<Map<String, String>> outputAsParameter = outputs.stream().map(this::toMap).collect(Collectors.toList());
 
-        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL, username).repository(
-                                                                                                            session.getRepositoryName())
-                                                                                                    .param(QUERY_PARAM,
-                                                                                                            nxql)
-                                                                                                    .param(INPUT_PARAMETERS,
-                                                                                                            (Serializable) inputAsParameter)
-                                                                                                    .param(OUTPUT_PARAMETERS,
-                                                                                                            (Serializable) outputAsParameter)
-                                                                                                    .param(MODEL_PARAMETERS,
-                                                                                                            (Serializable) modelParams)
-                                                                                                    .param(EXPORT_SPLIT_PARAM,
-                                                                                                            split)
-                                                                                                    .build();
+        BulkCommand bulkCommand = new BulkCommand.Builder(EXPORT_ACTION_NAME, notNullNXQL,
+                username).repository(session.getRepositoryName())
+                         .param(QUERY_PARAM, nxql)
+                         .param(INPUT_PARAMETERS, (Serializable) inputAsParameter)
+                         .param(OUTPUT_PARAMETERS, (Serializable) outputAsParameter)
+                         .param(MODEL_PARAMETERS, (Serializable) modelParams)
+                         .param(EXPORT_SPLIT_PARAM, split)
+                         .build();
 
         if (log.isDebugEnabled()) {
             log.debug("Submitting command id: {}, for action {}", bulkCommand.getId(), bulkCommand.getAction());
@@ -226,6 +158,41 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             throw new NuxeoException("AI Client is not available; interrupting export " + bulkCommand.getId());
         }
         return Framework.getService(BulkService.class).submit(bulkCommand);
+    }
+
+    @Override
+    public void export(CoreSession session, Set<String> uids) {
+        CloudClient client = Framework.getService(CloudClient.class);
+        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(AI_RUNNING_EXPORTS_KVS);
+        Set<String> statuses = getStatuses().stream()
+                                            .filter(this::isRunning)
+                                            .map(BulkStatus::getId)
+                                            .collect(Collectors.toSet());
+        for (String uid : uids) {
+            log.info("Preparing export for model " + uid);
+            String exportId = kvs.getString(uid);
+            if (statuses.contains(exportId)) {
+                log.info("Export {} for model {} is already running; skipping", exportId, uid);
+                continue;
+            }
+
+            CorpusDelta delta = getCorpusDelta(session, client, uid);
+            if (delta == null || delta.isEmpty()) {
+                log.info("Delta is empty for model " + uid);
+                continue;
+            }
+
+            String original = delta.getQuery();
+            String modified = modifyQuery(original, delta.getEnd());
+            if (checkMinimum(session, modified, delta.getMinSize())) {
+                Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, delta.getCorporaId());
+                String jobId = export(session, modified, delta.getInputs(), delta.getOutputs(), DEFAULT_SPLIT, params);
+                log.info("Initiating continuous export for Model " + uid + " with job id " + jobId);
+                kvs.put(uid, jobId, TWO_DAYS_IN_SEC);
+            } else {
+                log.info("Not enough documents to export; skipping");
+            }
+        }
     }
 
     protected void validate(String nxql, Set<PropertyType> inputs, Set<PropertyType> outputs) {
@@ -256,45 +223,29 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         return map;
     }
 
-    @Override
-    public void export(CoreSession session, Set<String> uids) {
-        CloudClient client = Framework.getService(CloudClient.class);
-        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(AI_RUNNING_EXPORTS_KVS);
-        Set<String> statuses = getStatuses().stream()
-                                            .filter(this::isRunning)
-                                            .map(BulkStatus::getId)
-                                            .collect(Collectors.toSet());
-        for (String uid : uids) {
-            log.info("Preparing export for model " + uid);
-            String exportId = kvs.getString(uid);
-            if (statuses.contains(exportId)) {
-                log.info("Export {} for model {} is already running; skipping", exportId, uid);
-                continue;
-            }
-
-            CorpusDelta delta = getCorpusDelta(session, client, uid);
-            if (delta == null || delta.isEmpty()) {
-                log.info("Delta is empty for model " + uid);
-                continue;
-            }
-
-            String original = delta.getQuery();
-            String modified = modifyQuery(original, delta.getEnd());
-            if (checkMinimum(session, modified, delta.getMinSize())) {
-                Map<String, Serializable> params = Collections.singletonMap(CORPORA_ID_PARAM, delta.getCorporaId());
-                String jobId = export(session, modified, delta.getInputs(), delta.getOutputs(), DEFAULT_SPLIT, params);
-                log.info("Initiating continues export for Model " + uid + " with job id " + jobId);
-                kvs.put(uid, jobId, TWO_DAYS_IN_SEC);
-            } else {
-                log.info("Not enough documents to export; skipping");
-            }
-        }
-    }
+    // ---------------------------
+    // STATUS helpers
+    // ---------------------------
 
     protected boolean isRunning(BulkStatus status) {
         return status.getState() == BulkStatus.State.RUNNING || status.getState() == BulkStatus.State.SCROLLING_RUNNING
                 || status.getState() == BulkStatus.State.SCHEDULED;
     }
+
+    @Override
+    public List<BulkStatus> getStatuses() {
+        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(BULK_KV_STORE_NAME);
+        KeyValueStoreProvider kv = (KeyValueStoreProvider) kvs;
+        return kv.keyStream(STATUS_PREFIX)
+                 .map(kv::get)
+                 .map(BulkCodecs.getStatusCodec()::decode)
+                 .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
+                 .collect(Collectors.toList());
+    }
+
+    // ---------------------------
+    // Corpus delta helpers
+    // ---------------------------
 
     @Nullable
     protected CorpusDelta getCorpusDelta(CoreSession session, CloudClient client, String uid) {
@@ -313,22 +264,10 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         }
     }
 
-    @Override
-    public List<BulkStatus> getStatuses() {
-        KeyValueStore kvs = Framework.getService(KeyValueService.class).getKeyValueStore(BULK_KV_STORE_NAME);
-        KeyValueStoreProvider kv = (KeyValueStoreProvider) kvs;
-        return kv.keyStream(STATUS_PREFIX)
-                 .map(kv::get)
-                 .map(BulkCodecs.getStatusCodec()::decode)
-                 .filter(status -> EXPORT_ACTION_NAME.equals(status.getAction()))
-                 .collect(Collectors.toList());
-    }
+    // ---------------------------
+    // Query modification and utils
+    // ---------------------------
 
-    /**
-     * @param original NXQL Query used for exporting documents
-     * @param calendar {@link Calendar} instance to exclude all models modified before the given date
-     * @return A modified query
-     */
     protected String modifyQuery(String original, Calendar calendar) {
         SQLQuery query = SQLQueryParser.parse(original);
         String isoTime = DateUtils.formatISODateTime(calendar);
@@ -402,6 +341,20 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     }
 
     @Override
+    public List<String> getRunningExports() {
+        return List.of();
+    }
+
+    @Override
+    public void markExportAsRunning(String id) {
+        // This method is intentionally empty - marking exports as running is handled by the bulk framework
+    }
+
+    // ---------------------------
+    // STATISTICS implemented using NXQL + in-memory aggregation
+    // ---------------------------
+
+    @Override
     public Collection<Statistic> getStatistics(CoreSession session, String nxql, Set<PropertyType> inputProperties,
             Set<PropertyType> outputProperties) {
         validate(nxql, inputProperties, outputProperties);
@@ -411,102 +364,226 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
         featuresList.addAll(outputProperties.stream().map(ExportHelper::addTypeIfNull).collect(Collectors.toList()));
 
         List<Statistic> stats = new ArrayList<>();
-        NxQueryBuilder qb = new NxQueryBuilder(session).nxql(nxql).limit(0);
-        long total = getOverallStats(featuresList, stats, qb);
+        // 1) get total count for the NXQL as-is
+        DocumentModelList allDocs = session.query(nxql);
+        long total = allDocs.size();
         if (total < 1) {
             return emptyList();
         }
-        qb = new NxQueryBuilder(session).nxql(notNullNxql(nxql, featuresList)).limit(0);
-        addCount(stats, qb);
+        stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, total));
+
+        // 2) For each property compute missing, cardinality, top terms and counts
+        // We'll scan documents and compute per-property metrics in-memory
+        Map<String, PropertyAccumulator> accumulators = new HashMap<>();
+        SchemaManager schemaManager = Framework.getService(SchemaManager.class);
+        for (PropertyType prop : featuresList) {
+            String name = prop.getName();
+            accumulators.put(name, new PropertyAccumulator(name, prop, schemaManager));
+        }
+
+        // walk documents and update accumulators
+        for (DocumentModel dm : allDocs) {
+            for (PropertyAccumulator acc : accumulators.values()) {
+                acc.consume(dm);
+            }
+        }
+
+        // produce statistics from accumulators
+        for (PropertyAccumulator acc : accumulators.values()) {
+            // missing stat
+            Statistic missing = Statistic.of(acc.missingId(), acc.fieldName, acc.getInputType(), "missing",
+                    acc.missingCount());
+            stats.add(missing);
+
+            // count stat (non-null)
+            Statistic count = Statistic.of(acc.countId(), acc.fieldName, acc.getInputType(), "count", acc.count());
+            stats.add(count);
+
+            // cardinality stat
+            Statistic card = Statistic.of(acc.cardId(), acc.fieldName, acc.getInputType(), "cardinality",
+                    acc.cardinality());
+            stats.add(card);
+
+            // top terms as buckets
+            List<org.nuxeo.ai.sdk.objects.Bucket> buckets = acc.topTermsAsBuckets();
+            if (!buckets.isEmpty()) {
+                Statistic termsStat = Statistic.of(acc.termsId(), acc.fieldName, acc.getInputType(), "terms",
+                        (Number) buckets.size());
+                termsStat.setValue(buckets);
+                stats.add(termsStat);
+            }
+        }
+
+        // 3) add count of valid dataset values (not-null according to property types)
+        String notNullNXQL = notNullNxql(nxql, featuresList);
+        DocumentModelList validDocs = session.query(notNullNXQL);
+        long validCount = validDocs.size();
+        stats.add(Statistic.of("dataset_count", "dataset", "dataset", STATS_COUNT, validCount));
+
         return stats;
     }
 
-    /**
-     * Get the stats for the smaller dataset of valid values.
-     */
-    protected void addCount(List<Statistic> stats, NxQueryBuilder qb) {
-        EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.add(Statistic.of(STATS_COUNT, STATS_COUNT, STATS_COUNT, STATS_COUNT,
-                esResult.getElasticsearchResponse().getHits().getTotalHits().value));
-    }
+    /** Very small helper to accumulate property metrics while scanning documents */
+    protected static class PropertyAccumulator {
+        final String fieldName;
 
-    /**
-     * Gets the overall stats for the dataset, before considering if the fields are valid.
-     */
-    protected Long getOverallStats(List<PropertyType> featuresWithType, List<Statistic> stats, NxQueryBuilder qb) {
-        for (PropertyType prop : featuresWithType) {
-            String propName = prop.getName();
-            if (prop.getType() != null) {
-                switch (prop.getType()) {
-                case CATEGORY_TYPE:
-                case TEXT_TYPE:
-                    // TODO assuming that text is a property ! could be a blob
-                    qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
-                    qb.addAggregate(makeAggregate(AGG_TYPE_TERMS, propName, TERM_PROPS));
-                    qb.addAggregate(makeAggregate(AGG_CARDINALITY, propName, EMPTY_PROPS));
-                    break;
-                case IMAGE_TYPE:
-                    qb.addAggregate(makeAggregate(AGG_MISSING, contentProperty(propName), EMPTY_PROPS));
-                    break;
-                default:
-                    // Only 3 types at the moment, we would need numeric type in the future. //
+        final PropertyType propType;
+
+        final String inputType; // derived type name for Statistic
+
+        long missing = 0;
+
+        long count = 0;
+
+        final Map<String, Long> termCounts = new HashMap<>();
+
+        PropertyAccumulator(String fieldName, PropertyType propType, SchemaManager sm) {
+            this.fieldName = fieldName;
+            this.propType = propType;
+            Field f = sm.getField(fieldName);
+            this.inputType = DatasetStatsService.getInputType(f);
+        }
+
+        void consume(DocumentModel dm) {
+            try {
+                // For blobs (images/text as blob) check .length property if exists
+                if (IMAGE_TYPE.equals(propType.getType())) {
+                    consumeBlobProperty(dm);
+                } else {
+                    consumeRegularProperty(dm);
                 }
-            } else {
-                // Assuming without type it is text or category !
-                qb.addAggregate(makeAggregate(AGG_MISSING, propName, EMPTY_PROPS));
+            } catch (Exception e) {
+                // property missing or not accessible; treat as missing
+                missing++;
             }
         }
-        EsResult esResult = Framework.getService(ElasticSearchService.class).queryAndAggregate(qb);
-        stats.addAll(esResult.getAggregates()
-                             .stream()
-                             .map(agg -> (Aggregate<?>) agg)
-                             .map(this::getStatistic)
-                             .collect(Collectors.toList()));
-        long total = esResult.getElasticsearchResponse().getHits().getTotalHits().value;
-        stats.add(Statistic.of(STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, STATS_TOTAL, total));
 
-        return total;
-    }
-
-    protected Statistic getStatistic(Aggregate<?> agg) {
-        return Statistic.from(() -> {
-            Number numericValue = null;
-            List<org.nuxeo.ai.sdk.objects.Bucket> value = null;
-            if (agg instanceof SingleValueMetricAggregate) {
-                Double val = ((SingleValueMetricAggregate) agg).getValue();
-                numericValue = Double.isFinite(val) ? val : -1;
-            } else if (agg instanceof SingleBucketAggregate) {
-                numericValue = ((SingleBucketAggregate) agg).getDocCount();
-            } else if (agg instanceof MultiBucketAggregate) {
-                List<? extends Bucket> buckets = agg.getBuckets();
-                value = buckets.stream()
-                               .map(bucket -> new org.nuxeo.ai.sdk.objects.Bucket(bucket.getKey(),
-                                       bucket.getDocCount()))
-                               .collect(Collectors.toList());
+        private void consumeBlobProperty(DocumentModel dm) throws Exception {
+            Serializable len = (Serializable) dm.getPropertyValue(fieldName + "/length");
+            Long l = (len instanceof Number) ? ((Number) len).longValue() : null;
+            if (l == null || l <= 0) {
+                missing++;
             } else {
-                throw new UnsupportedOperationException("Unable to create a statistic for " + agg.getType());
+                count++;
             }
+        }
 
-            String fieldName = agg.getField();
-            if (fieldName.endsWith("/length") || fieldName.endsWith(".length")) {
-                fieldName = fieldName.substring(0, fieldName.length() - "/length".length());
+        private void consumeRegularProperty(DocumentModel dm) throws Exception {
+            Serializable v = (Serializable) dm.getPropertyValue(fieldName);
+            if (v == null) {
+                missing++;
+            } else if (v instanceof String) {
+                consumeStringValue((String) v);
+            } else if (v instanceof String[]) {
+                consumeStringArray((String[]) v);
+            } else if (v instanceof Collection) {
+                consumeCollection((Collection<?>) v);
+            } else {
+                // other types: count as present and index value string
+                count++;
+                termCounts.merge(String.valueOf(v), 1L, Long::sum);
             }
+        }
 
-            SchemaManager ts = Framework.getService(SchemaManager.class);
-            Field field = ts.getField(fieldName);
+        private void consumeStringValue(String s) {
+            if (s.trim().isEmpty()) {
+                missing++;
+            } else {
+                count++;
+                termCounts.merge(s, 1L, Long::sum);
+            }
+        }
 
-            String type = DatasetStatsService.getInputType(field);
+        private void consumeStringArray(String[] arr) {
+            boolean any = false;
+            for (String s : arr) {
+                if (s != null && !s.trim().isEmpty()) {
+                    termCounts.merge(s, 1L, Long::sum);
+                    any = true;
+                }
+            }
+            if (any) {
+                count++;
+            } else {
+                missing++;
+            }
+        }
 
-            Statistic statistic = new Statistic(agg.getId(), fieldName, type, agg.getType(), numericValue);
-            statistic.setValue(value);
+        private void consumeCollection(Collection<?> c) {
+            boolean any = false;
+            for (Object o : c) {
+                if (o != null) {
+                    String key = String.valueOf(o);
+                    termCounts.merge(key, 1L, Long::sum);
+                    any = true;
+                }
+            }
+            if (any) {
+                count++;
+            } else {
+                missing++;
+            }
+        }
 
-            return statistic;
-        });
+        long missingCount() {
+            return missing;
+        }
+
+        long count() {
+            return count;
+        }
+
+        long cardinality() {
+            return termCounts.size();
+        }
+
+        String missingId() {
+            return "missing_" + fieldName;
+        }
+
+        String countId() {
+            return "count_" + fieldName;
+        }
+
+        String cardId() {
+            return "cardinality_" + fieldName;
+        }
+
+        String termsId() {
+            return "terms_" + fieldName;
+        }
+
+        String getInputType() {
+            return inputType == null ? "unknown" : inputType;
+        }
+
+        List<org.nuxeo.ai.sdk.objects.Bucket> topTermsAsBuckets() {
+            if (termCounts.isEmpty())
+                return Collections.emptyList();
+            int size = parseTermsSize(Optional.ofNullable(System.getProperty("nuxeo.ai.terms.size")).orElse("200"));
+            return termCounts.entrySet()
+                             .stream()
+                             .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue()))
+                             .limit(size)
+                             .map(e -> new org.nuxeo.ai.sdk.objects.Bucket(e.getKey(), e.getValue()))
+                             .collect(Collectors.toList());
+        }
+
+        /**
+         * Safely parses the terms size value, returning a default value on error.
+         */
+        private int parseTermsSize(String value) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException e) {
+                return Integer.parseInt(DEFAULT_NUM_TERMS);
+            }
+        }
     }
 
-    protected String contentProperty(String propName) {
-        return propName + "/length";
-    }
+    // ---------------------------
+    // Helpers: notNull Nxql and blob detection
+    // ---------------------------
 
     protected String notNullNxql(String nxql, List<PropertyType> featuresWithType) {
         StringBuilder sb = new StringBuilder(nxql);
@@ -515,9 +592,9 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             String propName = prop.getName();
             Field field = serv.getField(propName);
             if (IMAGE_TYPE.equals(prop.getType()) || isTextBlob(prop, field)) {
-                sb.append(" AND ").append(contentProperty(propName)).append(" IS NOT NULL");
+                sb.append(" AND ").append(propName).append("/length IS NOT NULL");
             } else if (CATEGORY_TYPE.equals(prop.getType()) || TEXT_TYPE.equals(prop.getType())) {
-                // nothing to do here
+                // nothing to add for normal fields
             } else {
                 log.warn("Unknown Property type " + prop.getType());
             }

@@ -21,20 +21,17 @@ package org.nuxeo.ai.textract;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.nuxeo.ai.enrichment.EnrichmentTestFeature.setupBlobForStream;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -52,12 +49,13 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeFeature;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.Block;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import software.amazon.awssdk.services.textract.model.Block;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, RuntimeFeature.class, PlatformFeature.class })
+@Features({ EnrichmentTestFeature.class, PlatformFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-textract-config.xml")
@@ -106,18 +104,22 @@ public class TestTextractService {
 
     @Test
     public void testBlocks() throws URISyntaxException, IOException {
-        Block b = new Block();
-        b.setBlockType("LINE");
-        String raw = toJsonString(jg -> jg.writeObjectField("blocks", Arrays.asList(b)));
-
-        AnalyzeDocumentResult result = JacksonUtil.MAPPER.readValue(raw, AnalyzeDocumentResult.class);
-        List<Block> rawBlock = result.getBlocks();
-        assertNotNull(rawBlock);
-
         File json = FileUtils.getResourceFileFromContext("files/textract.json");
-        AnalyzeDocumentResult helper = JacksonUtil.MAPPER.readValue(json, AnalyzeDocumentResult.class);
-        List<Block> blocks = helper.getBlocks();
+        assertNotNull(json);
+        JsonNode root = JacksonUtil.MAPPER.readTree(json);
+        assertNotNull(root);
+        JsonNode blocks = root.get("blocks");
         assertNotNull(blocks);
+        assertTrue(blocks.isArray());
+        assertTrue(blocks.size() > 0);
+        boolean hasPage = false;
+        for (JsonNode b : blocks) {
+            if (b.hasNonNull("blockType") && "PAGE".equalsIgnoreCase(b.get("blockType").asText())) {
+                hasPage = true;
+                break;
+            }
+        }
+        assertTrue("Expected at least one PAGE block", hasPage);
     }
 
     @Test
@@ -130,8 +132,7 @@ public class TestTextractService {
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("docId", "default", "parent", "File", null);
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder("b1", "myb", blobTextFromDoc);
 
-        Block b = new Block();
-        b.setBlockType("TABLE");
+        Block b = Block.builder().blockType("TABLE").build();
         processors.forEach(p -> p.process(Arrays.asList(b), null, new IdRef(blobTextFromDoc.getId()), builder));
 
         EnrichmentMetadata metadata = builder.build();

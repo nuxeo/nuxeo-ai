@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>5.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-addons</artifactId>
   <name>Nuxeo AI Addons parent POM</name>
@@ -14,6 +14,7 @@
   <properties>
     <wiremock.version>2.27.2</wiremock.version>
     <gcp.version>26.75.0</gcp.version>
+    <aws.sdk.version>2.26.0</aws.sdk.version>
   </properties>
 
   <modules>
@@ -27,6 +28,7 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Only manage project-specific dependencies here; AWS SDK dependencies are managed by the BOM in the root POM and should not be listed here. -->
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-core</artifactId>
@@ -51,42 +53,6 @@
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-image-quality-core</artifactId>
         <version>${nuxeo.ai.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-rekognition</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-comprehend</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-textract</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-translate</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-logs</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-sns</artifactId>
-        <version>${aws.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-transcribe</artifactId>
-        <version>${aws.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.tomakehurst</groupId>

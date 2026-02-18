@@ -20,51 +20,222 @@ package org.nuxeo.ai.pipes.services;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
 import org.nuxeo.lib.stream.computation.Record;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.deser.std.StdDelegatingDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.util.StdConverter;
 
 /**
  * Utilities for use with Jackson
  */
 public class JacksonUtil {
 
+    private static final Logger log = LogManager.getLogger(JacksonUtil.class);
+
     public static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final AtomicBoolean AWS_SERIALIZERS_ADDED = new AtomicBoolean(false);
 
     static {
         MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        MAPPER.deactivateDefaultTyping(); // ensure no residual default typing
         SimpleModule module = new SimpleModule();
         module.addDeserializer(Instant.class, new InstantDeserializer());
         module.addSerializer(Instant.class, new InstantSerializer());
-        module.addSerializer(ManagedBlob.class, new ManagedBlobSerializer());
-        module.addDeserializer(ManagedBlob.class,
-                new StdDelegatingDeserializer<>(new StdConverter<BlobMetaImpl, ManagedBlob>() {
-                    @Override
-                    public ManagedBlob convert(BlobMetaImpl value) {
-                        return value;
-                    }
-                }));
+        // Register ManagedBlob custom (de)serializers to avoid instantiation issues for concrete implementations
+        ManagedBlobSerializer managedBlobSerializer = new ManagedBlobSerializer();
+        ManagedBlobDeserializer managedBlobDeserializer = new ManagedBlobDeserializer();
+        module.addSerializer(ManagedBlob.class, managedBlobSerializer);
+        module.addDeserializer(ManagedBlob.class, managedBlobDeserializer);
+        // Attempt to register concrete SimpleManagedBlob if present so Jackson doesn't try bean construction
+        try {
+            Class<?> smb = Class.forName("org.nuxeo.ecm.core.blob.SimpleManagedBlob");
+            module.addSerializer((Class) smb, managedBlobSerializer);
+            module.addDeserializer((Class) smb, managedBlobDeserializer);
+        } catch (ClassNotFoundException ignore) {
+            // SimpleManagedBlob class not available in this context - this is expected and safe to ignore
+        }
+        try {
+            registerAwsSerializers(module); // ignore return here, static init
+        } catch (Exception e) {
+            // ignore if AWS SDK absent
+        }
         MAPPER.registerModule(module);
+        // Removed default typing activation which caused attempts to instantiate concrete ManagedBlob implementations
+        MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+    }
+
+    private static boolean registerAwsSerializers(SimpleModule module) {
+        boolean added = false;
+        try {
+            Class<?> sdkPojoClass = loadSdkPojoClass();
+            if (sdkPojoClass == null) {
+                return false;
+            }
+            JsonSerializer<Object> sdkPojoSerializer = buildSdkPojoSerializer();
+            module.addSerializer((Class) sdkPojoClass, sdkPojoSerializer);
+            added = true;
+            // Attempt textract Block specifically (some SDK versions create subclasses)
+            registerTextractBlockSerializer(module, sdkPojoSerializer);
+            // Fallback MixIn to ensure serializer selection when dynamic proxies / different CLs
+            registerSdkPojoMixin(sdkPojoClass, sdkPojoSerializer);
+        } catch (Exception ignore) {
+            // swallow
+        }
+        return added;
+    }
+
+    /**
+     * Attempts to load the AWS SDK SdkPojo class using multiple strategies.
+     *
+     * @return the SdkPojo class if found, null otherwise
+     */
+    private static Class<?> loadSdkPojoClass() {
+        try {
+            return Class.forName("software.amazon.awssdk.core.SdkPojo");
+        } catch (ClassNotFoundException primary) {
+            try {
+                return Thread.currentThread()
+                             .getContextClassLoader()
+                             .loadClass("software.amazon.awssdk.core.SdkPojo");
+            } catch (Exception secondary) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Attempts to register the Textract Block class serializer.
+     */
+    private static void registerTextractBlockSerializer(SimpleModule module, JsonSerializer<Object> serializer) {
+        try {
+            Class<?> blockClass = Class.forName("software.amazon.awssdk.services.textract.model.Block");
+            module.addSerializer((Class) blockClass, serializer);
+        } catch (Exception ignore) {
+            // ignore missing Block class
+        }
+    }
+
+    /**
+     * Attempts to register a MixIn for SdkPojo to ensure proper serializer selection.
+     */
+    private static void registerSdkPojoMixin(Class<?> sdkPojoClass, JsonSerializer<Object> serializer) {
+        try {
+            @com.fasterxml.jackson.databind.annotation.JsonSerialize(using = JacksonUtil.SdkPojoFallbackSerializer.class)
+            abstract class SdkPojoMixin {
+            }
+            JacksonUtil.SdkPojoFallbackSerializer.setDelegate(serializer);
+            MAPPER.addMixIn(sdkPojoClass, SdkPojoMixin.class);
+        } catch (Exception ignore) {
+            // ignore any mixin issues
+        }
+    }
+
+    // Re-added method: builds a reflective JsonSerializer for AWS SdkPojo objects
+    private static JsonSerializer<Object> buildSdkPojoSerializer() {
+        return new JsonSerializer<>() {
+            @Override
+            public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeStartObject();
+                for (Method m : value.getClass().getMethods()) {
+                    if (m.getParameterCount() != 0 || !Modifier.isPublic(m.getModifiers())) {
+                        continue;
+                    }
+                    if (m.getReturnType() == Void.TYPE) {
+                        continue;
+                    }
+                    String name = m.getName();
+                    if (name.equals("getClass") || name.equals("sdkFields") || name.equals("toBuilder")
+                            || name.equals("builder")) {
+                        continue;
+                    }
+                    if (name.startsWith("get") && name.length() > 3) {
+                        name = Character.toLowerCase(name.charAt(3)) + name.substring(4);
+                    } else if (name.startsWith("is") && name.length() > 2
+                            && (m.getReturnType() == boolean.class || m.getReturnType() == Boolean.class)) {
+                        name = Character.toLowerCase(name.charAt(2)) + name.substring(3);
+                    } else {
+                        // skip non bean-style accessors
+                        continue;
+                    }
+                    try {
+                        Object fieldVal = m.invoke(value);
+                        if (fieldVal == null) {
+                            continue;
+                        }
+                        if (fieldVal instanceof java.util.Collection
+                                && ((java.util.Collection<?>) fieldVal).isEmpty()) {
+                            continue;
+                        }
+                        if (fieldVal instanceof CharSequence cs) {
+                            gen.writeStringField(name, cs.toString());
+                        } else if (fieldVal instanceof Number || fieldVal instanceof Boolean) {
+                            gen.writeObjectField(name, fieldVal);
+                        } else {
+                            gen.writeFieldName(name);
+                            gen.writeObject(fieldVal);
+                        }
+                    } catch (Exception ignore) {
+                        // ignore individual property issues
+                    }
+                }
+                gen.writeEndObject();
+            }
+        };
+    }
+
+    private static void ensureAwsSerializers() {
+        if (AWS_SERIALIZERS_ADDED.get()) {
+            return;
+        }
+        synchronized (AWS_SERIALIZERS_ADDED) {
+            if (AWS_SERIALIZERS_ADDED.get()) {
+                return;
+            }
+            // Register lazily on mapper (new module) to cover runtime-added AWS classes
+            SimpleModule awsModule = new SimpleModule();
+            boolean added = registerAwsSerializers(awsModule);
+            if (added) {
+                MAPPER.registerModule(awsModule);
+            }
+            MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            AWS_SERIALIZERS_ADDED.set(true);
+        }
     }
 
     public static String toJsonString(JsonGeneratorConsumer withConsumer) {
+        ensureAwsSerializers();
+        // Defensive: ensure the feature is disabled each invocation (other modules may have re-enabled it)
+        if (MAPPER.getSerializationConfig().isEnabled(SerializationFeature.FAIL_ON_EMPTY_BEANS)) {
+            MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        }
         StringWriter writer = new StringWriter();
         try (JsonGenerator jg = MAPPER.getFactory().createGenerator(writer)) {
             jg.writeStartObject();
@@ -79,7 +250,7 @@ public class JacksonUtil {
     }
 
     /**
-     * Gets the DocumentModel from an Event.  Returns null if that's not possible
+     * Gets the DocumentModel from an Event. Returns null if that's not possible
      */
     public static DocumentModel toDoc(Event event) {
         DocumentEventContext docCtx = (DocumentEventContext) event.getContext();
@@ -112,6 +283,12 @@ public class JacksonUtil {
         try {
             return MAPPER.readValue(record.getData(), valueType);
         } catch (IOException e) {
+            try {
+                String raw = new String(record.getData(), StandardCharsets.UTF_8);
+                log.debug("JacksonUtil.fromRecord DEBUG raw json for key={} => {}", record.getKey(), raw);
+            } catch (Exception ignored) {
+                // Intentionally ignore exceptions during debug output - the original IOException will be thrown below
+            }
             throw new NuxeoException("Unable to read record data for : " + record.getKey(), e);
         }
     }
@@ -152,6 +329,71 @@ public class JacksonUtil {
         }
     }
 
+    // Custom deserializer for ManagedBlob creating a lightweight dynamic proxy exposing metadata
+    public static class ManagedBlobDeserializer extends JsonDeserializer<ManagedBlob> {
+        @Override
+        public ManagedBlob deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            JsonNode node = p.getCodec().readTree(p);
+            final String mimeType = text(node, "mimeType");
+            final String encoding = text(node, "encoding");
+            final String digest = text(node, "digest");
+            final String providerId = text(node, "providerId");
+            final String key = text(node, "key");
+            final long length = longVal(node, "length");
+            InvocationHandler handler = (proxy, method, args) -> {
+                switch (method.getName()) {
+                    case "getMimeType":
+                        return mimeType;
+                    case "getEncoding":
+                        return encoding;
+                    case "getDigest":
+                        return digest;
+                    case "getProviderId":
+                        return providerId;
+                    case "getKey":
+                        return key;
+                    case "getLength":
+                        return length;
+                    case "toString":
+                        return "ManagedBlob{" + key + "," + mimeType + "," + length + "}";
+                    case "equals":
+                        if (args != null && args.length == 1 && args[0] != null
+                                && Proxy.isProxyClass(args[0].getClass())) {
+                            // Compare metadata of other proxy
+                            Object other = args[0];
+                            try {
+                                String otherKey = (String) other.getClass().getMethod("getKey").invoke(other);
+                                String otherDigest = (String) other.getClass().getMethod("getDigest").invoke(other);
+                                Long otherLength = (Long) other.getClass().getMethod("getLength").invoke(other);
+                                return Objects.equals(key, otherKey) && Objects.equals(digest, otherDigest)
+                                        && Objects.equals(length, otherLength);
+                            } catch (Exception ignore) {
+                                // Ignore reflection exceptions - fall through to standard equals comparison
+                            }
+                        }
+                        return proxy == args[0];
+                    case "hashCode":
+                        return Objects.hash(key, digest, length);
+                    default:
+                        // Unsupported operations return null
+                        return null;
+                }
+            };
+            return (ManagedBlob) Proxy.newProxyInstance(ManagedBlob.class.getClassLoader(),
+                    new Class[] { ManagedBlob.class }, handler);
+        }
+
+        private String text(JsonNode node, String field) {
+            JsonNode n = node.get(field);
+            return n == null || n.isNull() ? null : n.asText();
+        }
+
+        private long longVal(JsonNode node, String field) {
+            JsonNode n = node.get(field);
+            return n == null || n.isNull() ? 0L : n.asLong();
+        }
+    }
+
     /**
      * Deserializes an instant
      */
@@ -162,6 +404,25 @@ public class JacksonUtil {
             String val = ctxt.readValue(jp, String.class);
             return Instant.parse(val);
 
+        }
+    }
+
+    // Fallback serializer used by MixIn to delegate to runtime-created sdkPojoSerializer
+    public static class SdkPojoFallbackSerializer extends JsonSerializer<Object> {
+        private static JsonSerializer<Object> delegate;
+
+        public static void setDelegate(JsonSerializer<Object> delegateSerializer) {
+            delegate = delegateSerializer;
+        }
+
+        @Override
+        public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            if (delegate != null) {
+                delegate.serialize(value, gen, serializers);
+            } else {
+                gen.writeStartObject();
+                gen.writeEndObject();
+            }
         }
     }
 }

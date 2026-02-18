@@ -18,7 +18,6 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
@@ -27,85 +26,90 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
 
 import net.jodah.failsafe.RetryPolicy;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
- * Detect unsafe content in images.
+ * An enrichment provider for unsafe image detection - Now using domain DTOs
  */
 public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
     public static final String MINIMUM_CONFIDENCE = "minConfidence";
 
-    public static final String DEFAULT_CONFIDENCE = "70";
+    public static final String DEFAULT_CONFIDENCE = "50";
 
-    protected float minConfidence;
+    private static final float DEFAULT_CONFIDENCE_FLOAT = 50f;
 
-    protected EnrichmentMetadata.Label newLabel(ModerationLabel l) {
-        if (l.getConfidence() >= minConfidence) {
-            return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100);
-        } else {
-            return null;
-        }
-    }
+    protected float minConfidence = parseConfidence(DEFAULT_CONFIDENCE);
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        Map<String, String> options = descriptor.options;
-        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+        minConfidence = parseConfidence(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+    }
+
+    /**
+     * Safely parses a confidence value string to float, returning a default value on error.
+     */
+    private float parseConfidence(String value) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException e) {
+            return DEFAULT_CONFIDENCE_FLOAT;
+        }
     }
 
     @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
-        RekognitionService rs = Framework.getService(RekognitionService.class);
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-                DetectModerationLabelsResult result = rs.detectUnsafeImages(blob.getValue());
-                if (result != null && !result.getModerationLabels().isEmpty()) {
-                    enriched.addAll(processResult(doc, blob.getKey(), result));
+            RekognitionService rs = Framework.getService(RekognitionService.class);
+            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+                LabelsResult result = rs.detectModerationLabels(blob.getValue(), minConfidence);
+                if (result != null && result.labels() != null && !result.labels().isEmpty()) {
+                    enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
                 }
             }
             return enriched;
         });
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
-    }
-
     /**
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectModerationLabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
+            LabelsResult result) {
+        List<EnrichmentMetadata.Label> labels = result.labels()
                                                       .stream()
-                                                      .map(this::newLabel)
-                                                      .filter(Objects::nonNull)
+                                                      .filter(label -> label.confidence() >= minConfidence)
+                                                      .map(label -> new EnrichmentMetadata.Label(label.name(),
+                                                              label.confidence() / 100))
                                                       .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
-
+        String raw = toJsonString(jg -> jg.writeObjectField("moderationLabels", result.labels()));
         String rawKey = saveJsonAsRawBlob(raw);
+
         return Collections.singletonList(
                 new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
                                                                            .withRawKey(rawKey)
-                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .withDocumentProperties(
+                                                                                   Collections.singleton(propName))
                                                                            .build());
+    }
+
+    @Override
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(throwable -> throwable instanceof SdkClientException
+                && throwable.getMessage().contains("is not authorized to perform"));
     }
 
     @Override

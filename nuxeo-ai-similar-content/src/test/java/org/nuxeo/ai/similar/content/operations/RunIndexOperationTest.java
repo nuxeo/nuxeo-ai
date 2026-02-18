@@ -24,7 +24,8 @@ package org.nuxeo.ai.similar.content.operations;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,12 +45,12 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class, CoreBulkFeature.class })
-@Deploy("org.nuxeo.ecm.platform.tag")
 @Deploy("org.nuxeo.ai.similar-content")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")

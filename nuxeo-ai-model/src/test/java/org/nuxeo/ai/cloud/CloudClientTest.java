@@ -18,40 +18,24 @@
  */
 package org.nuxeo.ai.cloud;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_CORPORA_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_DOCUMENTS_COUNT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_EVALUATION_DATA;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_INPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_MODEL_ID;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_OUTPUTS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_QUERY;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_SPLIT;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_STATS;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TRAINING_DATA;
-import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
-import static org.nuxeo.ai.auth.JWTAuthenticator.LEEWAY_10_MIN;
-import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
-import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
-import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
-import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSession;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,14 +60,16 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.impl.PublicClaims;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
+import static org.nuxeo.ai.adapters.DatasetExport.*;
+import static org.nuxeo.ai.auth.JWTAuthenticator.LEEWAY_10_MIN;
+import static org.nuxeo.ai.cloud.NuxeoCloudClient.API_AI;
+import static org.nuxeo.ai.model.serving.TestModelServing.createTestBlob;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
+import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSession;
 
 @RunWith(FeaturesRunner.class)
 @Features({ PlatformFeature.class, AutomationFeature.class })
@@ -143,7 +129,7 @@ public class CloudClientTest {
                                   .withIssuer("mockTestProject")
                                   .withAudience("nuxeo")
                                   .withSubject("Administrator")
-                                  .withClaim(PublicClaims.NOT_BEFORE, Instant.now().toEpochMilli() + 3000)
+                                  .acceptNotBefore(LEEWAY_10_MIN)
                                   .acceptIssuedAt(LEEWAY_10_MIN)
                                   .acceptExpiresAt(10)
                                   .build();
@@ -248,12 +234,10 @@ public class CloudClientTest {
 
         CorpusDelta delta = MAPPER.readValue(corpusDelta.getStream(), CorpusDelta.class);
         assertNotNull(delta);
-        assertThat(delta.getInputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(1)
-                                                                                                      .contains(
-                                                                                                              "file:content");
-        assertThat(delta.getOutputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(1)
-                                                                                                       .contains(
-                                                                                                               "dc:title");
+        assertThat(delta.getInputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(
+                1).contains("file:content");
+        assertThat(delta.getOutputs().stream().map(PropertyType::getName).collect(Collectors.toList())).hasSize(
+                1).contains("dc:title");
     }
 
     @Test

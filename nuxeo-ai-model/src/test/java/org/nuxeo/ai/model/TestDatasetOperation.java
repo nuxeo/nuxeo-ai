@@ -31,17 +31,19 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
 import org.nuxeo.ai.model.export.DatasetExportOperation;
 import org.nuxeo.ai.model.export.DatasetExportRestartOperation;
 import org.nuxeo.ai.model.export.DatasetExportUpdaterOperation;
 import org.nuxeo.ai.model.export.DatasetGetModelOperation;
 import org.nuxeo.ai.model.export.ExportProgressOperation;
-import org.nuxeo.ai.bulk.BulkProgressStatus;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationChain;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -53,22 +55,23 @@ import org.nuxeo.ecm.core.api.impl.blob.JSONBlob;
 import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.elasticsearch.test.RepositoryElasticSearchFeature;
+import org.nuxeo.ecm.core.test.CoreFeature;
+import org.nuxeo.ecm.core.test.CoreSearchFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class,
-        RepositoryElasticSearchFeature.class })
+@Features({ CoreSearchFeature.class, CoreFeature.class, EnrichmentTestFeature.class, AutomationFeature.class,
+        CoreBulkFeature.class })
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
 @Deploy("org.nuxeo.ai.ai-core")
 @Deploy("org.nuxeo.ai.ai-core:OSGI-INF/recordwriter-test.xml")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.automation.core")
-@Deploy("org.nuxeo.elasticsearch.core.test:elasticsearch-test-contrib.xml")
 public class TestDatasetOperation {
 
     public static final String TEST_QUERY = "SELECT * from document WHERE dc:title IS NOT NULL";
@@ -213,7 +216,7 @@ public class TestDatasetOperation {
 
         ctx = new OperationContext(session);
         params = new HashMap<>();
-//        params.put("commandId", returned);
+        // params.put("commandId", returned);
 
         @SuppressWarnings("unchecked")
         List<BulkProgressStatus> result = (List<BulkProgressStatus>) automationService.run(ctx,
@@ -239,8 +242,8 @@ public class TestDatasetOperation {
 
         Map<String, Object> statusParams = new HashMap<>();
         statusParams.put("modelId", "e67ee0e8-1bef-4fb7-9966-1d14081221");
-        BulkProgressStatus progressStatus = (BulkProgressStatus) automationService.run(ctx,
-                ExportProgressOperation.ID, statusParams);
+        BulkProgressStatus progressStatus = (BulkProgressStatus) automationService.run(ctx, ExportProgressOperation.ID,
+                statusParams);
         assertNotNull(progressStatus);
         assertThat(progressStatus.getId()).isEqualTo(returned);
 

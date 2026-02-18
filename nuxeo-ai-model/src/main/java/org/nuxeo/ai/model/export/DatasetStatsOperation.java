@@ -103,7 +103,12 @@ public class DatasetStatsOperation {
     }
 
     protected void setMultiClass(FieldStatistics stat) {
-        Type type = sm.getField(stat.getField()).getType();
-        stat.setMultiClass(type.isListType());
+        var field = sm.getField(stat.getField());
+        if (field != null) {
+            Type type = field.getType();
+            stat.setMultiClass(type.isListType());
+        } else {
+            stat.setMultiClass(false);
+        }
     }
 }

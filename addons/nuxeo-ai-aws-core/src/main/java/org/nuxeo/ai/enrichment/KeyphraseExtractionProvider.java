@@ -29,20 +29,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.KeyPhrasesResult;
 import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.comprehend.model.DetectKeyPhrasesResult;
 
 import net.jodah.failsafe.RetryPolicy;
 
 public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
-
-    private static final Log log = LogFactory.getLog(KeyphraseExtractionProvider.class);
 
     // in bytes
     public static final long KEYPHRASE_MAX_SIZE = 100_000;
@@ -52,6 +51,8 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
     public static final String DEFAULT_LANGUAGE = "en";
 
     public static final String KEYPHRASE_KEY = "KeyPhrases";
+
+    private static final Log log = LogFactory.getLog(KeyphraseExtractionProvider.class);
 
     protected String languageCode;
 
@@ -72,9 +73,9 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
                             + prop.getValue().length());
                     continue;
                 }
-                DetectKeyPhrasesResult result = Framework.getService(ComprehendService.class)
-                                                         .extractKeyphrase(prop.getValue(), languageCode);
-                if (result != null && !result.getKeyPhrases().isEmpty()) {
+                KeyPhrasesResult result = Framework.getService(ComprehendService.class)
+                                                   .detectKeyPhrases(prop.getValue(), languageCode);
+                if (result != null && !result.keyPhrases().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -86,28 +87,27 @@ public class KeyphraseExtractionProvider extends AbstractEnrichmentProvider impl
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            DetectKeyPhrasesResult result) {
-        List<AIMetadata.Label> labels = result.getKeyPhrases()
+            KeyPhrasesResult result) {
+        List<AIMetadata.Label> labels = result.keyPhrases()
                                               .stream()
-                                              .map(kp -> new AIMetadata.Label(kp.getText(), kp.getScore()))
+                                              .map(kp -> new AIMetadata.Label(kp.text(), kp.score()))
                                               .collect(Collectors.toList());
-        String raw = toJsonString(jg -> {
-            jg.writeObjectField(KEYPHRASE_KEY, result.getKeyPhrases());
-        });
+        String raw = toJsonString(jg -> jg.writeObjectField(KEYPHRASE_KEY, result.keyPhrases()));
 
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
-                                                                                        .withRawKey(rawKey)
-                                                                                        .withDocumentProperties(
-                                                                                                Collections.singleton(
-                                                                                                        xPath))
-                                                                                        .build());
+        return Collections.singletonList(
+                new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
+                                                               .withRawKey(rawKey)
+                                                               .withDocumentProperties(Collections.singleton(xPath))
+                                                               .build());
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(throwable -> {
+            String message = throwable.getMessage();
+            return message != null && message.contains("is not authorized to perform");
+        });
     }
 
     @Override

@@ -32,7 +32,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +57,7 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -177,17 +180,17 @@ public class TestSuggestionOp {
                                                .map(JsonNode::asText)
                                                .collect(Collectors.toSet());
             switch (suggestion.get("property").asText()) {
-            case "dr:docIdOnlyRef":
-                assertTrue(entityType.contains("document"));
-                break;
-            case "dc:creator":
-                assertTrue(entityType.contains("user"));
-                break;
-            case "dc:nature":
-                assertTrue(entityType.contains("directoryEntry"));
-                break;
-            case "dc:subjects":
-                assertTrue(entityType.contains("directoryEntry"));
+                case "dr:docIdOnlyRef":
+                    assertTrue(entityType.contains("document"));
+                    break;
+                case "dc:creator":
+                    assertTrue(entityType.contains("user"));
+                    break;
+                case "dc:nature":
+                    assertTrue(entityType.contains("directoryEntry"));
+                    break;
+                case "dc:subjects":
+                    assertTrue(entityType.contains("directoryEntry"));
             }
         }
     }

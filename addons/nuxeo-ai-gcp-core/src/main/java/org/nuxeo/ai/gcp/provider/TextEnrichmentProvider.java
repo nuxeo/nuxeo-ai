@@ -1,21 +1,20 @@
 /*
- *   (C) Copyright 2006-2020 Nuxeo (http://nuxeo.com/) and others.
+ * (C) Copyright 2018 Nuxeo (http://nuxeo.com/) and others.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- *
- *   Contributors:
- *       anechaev
+ * Contributors:
+ *     anechaev
  */
 package org.nuxeo.ai.gcp.provider;
 
@@ -23,14 +22,12 @@ import static com.google.cloud.vision.v1.Feature.Type.TEXT_DETECTION;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.stream.Collectors;
+
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
-import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
-import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ecm.core.api.NuxeoException;
+
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.EntityAnnotation;
 import com.google.cloud.vision.v1.Feature;
@@ -38,24 +35,9 @@ import com.google.cloud.vision.v1.Feature;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * Finds items in an image and labels them
+ * Detects text in images using GCP Vision API
  */
-public class TextEnrichmentProvider extends AbstractTagProvider<EntityAnnotation>
-        implements EnrichmentCachable, Polygonal {
-
-    private static final Logger log = LogManager.getLogger(TextEnrichmentProvider.class);
-
-    @Override
-    public void init(EnrichmentDescriptor descriptor) {
-        super.init(descriptor);
-        // GCP doesn't provide confidence for text detection
-        this.minConfidence = 0.0f;
-    }
-
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(NuxeoException.class);
-    }
+public class TextEnrichmentProvider extends AbstractTagProvider<EntityAnnotation> implements EnrichmentCachable {
 
     @Override
     protected Feature.Type getType() {
@@ -63,14 +45,25 @@ public class TextEnrichmentProvider extends AbstractTagProvider<EntityAnnotation
     }
 
     @Override
-    protected List<EntityAnnotation> getAnnotationList(AnnotateImageResponse res) {
-        return res.getTextAnnotationsList();
+    protected List<EntityAnnotation> getAnnotationList(AnnotateImageResponse response) {
+        return response.getTextAnnotationsList()
+                       .stream()
+                       .filter(annotation -> annotation.getConfidence() >= minConfidence)
+                       .collect(Collectors.toList());
     }
 
     @Override
     protected AIMetadata.Tag newTag(EntityAnnotation annotation) {
-        AIMetadata.Box box = getBox(annotation.getBoundingPoly());
-        return new EnrichmentMetadata.Tag(annotation.getDescription(), kind, null, box, null, annotation.getScore());
+        return new AIMetadata.Tag(annotation.getDescription(), null, null, null, java.util.Collections.emptyList(),
+                annotation.getConfidence());
+    }
+
+    @Override
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(throwable -> {
+            String message = throwable.getMessage();
+            return message != null && message.contains("is not authorized to perform");
+        });
     }
 
     @Override

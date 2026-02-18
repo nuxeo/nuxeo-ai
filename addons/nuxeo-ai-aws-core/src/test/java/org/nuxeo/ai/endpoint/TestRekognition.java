@@ -4,10 +4,14 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,12 +25,10 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.ServletContainerFeature;
+
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 
 @RunWith(FeaturesRunner.class)
 @Features({ WebEngineFeature.class, CoreFeature.class })
@@ -39,7 +41,7 @@ public class TestRekognition {
 
     private static final Integer TIMEOUT = 1000 * 60 * 5; // 5min
 
-    protected Client client;
+    protected HttpClient httpClient;
 
     @Inject
     protected ServletContainerFeature servletContainerFeature;
@@ -49,29 +51,24 @@ public class TestRekognition {
 
     @Before
     public void setup() {
-        client = Client.create();
-        client.setConnectTimeout(TIMEOUT);
-        client.setReadTimeout(TIMEOUT);
-        client.setFollowRedirects(Boolean.FALSE);
+        httpClient = HttpClient.newHttpClient();
     }
 
     @Test
-    public void shouldCreateNotification() throws IOException {
+    public void shouldCreateNotification() throws IOException, InterruptedException {
         ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
         arrayNode.add(new ObjectNode(JsonNodeFactory.instance));
-        WebResource webResource = client.resource(getBaseURL())
-                                        .path("aiaddons")
-                                        .path("rekognition")
-                                        .path("callback")
-                                        .path("labels");
 
         File jsonPayload = FileUtils.getResourceFileFromContext("sns-success-resp.json");
         byte[] jsonData = Files.readAllBytes(Paths.get(jsonPayload.toURI()));
         String jsonPost = new String(jsonData, StandardCharsets.UTF_8);
-        ClientResponse response = webResource.accept(CONTENT_TYPE)
-                                             .type(CONTENT_TYPE)
-                                             .post(ClientResponse.class, jsonPost);
-        assertEquals(200, response.getStatus());
+        var request = java.net.http.HttpRequest.newBuilder()
+                                               .uri(URI.create(getBaseURL() + "/aiaddons/rekognition/callback/labels"))
+                                               .header("Content-Type", CONTENT_TYPE)
+                                               .POST(java.net.http.HttpRequest.BodyPublishers.ofString(jsonPost))
+                                               .build();
+        var response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
 
         eventService.waitForAsyncCompletion();
     }

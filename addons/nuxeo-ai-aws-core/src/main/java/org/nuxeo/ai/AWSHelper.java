@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,16 +41,17 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.aws.NuxeoAWSCredentialsProvider;
 import org.nuxeo.runtime.aws.NuxeoAWSRegionProvider;
 import org.nuxeo.runtime.services.config.ConfigurationService;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.services.logs.model.UnrecognizedClientException;
-import com.amazonaws.services.rekognition.model.AccessDeniedException;
-import com.amazonaws.services.rekognition.model.Image;
-import com.amazonaws.services.rekognition.model.Video;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.Block;
-import com.amazonaws.services.textract.model.Document;
-import com.amazonaws.services.textract.model.Relationship;
+
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.services.rekognition.model.Image;
+import software.amazon.awssdk.services.rekognition.model.Video;
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
+import software.amazon.awssdk.services.textract.model.Block;
+import software.amazon.awssdk.services.textract.model.Document;
+import software.amazon.awssdk.services.textract.model.Relationship;
 
 /**
  * Helps with S3 images and AWS credentials
@@ -66,9 +68,10 @@ public class AWSHelper {
 
     public static final String NEW_LINE = "\n";
 
+    public static final String CONFIG_S3_BUCKET = "nuxeo.enrichment.aws.s3.bucket";
+
     protected static final Set<String> FATAL_ERRORS = new HashSet<>(
-            Arrays.asList(UnrecognizedClientException.class.getSimpleName(),
-                    AccessDeniedException.class.getSimpleName()));
+            Arrays.asList("UnrecognizedClientException", "AccessDeniedException"));
 
     private static final Logger log = LogManager.getLogger(AWSHelper.class);
 
@@ -87,9 +90,8 @@ public class AWSHelper {
         ImageHelperWithS3 imageHelperWithS3;
         try {
             Class.forName(S3_MANAGER_NAME);
-            imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ?
-                    null :
-                    new ImageHelperWithS3();
+            imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ? null
+                    : new ImageHelperWithS3();
         } catch (ClassNotFoundException e) {
             imageHelperWithS3 = null;
         }
@@ -108,22 +110,76 @@ public class AWSHelper {
 
     /**
      * A wrapper for enrichment that handles errors, deciding if they are fatal or not.
+     * <p>
+     * Catches {@link SdkServiceException} directly, and also inspects the cause chain
+     * of any {@link RuntimeException} (e.g. {@link org.nuxeo.ecm.core.api.NuxeoException})
+     * in case an intermediate layer wrapped the original AWS SDK exception.
      */
     public static <T> T handlingExceptions(Supplier<T> supplier) {
         try {
             return supplier.get();
-        } catch (AmazonServiceException e) {
-            throw isFatal(e) ? new FatalEnrichmentError(e) : e;
-        } catch (IllegalArgumentException e) {
-            throw new FatalEnrichmentError(e);
+        } catch (SdkServiceException e) {
+            if (isFatal(e)) {
+                logFatalAwsError(e);
+                throw new FatalEnrichmentError(e);
+            }
+            throw e;
+        } catch (RuntimeException e) {
+            // Check if the cause chain contains an SdkServiceException that was wrapped
+            SdkServiceException sdkCause = findSdkServiceException(e);
+            if (sdkCause != null) {
+                if (isFatal(sdkCause)) {
+                    logFatalAwsError(sdkCause);
+                    throw new FatalEnrichmentError(sdkCause);
+                }
+                throw sdkCause;
+            }
+            if (e instanceof IllegalArgumentException) {
+                throw new FatalEnrichmentError(e);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Walks the exception cause chain looking for an {@link SdkServiceException}.
+     *
+     * @return the first {@code SdkServiceException} found, or {@code null}
+     */
+    private static SdkServiceException findSdkServiceException(Throwable t) {
+        Throwable cause = t.getCause();
+        int depth = 0;
+        while (cause != null && depth < 10) {
+            if (cause instanceof SdkServiceException) {
+                return (SdkServiceException) cause;
+            }
+            cause = cause.getCause();
+            depth++;
+        }
+        return null;
+    }
+
+    /**
+     * Logs a concise error message for a fatal AWS service exception.
+     */
+    private static void logFatalAwsError(SdkServiceException e) {
+        if (e instanceof AwsServiceException) {
+            String errorCode = ((AwsServiceException) e).awsErrorDetails().errorCode();
+            String serviceName = ((AwsServiceException) e).awsErrorDetails().serviceName();
+            log.error("Fatal AWS error [{}] from service [{}]: {}. "
+                      + "Verify that the IAM role has the required permissions.",
+                      errorCode, serviceName, e.getMessage());
         }
     }
 
     /**
      * Is this exception unrecoverable?
      */
-    public static boolean isFatal(AmazonServiceException e) {
-        return FATAL_ERRORS.contains(e.getErrorCode());
+    public static boolean isFatal(SdkServiceException e) {
+        if (e instanceof AwsServiceException) {
+            return FATAL_ERRORS.contains(((AwsServiceException) e).awsErrorDetails().errorCode());
+        }
+        return false;
     }
 
     /**
@@ -154,7 +210,7 @@ public class AWSHelper {
             }
         }
         ByteBuffer byteBuffer = getBlobAsBytes(managedBlob);
-        return byteBuffer != null ? new Document().withBytes(byteBuffer) : null;
+        return byteBuffer != null ? Document.builder().bytes(SdkBytes.fromByteBuffer(byteBuffer)).build() : null;
     }
 
     /**
@@ -168,7 +224,7 @@ public class AWSHelper {
             }
         }
         ByteBuffer byteBuffer = getBlobAsBytes(managedBlob);
-        return byteBuffer != null ? new Image().withBytes(byteBuffer) : null;
+        return byteBuffer != null ? Image.builder().bytes(SdkBytes.fromByteBuffer(byteBuffer)).build() : null;
     }
 
     /**
@@ -178,21 +234,20 @@ public class AWSHelper {
         if (s3Helper != null) {
             return s3Helper.getVideo(managedBlob);
         }
-
         return null;
     }
 
     /**
      * Get the AWS region.
      */
-    public String getRegion() {
+    public software.amazon.awssdk.regions.Region getRegion() {
         return regionProvider.getRegion();
     }
 
     /**
      * Get the AWS Credentials Provider.
      */
-    public AWSCredentialsProvider getCredentialsProvider() {
+    public AwsCredentialsProvider getCredentialsProvider() {
         return credentialsProvider;
     }
 
@@ -203,50 +258,50 @@ public class AWSHelper {
      */
     public String debugTextractBlock(Block block) {
 
-        StringBuilder builder = new StringBuilder("Block Id : " + block.getId() + NEW_LINE);
+        StringBuilder builder = new StringBuilder("Block Id : " + block.id() + NEW_LINE);
 
-        if (block.getText() != null) {
-            builder.append("    Detected text: " + block.getText() + NEW_LINE);
+        if (block.text() != null) {
+            builder.append("    Detected text: " + block.text() + NEW_LINE);
         }
-        builder.append("    Type: " + block.getBlockType() + NEW_LINE);
+        builder.append("    Type: " + block.blockType() + NEW_LINE);
 
-        if (!block.getBlockType().equals("PAGE")) {
-            builder.append("    Confidence: " + block.getConfidence().toString() + NEW_LINE);
+        if (!block.blockType().equals(software.amazon.awssdk.services.textract.model.BlockType.PAGE)) {
+            builder.append("    Confidence: " + block.confidence().toString() + NEW_LINE);
         }
-        if (block.getBlockType().equals("CELL")) {
+        if (block.blockType().equals(software.amazon.awssdk.services.textract.model.BlockType.CELL)) {
             builder.append("    Cell information:" + NEW_LINE);
-            builder.append("        Column: " + block.getColumnIndex() + NEW_LINE);
-            builder.append("        Row: " + block.getRowIndex() + NEW_LINE);
-            builder.append("        Column span: " + block.getColumnSpan() + NEW_LINE);
-            builder.append("        Row span: " + block.getRowSpan() + NEW_LINE);
+            builder.append("        Column: " + block.columnIndex() + NEW_LINE);
+            builder.append("        Row: " + block.rowIndex() + NEW_LINE);
+            builder.append("        Column span: " + block.columnSpan() + NEW_LINE);
+            builder.append("        Row span: " + block.rowSpan() + NEW_LINE);
         }
 
         builder.append("    Relationships" + NEW_LINE);
-        List<Relationship> relationships = block.getRelationships();
+        List<Relationship> relationships = block.relationships();
         if (relationships != null) {
             for (Relationship relationship : relationships) {
-                builder.append("        Type: " + relationship.getType() + NEW_LINE);
-                builder.append("        IDs: " + relationship.getIds().toString() + NEW_LINE);
+                builder.append("        Type: " + relationship.type() + NEW_LINE);
+                builder.append("        IDs: " + relationship.ids().toString() + NEW_LINE);
             }
         } else {
             builder.append("        No related Blocks" + NEW_LINE);
         }
 
         builder.append("    Geometry" + NEW_LINE);
-        builder.append("        Bounding Box: " + block.getGeometry().getBoundingBox().toString() + NEW_LINE);
-        builder.append("        Polygon: " + block.getGeometry().getPolygon().toString() + NEW_LINE);
+        builder.append("        Bounding Box: " + block.geometry().boundingBox().toString() + NEW_LINE);
+        builder.append("        Polygon: " + block.geometry().polygon().toString() + NEW_LINE);
 
-        List<String> entityTypes = block.getEntityTypes();
+        List<software.amazon.awssdk.services.textract.model.EntityType> entityTypes = block.entityTypes();
         builder.append("    Entity Types" + NEW_LINE);
         if (entityTypes != null) {
-            for (String entityType : entityTypes) {
+            for (software.amazon.awssdk.services.textract.model.EntityType entityType : entityTypes) {
                 builder.append("        Entity Type: " + entityType + NEW_LINE);
             }
         } else {
             builder.append("        No entity type" + NEW_LINE);
         }
-        if (block.getPage() != null) {
-            builder.append("    Page: " + block.getPage() + NEW_LINE);
+        if (block.page() != null) {
+            builder.append("    Page: " + block.page() + NEW_LINE);
         }
 
         return builder.toString();
@@ -260,9 +315,18 @@ public class AWSHelper {
     public List<Block> getTextractBlocks(EnrichmentMetadata metadata) throws IOException {
         String raw = EnrichmentUtils.getRawBlob(metadata);
         if (StringUtils.isNotEmpty(raw)) {
-            AnalyzeDocumentResult result = JacksonUtil.MAPPER.readValue(raw, AnalyzeDocumentResult.class);
-            return result.getBlocks();
+            AnalyzeDocumentResponse result = JacksonUtil.MAPPER.readValue(raw, AnalyzeDocumentResponse.class);
+            return result.blocks();
         }
         return Collections.emptyList();
+    }
+
+    public static String getS3BucketName() {
+        ConfigurationService cs = Framework.getService(ConfigurationService.class);
+        String bucket = cs != null ? cs.getProperty(CONFIG_S3_BUCKET) : null;
+        if (StringUtils.isBlank(bucket)) {
+            bucket = "default-bucket"; // fallback
+        }
+        return bucket;
     }
 }

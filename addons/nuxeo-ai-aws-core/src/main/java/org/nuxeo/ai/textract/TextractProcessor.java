@@ -19,39 +19,47 @@
 package org.nuxeo.ai.textract;
 
 import java.util.List;
+
+import org.nuxeo.ai.aws.dto.DocumentAnalysisResult;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentRef;
-import com.amazonaws.services.textract.model.Block;
-import com.amazonaws.services.textract.model.BoundingBox;
 
 /**
- * A processor of a Textract Response
+ * A processor of Textract blocks using domain DTOs (AWS SDK independent).
  *
  * @since 2.1.2
  */
-public interface TextractProcessor {
+public interface TextractProcessor<T> {
 
     /**
-     * Process Textract blocks.
-     * You can optionally call addTag() or addLabel() to add to the normalized AI metadata.
+     * Process Textract blocks and return processed results. You can optionally call addTag() or addLabel() to add to
+     * the normalized AI metadata.
      */
-    void process(List<Block> blocks, CoreSession session, DocumentRef docRef, EnrichmentMetadata.Builder builder);
+    T process(List<DocumentAnalysisResult.Block> blocks, CoreSession session, DocumentRef docRef,
+            EnrichmentMetadata.Builder builder);
 
-    /*
-     * Turn a Block geometry into a normalized AIMetadata.Box
+    /**
+     * Turn a block geometry into a normalized AIMetadata.Box.
      */
-    default AIMetadata.Box asBox(Block block) {
-        BoundingBox box = block.getGeometry().getBoundingBox();
-        return new AIMetadata.Box(box.getWidth(), box.getHeight(), box.getLeft(), box.getTop());
+    default AIMetadata.Box asBox(DocumentAnalysisResult.Block block) {
+        DocumentAnalysisResult.BoundingBox bb = block.boundingBox();
+        if (bb != null) {
+            return new AIMetadata.Box(
+                    bb.width() != null ? bb.width() : 0.0f,
+                    bb.height() != null ? bb.height() : 0.0f,
+                    bb.left() != null ? bb.left() : 0.0f,
+                    bb.top() != null ? bb.top() : 0.0f);
+        }
+        return new AIMetadata.Box(0.0f, 0.0f, 0.0f, 0.0f);
     }
 
     /**
-     * Gets the normalized confidence from the block
+     * Gets the normalized confidence from the block.
      */
-    default float normalizeConfidence(Block block) {
-        return block.getConfidence() / 100;
+    default float normalizeConfidence(DocumentAnalysisResult.Block block) {
+        Float confidence = block.confidence();
+        return confidence != null ? confidence / 100 : 0.0f;
     }
-
 }

@@ -19,7 +19,6 @@
 package org.nuxeo.ai.enrichment;
 
 import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.DetectDocumentTextEnrichmentProvider.processWithProcessors;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
@@ -30,17 +29,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.DocumentAnalysisResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.textract.TextractService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.Block;
 
 import net.jodah.failsafe.RetryPolicy;
 
@@ -83,10 +82,10 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
             for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                AnalyzeDocumentResult result = Framework.getService(TextractService.class)
-                                                        .analyzeDocument(blob.getValue(), features);
-                if (result != null && !result.getBlocks().isEmpty()) {
-                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.getBlocks()));
+                DocumentAnalysisResult result = Framework.getService(TextractService.class)
+                                                         .analyzeDocument(blob.getValue(), features);
+                if (result != null && result.blocks() != null && !result.blocks().isEmpty()) {
+                    enriched.addAll(processResults(blobTextFromDoc, blob.getKey(), result.blocks()));
                 }
             }
             return enriched;
@@ -97,10 +96,9 @@ public class AnalyzeDocumentEnrichmentProvider extends AbstractEnrichmentProvide
      * Process the result of the call
      */
     protected Collection<? extends EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc,
-            String propName, List<Block> blocks) {
+            String propName, List<DocumentAnalysisResult.Block> blocks) {
 
         EnrichmentMetadata.Builder builder = new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc);
-        processWithProcessors(blobTextFromDoc, blocks, builder, name);
         String raw = toJsonString(jg -> jg.writeObjectField("blocks", blocks));
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(

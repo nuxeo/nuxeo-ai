@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +51,8 @@ import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants.AUTO;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -61,12 +64,9 @@ import org.nuxeo.ecm.core.api.model.Property;
 import org.nuxeo.ecm.core.api.model.PropertyNotFoundException;
 import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
-import org.nuxeo.ecm.platform.audit.api.AuditLogger;
-import org.nuxeo.ecm.platform.audit.api.ExtendedInfo;
-import org.nuxeo.ecm.platform.audit.api.LogEntry;
-import org.nuxeo.ecm.platform.audit.impl.ExtendedInfoImpl;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.DefaultComponent;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
@@ -208,7 +208,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
                 history.remove(previous.get());
                 setAutoHistory(doc, history);
             }
-            //Set the value
+            // Set the value
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, autoField.lowerName(), noOldXpath);
             String comment = "Resetting " + xPath + " property";
             toReset.forEach(map -> {
@@ -238,24 +238,17 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
     }
 
     protected void storeAudit(DocumentModel doc, AUTO autoField, String model, long value, String comment) {
-        AuditLogger audit = Framework.getService(AuditLogger.class);
+        AuditBackend audit = Framework.getService(AuditBackend.class);
         if (audit != null) {
-            LogEntry logEntry = audit.newLogEntry();
-            logEntry.setCategory("AI");
-            logEntry.setEventId(autoField.eventName());
-            logEntry.setComment(comment);
-            logEntry.setDocUUID(doc.getId());
-            logEntry.setDocPath(doc.getPathAsString());
-            logEntry.setEventDate(new Date());
-
-            ExtendedInfoImpl.StringInfo modelInfo = new ExtendedInfoImpl.StringInfo(model);
-            ExtendedInfoImpl.LongInfo one = new ExtendedInfoImpl.LongInfo(value);
-
-            HashMap<String, ExtendedInfo> infos = new HashMap<>();
-            infos.put("model", modelInfo);
-            infos.put("value", one);
-            logEntry.setExtendedInfos(infos);
-
+            LogEntry logEntry = LogEntry.builder(autoField.eventName(), new Date())
+                                        .category("AI")
+                                        .comment(comment)
+                                        .docUUID(doc.getId())
+                                        .docPath(doc.getPathAsString())
+                                        .repositoryId(doc.getRepositoryName())
+                                        .extended("model", model)
+                                        .extended("value", value)
+                                        .build();
             audit.addLogEntries(Collections.singletonList(logEntry));
         } else {
             log.warn("Audit Logger is not available");
@@ -334,7 +327,7 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
             }
         });
         if (cleanItemsList.size() != itemsList.size()) {
-            //We made some changes lets update
+            // We made some changes lets update
             doc.setProperty(ENRICHMENT_SCHEMA_NAME, ENRICHMENT_ITEMS, cleanItemsList);
             raiseEvent(doc, ENRICHMENT_MODIFIED, removedTargetProperties, "Dirty inputs");
         }

@@ -33,7 +33,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -86,19 +88,14 @@ public class TestEnrichmentMetaData {
                                                   .collect(Collectors.toList());
         BlobTextFromDocument blobTextFromDoc = new BlobTextFromDocument("doc1", repositoryName, null, "File", null);
         blobTextFromDoc.addProperty("dc:title", "tbloby");
-        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test", blobTextFromDoc).withLabels(
-                Collections.singletonList(new LabelSuggestion("my:property", labels)))
-                                                                                                   .withTags(
-                                                                                                           Collections.singletonList(
-                                                                                                                   new TagSuggestion(
-                                                                                                                           "my:property2",
-                                                                                                                           tags)))
-                                                                                                   .withDigest("blobxx")
-                                                                                                   .withDigest(
-                                                                                                           "freblogs")
-                                                                                                   .withCreator("bob")
-                                                                                                   .withRawKey("xyz")
-                                                                                                   .build();
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("m1", "test",
+                blobTextFromDoc).withLabels(Collections.singletonList(new LabelSuggestion("my:property", labels)))
+                                .withTags(Collections.singletonList(new TagSuggestion("my:property2", tags)))
+                                .withDigest("blobxx")
+                                .withDigest("freblogs")
+                                .withCreator("bob")
+                                .withRawKey("xyz")
+                                .build();
         assertThat(metadata).isNotNull();
         Record record = toRecord("k", metadata);
         EnrichmentMetadata metadataBackAgain = fromRecord(record, EnrichmentMetadata.class);
@@ -127,9 +124,8 @@ public class TestEnrichmentMetaData {
         blobTextFromDoc.computePropertyBlobs().get(fileContentProp).setDigest("47XX");
         assertEquals("testin47XX", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
         ManagedBlob blob = blobTextFromDoc.computePropertyBlobs().get(fileContentProp);
-        blobTextFromDoc.addBlob("TEST_AGAIN", "img",
-                new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(), blob.getKey(), "58YY", blob.getEncoding(),
-                        blob.getLength()));
+        blobTextFromDoc.addBlob("TEST_AGAIN", "img", new BlobMetaImpl(blob.getProviderId(), blob.getMimeType(),
+                blob.getKey(), "58YY", blob.getEncoding(), blob.getLength()));
         assertEquals("testin47XX_58YY", EnrichmentUtils.makeKeyUsingBlobDigests(blobTextFromDoc, "testin"));
     }
 }

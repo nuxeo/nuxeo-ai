@@ -19,46 +19,69 @@
  */
 package org.nuxeo.ai.transcribe;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.nuxeo.ai.aws.dto.TranscriptionJobResult;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ecm.core.api.Blob;
-import com.amazonaws.services.transcribe.AmazonTranscribe;
-import com.amazonaws.services.transcribe.model.StartTranscriptionJobResult;
-import com.amazonaws.services.transcribe.model.TranscriptionJob;
 
 /**
- * Service interface intended for Video/Audio transcription
+ * Service interface intended for Video/Audio transcription - Now using domain DTOs This interface is completely
+ * independent of AWS SDK implementation details
  */
 public interface TranscribeService {
 
     /**
      * Start transcription job for
      *
-     * @param blob      that contains Video/Audio
+     * @param blob that contains Video/Audio
      * @param languages an array of languages
-     * @return {@link TranscriptionJob} of created request
+     * @return {@link TranscriptionJobResult} of created request
      */
-    StartTranscriptionJobResult requestTranscription(Blob blob, String... languages);
+    TranscriptionJobResult requestTranscription(Blob blob, String... languages);
 
     /**
-     * @param transcription to convert to lables
-     * @return a {@link List} of {@link AIMetadata.Label}
-     */
-    List<AIMetadata.Label> asLabels(AudioTranscription transcription);
-
-    /**
-     * Unique Job Name
+     * Get transcription job status and results
      *
-     * @param blob for digest
-     * @param code language code
-     * @return a UUID
+     * @param jobName the name of the transcription job
+     * @return {@link TranscriptionJobResult} with job status and results
      */
-    String getJobName(Blob blob, String code);
+    TranscriptionJobResult getTranscriptionJob(String jobName);
 
     /**
-     * Get AWS Transcribe Client
+     * Delete transcription job
      *
-     * @return {@link AmazonTranscribe}
+     * @param jobName the name of the transcription job to delete
      */
-    AmazonTranscribe getClient();
+    void deleteTranscriptionJob(String jobName);
+
+    /**
+     * Process transcription results into AI metadata
+     *
+     * @param result the transcription job result
+     * @return List of AIMetadata extracted from transcription
+     */
+    List<AIMetadata> processTranscriptionResult(TranscriptionJobResult result);
+
+    /**
+     * New helper method used by tests to convert a transcription to labels (migrated from provider)
+     */
+    default List<AIMetadata.Label> asLabels(AudioTranscription transcription) {
+        if (transcription == null || transcription.getResults() == null
+                || transcription.getResults().getItems() == null) {
+            return java.util.Collections.emptyList();
+        }
+        List<AIMetadata.Label> labels = new ArrayList<>();
+        for (AudioTranscription.Item item : transcription.getResults().getItems()) {
+            if (item.getType() == AudioTranscription.Type.PRONUNCIATION && !item.getAlternatives().isEmpty()) {
+                double conf = item.getAlternatives().get(0).confidence;
+                String content = item.getAlternatives().get(0).content;
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(content)) {
+                    labels.add(new AIMetadata.Label(content, (float) conf));
+                }
+            }
+        }
+        return labels;
+    }
 }

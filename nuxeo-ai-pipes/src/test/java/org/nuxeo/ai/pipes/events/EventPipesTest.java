@@ -30,7 +30,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.PipesTestConfigFeature;
@@ -164,11 +166,11 @@ public class EventPipesTest {
     @Test
     public void testPostCommitEventRegistration() {
         EventServiceImpl eventS = (EventServiceImpl) eventService;
-        assertTrue("We must add a PostCommit listener via config.", eventS.getListenerList()
-                                                                          .getAsyncPostCommitListeners()
-                                                                          .stream()
-                                                                          .anyMatch(
-                                                                                  l -> l instanceof PostCommitEventListenerWrapper));
+        assertTrue("We must add a PostCommit listener via config.",
+                eventS.getListenerList()
+                      .getAsyncPostCommitListeners()
+                      .stream()
+                      .anyMatch(l -> l instanceof PostCommitEventListenerWrapper));
     }
 
 }

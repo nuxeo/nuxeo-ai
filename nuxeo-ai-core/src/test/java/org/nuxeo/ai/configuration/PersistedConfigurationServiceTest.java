@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -98,7 +100,7 @@ public class PersistedConfigurationServiceTest {
     }
 
     @Test
-    public void shouldNormalize () throws IOException {
+    public void shouldNormalize() throws IOException {
         pcs.register(ThresholdConfiguratorDescriptor.class);
 
         getStore().put("testKey", thresholdFileOne);
@@ -147,8 +149,7 @@ public class PersistedConfigurationServiceTest {
     public void iCanPropagateConfiguration() throws InterruptedException {
         int thresholdSize = ((ThresholdComponent) Framework.getRuntime()
                                                            .getComponent(
-                                                                   "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds
-                .size();
+                                                                   "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
         // TODO: AICORE-366
         // messageReceivedLatch = new CountDownLatch(1);
         aiConfigurationService.set(UUID.randomUUID().toString(), thresholdFolder);
@@ -164,8 +165,7 @@ public class PersistedConfigurationServiceTest {
         while (System.currentTimeMillis() < deadline) {
             newThresholdSize = ((ThresholdComponent) Framework.getRuntime()
                                                               .getComponent(
-                                                                      "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds
-                    .size();
+                                                                      "org.nuxeo.ai.configuration.ThresholdComponent")).typeThresholds.size();
             if (newThresholdSize == thresholdSize + 1) {
                 return;
             }

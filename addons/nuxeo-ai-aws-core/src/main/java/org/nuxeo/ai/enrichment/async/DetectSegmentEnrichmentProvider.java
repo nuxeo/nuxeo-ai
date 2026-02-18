@@ -46,10 +46,10 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import com.amazonaws.services.rekognition.model.GetSegmentDetectionRequest;
-import com.amazonaws.services.rekognition.model.GetSegmentDetectionResult;
-import com.amazonaws.services.rekognition.model.SegmentDetection;
-import com.amazonaws.services.rekognition.model.SegmentType;
+import software.amazon.awssdk.services.rekognition.model.GetSegmentDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.GetSegmentDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.SegmentDetection;
+import software.amazon.awssdk.services.rekognition.model.SegmentType;
 
 /**
  * Detects segments in Video
@@ -86,11 +86,15 @@ public class DetectSegmentEnrichmentProvider extends AbstractEnrichmentProvider 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         KeyValueStore store = getStore();
         for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-            String jobId = rs.startDetectVideoSegments(blob.getValue(), segmentTypes);
-            HashMap<String, Serializable> params = new HashMap<>();
-            params.put("doc", doc);
-            params.put("key", blob.getKey());
-            storeCallback(store, jobId, params);
+            // Call startVideoSegmentDetection for each segment type
+            for (SegmentType segmentType : segmentTypes) {
+                String jobId = rs.startVideoSegmentDetection(blob.getValue(), segmentType);
+                HashMap<String, Serializable> params = new HashMap<>();
+                params.put("doc", doc);
+                params.put("key", blob.getKey());
+                params.put("segmentType", segmentType);
+                storeCallback(store, jobId, params);
+            }
         }
 
         return Collections.emptyList();
@@ -105,24 +109,24 @@ public class DetectSegmentEnrichmentProvider extends AbstractEnrichmentProvider 
         RekognitionService rs = Framework.getService(RekognitionService.class);
         List<AIMetadata.Label> labels = new ArrayList<>();
         List<SegmentDetection> nativeSegmentObjects = new ArrayList<>();
-        GetSegmentDetectionResult result = null;
+        GetSegmentDetectionResponse result = null;
         do {
-            GetSegmentDetectionRequest request = new GetSegmentDetectionRequest().withJobId(jobId);
+            GetSegmentDetectionRequest.Builder requestBuilder = GetSegmentDetectionRequest.builder().jobId(jobId);
 
-            if (result != null && result.getNextToken() != null) {
-                request.withNextToken(result.getNextToken());
+            if (result != null && result.nextToken() != null) {
+                requestBuilder.nextToken(result.nextToken());
             }
-            result = rs.getClient().getSegmentDetection(request);
+            result = rs.getClient().getSegmentDetection(requestBuilder.build());
 
-            List<AIMetadata.Label> currentPageTags = result.getSegments()
+            List<AIMetadata.Label> currentPageTags = result.segments()
                                                            .stream()
                                                            .map(c -> newLabel(c))
                                                            .filter(Objects::nonNull)
                                                            .collect(Collectors.toList());
 
             labels.addAll(currentPageTags);
-            nativeSegmentObjects.addAll(result.getSegments());
-        } while (result.getNextToken() != null);
+            nativeSegmentObjects.addAll(result.segments());
+        } while (result.nextToken() != null);
 
         List<EnrichmentMetadata> metadata = new ArrayList<>();
         String raw = toJsonString(jg -> {
@@ -139,16 +143,14 @@ public class DetectSegmentEnrichmentProvider extends AbstractEnrichmentProvider 
     }
 
     protected EnrichmentMetadata.Label newLabel(SegmentDetection segmentDetection) {
-        if (SegmentType.SHOT.toString().equals(segmentDetection.getType())) {
-            return new EnrichmentMetadata.Label(segmentDetection.getType(),
-                    segmentDetection.getShotSegment().getConfidence() / 100,
-                    segmentDetection.getStartTimestampMillis());
-        } else if (SegmentType.TECHNICAL_CUE.toString().equals(segmentDetection.getType())) {
-            return new EnrichmentMetadata.Label(segmentDetection.getTechnicalCueSegment().getType(),
-                    segmentDetection.getTechnicalCueSegment().getConfidence() / 100,
-                    segmentDetection.getStartTimestampMillis());
+        if (SegmentType.SHOT.toString().equals(segmentDetection.type().toString())) {
+            return new EnrichmentMetadata.Label(segmentDetection.type().toString(),
+                    segmentDetection.shotSegment().confidence() / 100, segmentDetection.startTimestampMillis());
+        } else if (SegmentType.TECHNICAL_CUE.toString().equals(segmentDetection.type().toString())) {
+            return new EnrichmentMetadata.Label(segmentDetection.technicalCueSegment().type().toString(),
+                    segmentDetection.technicalCueSegment().confidence() / 100, segmentDetection.startTimestampMillis());
         } else {
-            throw new NuxeoException("Unknown video segment type: " + segmentDetection.getType());
+            throw new NuxeoException("Unknown video segment type: " + segmentDetection.type());
         }
     }
 

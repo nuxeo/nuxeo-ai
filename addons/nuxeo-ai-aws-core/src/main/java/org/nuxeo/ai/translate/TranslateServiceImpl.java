@@ -20,68 +20,80 @@ package org.nuxeo.ai.translate;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.abstraction.AWSServiceRegistry;
+import org.nuxeo.ai.aws.abstraction.TranslateServiceFacade;
+import org.nuxeo.ai.aws.abstraction.dto.TranslateRequest;
+import org.nuxeo.ai.aws.dto.TranslateResult;
+import org.nuxeo.ai.aws.dto.TranslationResult;
 import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.services.translate.AmazonTranslate;
-import com.amazonaws.services.translate.AmazonTranslateClientBuilder;
-import com.amazonaws.services.translate.model.TranslateTextRequest;
-import com.amazonaws.services.translate.model.TranslateTextResult;
 
 /**
- * Calls AWS translate
+ * Calls AWS Translate via abstraction layer - NO AWS SDK IMPORTS! All AWS SDK dependencies are completely isolated in
+ * the facade layer. This service now only depends on our abstraction DTOs and interfaces.
  */
 public class TranslateServiceImpl extends DefaultComponent implements TranslateService {
 
     private static final Log log = LogFactory.getLog(TranslateServiceImpl.class);
 
-    protected volatile AmazonTranslate client;
+    protected TranslateServiceFacade translateFacade;
 
     protected AWSMetrics awsMetrics;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        AWSServiceRegistry registry = Framework.getService(AWSServiceRegistry.class);
+        if (registry != null) {
+            translateFacade = registry.getTranslateService();
+        }
+        if (translateFacade == null) {
+            log.warn("TranslateServiceFacade is not available; translate operations will fail.");
+        }
         awsMetrics = Framework.getService(AWSMetrics.class);
     }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
         super.stop(context);
-        client = null;
-    }
-
-    protected AmazonTranslate getClient() {
-        AmazonTranslate localClient = client;
-        if (localClient == null) {
-            synchronized (this) {
-                localClient = client;
-                if (localClient == null) {
-                    AmazonTranslateClientBuilder builder = AmazonTranslateClientBuilder.standard()
-                                                                                       .withCredentials(
-                                                                                               AWSHelper.getInstance()
-                                                                                                        .getCredentialsProvider())
-                                                                                       .withRegion(
-                                                                                               AWSHelper.getInstance()
-                                                                                                        .getRegion());
-                    client = localClient = builder.build();
-                }
-            }
-        }
-        return localClient;
+        translateFacade = null;
+        awsMetrics = null;
     }
 
     @Override
-    public TranslateTextResult translateText(String text, String sourceLanguageCode, String targetLanguageCode) {
-        if (log.isDebugEnabled()) {
-            log.debug("Calling Translate for " + text);
+    public TranslationResult translateText(String text, String sourceLanguageCode, String targetLanguageCode) {
+        if (translateFacade == null) {
+            throw new IllegalStateException(
+                    "TranslateServiceFacade is not available. Check that AWSServiceRegistry is properly configured.");
         }
-        TranslateTextRequest request = new TranslateTextRequest().withText(text)
-                                                                 .withSourceLanguageCode(sourceLanguageCode)
-                                                                 .withTargetLanguageCode(targetLanguageCode);
-        awsMetrics.getTranslateTotalChars().update(text.length());
-        return getClient().translateText(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Calling translateText from " + sourceLanguageCode + " to " + targetLanguageCode);
+        }
+
+        TranslateRequest.TranslateText request = new TranslateRequest.TranslateText(text, sourceLanguageCode,
+                targetLanguageCode);
+
+        TranslateResult result = translateFacade.translateText(request);
+
+        if (log.isDebugEnabled()) {
+            log.debug("TranslateResult: " + result);
+        }
+
+        if (awsMetrics != null) {
+            awsMetrics.updateTranslateCharacterUnits(text.length());
+        }
+
+        // Convert to existing DTO format for backward compatibility
+        return convertToTranslationResult(result);
+    }
+
+    /**
+     * Helper method to maintain backward compatibility with existing TranslationResult DTO
+     */
+    private TranslationResult convertToTranslationResult(TranslateResult result) {
+        return new TranslationResult(result.translatedText(), result.sourceLanguageCode(), result.targetLanguageCode());
     }
 }

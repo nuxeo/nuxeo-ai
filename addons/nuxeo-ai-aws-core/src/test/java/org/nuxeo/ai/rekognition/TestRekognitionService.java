@@ -29,8 +29,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import javax.inject.Inject;
-import org.jetbrains.annotations.NotNull;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWS;
@@ -124,8 +125,12 @@ public class TestRekognitionService {
         blobTextFromDoc = setupBlobTextFromDocument("creative_adults-beautiful-blue.jpg");
         metadataCollection = service.enrich(blobTextFromDoc);
         assertEquals(1, metadataCollection.size());
-        assertTrue(metadataCollection.iterator().next().getLabels().stream().mapToInt(l -> l.getValues().size()).sum()
-                >= 2);
+        assertTrue(metadataCollection.iterator()
+                                     .next()
+                                     .getLabels()
+                                     .stream()
+                                     .mapToInt(l -> l.getValues().size())
+                                     .sum() >= 2);
     }
 
     @Test
@@ -149,7 +154,6 @@ public class TestRekognitionService {
         assertNotNull(metadata.getLabels());
     }
 
-    @NotNull
     protected BlobTextFromDocument setupBlobTextFromDocument(String name) throws IOException {
         BlobProvider blobProvider = manager.getBlobProvider("test");
         Blob blob = Blobs.createBlob(new File(getClass().getResource("/files/" + name).getPath()), "image/jpeg");

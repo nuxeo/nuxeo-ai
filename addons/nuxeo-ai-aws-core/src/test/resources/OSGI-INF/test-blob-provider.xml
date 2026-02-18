@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.test.blob.provider">
+
+  <extension target="org.nuxeo.ecm.core.blob.BlobManager" point="configuration">
+    <blobprovider name="default">
+      <class>org.nuxeo.ecm.core.blob.InMemoryBlobProvider</class>
+      <property name="transient">true</property>
+    </blobprovider>
+  </extension>
+
+</component>
+

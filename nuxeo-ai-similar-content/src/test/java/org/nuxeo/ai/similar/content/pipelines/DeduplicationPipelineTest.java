@@ -35,7 +35,9 @@ import static org.nuxeo.ai.similar.content.pipelines.DuplicationPipeline.PIPELIN
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -58,6 +60,7 @@ import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
 import org.nuxeo.runtime.test.runner.TransactionalFeature;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -132,7 +135,7 @@ public class DeduplicationPipelineTest {
                 + "}");
 
         stubFor(WireMock.get("/api/v1/ai/dedup/mockTestProject/similars")
-                        .withHeader(SCROLL_ID_HEADER, absent())
+                        .withHeader(SCROLL_ID_HEADER, WireMock.absent())
                         .willReturn(okJson(response.toString())));
         // Second stub is intended for mimicking the end of the scroller
         String emptyResponse = "{\n" //
