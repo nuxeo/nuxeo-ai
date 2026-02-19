@@ -110,9 +110,16 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
      * Create a AI Tag based on the face details.
      */
     protected AIMetadata.Tag newFaceTag(FaceDetail faceDetail) {
+        return newFaceTag(faceDetail, 0L);
+    }
+
+    /**
+     * Create a AI Tag based on the face details with a timestamp.
+     */
+    protected AIMetadata.Tag newFaceTag(FaceDetail faceDetail, long timestamp) {
         software.amazon.awssdk.services.rekognition.model.BoundingBox box = faceDetail.boundingBox();
         if (faceDetail.confidence() >= minConfidence) {
-            List<AIMetadata.Label> labels = collectLabels(faceDetail);
+            List<AIMetadata.Label> labels = collectLabels(faceDetail, timestamp);
             return new AIMetadata.Tag("face", kind, null,
                     new AIMetadata.Box(box.width(), box.height(), box.left(), box.top()), labels,
                     faceDetail.confidence());

@@ -84,10 +84,6 @@
             <groupId>org.nuxeo.ecm.core</groupId>
             <artifactId>nuxeo-core-search</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.nuxeo.ecm.platform</groupId>
-            <artifactId>nuxeo-platform-audit-core</artifactId>
-        </dependency>
         <!-- TEST Deps  -->
         <dependency>
             <groupId>org.nuxeo.ecm.platform</groupId>

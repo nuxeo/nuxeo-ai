@@ -396,7 +396,7 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
             stats.add(missing);
 
             // count stat (non-null)
-            Statistic count = Statistic.of(acc.countId(), acc.fieldName, acc.getInputType(), "count", acc.count());
+            Statistic count = Statistic.of(acc.countId(), acc.fieldName, acc.getInputType(), STATS_COUNT, acc.count());
             stats.add(count);
 
             // cardinality stat

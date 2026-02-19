@@ -12,6 +12,7 @@ package org.nuxeo.ai.aws.abstraction.dto;
 /**
  * AWS SDK-independent request DTOs for Transcribe service.
  */
+@SuppressWarnings("java:S100") // Records are types and follow PascalCase, not camelCase
 public class TranscribeRequest {
 
     private TranscribeRequest() {
@@ -19,9 +20,15 @@ public class TranscribeRequest {
     }
 
     public static record StartTranscription(String jobName, String mediaFileUri, String mediaFormat,
-            String languageCode, String outputBucketName, boolean enableSpeakerLabels, int maxSpeakerLabels) {}
+            String languageCode, String outputBucketName, boolean enableSpeakerLabels, int maxSpeakerLabels) {
+        // Record auto-generates constructor, accessors, equals, hashCode, and toString
+    }
 
-    public static record GetTranscriptionJob(String jobName) {}
+    public static record GetTranscriptionJob(String jobName) {
+        // Record auto-generates constructor, accessors, equals, hashCode, and toString
+    }
 
-    public static record DeleteTranscriptionJob(String jobName) {}
+    public static record DeleteTranscriptionJob(String jobName) {
+        // Record auto-generates constructor, accessors, equals, hashCode, and toString
+    }
 }

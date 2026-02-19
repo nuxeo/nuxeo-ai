@@ -18,68 +18,36 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.AWSHelper;
 import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
-
-import net.jodah.failsafe.RetryPolicy;
-import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * An enrichment provider for unsafe image detection - Now using domain DTOs
  */
-public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
-
-    public static final String MINIMUM_CONFIDENCE = "minConfidence";
+public class DetectUnsafeImagesEnrichmentProvider extends AbstractConfidenceEnrichmentProvider {
 
     public static final String DEFAULT_CONFIDENCE = "50";
 
-    private static final float DEFAULT_CONFIDENCE_FLOAT = 50f;
-
-    protected float minConfidence = parseConfidence(DEFAULT_CONFIDENCE);
-
     @Override
-    public void init(EnrichmentDescriptor descriptor) {
-        super.init(descriptor);
-        minConfidence = parseConfidence(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
-    }
-
-    /**
-     * Safely parses a confidence value string to float, returning a default value on error.
-     */
-    private float parseConfidence(String value) {
-        try {
-            return Float.parseFloat(value);
-        } catch (NumberFormatException e) {
-            return DEFAULT_CONFIDENCE_FLOAT;
-        }
+    protected String getDefaultConfidence() {
+        return DEFAULT_CONFIDENCE;
     }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
-        return AWSHelper.handlingExceptions(() -> {
-            List<EnrichmentMetadata> enriched = new ArrayList<>();
-            RekognitionService rs = Framework.getService(RekognitionService.class);
-            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
-                LabelsResult result = rs.detectModerationLabels(blob.getValue(), minConfidence);
-                if (result != null && result.labels() != null && !result.labels().isEmpty()) {
-                    enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
-                }
+        return enrichBlobs(blobTextFromDoc, (doc, propName, rs, blob) -> {
+            LabelsResult result = rs.detectModerationLabels(blob, minConfidence);
+            if (result != null && result.labels() != null && !result.labels().isEmpty()) {
+                return processResult(doc, propName, result);
             }
-            return enriched;
+            return Collections.emptyList();
         });
     }
 
@@ -98,22 +66,6 @@ public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProv
         String raw = toJsonString(jg -> jg.writeObjectField("moderationLabels", result.labels()));
         String rawKey = saveJsonAsRawBlob(raw);
 
-        return Collections.singletonList(
-                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
-                                                                           .withRawKey(rawKey)
-                                                                           .withDocumentProperties(
-                                                                                   Collections.singleton(propName))
-                                                                           .build());
-    }
-
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(throwable -> throwable instanceof SdkClientException
-                && throwable.getMessage().contains("is not authorized to perform"));
-    }
-
-    @Override
-    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
-        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
+        return Collections.singletonList(buildLabelMetadata(blobTextFromDoc, propName, labels, rawKey));
     }
 }

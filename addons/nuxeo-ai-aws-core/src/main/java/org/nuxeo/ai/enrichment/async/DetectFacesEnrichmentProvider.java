@@ -19,8 +19,6 @@
 package org.nuxeo.ai.enrichment.async;
 
 import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
-import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENCE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.io.Serializable;
@@ -33,9 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
-import org.nuxeo.ai.enrichment.EnrichmentCachable;
-import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -44,38 +39,19 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueStore;
 
-import software.amazon.awssdk.services.rekognition.model.Attribute;
-import software.amazon.awssdk.services.rekognition.model.BoundingBox;
-import software.amazon.awssdk.services.rekognition.model.FaceDetail;
 import software.amazon.awssdk.services.rekognition.model.FaceDetection;
 import software.amazon.awssdk.services.rekognition.model.GetFaceDetectionRequest;
 import software.amazon.awssdk.services.rekognition.model.GetFaceDetectionResponse;
 
 /**
- * Detects faces in an image.
+ * Detects faces in a video asynchronously.
  */
-public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
+public class DetectFacesEnrichmentProvider
+        extends org.nuxeo.ai.enrichment.DetectFacesEnrichmentProvider {
 
     public static final String ASYNC_ACTION_NAME = "StartFaceDetection";
 
     public static final String ENRICHMENT_NAME = "aws.videoFaceDetection";
-
-    public static final String ATTRIBUTES_OPTION = "attribute";
-
-    public static final String DEFAULT_CONFIDENCE = "70";
-
-    public static final String DEFAULT_ATTRIBUTES = "ALL";
-
-    protected float minConfidence;
-
-    protected Attribute attribute;
-
-    @Override
-    public void init(EnrichmentDescriptor descriptor) {
-        super.init(descriptor);
-        attribute = Attribute.valueOf(descriptor.options.getOrDefault(ATTRIBUTES_OPTION, DEFAULT_ATTRIBUTES));
-        minConfidence = Float.parseFloat(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
-    }
 
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
@@ -94,7 +70,7 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
     }
 
     /**
-     * Processes the result of the call to AWS.
+     * Processes the result of the async call to AWS.
      */
     public Collection<EnrichmentMetadata> processResults(BlobTextFromDocument blobTextFromDoc, String propName,
             String jobId) {
@@ -133,82 +109,6 @@ public class DetectFacesEnrichmentProvider extends AbstractEnrichmentProvider im
                                                                            .withDocumentProperties(singleton(propName))
                                                                            .build());
         return metadata;
-    }
-
-    /**
-     * Create a AI Tag based on the face details.
-     */
-    protected AIMetadata.Tag newFaceTag(FaceDetail faceDetail, long timestamp) {
-        BoundingBox box = faceDetail.boundingBox();
-        if (faceDetail.confidence() >= minConfidence) {
-            List<AIMetadata.Label> labels = collectLabels(faceDetail, timestamp);
-            return new AIMetadata.Tag("face", kind, null,
-                    new AIMetadata.Box(box.width(), box.height(), box.left(), box.top()), labels,
-                    faceDetail.confidence());
-        }
-        return null;
-    }
-
-    /**
-     * Adds extra labels for this face.
-     */
-    protected List<AIMetadata.Label> collectLabels(FaceDetail faceDetail, long timestamp) {
-        List<AIMetadata.Label> labels = new ArrayList<>();
-        if (faceDetail.smile() != null && faceDetail.smile().value()
-                && faceDetail.smile().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("smile", faceDetail.smile().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.eyeglasses() != null && faceDetail.eyeglasses().value()
-                && faceDetail.eyeglasses().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("eyeglasses", faceDetail.eyeglasses().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.sunglasses() != null && faceDetail.sunglasses().value()
-                && faceDetail.sunglasses().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("sunglasses", faceDetail.sunglasses().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.beard() != null && faceDetail.beard().value()
-                && faceDetail.beard().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("beard", faceDetail.beard().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.mustache() != null && faceDetail.mustache().value()
-                && faceDetail.mustache().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("mustache", faceDetail.mustache().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.eyesOpen() != null && faceDetail.eyesOpen().value()
-                && faceDetail.eyesOpen().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("eyesOpen", faceDetail.eyesOpen().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.mouthOpen() != null && faceDetail.mouthOpen().value()
-                && faceDetail.mouthOpen().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label("mouthOpen", faceDetail.mouthOpen().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.gender() != null && faceDetail.gender().confidence() > minConfidence) {
-            labels.add(new AIMetadata.Label(faceDetail.gender().value().toString().toLowerCase(),
-                    faceDetail.gender().confidence() / 100, timestamp));
-        }
-
-        if (faceDetail.emotions() != null && !faceDetail.emotions().isEmpty()) {
-            faceDetail.emotions().forEach(emotion -> {
-                if (emotion.confidence() > minConfidence) {
-                    labels.add(new AIMetadata.Label(emotion.type().toString().toLowerCase(), emotion.confidence() / 100,
-                            timestamp));
-                }
-            });
-        }
-
-        return labels;
-    }
-
-    @Override
-    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
-        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
     }
 
 }

@@ -10,27 +10,34 @@ package org.nuxeo.ai.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import jakarta.inject.Inject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.internal.InitAudit;
 import org.nuxeo.ai.internal.InitDatasetDocuments;
+import org.nuxeo.audit.api.AuditQueryBuilder;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
+import org.nuxeo.audit.test.AuditFeature;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.query.sql.model.Predicates;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeFeature;
 
 @RunWith(FeaturesRunner.class)
-@Features({ AutomationFeature.class, RuntimeFeature.class })
+@Features({ AuditFeature.class, AutomationFeature.class })
 @Deploy({ "org.nuxeo.ai.ai-internal" })
 @Deploy({ "org.nuxeo.ecm.platform.picture.core" })
 @Deploy({ "org.nuxeo.ecm.platform.tag" })
@@ -45,12 +52,21 @@ public class TestOperations {
 
     @Test
     public void iCanInitAudit() throws OperationException {
-        // Test audit initialization operation without deprecated audit classes
+        AuditBackend audit = Framework.getService(AuditBackend.class);
+        AuditQueryBuilder qb = new AuditQueryBuilder();
+        qb.predicate(Predicates.eq("category", "AI"));
+        List<LogEntry> entriesBefore = audit.queryLogs(qb);
+        assertThat(entriesBefore).isEmpty();
+
         OperationContext ctx = new OperationContext(session);
         ctx.put("modelName", "something");
         Object response = automationService.run(ctx, InitAudit.ID);
         assertThat(response).isNotNull();
-        // Basic test to ensure the operation runs without error
+
+        qb = new AuditQueryBuilder();
+        qb.predicate(Predicates.eq("category", "AI"));
+        List<LogEntry> entriesAfter = audit.queryLogs(qb);
+        assertThat(entriesAfter).isNotEmpty();
     }
 
     @Test
