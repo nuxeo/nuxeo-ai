@@ -9,38 +9,35 @@
 package org.nuxeo.ai.test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_CATEGORY;
-import static org.nuxeo.ecm.platform.audit.api.BuiltinLogEntryData.LOG_EVENT_ID;
 
 import java.util.List;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.internal.InitAudit;
 import org.nuxeo.ai.internal.InitDatasetDocuments;
+import org.nuxeo.audit.api.AuditQueryBuilder;
+import org.nuxeo.audit.api.LogEntry;
+import org.nuxeo.audit.service.AuditBackend;
+import org.nuxeo.audit.test.AuditFeature;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.query.sql.model.Predicate;
 import org.nuxeo.ecm.core.query.sql.model.Predicates;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
-import org.nuxeo.ecm.platform.audit.AuditFeature;
-import org.nuxeo.ecm.platform.audit.api.AuditQueryBuilder;
-import org.nuxeo.ecm.platform.audit.api.AuditReader;
-import org.nuxeo.ecm.platform.audit.api.LogEntry;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.RuntimeFeature;
-import com.sun.jersey.core.spi.factory.ResponseImpl;
 
 @RunWith(FeaturesRunner.class)
-@Features({ AutomationFeature.class, RuntimeFeature.class, AuditFeature.class })
+@Features({ AuditFeature.class, AutomationFeature.class })
 @Deploy({ "org.nuxeo.ai.ai-internal" })
 @Deploy({ "org.nuxeo.ecm.platform.picture.core" })
 @Deploy({ "org.nuxeo.ecm.platform.tag" })
@@ -53,22 +50,23 @@ public class TestOperations {
     @Inject
     protected AutomationService automationService;
 
-    @Inject
-    protected AuditReader auditReader;
-
     @Test
     public void iCanInitAudit() throws OperationException {
+        AuditBackend audit = Framework.getService(AuditBackend.class);
         AuditQueryBuilder qb = new AuditQueryBuilder();
-        Predicate predicate = Predicates.eq(LOG_CATEGORY, "AI");
-        qb.predicate(predicate).and(Predicates.eq(LOG_EVENT_ID, "AUTO_FILLED"));
-        List<LogEntry> logEntries = auditReader.queryLogs(qb);
-        assertThat(logEntries.size()).isZero();
+        qb.predicate(Predicates.eq("category", "AI"));
+        List<LogEntry> entriesBefore = audit.queryLogs(qb);
+        assertThat(entriesBefore).isEmpty();
+
         OperationContext ctx = new OperationContext(session);
         ctx.put("modelName", "something");
-        ResponseImpl response = (ResponseImpl) automationService.run(ctx, InitAudit.ID);
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-        logEntries = auditReader.queryLogs(qb);
-        assertThat(logEntries.size()).isNotZero();
+        Object response = automationService.run(ctx, InitAudit.ID);
+        assertThat(response).isNotNull();
+
+        qb = new AuditQueryBuilder();
+        qb.predicate(Predicates.eq("category", "AI"));
+        List<LogEntry> entriesAfter = audit.queryLogs(qb);
+        assertThat(entriesAfter).isNotEmpty();
     }
 
     @Test

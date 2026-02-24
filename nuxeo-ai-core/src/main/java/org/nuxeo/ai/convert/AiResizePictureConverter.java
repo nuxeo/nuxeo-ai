@@ -24,13 +24,22 @@ import static org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants.OPTION_
 import static org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants.OPTION_RESIZE_HEIGHT;
 import static org.nuxeo.ecm.platform.picture.api.ImagingConvertConstants.OPTION_RESIZE_WIDTH;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.convert.api.ConversionException;
 import org.nuxeo.ecm.core.convert.cache.SimpleCachableBlobHolder;
@@ -62,7 +71,6 @@ public class AiResizePictureConverter implements Converter {
         int width = getInteger(w);
         Serializable d = parameters.get(OPTION_RESIZE_DEPTH);
         int depth = getInteger(d);
-        // use the registered conversion format
         String format = (String) parameters.get(CONVERSION_FORMAT);
         for (Blob source : sources) {
             if (source != null) {
@@ -82,12 +90,82 @@ public class AiResizePictureConverter implements Converter {
                 if (result != null && result.getLength() > 0) {
                     results.add(result);
                 } else {
-                    log.warn("Could not resize blob {} with digest {}", source.getFilename(), source.getDigest());
+                    log.warn("Could not resize blob {} with digest {} via ImageMagick, attempting Java fallback",
+                            source.getFilename(), source.getDigest());
+                    // Fallback: attempt in-JVM resize using the requested format.
+                    String imgFormat = resolveImageIOFormat(format);
+                    String mimeType = resolveOutputMimeType(format);
+                    try (java.io.InputStream sourceStream = source.getStream()) {
+                        BufferedImage inputImg = ImageIO.read(sourceStream);
+                        if (inputImg != null) {
+                            int targetW = (width > 0) ? width : inputImg.getWidth();
+                            int targetH = (height > 0) ? height : inputImg.getHeight();
+                            BufferedImage scaled = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
+                            Graphics2D g2d = scaled.createGraphics();
+                            g2d.drawImage(inputImg, 0, 0, targetW, targetH, null);
+                            g2d.dispose();
+                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            ImageIO.write(scaled, imgFormat, baos);
+                            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+                            Blob fallback = Blobs.createBlob(bais, mimeType);
+                            fallback.setFilename(ensureExtension(source.getFilename(), imgFormat));
+                            results.add(fallback);
+                        } else {
+                            log.error("Java fallback failed to read image data for blob {}", source.getFilename());
+                        }
+                    } catch (IOException ioe) {
+                        log.error("Java fallback resize failed for blob {}: {}", source.getFilename(),
+                                ioe.getMessage());
+                    }
                 }
             }
         }
 
         return new SimpleCachableBlobHolder(results);
+    }
+
+    protected String ensureExtension(String filename, String imgFormat) {
+        String ext = "jpg".equals(imgFormat) ? ".jpg" : "." + imgFormat;
+        if (filename == null) {
+            return "converted" + ext;
+        }
+        int idx = filename.lastIndexOf('.');
+        if (idx > -1) {
+            return filename.substring(0, idx) + ext;
+        }
+        return filename + ext;
+    }
+
+    protected static String resolveImageIOFormat(String format) {
+        if (format == null || format.isBlank()) {
+            return "jpg";
+        }
+        switch (format.toLowerCase()) {
+        case "png":
+            return "png";
+        case "gif":
+            return "gif";
+        case "bmp":
+            return "bmp";
+        default:
+            return "jpg";
+        }
+    }
+
+    protected static String resolveOutputMimeType(String format) {
+        if (format == null || format.isBlank()) {
+            return "image/jpeg";
+        }
+        switch (format.toLowerCase()) {
+        case "png":
+            return "image/png";
+        case "gif":
+            return "image/gif";
+        case "bmp":
+            return "image/bmp";
+        default:
+            return "image/jpeg";
+        }
     }
 
     @Override

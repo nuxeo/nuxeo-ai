@@ -26,22 +26,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.SentimentResult;
 import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.comprehend.model.DetectSentimentResult;
-import com.amazonaws.services.comprehend.model.SentimentScore;
-import com.amazonaws.services.comprehend.model.SentimentType;
 
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * An enrichment provider for sentiment analysis
+ * An enrichment provider for sentiment analysis - Now using domain DTOs
  */
 public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
@@ -73,9 +72,9 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
                             + prop.getValue().length());
                     continue;
                 }
-                DetectSentimentResult result = Framework.getService(ComprehendService.class)
-                                                        .detectSentiment(prop.getValue(), languageCode);
-                if (result != null && StringUtils.isNotEmpty(result.getSentiment())) {
+                SentimentResult result = Framework.getService(ComprehendService.class)
+                                                  .detectSentiment(prop.getValue(), languageCode);
+                if (result != null && StringUtils.isNotEmpty(result.sentiment())) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -87,11 +86,11 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectSentimentResult result) {
+            SentimentResult result) {
         List<EnrichmentMetadata.Label> labels = getSentimentLabel(result);
         String raw = toJsonString(jg -> {
-            jg.writeObjectField("sentimentScore", result.getSentimentScore());
-            jg.writeStringField("sentiment", result.getSentiment());
+            jg.writeObjectField("sentimentScore", result.getScores());
+            jg.writeStringField("sentiment", result.sentiment());
         });
         String rawKey = saveJsonAsRawBlob(raw);
         return Collections.singletonList(
@@ -105,47 +104,27 @@ public class SentimentEnrichmentProvider extends AbstractEnrichmentProvider impl
     /**
      * Builds a normalized list of labels from the sentiment result
      */
-    public List<EnrichmentMetadata.Label> getSentimentLabel(DetectSentimentResult result) {
+    public List<EnrichmentMetadata.Label> getSentimentLabel(SentimentResult result) {
         List<EnrichmentMetadata.Label> labels = new ArrayList<>(1);
-        SentimentScore sentimentScore = result.getSentimentScore();
-        SentimentType sentiment;
-        try {
-            sentiment = SentimentType.valueOf(result.getSentiment().toUpperCase());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new NuxeoException(e);
-        }
+        SentimentResult.SentimentScore sentimentScore = result.getScores();
+        String sentiment = result.sentiment();
 
-        Float confidence;
-        switch (sentiment) {
-        case POSITIVE:
-            confidence = sentimentScore.getPositive();
-            break;
-        case NEGATIVE:
-            confidence = sentimentScore.getNegative();
-            break;
-        case MIXED:
-            confidence = sentimentScore.getMixed();
-            break;
-        case NEUTRAL:
-            confidence = sentimentScore.getNeutral();
-            break;
-        default:
-            throw new NuxeoException("Invalid sentiment: " + sentiment);
-        }
+        Float confidence = switch (sentiment.toUpperCase()) {
+            case "POSITIVE" -> sentimentScore.positive();
+            case "NEGATIVE" -> sentimentScore.negative();
+            case "MIXED" -> sentimentScore.mixed();
+            case "NEUTRAL" -> sentimentScore.neutral();
+            default -> throw new NuxeoException("Invalid sentiment: " + sentiment);
+        };
 
-        if (confidence == null) {
-            throw new NuxeoException(
-                    String.format("A %s sentiment has been returned without any confidence score", sentiment));
-        }
-
-        labels.add(new EnrichmentMetadata.Label(sentiment.toString(), confidence / 100));
+        labels.add(new EnrichmentMetadata.Label(sentiment.toLowerCase(), confidence / 100));
         return labels;
     }
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(
+                throwable -> (throwable).getMessage().contains("is not authorized to perform"));
     }
 
     @Override

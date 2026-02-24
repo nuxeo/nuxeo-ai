@@ -1,89 +1,33 @@
 package org.nuxeo.ai.services;
 
-import java.io.IOException;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AIConstants;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.elasticsearch.api.ESClient;
-import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
-import org.nuxeo.elasticsearch.client.ESRestClient;
-import org.nuxeo.elasticsearch.http.readonly.filter.DefaultSearchRequestFilter;
-import org.nuxeo.elasticsearch.http.readonly.filter.SearchRequestFilter;
-import org.nuxeo.elasticsearch.http.readonly.service.RequestFilterService;
-import org.nuxeo.runtime.api.Framework;
-import org.opensearch.client.Request;
-import org.opensearch.client.Response;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 
 public class ModelUsageServiceImpl implements ModelUsageService {
 
     private static final Logger log = LogManager.getLogger(ModelUsageServiceImpl.class);
 
-    protected static final String INDICES = "audit";
-
-    protected static final String RAW_QUERY = "pretty";
-
-    protected static final String AGGREGATE_BY_DATE_TEMPL = "{\n" //
-            + "    \"aggs\": {\n" //
-            + "        \"by\": {\n"//
-            + "            \"date_histogram\": {\n"//
-            + "                \"field\": \"eventDate\",\n"//
-            + "                \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSSZ\",\n"//
-            + "                \"interval\": \"day\",\n" //
-            + "                \"min_doc_count\": 0\n"//
-            + "            }\n" //
-            + "        }\n" //
-            + "    },\n" //
-            + "    \"query\": {\n" //
-            + "        \"bool\": {\n"//
-            + "            \"must\": [\n" //
-            + "                {\n" //
-            + "                    \"term\": {\n"//
-            + "                        \"eventId\": \"%s\"\n" //
-            + "                    }\n"//
-            + "                },\n" //
-            + "                {\n" //
-            + "                    \"term\": {\n"//
-            + "                        \"extended.model\": \"%s\"\n" //
-            + "                    }\n"//
-            + "                }\n" //
-            + "            ]\n" //
-            + "        }\n" //
-            + "    }\n" //
-            + "}";//
-
-    public static final String ES_BASE_URL_PROPERTY = "elasticsearch.httpReadOnly.baseUrl";
-
-    protected String esBaseUrl;
-
     @Override
     public String usage(CoreSession session, AIConstants.AUTO type, String modelId) {
-        RequestFilterService requestFilterService = Framework.getService(RequestFilterService.class);
         try {
-            SearchRequestFilter filter = requestFilterService.getRequestFilters(INDICES);
-            if (filter == null) {
-                filter = new DefaultSearchRequestFilter();
+            if (session == null || type == null || modelId == null) {
+                log.warn("Invalid parameters: session, type, or modelId is null");
+                return "{\"total\":0,\"hits\":0}";
             }
 
-            String payload = String.format(AGGREGATE_BY_DATE_TEMPL, type.eventName(), modelId);
+            String nxql = String.format("SELECT ecm:uuid FROM LogEntry WHERE eventId = '%s' AND extended.model = '%s'",
+                    type.eventName(), modelId);
 
-            filter.init(session, INDICES, RAW_QUERY, payload);
-            log.debug(filter);
+            DocumentModelList docs = session.query(nxql);
+            long total = docs.size();
 
-            ESClient esClient = Framework.getService(ElasticSearchAdmin.class).getClient();
-            if (!(esClient instanceof ESRestClient client)) {
-                throw new IllegalStateException("Passthrough works only with a RestClient");
-            }
-            Request request = new Request("GET", filter.getUrl());
-            if (payload != null) {
-                request.setJsonEntity(payload);
-            }
-            Response response = client.performRequestWithTracing(request);
-            return EntityUtils.toString(response.getEntity());
-        } catch (ReflectiveOperationException | IOException e) {
-            log.error("Error when trying to get Search Request Filter for indices {}", INDICES, e);
-            return null;
+            return String.format("{\"total\": %d, \"hits\": %d}", total, total);
+        } catch (Exception e) {
+            log.error("Error when trying to query model usage data", e);
+            return "{\"total\":0,\"hits\":0}";
         }
     }
 }

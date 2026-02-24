@@ -44,7 +44,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -54,13 +56,13 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.Seconds;
 import org.nuxeo.ai.auth.NuxeoClaim;
 import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
@@ -85,7 +87,8 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.Component;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.auth0.jwt.impl.PublicClaims;
+
+import com.auth0.jwt.RegisteredClaims;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
@@ -173,7 +176,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
 
             JWTKeyService jwt = Framework.getService(JWTKeyService.class);
             Map<String, Serializable> claims = new HashMap<>();
-            claims.put(PublicClaims.SUBJECT, session.getPrincipal().getActingUser());
+            claims.put(RegisteredClaims.SUBJECT, session.getPrincipal().getActingUser());
 
             // TODO: AICORE-541 - use session to apply correct groups
             String[] groups = { INSIGHT_PREFIX + MANAGERS_GROUP_SUFFIX };
@@ -245,9 +248,9 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     public String initExport(CoreSession session, @Nullable String corporaId, CorporaParameters parameters) {
         try {
             InsightClient client = getClient(session).orElse(null);
-            return client == null ?
-                    null :
-                    client.api(API.Export.INIT).call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
+            return client == null ? null
+                    : client.api(API.Export.INIT)
+                            .call(Collections.singletonMap(CORPORA_ID_PARAM, corporaId), parameters);
         } catch (IOException e) {
             log.error("User {} failed to initialize export", session.getPrincipal().getActingUser(), e);
             return null;
@@ -320,8 +323,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
         Blob evalData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_EVALUATION_DATA);
         Blob statsData = (Blob) dataset.getPropertyValue(DATASET_EXPORT_STATS);
 
-        if ((trainingData == null || trainingData.getLength() == 0 || trainingData.getFile() == null) && (
-                evalData == null || evalData.getLength() == 0 || evalData.getFile() == null)) {
+        if ((trainingData == null || trainingData.getLength() == 0 || trainingData.getFile() == null)
+                && (evalData == null || evalData.getLength() == 0 || evalData.getFile() == null)) {
             log.warn("Job/Command: {} has neither training nor evaluation data. Document {}", jobId, dataset.getId());
         } else if (statsData == null || statsData.getLength() == 0) {
             log.warn("Job/Command: {} has no statistics data.", jobId);
@@ -334,7 +337,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
 
             try {
-                DateTime start = DateTime.now();
+                Instant start = Instant.now();
 
                 String batch1 = createTrainingDataBatch(client, trainingData, jobId);
 
@@ -350,8 +353,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                 String batch3 = batchUpload.getBatchId();
                 batch3 = createBatch(batchUpload, "statistics", "2", statsData) ? batch3 : null;
 
-                DateTime end = DateTime.now();
-                log.info("Dataset upload took {} seconds", Seconds.secondsBetween(start, end).getSeconds());
+                Instant end = Instant.now();
+                log.info("Dataset upload took {} seconds", Duration.between(start, end).getSeconds());
 
                 AICorpus corpus = createCorpus(dataset, batch1, batch2, batch3, start, end);
                 String corporaId = (String) dataset.getPropertyValue(DATASET_EXPORT_CORPORA_ID);
@@ -421,8 +424,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
     }
 
     @Nonnull
-    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, DateTime start,
-            DateTime end) {
+    private AICorpus createCorpus(DocumentModel datasetDoc, String batch1, String batch2, String batch3, Instant start,
+            Instant end) {
         String jobId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_JOB_ID);
         String batchId = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_BATCH_ID);
         String query = (String) datasetDoc.getPropertyValue(DATASET_EXPORT_QUERY);
@@ -457,8 +460,8 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                                                                      .setEvalData(new AICorpus.Batch("1", batch2))
                                                                      .setStats(new AICorpus.Batch("2", batch3))
                                                                      .setInfo(new AICorpus.Info(
-                                                                             dateFormat.format(start.toDate()),
-                                                                             dateFormat.format(end.toDate())))
+                                                                             dateFormat.format(Date.from(start)),
+                                                                             dateFormat.format(Date.from(end))))
                                                                      .setJobId(jobId)
                                                                      .setBatchId(batchId)
                                                                      .build();

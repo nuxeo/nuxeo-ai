@@ -30,7 +30,9 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.FILE_CONTENT;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,22 +40,22 @@ import org.nuxeo.ai.similar.content.operation.FindSimilar;
 import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.OperationException;
-import org.nuxeo.ecm.automation.server.jaxrs.batch.BatchManager;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.io.upload.batch.BatchManager;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 @RunWith(FeaturesRunner.class)
 @Features({ AutomationFeature.class })
-@Deploy("org.nuxeo.ecm.platform.tag")
 @Deploy("org.nuxeo.ai.similar-content")
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ai.nuxeo-jwt-authenticator-core")
@@ -135,5 +137,4 @@ public class FindSimilarTest {
         List<DocumentModel> response = (List<DocumentModel>) automationService.run(ctx, FindSimilar.ID);
         assertThat(response).isNotEmpty();
     }
-
 }

@@ -25,11 +25,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.nuxeo.ai.pipes.services.JacksonUtil;
 import org.nuxeo.ai.sdk.objects.PropertyType;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * A POJO representation used to transfer data in a stream. The main subject of this class is usually either a blob or a
@@ -43,6 +47,7 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
 
     private final Map<String, String> blobTypes = new HashMap<>();
 
+    @JsonDeserialize(contentUsing = JacksonUtil.ManagedBlobDeserializer.class)
     private final Map<String, ManagedBlob> blobs = new HashMap<>();
 
     private String id;
@@ -156,15 +161,64 @@ public class BlobTextFromDocument implements Partitionable, Serializable {
             return false;
         }
         BlobTextFromDocument that = (BlobTextFromDocument) o;
-        return Objects.equals(id, that.id) && Objects.equals(repositoryName, that.repositoryName) && Objects.equals(
-                parentId, that.parentId) && Objects.equals(primaryType, that.primaryType) && Objects.equals(facets,
-                that.facets) && Objects.equals(blobs, that.blobs) && Objects.equals(blobTypes, that.blobTypes)
-                && Objects.equals(properties, that.properties);
+        if (!Objects.equals(id, that.id) || !Objects.equals(repositoryName, that.repositoryName)
+                || !Objects.equals(parentId, that.parentId) || !Objects.equals(primaryType, that.primaryType)
+                || !Objects.equals(facets, that.facets) || !Objects.equals(blobTypes, that.blobTypes)
+                || !Objects.equals(properties, that.properties)) {
+            return false;
+        }
+        // Compare blobs by metadata rather than relying on ManagedBlob.equals (proxy vs concrete)
+        if (blobs.size() != that.blobs.size()) {
+            return false;
+        }
+        for (Map.Entry<String, ManagedBlob> e : blobs.entrySet()) {
+            ManagedBlob otherBlob = that.blobs.get(e.getKey());
+            ManagedBlob thisBlob = e.getValue();
+            if (!blobMetaEquals(thisBlob, otherBlob)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean blobMetaEquals(ManagedBlob a, ManagedBlob b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        try {
+            return Objects.equals(a.getKey(), b.getKey()) && Objects.equals(a.getDigest(), b.getDigest())
+                    && Objects.equals(a.getMimeType(), b.getMimeType())
+                    && Objects.equals(a.getEncoding(), b.getEncoding())
+                    && Objects.equals(a.getProviderId(), b.getProviderId()) && a.getLength() == b.getLength();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobs, blobTypes, properties);
+        int blobsHash = 0;
+        for (Map.Entry<String, ManagedBlob> e : blobs.entrySet()) {
+            ManagedBlob mb = e.getValue();
+            if (mb != null) {
+                blobsHash += safeBlobHash(e.getKey(), mb);
+            } else {
+                blobsHash += Objects.hash(e.getKey(), null);
+            }
+        }
+        return Objects.hash(id, repositoryName, parentId, primaryType, facets, blobsHash, blobTypes, properties);
+    }
+
+    private int safeBlobHash(String key, ManagedBlob mb) {
+        try {
+            return Objects.hash(key, mb.getKey(), mb.getDigest(), mb.getMimeType(),
+                    mb.getEncoding(), mb.getProviderId(), mb.getLength());
+        } catch (Exception e) {
+            return Objects.hash(key);
+        }
     }
 
     @Override

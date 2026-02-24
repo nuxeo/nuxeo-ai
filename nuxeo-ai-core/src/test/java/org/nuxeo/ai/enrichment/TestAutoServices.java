@@ -37,7 +37,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.auto.AutoHistory;
@@ -149,8 +151,8 @@ public class TestAutoServices {
 
         for (String schema : testDoc.getSchemas()) {
             for (Map.Entry<String, Object> entry : testDoc.getProperties(schema).entrySet()) {
-                System.out.println(schema + " prop " + entry.getKey() + " is list " + testDoc.getPropertyObject(schema,
-                        entry.getKey()).isList());
+                System.out.println(schema + " prop " + entry.getKey() + " is list "
+                        + testDoc.getPropertyObject(schema, entry.getKey()).isList());
             }
         }
 

@@ -18,13 +18,15 @@
  */
 package org.nuxeo.ai.textract;
 
+import java.util.Collections;
 import java.util.List;
+
+import org.nuxeo.ai.aws.dto.DocumentAnalysisResult;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.DetectDocumentTextResult;
 
 /**
- * Works with AWS Textract
+ * Works with AWS Textract - Now using domain DTOs instead of AWS SDK models This interface is completely independent of
+ * AWS SDK implementation details
  *
  * @since 2.1.2
  */
@@ -33,16 +35,20 @@ public interface TextractService {
     /**
      * Detect text for the provided blob
      */
-    DetectDocumentTextResult detectText(ManagedBlob blob);
+    DocumentAnalysisResult detectText(ManagedBlob blob);
 
     /**
      * Analyzes the provided blob as a text document
      */
-    AnalyzeDocumentResult analyzeDocument(ManagedBlob blob, String... features);
+    DocumentAnalysisResult analyzeDocument(ManagedBlob blob, String... features);
 
     /**
-     * Return any processors that act on the specified service
+     * Process blocks using the provided processor
      */
-    List<TextractProcessor> getProcessors(String serviceName);
+    <T> List<T> processBlocks(DocumentAnalysisResult result, TextractProcessor<T> processor);
 
+    /** Retrieve registered processors by name (backward compatibility). */
+    default List<TextractProcessor> getProcessors(String name) {
+        return Collections.emptyList();
+    }
 }

@@ -21,7 +21,6 @@ package org.nuxeo.ai;
 import static org.junit.Assume.assumeTrue;
 
 import org.apache.commons.lang3.StringUtils;
-import com.amazonaws.SDKGlobalConfiguration;
 
 /**
  * Works with AWS tests
@@ -32,10 +31,9 @@ public class AWS {
      * Assume we have valid credentials
      */
     public static void assumeCredentials() {
-        String envId = StringUtils.defaultIfBlank(System.getenv(SDKGlobalConfiguration.ACCESS_KEY_ENV_VAR),
-                System.getenv(SDKGlobalConfiguration.ALTERNATE_ACCESS_KEY_ENV_VAR));
-        String envSecret = StringUtils.defaultIfBlank(System.getenv(SDKGlobalConfiguration.SECRET_KEY_ENV_VAR),
-                System.getenv(SDKGlobalConfiguration.ALTERNATE_SECRET_KEY_ENV_VAR));
+        String envId = StringUtils.defaultIfBlank(System.getenv("AWS_ACCESS_KEY_ID"), System.getenv("AWS_ACCESS_KEY"));
+        String envSecret = StringUtils.defaultIfBlank(System.getenv("AWS_SECRET_ACCESS_KEY"),
+                System.getenv("AWS_SECRET_KEY"));
         assumeTrue("AWS Credentials not set in the environment variables", StringUtils.isNoneBlank(envId, envSecret));
     }
 }

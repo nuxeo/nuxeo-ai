@@ -23,16 +23,20 @@ import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CON
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEFAULT_CONFIGURATION;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ai.services.SearchAdapterService;
+import org.nuxeo.ai.services.SearchOptions;
+import org.nuxeo.ai.services.SearchSummary;
 import org.nuxeo.ai.similar.content.services.SimilarContentService;
 import org.nuxeo.ecm.automation.core.annotations.Context;
 import org.nuxeo.ecm.automation.core.annotations.Operation;
 import org.nuxeo.ecm.automation.core.annotations.OperationMethod;
 import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.elasticsearch.api.ElasticSearchService;
-import org.nuxeo.elasticsearch.api.EsScrollResult;
-import org.nuxeo.elasticsearch.query.NxQueryBuilder;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,6 +45,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Operation(id = GetAssetCounts.ID, category = "AI", label = "Gets Asset Counts", description = "Gets asset counts (indexed/not indexed)")
 public class GetAssetCounts {
+
+    private static final Logger log = LogManager.getLogger(GetAssetCounts.class);
 
     public static final String ID = "AI.GetAssetCounts";
 
@@ -51,9 +57,6 @@ public class GetAssetCounts {
 
     @Context
     protected SimilarContentService scs;
-
-    @Context
-    protected ElasticSearchService es;
 
     @OperationMethod
     public Response run() throws JsonProcessingException {
@@ -72,14 +75,22 @@ public class GetAssetCounts {
         long indexedAssetsCount = getTotalHits(facetFilterBuilder.toString());
         long nonIndexedAssetsCount = totalAssetsCount - indexedAssetsCount;
         return Response.ok(
-                               MAPPER.writeValueAsString(new Counts(totalAssetsCount, indexedAssetsCount, nonIndexedAssetsCount)))
+                MAPPER.writeValueAsString(new Counts(totalAssetsCount, indexedAssetsCount, nonIndexedAssetsCount)))
                        .build();
     }
 
     protected long getTotalHits(String query) {
-        EsScrollResult esScroll = es.scroll(
-                (new NxQueryBuilder(this.session)).nxql(query).limit(1).onlyElasticsearchResponse(), 10);
-        return esScroll.getElasticsearchResponse().getHits().getTotalHits().value;
+        SearchAdapterService adapter = Framework.getService(SearchAdapterService.class);
+        if (adapter == null) {
+            return session.query(query).totalSize();
+        }
+        try {
+            SearchSummary summary = adapter.search(session, query, SearchOptions.builder().limit(0).build());
+            return summary.getTotal();
+        } catch (Exception e) {
+            log.warn("SearchAdapterService search failed, falling back to CoreSession query", e);
+            return session.query(query).totalSize();
+        }
     }
 
     protected static class Counts {

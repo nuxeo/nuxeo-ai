@@ -27,14 +27,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
+
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.EntityAnnotation;
 import com.google.cloud.vision.v1.Feature;
@@ -43,16 +44,13 @@ import com.google.protobuf.util.JsonFormat;
 import net.jodah.failsafe.RetryPolicy;
 
 /**
- * Finds items in an image and labels them
+ * Finds items in an image and labels them using GCP Vision API.
+ * <p>
+ * This provider produces labels (not tags) to match the classification kind.
  */
 public class LabelsEnrichmentProvider extends AbstractTagProvider<EntityAnnotation> implements EnrichmentCachable {
 
     private static final Logger log = LogManager.getLogger(LabelsEnrichmentProvider.class);
-
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(NuxeoException.class);
-    }
 
     @Override
     protected Feature.Type getType() {
@@ -60,13 +58,13 @@ public class LabelsEnrichmentProvider extends AbstractTagProvider<EntityAnnotati
     }
 
     @Override
-    protected List<EntityAnnotation> getAnnotationList(AnnotateImageResponse res) {
-        return res.getLabelAnnotationsList();
+    protected List<EntityAnnotation> getAnnotationList(AnnotateImageResponse response) {
+        return response.getLabelAnnotationsList();
     }
 
     @Override
     protected AIMetadata.Tag newTag(EntityAnnotation annotation) {
-        throw new UnsupportedOperationException("The class is defined for label creation. See this#toLabel");
+        throw new UnsupportedOperationException("This provider produces labels, not tags. See toLabel().");
     }
 
     @Override
@@ -100,11 +98,16 @@ public class LabelsEnrichmentProvider extends AbstractTagProvider<EntityAnnotati
         return results;
     }
 
-    protected EnrichmentMetadata.Label toLabel(EntityAnnotation annotation) {
-        float score = annotation.getScore();
-        String desc = annotation.getDescription();
+    protected AIMetadata.Label toLabel(EntityAnnotation annotation) {
+        return new AIMetadata.Label(annotation.getDescription(), annotation.getScore());
+    }
 
-        return new EnrichmentMetadata.Label(desc, score);
+    @Override
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(throwable -> {
+            String message = throwable.getMessage();
+            return message != null && message.contains("is not authorized to perform");
+        });
     }
 
     @Override

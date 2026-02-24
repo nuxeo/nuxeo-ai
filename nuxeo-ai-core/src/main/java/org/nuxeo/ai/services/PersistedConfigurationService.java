@@ -21,7 +21,9 @@ package org.nuxeo.ai.services;
 
 import java.io.IOException;
 import java.util.List;
-import javax.annotation.Nullable;
+
+import jakarta.annotation.Nullable;
+
 import org.nuxeo.runtime.model.Descriptor;
 
 /**
@@ -39,7 +41,7 @@ public interface PersistedConfigurationService {
     /**
      * Stores a contribution under
      *
-     * @param key          {@link String} as unique key
+     * @param key {@link String} as unique key
      * @param contribution {@link Descriptor} as an object that conforms to the interface
      * @throws IOException if write to Persistent layer fails
      */

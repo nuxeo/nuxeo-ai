@@ -132,7 +132,8 @@ public class AWSMetrics extends DefaultComponent {
         comprehendKeyphraseUnits = registry.histogram(MetricRegistry.name(comprehendName, "comprehendKeyphraseUnits"));
         comprehendEntitiesUnits = registry.histogram(MetricRegistry.name(comprehendName, "comprehendEntitiesUnits"));
 
-        // Textract (Price is based on pages number - we don't use pdfbox to calculate those page nb yet TODO AICORE-446)
+        // Textract (Price is based on pages number - we don't use pdfbox to calculate those page nb yet TODO
+        // AICORE-446)
         textractGlobalCalls = registry.counter(MetricRegistry.name(textractName, "textractGlobalCalls"));
 
         // Transcribe (Price is based on track length - we do not count this information yet TODO AICORE-446)
@@ -319,5 +320,22 @@ public class AWSMetrics extends DefaultComponent {
     public void updateComprehendEntitiesUnits(long value) {
         getComprehendEntitiesUnits().update(value);
         getComprehendTotalUnits().update(value);
+    }
+
+    public void updateRekognitionImageUnits(long units) {
+        rekognitionImgCalls.inc(units);
+        rekognitionGlobalCalls.inc(units);
+    }
+
+    public void updateTextractPageUnits(long units) {
+        textractGlobalCalls.inc(units);
+    }
+
+    public void updateTranscribeUnits(long units) {
+        transcribeGlobalCalls.inc(units);
+    }
+
+    public void updateTranslateCharacterUnits(long units) {
+        translateTotalChars.update(units);
     }
 }

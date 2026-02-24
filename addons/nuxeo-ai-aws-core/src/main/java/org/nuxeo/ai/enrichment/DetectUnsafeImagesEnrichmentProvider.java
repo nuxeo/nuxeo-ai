@@ -18,98 +18,54 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.singleton;
-import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import org.nuxeo.ai.AWSHelper;
-import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ai.rekognition.RekognitionService;
-import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectModerationLabelsResult;
-import com.amazonaws.services.rekognition.model.ModerationLabel;
 
-import net.jodah.failsafe.RetryPolicy;
+import org.nuxeo.ai.aws.dto.LabelsResult;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 
 /**
- * Detect unsafe content in images.
+ * An enrichment provider for unsafe image detection - Now using domain DTOs
  */
-public class DetectUnsafeImagesEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
+public class DetectUnsafeImagesEnrichmentProvider extends AbstractConfidenceEnrichmentProvider {
 
-    public static final String MINIMUM_CONFIDENCE = "minConfidence";
+    public static final String DEFAULT_CONFIDENCE = "50";
 
-    public static final String DEFAULT_CONFIDENCE = "70";
-
-    protected float minConfidence;
-
-    protected EnrichmentMetadata.Label newLabel(ModerationLabel l) {
-        if (l.getConfidence() >= minConfidence) {
-            return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100);
-        } else {
-            return null;
-        }
+    @Override
+    protected String getDefaultConfidence() {
+        return DEFAULT_CONFIDENCE;
     }
 
     @Override
-    public void init(EnrichmentDescriptor descriptor) {
-        super.init(descriptor);
-        Map<String, String> options = descriptor.options;
-        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
-    }
-
-    @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
-        RekognitionService rs = Framework.getService(RekognitionService.class);
-        return AWSHelper.handlingExceptions(() -> {
-            List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-                DetectModerationLabelsResult result = rs.detectUnsafeImages(blob.getValue());
-                if (result != null && !result.getModerationLabels().isEmpty()) {
-                    enriched.addAll(processResult(doc, blob.getKey(), result));
-                }
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
+        return enrichBlobs(blobTextFromDoc, (doc, propName, rs, blob) -> {
+            LabelsResult result = rs.detectModerationLabels(blob, minConfidence);
+            if (result != null && result.labels() != null && !result.labels().isEmpty()) {
+                return processResult(doc, propName, result);
             }
-            return enriched;
+            return Collections.emptyList();
         });
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
     }
 
     /**
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectModerationLabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getModerationLabels()
+            LabelsResult result) {
+        List<EnrichmentMetadata.Label> labels = result.labels()
                                                       .stream()
-                                                      .map(this::newLabel)
-                                                      .filter(Objects::nonNull)
+                                                      .filter(label -> label.confidence() >= minConfidence)
+                                                      .map(label -> new EnrichmentMetadata.Label(label.name(),
+                                                              label.confidence() / 100))
                                                       .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.getModerationLabels()));
-
+        String raw = toJsonString(jg -> jg.writeObjectField("moderationLabels", result.labels()));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(
-                new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
-                                                                           .withRawKey(rawKey)
-                                                                           .withDocumentProperties(singleton(propName))
-                                                                           .build());
-    }
 
-    @Override
-    public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
-        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
+        return Collections.singletonList(buildLabelMetadata(blobTextFromDoc, propName, labels, rawKey));
     }
 }

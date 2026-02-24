@@ -31,7 +31,9 @@ import static org.nuxeo.ecm.core.api.AbstractSession.BINARY_TEXT_SYS_PROP;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
@@ -102,7 +104,7 @@ public class StreamsPipesTest {
         }
 
         DocumentModel theTestDoc;
-        //Now check the MimeBlobPropertyFilter filter the blob by "text" mimetype
+        // Now check the MimeBlobPropertyFilter filter the blob by "text" mimetype
         try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, PIPE_TEXT_OUT)) {
             LogRecord<Record> record = tailer.read(Duration.ofSeconds(1));
             assertNotNull(record);
@@ -110,7 +112,7 @@ public class StreamsPipesTest {
             theTestDoc = session.getDocument(new IdRef(andBack.getId()));
         }
 
-        //Modify the test document and check the dirty listeners ran
+        // Modify the test document and check the dirty listeners ran
         try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, PIPE_DIRTY_OUT)) {
             assertEquals(null, tailer.read(Duration.ofSeconds(1)));
             theTestDoc.setPropertyValue("dc:title", "Dirty Document");
@@ -129,7 +131,7 @@ public class StreamsPipesTest {
         ((DocumentModelImpl) doc).setId(UUID.randomUUID().toString());
         LogManager manager = Framework.getService(StreamService.class).getLogManager();
 
-        //First create some text and check it gets added to the stream
+        // First create some text and check it gets added to the stream
         try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, DEFAULT_BINARY_TEXT)) {
             tailer.toEnd();
             doc = session.createDocument(doc);
@@ -143,7 +145,7 @@ public class StreamsPipesTest {
             assertEquals("My text", andBack.getProperties().get(NXQL.ECM_FULLTEXT));
         }
 
-        //Create text twice but the second is ignore because its in the "window size"
+        // Create text twice but the second is ignore because its in the "window size"
         try (LogTailer<Record> tailer = manager.createTailer(TEST_GROUP, CUSTOM_BINARY_TEXT)) {
             tailer.toEnd();
             doc = session.createDocument(doc);

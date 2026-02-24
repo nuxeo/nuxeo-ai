@@ -22,27 +22,34 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.AWSClientFactory;
+import org.nuxeo.ai.aws.dto.DocumentAnalysisResult;
+import org.nuxeo.ai.aws.dto.TextractResult;
+import org.nuxeo.ai.aws.mapper.TextractMapper;
 import org.nuxeo.ai.metrics.AWSMetrics;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
+import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
-import com.amazonaws.services.textract.AmazonTextract;
-import com.amazonaws.services.textract.AmazonTextractClientBuilder;
-import com.amazonaws.services.textract.model.AnalyzeDocumentRequest;
-import com.amazonaws.services.textract.model.AnalyzeDocumentResult;
-import com.amazonaws.services.textract.model.DetectDocumentTextRequest;
-import com.amazonaws.services.textract.model.DetectDocumentTextResult;
-import com.amazonaws.services.textract.model.Document;
+
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentRequest;
+import software.amazon.awssdk.services.textract.model.DetectDocumentTextRequest;
+import software.amazon.awssdk.services.textract.model.Document;
+import software.amazon.awssdk.services.textract.model.FeatureType;
+import software.amazon.awssdk.services.textract.model.S3Object;
 
 /**
- * Implementation of TextractService
+ * Implementation of TextractService - Now using abstraction layer AWS SDK dependencies are isolated to this
+ * implementation class only
  *
  * @since 2.1.2
  */
@@ -52,97 +59,123 @@ public class TextractServiceImpl extends DefaultComponent implements TextractSer
 
     private static final Logger log = LogManager.getLogger(TextractServiceImpl.class);
 
-    protected volatile AmazonTextract client;
+    protected AWSClientFactory clientFactory;
 
     protected Map<String, List<TextractProcessor>> processors;
 
     protected AWSMetrics awsMetrics;
 
+    protected final List<TextractProcessorDescriptor> processorDescriptors = new java.util.ArrayList<>();
+
+    @Override
+    public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
+        if (XP_CONFIG.equals(extensionPoint) && contribution instanceof TextractProcessorDescriptor) {
+            processorDescriptors.add((TextractProcessorDescriptor) contribution);
+            // Recompute processors map to include newly added descriptor in case it arrives post-start
+            processors = processorDescriptors.stream()
+                                             .collect(groupingBy(TextractProcessorDescriptor::getServiceName,
+                                                     mapping(TextractProcessorDescriptor::getInstance, toList())));
+        }
+    }
+
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        clientFactory = Framework.getService(AWSClientFactory.class);
         awsMetrics = Framework.getService(AWSMetrics.class);
-        List<TextractProcessorDescriptor> configs = getDescriptors(XP_CONFIG);
-        if (!configs.isEmpty()) {
-            processors = configs.stream()
-                                .collect(groupingBy(TextractProcessorDescriptor::getServiceName,
-                                        mapping(TextractProcessorDescriptor::getInstance, toList())));
-        } else {
-            processors = Collections.emptyMap();
-        }
+        // Build processors map from contributed descriptors grouped by serviceName
+        processors = processorDescriptors.stream()
+                                         .collect(groupingBy(TextractProcessorDescriptor::getServiceName,
+                                                 mapping(TextractProcessorDescriptor::getInstance, toList())));
     }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
         super.stop(context);
-        client = null;
-    }
-
-    /**
-     * Get the AmazonTextractClient client
-     */
-    protected AmazonTextract getClient() {
-        AmazonTextract localClient = client;
-        if (localClient == null) {
-            synchronized (this) {
-                localClient = client;
-                if (localClient == null) {
-                    AmazonTextractClientBuilder builder = AmazonTextractClientBuilder.standard()
-                                                                                     .withCredentials(
-                                                                                             AWSHelper.getInstance()
-                                                                                                      .getCredentialsProvider())
-                                                                                     .withRegion(AWSHelper.getInstance()
-                                                                                                          .getRegion());
-                    client = localClient = builder.build();
-                }
-            }
-        }
-        return localClient;
+        clientFactory = null;
     }
 
     @Override
-    public DetectDocumentTextResult detectText(ManagedBlob blob) {
+    public DocumentAnalysisResult detectText(ManagedBlob blob) {
         if (log.isDebugEnabled()) {
             log.debug("Calling detectDocumentText for " + blob.getKey());
         }
 
-        Document document = AWSHelper.getInstance().getDocument(blob);
-        if (document != null) {
-            DetectDocumentTextRequest request = new DetectDocumentTextRequest().withDocument(document);
-            DetectDocumentTextResult result = getClient().detectDocumentText(request);
-            awsMetrics.getTextractGlobalCalls().inc();
-            if (log.isDebugEnabled()) {
-                log.debug("DetectDocumentTextResult is " + result);
-            }
-            return result;
-        }
+        DetectDocumentTextRequest request = DetectDocumentTextRequest.builder().document(getDocument(blob)).build();
 
-        return null;
-    }
-
-    @Override
-    public AnalyzeDocumentResult analyzeDocument(ManagedBlob blob, String... features) {
+        var awsResponse = clientFactory.getTextractClient().detectDocumentText(request);
         if (log.isDebugEnabled()) {
-            log.debug("Calling analyzeDocument for " + blob.getKey());
+            log.debug("DetectDocumentTextResponse: " + awsResponse);
         }
-
-        Document document = AWSHelper.getInstance().getDocument(blob);
-        if (document != null) {
-            AnalyzeDocumentRequest request = new AnalyzeDocumentRequest().withFeatureTypes(features)
-                                                                         .withDocument(document);
-            AnalyzeDocumentResult result = getClient().analyzeDocument(request);
-            if (log.isDebugEnabled()) {
-                log.debug("AnalyzeDocumentResult is " + result);
-            }
-            awsMetrics.getTextractGlobalCalls().inc();
-            return result;
-        }
-        return null;
+        awsMetrics.updateTextractPageUnits(1L);
+        TextractResult tr = TextractMapper.mapDetectDocumentTextResponse(awsResponse);
+        return toDocumentAnalysisResult(tr);
     }
 
     @Override
-    public List<TextractProcessor> getProcessors(String serviceName) {
-        return processors.getOrDefault(serviceName, Collections.emptyList());
+    public DocumentAnalysisResult analyzeDocument(ManagedBlob blob, String... features) {
+        if (log.isDebugEnabled()) {
+            log.debug("Calling analyzeDocument for " + blob.getKey() + " with features: " + Arrays.toString(features));
+        }
+
+        var featureTypes = Arrays.stream(features).map(FeatureType::fromValue).toList();
+
+        AnalyzeDocumentRequest request = AnalyzeDocumentRequest.builder()
+                                                               .document(getDocument(blob))
+                                                               .featureTypes(featureTypes)
+                                                               .build();
+
+        var awsResponse = clientFactory.getTextractClient().analyzeDocument(request);
+        if (log.isDebugEnabled()) {
+            log.debug("AnalyzeDocumentResponse: " + awsResponse);
+        }
+        awsMetrics.updateTextractPageUnits(1L);
+        TextractResult tr = TextractMapper.mapAnalyzeDocumentResponse(awsResponse);
+        return toDocumentAnalysisResult(tr);
     }
 
+    private DocumentAnalysisResult toDocumentAnalysisResult(TextractResult tr) {
+        List<DocumentAnalysisResult.Block> blocks = tr.blocks()
+                                                      .stream()
+                                                      .map(b -> new DocumentAnalysisResult.Block(b.blockType(), // fixed
+                                                                                                                // accessor
+                                                              b.confidence(), b.text(),
+                                                              b.boundingBox() != null
+                                                                      ? new DocumentAnalysisResult.BoundingBox(
+                                                                              b.boundingBox().width(),
+                                                                              b.boundingBox().height(),
+                                                                              b.boundingBox().left(),
+                                                                              b.boundingBox().top())
+                                                                      : null,
+                                                              Collections.emptyList()))
+                                                      .toList();
+        return new DocumentAnalysisResult(blocks);
+    }
+
+    @Override
+    public <T> List<T> processBlocks(DocumentAnalysisResult result, TextractProcessor<T> processor) {
+        if (result == null || result.blocks() == null) {
+            return Collections.emptyList();
+        }
+        return result.blocks()
+                     .stream()
+                     .map(block -> processor.process(Collections.singletonList(block), null, null, null))
+                     .filter(java.util.Objects::nonNull)
+                     .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<TextractProcessor> getProcessors(String name) {
+        return processors != null ? processors.getOrDefault(name, Collections.emptyList()) : Collections.emptyList();
+    }
+
+    /**
+     * Helper method to create Document object from ManagedBlob
+     */
+    private Document getDocument(ManagedBlob blob) {
+        S3Object s3Object = S3Object.builder().bucket(AWSHelper.getS3BucketName()).name(blob.getKey()).build();
+
+        return Document.builder().s3Object(s3Object).build();
+    }
 }

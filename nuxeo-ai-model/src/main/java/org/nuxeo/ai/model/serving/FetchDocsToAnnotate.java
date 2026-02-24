@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.automation.OperationContext;
@@ -58,6 +60,7 @@ import org.nuxeo.ecm.core.schema.types.Type;
 import org.nuxeo.ecm.core.schema.types.resolver.ObjectResolver;
 import org.nuxeo.ecm.platform.url.io.DocumentUrlJsonEnricher;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
@@ -169,12 +172,8 @@ public class FetchDocsToAnnotate {
             if (uids.isEmpty()) {
                 throw new NuxeoException("Please refer uids");
             }
-            DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('" + uids.stream()
-                                                                                                           .map(String::valueOf)
-                                                                                                           .collect(
-                                                                                                                   Collectors.joining(
-                                                                                                                           "','"))
-                    + "')");
+            DocumentModelList docs = coreSession.query("SELECT * FROM Document WHERE ecm:uuid IN ('"
+                    + uids.stream().map(String::valueOf).collect(Collectors.joining("','")) + "')");
             if (docs.isEmpty()) {
                 return Blobs.createJSONBlob(MAPPER.writeValueAsString(EMPTY_JSON_LIST));
             }
@@ -189,13 +188,15 @@ public class FetchDocsToAnnotate {
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .fetchInDoc("properties")
                                                            .base(VirtualHostHelper.getBaseURL(request))
-                                                           .get(), DocumentPropertyJsonWriter.class);
+                                                           .get(),
+                                DocumentPropertyJsonWriter.class);
                         DocumentUrlJsonEnricher enricher = registry.getInstance(
                                 RenderingContext.CtxBuilder.param("document", documentModel)
                                                            .session(coreSession)
                                                            .fetchInDoc("properties")
                                                            .base(VirtualHostHelper.getBaseURL(request))
-                                                           .get(), DocumentUrlJsonEnricher.class);
+                                                           .get(),
+                                DocumentUrlJsonEnricher.class);
                         // workaround to be able to have the data url for a given blob
                         List<Map<String, Object>> inputs = new ArrayList<>();
                         List<Map<String, Object>> outputs = new ArrayList<>();

@@ -18,29 +18,27 @@
  */
 package org.nuxeo.ai.enrichment;
 
-import static java.util.Collections.singleton;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ai.rekognition.RekognitionService;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.rekognition.model.DetectLabelsResult;
-import com.amazonaws.services.rekognition.model.Label;
 
 import net.jodah.failsafe.RetryPolicy;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
- * Finds items in an image and labels them
+ * Finds items in an image and labels them - Now using domain DTOs
  */
 public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
@@ -48,38 +46,52 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
 
     public static final String DEFAULT_MAX_RESULTS = "200";
 
+    private static final int DEFAULT_MAX_RESULTS_INT = 200;
+
     public static final String DEFAULT_CONFIDENCE = "70";
 
-    protected int maxResults;
+    protected int maxResults = parseMaxResults(DEFAULT_MAX_RESULTS);
 
-    protected float minConfidence;
-
-    protected static EnrichmentMetadata.Label newLabel(Label l) {
-        return new EnrichmentMetadata.Label(l.getName(), l.getConfidence() / 100);
-    }
+    protected float minConfidence = parseConfidence(DEFAULT_CONFIDENCE);
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        Map<String, String> options = descriptor.options;
-        maxResults = Integer.parseInt(options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
-        minConfidence = Float.parseFloat(options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+        maxResults = parseMaxResults(descriptor.options.getOrDefault(MAX_RESULTS, DEFAULT_MAX_RESULTS));
+        minConfidence = parseConfidence(descriptor.options.getOrDefault(MINIMUM_CONFIDENCE, DEFAULT_CONFIDENCE));
+    }
+
+    /**
+     * Safely parses a max results value string to int, returning a default value on error.
+     */
+    private int parseMaxResults(String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return DEFAULT_MAX_RESULTS_INT;
+        }
+    }
+
+    /**
+     * Safely parses a confidence value string to float, returning a default value on error.
+     */
+    private float parseConfidence(String value) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException e) {
+            return Float.parseFloat(DEFAULT_CONFIDENCE);
+        }
     }
 
     @Override
-    public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy().abortOn(SdkClientException.class);
-    }
-
-    @Override
-    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument doc) {
-        RekognitionService rs = Framework.getService(RekognitionService.class);
+    public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument blobTextFromDoc) {
         return AWSHelper.handlingExceptions(() -> {
             List<EnrichmentMetadata> enriched = new ArrayList<>();
-            for (Map.Entry<String, ManagedBlob> blob : doc.getBlobs().entrySet()) {
-                DetectLabelsResult result = rs.detectLabels(blob.getValue(), maxResults, minConfidence);
-                if (result != null && !result.getLabels().isEmpty()) {
-                    enriched.addAll(processResult(doc, blob.getKey(), result));
+            RekognitionService rs = Framework.getService(RekognitionService.class);
+            for (Map.Entry<String, ManagedBlob> blob : blobTextFromDoc.getBlobs().entrySet()) {
+                LabelsResult result = rs.detectLabels(blob.getValue(), maxResults, minConfidence);
+                if (result != null && result.labels() != null && !result.labels().isEmpty()) {
+                    enriched.addAll(processResult(blobTextFromDoc, blob.getKey(), result));
                 }
             }
             return enriched;
@@ -90,23 +102,29 @@ public class LabelsEnrichmentProvider extends AbstractEnrichmentProvider impleme
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument blobTextFromDoc, String propName,
-            DetectLabelsResult result) {
-        List<EnrichmentMetadata.Label> labels = result.getLabels()
+            LabelsResult result) {
+        List<EnrichmentMetadata.Label> labels = result.labels()
                                                       .stream()
-                                                      .map(LabelsEnrichmentProvider::newLabel)
+                                                      .map(awsLabel -> new EnrichmentMetadata.Label(awsLabel.name(),
+                                                              awsLabel.confidence() / 100))
                                                       .collect(Collectors.toList());
 
-        String raw = toJsonString(jg -> {
-            jg.writeObjectField("labels", result.getLabels());
-            jg.writeStringField("orientationCorrection", result.getOrientationCorrection());
-        });
-
+        String raw = toJsonString(jg -> jg.writeObjectField("labels", result.labels()));
         String rawKey = saveJsonAsRawBlob(raw);
-        return Collections.singletonList(
+
+        return java.util.Collections.singletonList(
                 new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
                                                                            .withRawKey(rawKey)
-                                                                           .withDocumentProperties(singleton(propName))
+                                                                           .withDocumentProperties(
+                                                                                   java.util.Collections.singleton(
+                                                                                           propName))
                                                                            .build());
+    }
+
+    @Override
+    public RetryPolicy getRetryPolicy() {
+        return super.getRetryPolicy().abortOn(throwable -> throwable instanceof SdkClientException
+                && throwable.getMessage().contains("is not authorized to perform"));
     }
 
     @Override

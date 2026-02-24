@@ -29,20 +29,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.EntitiesResult;
 import org.nuxeo.ai.comprehend.ComprehendService;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.runtime.api.Framework;
-import com.amazonaws.services.comprehend.model.DetectEntitiesResult;
 
 import net.jodah.failsafe.RetryPolicy;
 
 public class TextEntitiesProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
-
-    private static final Log log = LogFactory.getLog(TextEntitiesProvider.class);
 
     // in bytes
     public static final long ENTITY_MAX_SIZE = 100_000;
@@ -52,6 +51,8 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
     public static final String DEFAULT_LANGUAGE = "en";
 
     public static final String ENTITIES_KEY = "Entities";
+
+    private static final Log log = LogFactory.getLog(TextEntitiesProvider.class);
 
     protected String languageCode;
 
@@ -72,9 +73,9 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
                             + prop.getValue().length());
                     continue;
                 }
-                DetectEntitiesResult result = Framework.getService(ComprehendService.class)
-                                                       .detectEntities(prop.getValue(), languageCode);
-                if (result != null && !result.getEntities().isEmpty()) {
+                EntitiesResult result = Framework.getService(ComprehendService.class)
+                                                 .detectEntities(prop.getValue(), languageCode);
+                if (result != null && !result.entities().isEmpty()) {
                     enriched.addAll(processResult(blobTextFromDoc, prop.getKey(), result));
                 }
             }
@@ -86,14 +87,12 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
      * Processes the result of the call to AWS
      */
     protected Collection<EnrichmentMetadata> processResult(BlobTextFromDocument doc, String xPath,
-            DetectEntitiesResult result) {
-        List<AIMetadata.Label> labels = result.getEntities()
+            EntitiesResult result) {
+        List<AIMetadata.Label> labels = result.entities()
                                               .stream()
-                                              .map(kp -> new AIMetadata.Label(kp.getText(), kp.getScore()))
+                                              .map(e -> new AIMetadata.Label(e.text(), e.score()))
                                               .collect(Collectors.toList());
-        String raw = toJsonString(jg -> {
-            jg.writeObjectField(ENTITIES_KEY, result.getEntities());
-        });
+        String raw = toJsonString(jg -> jg.writeObjectField(ENTITIES_KEY, result.entities()));
 
         String rawKey = saveJsonAsRawBlob(raw);
         EnrichmentMetadata metadata = new EnrichmentMetadata.Builder(kind, name, doc).withLabels(asLabels(labels))
@@ -107,8 +106,10 @@ public class TextEntitiesProvider extends AbstractEnrichmentProvider implements 
 
     @Override
     public RetryPolicy getRetryPolicy() {
-        return super.getRetryPolicy()
-                    .abortOn(throwable -> (throwable).getMessage().contains("is not authorized to perform"));
+        return super.getRetryPolicy().abortOn(throwable -> {
+            String message = throwable.getMessage();
+            return message != null && message.contains("is not authorized to perform");
+        });
     }
 
     @Override

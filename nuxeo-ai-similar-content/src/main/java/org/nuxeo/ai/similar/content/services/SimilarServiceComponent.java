@@ -49,7 +49,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+
+import jakarta.annotation.Nullable;
+
 import org.apache.avro.message.MissingSchemaException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -101,8 +103,8 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     public static final String DEDUPLICATION_OPERATION_XP = "operation";
 
-    public static final String DEDUPLICATION_FACET_EXCLUSION_NXQL =
-            " AND ecm:mixinType != " + NXQL.escapeString(DEDUPLICATION_FACET);
+    public static final String DEDUPLICATION_FACET_EXCLUSION_NXQL = " AND ecm:mixinType != "
+            + NXQL.escapeString(DEDUPLICATION_FACET);
 
     public static final String DOCUMENT_INDEXED_EVENT = "documentIndexed";
 

@@ -22,19 +22,19 @@ import static org.nuxeo.ai.enrichment.LabelsEnrichmentProvider.MINIMUM_CONFIDENC
 
 import java.util.List;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.dto.DocumentAnalysisResult;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.streams.Initializable;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentRef;
-import com.amazonaws.services.textract.model.Block;
 
 /**
  * Debugs the blocks
  */
-public class DebuggingTextractProcessor implements TextractProcessor, Initializable {
+public class DebuggingTextractProcessor implements TextractProcessor<Object>, Initializable {
 
     public static final String DEFAULT_CONFIDENCE = "70";
 
@@ -48,13 +48,13 @@ public class DebuggingTextractProcessor implements TextractProcessor, Initializa
     }
 
     @Override
-    public void process(List<Block> blocks, CoreSession session, DocumentRef docRef,
+    public Object process(List<DocumentAnalysisResult.Block> blocks, CoreSession session, DocumentRef docRef,
             EnrichmentMetadata.Builder builder) {
-        blocks.forEach(block -> {
-            if (log.isDebugEnabled()) {
-                log.debug(AWSHelper.getInstance().debugTextractBlock(block));
-            }
-        });
+        if (blocks != null && log.isDebugEnabled()) {
+            blocks.forEach(block -> log.debug("Textract block: type={}, text={}, confidence={}",
+                    block.blockType(), block.text(), block.confidence()));
+        }
+        return null;
     }
 
 }

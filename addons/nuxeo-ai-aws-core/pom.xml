@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>nuxeo-ai-addons</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>5.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-aws-core</artifactId>
   <name>Nuxeo AI AWS Core</name>
@@ -39,36 +39,36 @@
       <artifactId>nuxeo-platform-video</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sts</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sts</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-rekognition</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>rekognition</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-comprehend</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>comprehend</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-textract</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>textract</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-translate</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>translate</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-logs</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>cloudwatchlogs</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sns</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sns</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-transcribe</artifactId>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>transcribe</artifactId>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.ecm.core</groupId>

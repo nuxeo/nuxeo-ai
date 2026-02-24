@@ -18,15 +18,27 @@
  */
 package org.nuxeo.ai.translate;
 
-import com.amazonaws.services.translate.model.TranslateTextResult;
+import org.nuxeo.ai.aws.dto.TranslationResult;
 
 /**
  * Works with AWS Translate.
+ * <p>
+ * Since 5.0.0, this interface uses domain DTOs ({@link TranslationResult}) instead of AWS SDK models, making it
+ * completely independent of AWS SDK implementation details. This is a breaking API change from previous versions where
+ * the return type was the AWS SDK {@code TranslateTextResult}.
+ *
+ * @since 2.0
  */
 public interface TranslateService {
 
     /**
      * Translates text from source to target language.
+     *
+     * @param text the text to translate
+     * @param sourceLanguageCode the source language code (e.g. "en")
+     * @param targetLanguageCode the target language code (e.g. "fr")
+     * @return translation result containing translated text and language codes
+     * @since 5.0.0
      */
-    TranslateTextResult translateText(String text, String sourceLanguageCode, String targetLanguageCode);
+    TranslationResult translateText(String text, String sourceLanguageCode, String targetLanguageCode);
 }

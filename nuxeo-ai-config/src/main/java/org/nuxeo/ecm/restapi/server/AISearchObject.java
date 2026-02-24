@@ -16,9 +16,8 @@
  * Contributors:
  *     Nuxeo
  */
-package org.nuxeo.ecm.restapi.server.jaxrs;
+package org.nuxeo.ecm.restapi.server;
 
-import static org.nuxeo.ai.services.ModelUsageServiceImpl.ES_BASE_URL_PROPERTY;
 import static org.nuxeo.ecm.core.api.CoreInstance.getCoreSessionSystem;
 
 import java.io.IOException;
@@ -28,32 +27,28 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.apache.commons.io.IOUtils;
-import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.nuxeo.ai.services.SearchAdapterService;
+import org.nuxeo.ai.services.SearchOptions;
+import org.nuxeo.ai.services.SearchSummary;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.webengine.model.WebObject;
 import org.nuxeo.ecm.webengine.model.impl.AbstractResource;
 import org.nuxeo.ecm.webengine.model.impl.ResourceTypeImpl;
-import org.nuxeo.elasticsearch.api.ESClient;
-import org.nuxeo.elasticsearch.api.ElasticSearchAdmin;
-import org.nuxeo.elasticsearch.client.ESRestClient;
-import org.nuxeo.elasticsearch.http.readonly.filter.DefaultSearchRequestFilter;
-import org.nuxeo.elasticsearch.http.readonly.filter.SearchRequestFilter;
-import org.nuxeo.elasticsearch.http.readonly.service.RequestFilterService;
 import org.nuxeo.runtime.api.Framework;
-import org.opensearch.client.Request;
-import org.opensearch.client.Response;
 
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
@@ -160,51 +155,30 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
     }
 
     protected String doSearchWithPayload(CoreSession session, String payload) {
-        RequestFilterService requestFilterService = Framework.getService(RequestFilterService.class);
         try {
-            SearchRequestFilter filter = requestFilterService.getRequestFilters(AUDIT);
-            if (filter == null) {
-                filter = new DefaultSearchRequestFilter();
-            }
-            filter.init(session, AUDIT, "", payload);
-            log.debug(filter);
-
-            ESClient esClient = Framework.getService(ElasticSearchAdmin.class).getClient();
-            if (!(esClient instanceof ESRestClient client)) {
-                throw new IllegalStateException("Passthrough works only with a RestClient");
-            }
-
-            Request request = new Request("GET", filter.getUrl());
-            if (payload != null) {
-                request.setJsonEntity(payload);
-            }
-            Response response = client.performRequestWithTracing(request);
-            return EntityUtils.toString(response.getEntity());
+            SearchAdapterService adapter = Framework.getService(SearchAdapterService.class);
+            String nxqlQuery = "SELECT * FROM LogEntry ORDER BY eventDate DESC";
+            SearchSummary summary = adapter.search(session, nxqlQuery,
+                    SearchOptions.builder().index(SearchAdapterService.DEFAULT_INDEX).limit(100).build());
+            return String.format("{\"total\": %d, \"hits\": %d}", summary.getTotal(), summary.getHitsCount());
         } catch (Exception e) {
-            log.error("Error when trying to get Search Request Filter for index audit", e);
+            log.error("Error when trying to execute search request on audit index", e);
             return null;
         }
-    }
-
-    protected String getElasticsearchBaseUrl() {
-        if (esBaseUrl == null) {
-            esBaseUrl = Framework.getProperty(ES_BASE_URL_PROPERTY, DEFAULT_ES_BASE_URL);
-        }
-        return esBaseUrl;
     }
 
     protected Configuration initFreeMarker() {
         try (InputStream stream = this.getClass().getResourceAsStream(TEMPLATE_FILE_NAME)) {
             String content = IOUtils.toString(stream, StandardCharsets.UTF_8);
-            Configuration cfg = new Configuration(Configuration.VERSION_2_3_0);
-            cfg.setClassForTemplateLoading(AISearchObject.class, "org.nuxeo.ai");
-            cfg.setDefaultEncoding("UTF-8");
-            cfg.setLocale(Locale.US);
+            Configuration config = new Configuration(Configuration.VERSION_2_3_0);
+            config.setClassForTemplateLoading(AISearchObject.class, "org.nuxeo.ai");
+            config.setDefaultEncoding("UTF-8");
+            config.setLocale(Locale.US);
             StringTemplateLoader stringLoader = new StringTemplateLoader();
             stringLoader.putTemplate(AUDIT, content);
-            cfg.setTemplateLoader(stringLoader);
-            cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-            return cfg;
+            config.setTemplateLoader(stringLoader);
+            config.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+            return config;
         } catch (IOException e) {
             throw new NuxeoException(e);
         }

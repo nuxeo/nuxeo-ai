@@ -25,6 +25,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
@@ -40,7 +41,8 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.KeyValueService;
 import org.nuxeo.runtime.kv.KeyValueStore;
 import org.nuxeo.runtime.transaction.TransactionHelper;
-import com.amazonaws.services.rekognition.model.AmazonRekognitionException;
+
+import software.amazon.awssdk.core.exception.SdkServiceException;
 
 /**
  * Base class for listening notifications on detect results
@@ -87,7 +89,7 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
             enrichment.forEach(this::saveMetadata);
         } catch (IOException | ClassNotFoundException e) {
             log.error("An error occurred during event process {}, for event {}", e.getMessage(), event.getName());
-        } catch (AmazonRekognitionException e) {
+        } catch (SdkServiceException e) {
             log.error("An error occurred at AWS Rekognition {}, for event {}", e.getMessage(), event.getName());
         }
     }
@@ -124,7 +126,7 @@ public abstract class BaseAsyncResultListener implements PostCommitEventListener
     protected abstract String getFailureEventName();
 
     /**
-     * @param jobId  reference for AWS Rekognition Job
+     * @param jobId reference for AWS Rekognition Job
      * @param params additional parameters
      * @return A {@link Collection} of {@link EnrichmentMetadata} for given job id
      */

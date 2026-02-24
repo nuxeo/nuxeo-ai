@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.abstraction.AWSServiceRegistry">
+  <implementation class="org.nuxeo.ai.aws.abstraction.AWSServiceRegistry" />
+  <service>
+    <provide interface="org.nuxeo.ai.aws.abstraction.AWSServiceRegistry" />
+  </service>
+</component>
+

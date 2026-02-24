@@ -15,7 +15,7 @@
 
   <extension point="providers"
              target="org.nuxeo.ecm.platform.query.api.PageProviderService">
-    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider" name="doctypes_pp">
+    <genericPageProvider name="doctypes_pp">
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <predicate parameter="ecm:primaryType" operator="IN">
@@ -41,8 +41,7 @@
 
   <extension point="providers"
              target="org.nuxeo.ecm.platform.query.api.PageProviderService">
-    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider"
-                         name="enrichments_pp">
+    <genericPageProvider name="enrichments_pp">
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
@@ -72,7 +71,7 @@
 
   <extension point="providers"
              target="org.nuxeo.ecm.platform.query.api.PageProviderService">
-    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider" name="docs_filled">
+    <genericPageProvider name="docs_filled">
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
@@ -86,8 +85,7 @@
 
   <extension point="providers"
              target="org.nuxeo.ecm.platform.query.api.PageProviderService">
-    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider"
-                         name="docs_corrected">
+    <genericPageProvider name="docs_corrected">
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND
@@ -101,7 +99,7 @@
 
   <extension point="providers"
              target="org.nuxeo.ecm.platform.query.api.PageProviderService">
-    <genericPageProvider class="org.nuxeo.elasticsearch.provider.ElasticSearchNxqlPageProvider" name="docs_others">
+    <genericPageProvider name="docs_others">
       <property name="coreSession">#{documentManager}</property>
       <whereClause docType="DocTypesPP">
         <fixedPart quoteParameters="false" escapeParameters="false">ecm:mixinType != 'HiddenInNavigation' AND

@@ -60,7 +60,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
+
+import jakarta.annotation.Nonnull;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,6 +91,7 @@ import org.nuxeo.ecm.core.bulk.message.BulkStatus;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.ComputationContext;
 import org.nuxeo.runtime.api.Framework;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
@@ -294,19 +297,19 @@ public class ExportInitComputation extends AbstractBulkComputation {
             for (String key : modelParams.keySet()) {
                 Serializable value = modelParams.get(key);
                 switch (key) {
-                case DATASET_EXPORT_MODEL_END_DATE:
-                case DATASET_EXPORT_MODEL_START_DATE:
-                    document.setPropertyValue(key, new Date((long) value));
-                    break;
-                case DATASET_EXPORT_MODEL_ID:
-                case DATASET_EXPORT_MODEL_NAME:
-                    document.setPropertyValue(key, value);
-                    break;
-                case CORPORA_ID_PARAM:
-                    document.setPropertyValue(DATASET_EXPORT_CORPORA_ID, value);
-                    break;
-                default:
-                    log.warn("Unknown property {} of type {}", key, value);
+                    case DATASET_EXPORT_MODEL_END_DATE:
+                    case DATASET_EXPORT_MODEL_START_DATE:
+                        document.setPropertyValue(key, new Date((long) value));
+                        break;
+                    case DATASET_EXPORT_MODEL_ID:
+                    case DATASET_EXPORT_MODEL_NAME:
+                        document.setPropertyValue(key, value);
+                        break;
+                    case CORPORA_ID_PARAM:
+                        document.setPropertyValue(DATASET_EXPORT_CORPORA_ID, value);
+                        break;
+                    default:
+                        log.warn("Unknown property {} of type {}", key, value);
                 }
             }
         }
@@ -326,9 +329,8 @@ public class ExportInitComputation extends AbstractBulkComputation {
     }
 
     protected String buildQueryFrom(DocumentModelList docs) {
-        return UUID_QUERY_INIT + " (" + docs.stream()
-                                            .map(doc -> escapeString(doc.getId()))
-                                            .collect(joining(COMMA_DELIMITER)) + ")";
+        return UUID_QUERY_INIT + " ("
+                + docs.stream().map(doc -> escapeString(doc.getId())).collect(joining(COMMA_DELIMITER)) + ")";
     }
 
     protected ExportRecord createRecordFromDoc(String id, Set<PropertyType> inputs, Set<PropertyType> outputs,

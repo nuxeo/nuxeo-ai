@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
-import javax.inject.Inject;
+
+import jakarta.inject.Inject;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
