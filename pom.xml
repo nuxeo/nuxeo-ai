@@ -8,13 +8,13 @@
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>5.0.0-SNAPSHOT</version>
+  <version>5.0.0</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
 
   <properties>
-    <nuxeo.ai.version>5.0.0-SNAPSHOT</nuxeo.ai.version>
+    <nuxeo.ai.version>${project.version}</nuxeo.ai.version>
     <dropwizard.version>4.2.38</dropwizard.version>
     <nuxeo.target.version>2025.14</nuxeo.target.version>
     <nuxeo.java.client.version>4.0.0</nuxeo.java.client.version>
