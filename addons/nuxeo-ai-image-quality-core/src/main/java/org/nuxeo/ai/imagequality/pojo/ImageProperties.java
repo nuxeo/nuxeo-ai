@@ -21,6 +21,7 @@ package org.nuxeo.ai.imagequality.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * The Properties end point helps you determine the quality of an image
  * (blurriness, contrast, brightness) along with the main colors
@@ -285,9 +286,21 @@ public class ImageProperties {
     private List<Faces> faces;
 
     /**
-     * Probability that it contains a weapon
+     * Probability that the image contains a weapon.
      */
     private float weapon;
+
+    /**
+     * Probability that the image contains a firearm.
+     */
+    @JsonProperty("weapon_firearm")
+    private float weaponFirearm;
+
+    /**
+     * Probability that the image contains a knife.
+     */
+    @JsonProperty("weapon_knife")
+    private float weaponKnife;
 
     /**
      * Probability that it contains alcohol
@@ -298,6 +311,18 @@ public class ImageProperties {
      * Probability that it contains drugs
      */
     private float drugs;
+
+    /**
+     * Probability that it contains medical drugs
+     */
+    @JsonProperty("medical_drugs")
+    private float medicalDrugs;
+
+    /**
+     * Probability that it contains recreational drugs
+     */
+    @JsonProperty("recreational_drugs")
+    private float recreationalDrugs;
 
     private Nudity nudity;
 
@@ -423,6 +448,22 @@ public class ImageProperties {
         this.weapon = weapon;
     }
 
+    public float getWeaponFirearm() {
+        return weaponFirearm;
+    }
+
+    public void setWeaponFirearm(float weaponFirearm) {
+        this.weaponFirearm = weaponFirearm;
+    }
+
+    public float getWeaponKnife() {
+        return weaponKnife;
+    }
+
+    public void setWeaponKnife(float weaponKnife) {
+        this.weaponKnife = weaponKnife;
+    }
+
     public float getAlcohol() {
         return alcohol;
     }
@@ -437,6 +478,22 @@ public class ImageProperties {
 
     public void setDrugs(float drugs) {
         this.drugs = drugs;
+    }
+
+    public float getMedicalDrugs() {
+        return medicalDrugs;
+    }
+
+    public void setMedicalDrugs(float medicalDrugs) {
+        this.medicalDrugs = medicalDrugs;
+    }
+
+    public float getRecreationalDrugs() {
+        return recreationalDrugs;
+    }
+
+    public void setRecreationalDrugs(float recreationalDrugs) {
+        this.recreationalDrugs = recreationalDrugs;
     }
 
     /**

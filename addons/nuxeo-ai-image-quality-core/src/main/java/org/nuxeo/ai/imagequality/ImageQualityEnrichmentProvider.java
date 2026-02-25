@@ -25,6 +25,7 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -80,7 +81,7 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
      * <li><strong>nudity</strong> for the nudity detection</li>
      * <li><strong>wad</strong> for the weapons-alcohol-drugs detection</li>
      * <li><strong>properties</strong> for image properties</li>
-     * <li><strong>face</strong> for face detection</li>
+     * <li><strong>faces</strong> for face detection</li>
      * <li><strong>face-attributes</strong> for face-attributes detection</li>
      * <li><strong>celebrities</strong> for celebrity detection</li>
      * <li><strong>type</strong> for type detection</li>
@@ -118,6 +119,8 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
 
     protected SightEngineMetrics sightEngineMetrics;
 
+    private static final ContentType UTF8_TEXT_PLAIN = ContentType.create(ContentType.TEXT_PLAIN.getMimeType(), StandardCharsets.UTF_8);
+
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
@@ -142,9 +145,9 @@ public class ImageQualityEnrichmentProvider extends RestEnrichmentProvider {
 
         // Use the multipart builder
         setMultipart(requestBuilder, builder -> {
-            builder.addTextBody(PARAM_MODELS, models, ContentType.DEFAULT_BINARY);
-            builder.addTextBody(PARAM_API_USER, apiKey, ContentType.DEFAULT_BINARY);
-            builder.addTextBody(PARAM_API_SECRET, apiSecret, ContentType.DEFAULT_BINARY);
+            builder.addTextBody(PARAM_MODELS, models, UTF8_TEXT_PLAIN);
+            builder.addTextBody(PARAM_API_USER, apiKey, UTF8_TEXT_PLAIN);
+            builder.addTextBody(PARAM_API_SECRET, apiSecret, UTF8_TEXT_PLAIN);
             builder.addBinaryBody(PARAM_MEDIA, file, ContentType.DEFAULT_BINARY, file.getName());
         });
 

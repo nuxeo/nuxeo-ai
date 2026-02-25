@@ -11,7 +11,7 @@
       <option name="uri">http://localhost:5078/1.0/check.json</option>
       <option name="headers.default">false</option>
       <option name="minConfidence">0.75</option>
-      <option name="models">nudity,wad,properties,face,type,celebrities,face-attributes,scam,text,offensive</option>
+      <option name="models">nudity,wad,properties,faces,type,celebrities,face-attributes,scam,text,offensive</option>
       <option name="nuxeo.ai.sightengine.apiKey">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
       <option name="nuxeo.ai.sightengine.apiSecret">CONFIGURED_BUT_NOT_USED_IN_TEST</option>
     </enrichment>
@@ -33,7 +33,7 @@
       <option name="uri">https://api.sightengine.com/1.0/check.json</option>
       <option name="headers.default">false</option>
       <option name="minConfidence">0.75</option>
-      <option name="models">nudity,wad,properties,face,type,celebrities,face-attributes,scam,text,offensive</option>
+      <option name="models">nudity,wad,properties,faces,type,celebrities,face-attributes,scam,text,offensive</option>
       <option name="nuxeo.ai.sightengine.apiKey">SET_THIS_SO_IT_WORKS</option>
       <option name="nuxeo.ai.sightengine.apiSecret">SET_THIS_SO_IT_WORKS</option>
     </enrichment>
