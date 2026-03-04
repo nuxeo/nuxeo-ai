@@ -13,7 +13,7 @@
 
   <properties>
     <wiremock.version>2.27.2</wiremock.version>
-    <gcp.version>26.76.0</gcp.version>
+    <gcp.version>26.77.0</gcp.version>
     <aws.sdk.version>2.26.0</aws.sdk.version>
   </properties>
 
