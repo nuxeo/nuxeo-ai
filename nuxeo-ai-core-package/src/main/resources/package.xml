@@ -15,10 +15,10 @@
   <!-- Production State: production_ready | testing | proto -->
   <production-state>production_ready</production-state>
   <supported>true</supported>
-  <platforms>
-    <platform>@DISTRIBUTION_NAME@-@NUXEO_PLATFORM_VERSION@</platform>
-    <platform>@DISTRIBUTION_NAME@-@NUXEO_TARGET_VERSION@</platform>
-  </platforms>
+  <target-platform>
+    <name>@DISTRIBUTION_NAME@</name>
+    <version>[@NUXEO_PLATFORM_VERSION@,2026.0)</version>
+  </target-platform>
   <!-- Dependencies on other packages -->
   <dependencies>
     <!-- <package>another-package:1.0.0:1.0.0</package> -->
