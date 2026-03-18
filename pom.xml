@@ -25,8 +25,8 @@
     <nuxeo.ai.client.version>1.4.0</nuxeo.ai.client.version>
     <nuxeo.ai.jwt.version>3.0.0</nuxeo.ai.jwt.version>
     <gcp.version>26.78.0</gcp.version>
-    <aws.sdk.version>2.42.14</aws.sdk.version>
-    <grpc-netty.version>1.79.0</grpc-netty.version>
+    <aws.sdk.version>2.42.16</aws.sdk.version>
+    <grpc-netty.version>1.80.0</grpc-netty.version>
     <google.protobuf.version>4.34.0</google.protobuf.version>
     <jakarta.validation.version>3.0.2</jakarta.validation.version>
     <jakarta.mail.api.version>2.0.1</jakarta.mail.api.version>
