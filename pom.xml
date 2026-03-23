@@ -16,7 +16,7 @@
   <properties>
     <nuxeo.ai.version>${project.version}</nuxeo.ai.version>
     <dropwizard.version>4.2.38</dropwizard.version>
-    <nuxeo.target.version>2025.14</nuxeo.target.version>
+    <nuxeo.target.version>${nuxeo.platform.version}</nuxeo.target.version>
     <nuxeo.java.client.version>4.0.0</nuxeo.java.client.version>
     <wiremock.version>2.27.2</wiremock.version>
     <nuxeo.log4j.version>1.1.0</nuxeo.log4j.version>
