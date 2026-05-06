@@ -1,0 +1,55 @@
+# Set list of templates to include, comma separated values.
+nuxeo.template.includes=common
+
+# Hyland Content Intelligence (Knowledge Enrichment) credentials.
+# Consume these values from the Content Innovation Cloud application configuration.
+nuxeo.hyland.cic.auth.baseUrl=
+nuxeo.hyland.cic.contextEnrichment.baseUrl=
+nuxeo.hyland.cic.enrichment.clientId=
+nuxeo.hyland.cic.enrichment.clientSecret=
+
+# Hyland Content Intelligence result-polling budget.
+# The upstream connector defaults to ~10 tries x ~3 s = ~30 s, which is fine for image-* actions but routinely
+# too short for the text-* actions (text-summarization / text-classification / named-entity-recognition-text)
+# on PDF / DOCX / XLSX / PPTX / TXT inputs, where Hyland CI processing typically takes 60-120 s. We raise the
+# budget here to 40 x 3 s = 120 s so document pipelines do not fall off the polling cliff and return PROCESSING.
+# Any deployment may override these in nuxeo.conf if their workload needs a different envelope.
+nuxeo.hyland.cic.pullResultsMaxTries=40
+nuxeo.hyland.cic.pullResultsSleepInterval=3000
+
+# Ensure image uploads flow into the AI pipeline so enrichment is triggered automatically.
+nuxeo.ai.images.enabled=true
+
+# Master switch: when true, enrichment runs on every image upload and results are persisted on the document
+# (dc:description from image-description; dc:tags from image-classification and named-entity-recognition-image).
+nuxeo.ai.contentintelligence.enabled=true
+
+# Knowledge Enrichment actions requested by the default image provider.
+# Note: image-classification requires a non-empty classes list (>= 2 distinct values).
+# named-entity-recognition-image adds any detected entities (persons, locations, organisations, ...) as tags.
+nuxeo.ai.contentintelligence.actions=image-description,image-classification,named-entity-recognition-image
+# Classes used by image-classification; override with values meaningful to your domain.
+nuxeo.ai.contentintelligence.classes=animal,person,vehicle,landscape,building,food,nature,furniture,document,electronics,plant,artwork
+# Max blob size (bytes) the image provider will process. The platform default (5 MB) is too small for modern cameras
+# and high-res scans; we raise it to 25 MB. Blobs above this cap are dropped with an "Unsupported call" log entry.
+nuxeo.ai.contentintelligence.maxSize=26214400
+
+# -----------------------------------------------------------------------------
+# Document pipeline: PDFs, Word, Excel, PowerPoint, plain text.
+# Uses the Hyland CI text-* actions and writes the summary to dc:description
+# and classification + named entities as dc:tags.
+# -----------------------------------------------------------------------------
+nuxeo.ai.contentintelligence.documents.enabled=true
+nuxeo.ai.contentintelligence.documents.actions=text-summarization,text-classification,named-entity-recognition-text
+# Classes used by text-classification; override with values meaningful to your domain.
+nuxeo.ai.contentintelligence.documents.classes=contract,invoice,report,letter,manual,article,presentation,memo,legal,financial,resume,other
+# Comma-separated list of blob MIME types routed into the document CI pipeline. This list is the single source
+# of truth: the FreeMarker template emits both the pipe-filter regex and the enrichment descriptor's
+# <mimeTypes> entries from it, so the two can never drift.
+nuxeo.ai.contentintelligence.documents.mimeTypes=application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain
+# Max blob size (bytes) the document provider will process. Text-heavy PDFs / PPTs routinely go over 10 MB, so the
+# platform default (5 MB) is inadequate; we raise it to 50 MB. Increase further if your tenant uploads larger decks.
+nuxeo.ai.contentintelligence.documents.maxSize=52428800
+
+# Enable the optional secondary provider that requests the full action set (embeddings, metadata generation, ...).
+nuxeo.ai.contentintelligence.all=false

@@ -1,0 +1,29 @@
+<!-- See documentation at http://doc.nuxeo.com/x/HgIz -->
+<package type="addon" name="nuxeo-ai-content-intelligence" version="@VERSION@">
+  <title>Nuxeo AI Content Intelligence</title>
+  <description>
+    <p>Enrichment provider that calls the Hyland Content Intelligence Knowledge Enrichment APIs
+      (image description, classification, embeddings, metadata generation, text summarization, ...).
+      Requires a valid Content Innovation Cloud account and endpoints.</p>
+  </description>
+  <vendor>Nuxeo</vendor>
+  <installer restart="true"/>
+  <uninstaller restart="true"/>
+  <!-- Nuxeo Validation: none | inprocess | primary_validation | nuxeo_certified -->
+  <nuxeo-validation>nuxeo_certified</nuxeo-validation>
+  <!-- Production State: production_ready | testing | proto -->
+  <production-state>production_ready</production-state>
+  <supported>true</supported>
+  <target-platform>
+    <name>@DISTRIBUTION_NAME@</name>
+    <version>[@NUXEO_PLATFORM_VERSION@,2026.0)</version>
+  </target-platform>
+  <!-- Dependencies on other packages -->
+  <dependencies>
+    <package>nuxeo-ai-core:@VERSION@:@VERSION@</package>
+  </dependencies>
+  <license>Apache License, Version 2.0</license>
+  <license-url>http://www.apache.org/licenses/LICENSE-2.0</license-url>
+  <!-- Visibility: PRIVATE | MARKETPLACE | DEV | PUBLIC -->
+  <visibility>MARKETPLACE</visibility>
+</package>

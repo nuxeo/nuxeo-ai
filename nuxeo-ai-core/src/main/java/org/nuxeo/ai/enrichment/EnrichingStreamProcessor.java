@@ -69,6 +69,16 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
 
     public static final String USE_CACHE = "cache";
 
+    /**
+     * Framework property controlling the per-call timeout (seconds) enforced by Failsafe around a single
+     * enrichment provider invocation. External providers that do synchronous long-polling (e.g. Hyland
+     * Content Intelligence for text/document actions) can legitimately take &gt; 60s, so we make the cap
+     * configurable instead of hard-coding it. Default preserves the historical behaviour.
+     */
+    public static final String CALL_TIMEOUT_SECONDS_PROP = "nuxeo.ai.enrichment.call.timeout.seconds";
+
+    public static final int DEFAULT_CALL_TIMEOUT_SECONDS = 60;
+
     @Override
     public Topology getTopology(Map<String, String> options) {
         String streamIn = options.get(STREAM_IN);
@@ -203,7 +213,17 @@ public class EnrichingStreamProcessor implements StreamProcessorTopology {
          */
         protected Collection<AIMetadata> callProvider(Record record, Callable<Collection<AIMetadata>> callable) {
 
-            Timeout<Collection<AIMetadata>> timeout = Timeout.of(Duration.ofSeconds(60));
+            int timeoutSeconds = DEFAULT_CALL_TIMEOUT_SECONDS;
+            try {
+                String cfg = Framework.getProperty(CALL_TIMEOUT_SECONDS_PROP);
+                if (cfg != null && !cfg.isBlank()) {
+                    timeoutSeconds = Integer.parseInt(cfg.trim());
+                }
+            } catch (NumberFormatException e) {
+                log.warn("Invalid value for {}, falling back to {}s", CALL_TIMEOUT_SECONDS_PROP,
+                        DEFAULT_CALL_TIMEOUT_SECONDS);
+            }
+            Timeout<Collection<AIMetadata>> timeout = Timeout.of(Duration.ofSeconds(timeoutSeconds));
 
             var retryPolicy = this.retryPolicy.copy().onRetry(c -> {
                 metrics.retry();

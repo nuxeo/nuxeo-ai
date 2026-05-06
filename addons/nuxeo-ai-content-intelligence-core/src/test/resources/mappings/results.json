@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/content/process/[^/]+/results"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "mock-job-id",
+      "status": "SUCCESS",
+      "results": [
+        {
+          "objectKey": "mock-object-key",
+          "imageDescription": {
+            "isSuccess": true,
+            "result": "A small test image"
+          },
+          "imageClassification": {
+            "isSuccess": true,
+            "result": "test-class"
+          },
+          "imageEmbeddings": {
+            "isSuccess": true,
+            "result": [0.1, 0.2, 0.3]
+          }
+        }
+      ]
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

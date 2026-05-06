@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/content/process"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "processingId": "mock-job-id"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -57,4 +57,5 @@ RUN --mount=type=bind,target=/packages \
     /packages/nuxeo-ai-core-${VERSION}.zip \
     /packages/nuxeo-ai-aws-package-${VERSION}.zip \
     /packages/nuxeo-ai-gcp-package-${VERSION}.zip \
-    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip
+    /packages/nuxeo-ai-image-quality-package-${VERSION}.zip \
+    /packages/nuxeo-ai-content-intelligence-package-${VERSION}.zip

@@ -72,3 +72,9 @@ nuxeo.ai.similar.content.listener.enable=false
 
 # KV Store storage timeout (default 48 hours)
 nuxeo.ai.timeout.kv.store=172800
+
+# Per-call Failsafe timeout (seconds) wrapping a single enrichment provider invocation.
+# Providers that do synchronous long-polling (e.g. Hyland Content Intelligence for text/document
+# actions) routinely take > 60s, so the historical 60s hard-coded cap was causing spurious retries
+# and partial results. Raise this only if your provider's worst-case call time exceeds this value.
+nuxeo.ai.enrichment.call.timeout.seconds=180

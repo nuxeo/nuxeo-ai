@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/files/upload/presigned-url.*"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "presignedUrl": "http://localhost:5079/upload/mock-object-key",
+      "objectKey": "mock-object-key"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -134,7 +134,8 @@ jobs:
           packages=('nuxeo-ai-core-package/target/nuxeo-ai-core-'
                     'addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-'
                     'addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-'
-                    'addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-')
+                    'addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-'
+                    'addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-')
 
           for pkg in "${packages[@]}"; do
             PACKAGE=${pkg}${{ env.VERSION }}.zip

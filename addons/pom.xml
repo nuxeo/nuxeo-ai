@@ -15,6 +15,7 @@
     <wiremock.version>2.27.2</wiremock.version>
     <gcp.version>26.80.0</gcp.version>
     <aws.sdk.version>2.26.0</aws.sdk.version>
+    <nuxeo.content.intelligence.connector.version>2025.0.0</nuxeo.content.intelligence.connector.version>
   </properties>
 
   <modules>
@@ -24,6 +25,8 @@
     <module>nuxeo-ai-aws-package</module>
     <module>nuxeo-ai-gcp-core</module>
     <module>nuxeo-ai-gcp-package</module>
+    <module>nuxeo-ai-content-intelligence-core</module>
+    <module>nuxeo-ai-content-intelligence-package</module>
   </modules>
 
   <dependencyManagement>
@@ -53,6 +56,16 @@
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-image-quality-core</artifactId>
         <version>${nuxeo.ai.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.ai</groupId>
+        <artifactId>nuxeo-ai-content-intelligence-core</artifactId>
+        <version>${nuxeo.ai.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuxeo.content.intelligence</groupId>
+        <artifactId>nuxeo-content-intelligence-connector-core</artifactId>
+        <version>${nuxeo.content.intelligence.connector.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.tomakehurst</groupId>
