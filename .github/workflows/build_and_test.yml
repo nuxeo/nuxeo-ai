@@ -61,7 +61,7 @@ jobs:
     outputs:
       version: ${{ steps.project.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: 'Set java version'
         id: java-version
         run: |
@@ -73,7 +73,7 @@ jobs:
                 echo "java-version=17" >> $GITHUB_OUTPUT
           fi
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version:  ${{ steps.java-version.outputs.java-version }}
           distribution: "zulu"
@@ -130,7 +130,7 @@ jobs:
       - run: ls -alR | grep ".*package.*.zip"
       - run: ls -alR | grep ".*nuxeo-ai-core-.*.zip"
       - name: Upload packages build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuxeo-ai-github-packages-build
           path: |
@@ -172,7 +172,7 @@ jobs:
     steps:
       - name: Slack Notification
         id: slack
-        uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c
         with:
           channel-id: "C9W4P9RKM"
           slack-message: "Nuxeo AI Core ${{ github.workflow }} workflow failed!\n${{ github.event.head_commit.url }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
