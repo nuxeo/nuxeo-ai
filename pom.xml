@@ -25,7 +25,7 @@
     <nuxeo.ai.client.version>1.4.0</nuxeo.ai.client.version>
     <nuxeo.ai.jwt.version>3.0.0</nuxeo.ai.jwt.version>
     <gcp.version>26.82.0</gcp.version>
-    <aws.sdk.version>2.44.6</aws.sdk.version>
+    <aws.sdk.version>2.44.7</aws.sdk.version>
     <grpc-netty.version>1.81.0</grpc-netty.version>
     <google.protobuf.version>4.34.1</google.protobuf.version>
     <jakarta.validation.version>3.0.2</jakarta.validation.version>
