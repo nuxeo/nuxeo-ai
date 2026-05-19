@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.contentintelligence.listeners">
+
+  <require>org.nuxeo.ai.services.AIComponent</require>
+
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
+    <!--
+      Persists the Hyland Content Intelligence long-form description (imageDescription / textSummary) to
+      dc:description. The description deliberately does NOT travel through the enrichment labels stream so
+      that the upstream StoreLabelsAsTags consumer (active when nuxeo.enrichment.save.tags=true for AWS / GCP /
+      Sightengine co-existence) cannot turn the description paragraph into a tag.
+    -->
+    <listener name="contentIntelligenceDescriptionListener"
+              async="true"
+              postCommit="true"
+              priority="100"
+              class="org.nuxeo.ai.contentintelligence.ContentIntelligenceDescriptionListener">
+      <event>enrichmentMetadataCreated</event>
+    </listener>
+  </extension>
+
+</component>

@@ -41,7 +41,22 @@
     </streamProcessor>
   </extension>
 
-  <!-- Consume the enrichment metadata and push it onto dc:description + dc:tags. -->
+  <!--
+    Tag-writing consumer for Hyland Content Intelligence enrichments.
+    
+    IMPORTANT: This consumer is DISABLED when nuxeo.enrichment.save.tags=true because in that case the upstream
+    StoreLabelsAsTags consumer (from nuxeo-ai-core) will write tags for ALL enrichments including Hyland CI.
+    Running both consumers would cause duplicate tags with slightly different sanitization:
+      - StoreLabelsAsTags removes spaces:      "high contrast" -> "highcontrast"
+      - This consumer hyphenates spaces:       "high contrast" -> "high-contrast"
+    
+    When nuxeo.enrichment.save.tags=false (the default for environments using only Hyland CI), this consumer handles
+    tag-writing with better formatting (hyphenated multi-word tags for readability).
+    
+    Note: dc:description is handled separately by ContentIntelligenceDescriptionListener listening on the
+    enrichmentMetadataCreated event, regardless of this consumer's status.
+  -->
+<#if "${nuxeo.enrichment.save.tags}" != "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="storeContentIntelligenceMetadataProcessor" defaultConcurrency="1" defaultPartitions="4"
                      class="org.nuxeo.ai.contentintelligence.StoreContentIntelligenceMetadata">
@@ -49,6 +64,7 @@
       <option name="source">ai/${nuxeo.enrichment.source.stream}</option>
     </streamProcessor>
   </extension>
+</#if>
 </#if>
 
   <!-- ============================================================ -->

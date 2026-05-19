@@ -15,8 +15,8 @@
  */
 package org.nuxeo.ai.contentintelligence;
 
-import java.util.LinkedHashSet;
-import java.util.Objects;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -37,32 +37,40 @@ import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
- * Consumes {@link EnrichmentMetadata} produced by {@link ContentIntelligenceEnrichmentProvider} and writes its results
- * back onto the source document:
- * <ul>
- *   <li>Labels prefixed with {@code imageDescription/} (images) or {@code textSummary/} (PDFs / Office documents /
- *       plain text) populate {@code dc:description}.</li>
- *   <li>Every other non-description label returned by Hyland CI (e.g. {@code imageClassification/...},
- *       {@code textClassification/...}, NER entity buckets) is written as a document tag via the
- *       {@link TagService}.</li>
- * </ul>
- * Values keep only the portion after the first {@code /} (i.e. the raw action result) so descriptions read as
- * plain text and tags don't carry action-name prefixes.
+ * Consumes {@link EnrichmentMetadata} produced by {@link ContentIntelligenceEnrichmentProvider} and tags the source
+ * document with every label value returned by Hyland CI.
+ * <p>
+ * Each Hyland CI action (e.g. {@code imageClassification}, {@code namedEntityImage}, {@code textClassification},
+ * {@code namedEntityText}) is carried as one {@link LabelSuggestion} whose
+ * {@link LabelSuggestion#getProperty() property} is the action name and whose values are the extracted strings (no
+ * action prefix). This consumer iterates every suggestion and writes the sanitised values as Nuxeo tags via the
+ * {@link TagService}.
+ * <p>
+ * Long-form description / summary text ({@code imageDescription}, {@code textSummary}) is NEVER part of the labels
+ * stream and is therefore never tagged here. It is persisted to {@code dc:description} by
+ * {@link ContentIntelligenceDescriptionListener} from the raw Hyland CI JSON blob. This split avoids the historical
+ * bug where the upstream {@code StoreLabelsAsTags} consumer (active in environments that set
+ * {@code nuxeo.enrichment.save.tags=true}, e.g. for AWS / GCP / Sightengine co-existence) turned the description
+ * paragraph into a single mega-tag.
  */
 public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer {
 
     private static final Logger log = LogManager.getLogger(StoreContentIntelligenceMetadata.class);
 
-    /** Action names whose value is treated as a plain description and written to {@code dc:description}. */
-    public static final Set<String> DESCRIPTION_ACTIONS = Set.of("imageDescription", "textSummary");
-
-    public static final String DESCRIPTION_PROPERTY = "dc:description";
+    /**
+     * Defensive filter: if for any reason a description-bearing suggestion ever shows up in the labels stream, drop
+     * it here instead of tagging the document with the full description paragraph.
+     */
+    public static final Set<String> DESCRIPTION_ACTIONS = ContentIntelligenceEnrichmentProvider.DESCRIPTION_ACTION_KEYS;
 
     /** Characters stripped out of tag names to keep them compatible with the Nuxeo {@link TagService}. */
     protected static final Pattern TAG_SANITIZER = Pattern.compile("[/'\\\\%]");
 
     /** Runs of whitespace in tag values are collapsed to a single hyphen so multi-word entities stay readable. */
     protected static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    /** Hyphens pattern for normalization during deduplication. */
+    protected static final Pattern HYPHENS = Pattern.compile("-+");
 
     @Override
     public void accept(EnrichmentMetadata metadata) {
@@ -81,33 +89,8 @@ public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer
                         metadata.context.documentRef);
                 return;
             }
-
-            if (applyDescription(doc, metadata)) {
-                session.saveDocument(doc);
-            }
             applyTags(session, doc, metadata);
         }));
-    }
-
-    /**
-     * Extracts the first non-blank description label value (from any {@link #DESCRIPTION_ACTIONS}) and writes it to
-     * {@code dc:description}, but only if the property is currently empty, to avoid overwriting user-edited
-     * descriptions.
-     *
-     * @return {@code true} if the document was mutated
-     */
-    protected boolean applyDescription(DocumentModel doc, EnrichmentMetadata metadata) {
-        String description = firstValueForActions(metadata, DESCRIPTION_ACTIONS);
-        if (StringUtils.isBlank(description)) {
-            return false;
-        }
-        Object existing = doc.getPropertyValue(DESCRIPTION_PROPERTY);
-        if (existing != null && StringUtils.isNotBlank(existing.toString())) {
-            log.debug("dc:description already set on {}, skipping AI description", doc.getId());
-            return false;
-        }
-        doc.setPropertyValue(DESCRIPTION_PROPERTY, description);
-        return true;
     }
 
     /** Tags the document with every non-description label value returned by Hyland CI. */
@@ -126,60 +109,47 @@ public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer
         }
     }
 
+    /**
+     * Collects every taggable label value out of {@code metadata}. Suggestions whose
+     * {@link LabelSuggestion#getProperty() property} matches a {@link #DESCRIPTION_ACTIONS description action} are
+     * skipped wholesale; the remaining values are run through {@link #sanitizeTag(String)} and deduplicated.
+     * <p>
+     * Deduplication is performed using a normalized key (lowercase, hyphens removed) so that near-duplicates like
+     * "high-contrast" and "highcontrast" collapse into a single tag. The first encountered version is kept.
+     */
     protected Set<String> collectTagValues(EnrichmentMetadata metadata) {
-        Set<String> tags = new LinkedHashSet<>();
+        // Map from normalized key -> first sanitized tag value (keeps insertion order)
+        Map<String, String> tagsByNormalizedKey = new LinkedHashMap<>();
         if (metadata.getLabels() == null) {
-            return tags;
+            return tagsByNormalizedKey.values().isEmpty() ? Set.of()
+                    : new java.util.LinkedHashSet<>(tagsByNormalizedKey.values());
         }
         for (LabelSuggestion suggestion : metadata.getLabels()) {
-            if (suggestion == null || suggestion.getValues() == null) {
+            if (suggestion == null || suggestion.getValues() == null
+                    || DESCRIPTION_ACTIONS.contains(suggestion.getProperty())) {
                 continue;
             }
             for (AIMetadata.Label label : suggestion.getValues()) {
                 if (label == null || StringUtils.isBlank(label.getName())) {
                     continue;
                 }
-                String[] parts = splitActionValue(label.getName());
-                if (DESCRIPTION_ACTIONS.contains(parts[0])) {
-                    continue;
-                }
-                String sanitized = sanitizeTag(parts[1]);
+                String sanitized = sanitizeTag(label.getName());
                 if (StringUtils.isNotBlank(sanitized)) {
-                    tags.add(sanitized);
+                    String normalizedKey = normalizeForDedup(sanitized);
+                    // Keep the first version encountered (typically the more readable hyphenated one)
+                    tagsByNormalizedKey.putIfAbsent(normalizedKey, sanitized);
                 }
             }
         }
-        return tags;
-    }
-
-    protected String firstValueForActions(EnrichmentMetadata metadata, Set<String> actionNames) {
-        if (metadata.getLabels() == null) {
-            return null;
-        }
-        return metadata.getLabels()
-                       .stream()
-                       .filter(Objects::nonNull)
-                       .flatMap(s -> s.getValues() == null ? java.util.stream.Stream.empty() : s.getValues().stream())
-                       .filter(Objects::nonNull)
-                       .map(AIMetadata.Label::getName)
-                       .filter(StringUtils::isNotBlank)
-                       .map(this::splitActionValue)
-                       .filter(parts -> actionNames.contains(parts[0]) && StringUtils.isNotBlank(parts[1]))
-                       .map(parts -> parts[1])
-                       .findFirst()
-                       .orElse(null);
+        return new java.util.LinkedHashSet<>(tagsByNormalizedKey.values());
     }
 
     /**
-     * Splits a label name formatted as {@code actionName/value} into a two-element array. When no slash is present the
-     * value is left blank and the whole name is treated as the action.
+     * Normalizes a tag for deduplication: lowercase + remove hyphens. This ensures "high-contrast" and "highcontrast"
+     * are treated as the same tag.
      */
-    protected String[] splitActionValue(String labelName) {
-        int idx = labelName.indexOf('/');
-        if (idx < 0) {
-            return new String[] { labelName, "" };
-        }
-        return new String[] { labelName.substring(0, idx), labelName.substring(idx + 1) };
+    protected String normalizeForDedup(String tag) {
+        return HYPHENS.matcher(tag.toLowerCase()).replaceAll("");
     }
 
     protected String sanitizeTag(String rawTag) {

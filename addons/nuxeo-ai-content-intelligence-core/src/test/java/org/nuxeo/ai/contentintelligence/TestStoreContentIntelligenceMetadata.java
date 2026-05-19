@@ -15,15 +15,9 @@
  */
 package org.nuxeo.ai.contentintelligence;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,13 +33,16 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
-import org.nuxeo.ecm.core.api.DocumentModel;
 
 /**
- * Unit tests for {@link StoreContentIntelligenceMetadata}. The consumer's hot path is the mapping between Hyland CI
- * labels (e.g. {@code imageDescription/...}, {@code textSummary/...}, {@code namedEntityText/...}) and the target
- * document properties ({@code dc:description} + {@code dc:tags}). All of that logic lives in protected helpers, so we
- * test them directly without needing a Nuxeo runtime.
+ * Unit tests for {@link StoreContentIntelligenceMetadata}. The consumer is now strictly a tag-writer: long-form
+ * description / summary text is delegated to {@link ContentIntelligenceDescriptionListener} and must never reach this
+ * code path through the labels stream. These tests therefore focus on:
+ * <ul>
+ *   <li>{@link StoreContentIntelligenceMetadata#sanitizeTag(String)} - tag string normalisation.</li>
+ *   <li>{@link StoreContentIntelligenceMetadata#collectTagValues(EnrichmentMetadata)} - one {@link LabelSuggestion}
+ *       per Hyland action; values surface as tags; description-action suggestions are filtered out defensively.</li>
+ * </ul>
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TestStoreContentIntelligenceMetadata {
@@ -58,22 +55,8 @@ public class TestStoreContentIntelligenceMetadata {
     }
 
     // ---------------------------------------------------------------------------------------------------------------
-    // splitActionValue / sanitizeTag - low level helpers
+    // sanitizeTag - low level helper
     // ---------------------------------------------------------------------------------------------------------------
-
-    @Test
-    public void shouldSplitActionAndValueOnFirstSlash() {
-        assertArrayEquals(new String[] { "imageDescription", "A sunny day in Paris" },
-                consumer.splitActionValue("imageDescription/A sunny day in Paris"));
-        // Only the first slash counts: paths that happen to contain a slash keep it in the value half.
-        assertArrayEquals(new String[] { "textSummary", "Clause 1/2: indemnity" },
-                consumer.splitActionValue("textSummary/Clause 1/2: indemnity"));
-    }
-
-    @Test
-    public void shouldTreatLabelWithoutSlashAsActionOnly() {
-        assertArrayEquals(new String[] { "legacyAction", "" }, consumer.splitActionValue("legacyAction"));
-    }
 
     @Test
     public void shouldHyphenateMultiWordTags() {
@@ -99,59 +82,17 @@ public class TestStoreContentIntelligenceMetadata {
     }
 
     // ---------------------------------------------------------------------------------------------------------------
-    // firstValueForActions - picks the description source
-    // ---------------------------------------------------------------------------------------------------------------
-
-    @Test
-    public void shouldPreferImageDescriptionWhenPresent() {
-        EnrichmentMetadata metadata = buildMetadata(label("imageDescription", "A skyline at dusk"),
-                label("imageClassification", "landscape"));
-        assertEquals("A skyline at dusk",
-                consumer.firstValueForActions(metadata, StoreContentIntelligenceMetadata.DESCRIPTION_ACTIONS));
-    }
-
-    @Test
-    public void shouldFallBackToTextSummaryForDocumentBlobs() {
-        EnrichmentMetadata metadata = buildMetadata(label("textSummary", "Supply contract with Acme Corp"),
-                label("textClassification", "contract"),
-                label("namedEntityText", "Jane Doe"));
-        assertEquals("Supply contract with Acme Corp",
-                consumer.firstValueForActions(metadata, StoreContentIntelligenceMetadata.DESCRIPTION_ACTIONS));
-    }
-
-    @Test
-    public void shouldReturnNullWhenNoDescriptionLabelPresent() {
-        EnrichmentMetadata metadata = buildMetadata(label("imageClassification", "landscape"),
-                label("namedEntityText", "Jane Doe"));
-        assertNull(consumer.firstValueForActions(metadata, StoreContentIntelligenceMetadata.DESCRIPTION_ACTIONS));
-    }
-
-    @Test
-    public void shouldHandleMetadataWithoutLabels() {
-        BlobTextFromDocument blobText = buildBlobText();
-        EnrichmentMetadata empty = new EnrichmentMetadata.Builder("/classification/imageLabels", "test", blobText)
-                                                                                                                .withLabels(
-                                                                                                                        Collections.emptyList())
-                                                                                                                .build();
-        assertNull(consumer.firstValueForActions(empty, StoreContentIntelligenceMetadata.DESCRIPTION_ACTIONS));
-        assertTrue(consumer.collectTagValues(empty).isEmpty());
-    }
-
-    // ---------------------------------------------------------------------------------------------------------------
-    // collectTagValues - description actions must be filtered out; everything else sanitised into tags
+    // collectTagValues - description suggestions must be filtered out; values become tags
     // ---------------------------------------------------------------------------------------------------------------
 
     @Test
     public void shouldCollectEveryNonDescriptionLabelAsATag() {
-        EnrichmentMetadata metadata = buildMetadata(label("textSummary", "A supply contract"),
-                label("textClassification", "contract"),
-                label("namedEntityText", "Acme Corp"),
-                label("namedEntityText", "Jane Doe"));
+        EnrichmentMetadata metadata = buildMetadata(
+                suggestion("textClassification", "contract"),
+                suggestion("namedEntityText", "Acme Corp", "Jane Doe"));
 
         Set<String> tags = consumer.collectTagValues(metadata);
-        // textSummary must NOT appear - descriptions are never tagged.
-        assertFalse(tags.contains("A-supply-contract"));
-        // The remaining three values must all be present, sanitised (multi-word -> hyphens, case preserved).
+        // Sanitised, multi-word -> hyphens, case preserved.
         assertTrue(tags.contains("contract"));
         assertTrue(tags.contains("Acme-Corp"));
         assertTrue(tags.contains("Jane-Doe"));
@@ -159,78 +100,86 @@ public class TestStoreContentIntelligenceMetadata {
     }
 
     @Test
-    public void shouldDeduplicateRepeatedLabelValues() {
-        EnrichmentMetadata metadata = buildMetadata(label("imageClassification", "landscape"),
-                label("namedEntityImage", "landscape"));
+    public void shouldDeduplicateRepeatedLabelValuesAcrossSuggestions() {
+        EnrichmentMetadata metadata = buildMetadata(
+                suggestion("imageClassification", "landscape"),
+                suggestion("namedEntityImage", "landscape"));
         Set<String> tags = consumer.collectTagValues(metadata);
         assertEquals(1, tags.size());
         assertTrue(tags.contains("landscape"));
     }
 
     @Test
-    public void shouldIgnoreBothImageAndTextDescriptionActionsWhenTagging() {
-        EnrichmentMetadata metadata = buildMetadata(label("imageDescription", "A sunset"),
-                label("textSummary", "A contract"),
-                label("imageClassification", "landscape"));
+    public void shouldDeduplicateNearDuplicatesWithDifferentHyphenation() {
+        // Hyland CI sometimes returns the same concept with different formatting from different actions:
+        // e.g. "high-contrast" from one action and "highcontrast" from another.
+        // These should collapse to a single tag (the first one encountered is kept).
+        EnrichmentMetadata metadata = buildMetadata(
+                suggestion("imageClassification", "high-contrast", "very-sharp"),
+                suggestion("namedEntityImage", "highcontrast", "verysharp", "photographic-film"),
+                suggestion("textClassification", "photographicfilm"));
+
         Set<String> tags = consumer.collectTagValues(metadata);
-        // Only imageClassification should survive - both description actions are excluded.
+        // Should keep only 3 unique tags (first encountered version of each)
+        assertEquals(3, tags.size());
+        assertTrue(tags.contains("high-contrast"));  // kept, first version
+        assertTrue(tags.contains("very-sharp"));     // kept, first version
+        assertTrue(tags.contains("photographic-film")); // kept, first version
+        // These should NOT be present (near-duplicates filtered out)
+        assertTrue(!tags.contains("highcontrast"));
+        assertTrue(!tags.contains("verysharp"));
+        assertTrue(!tags.contains("photographicfilm"));
+    }
+
+    @Test
+    public void shouldDeduplicateCaseInsensitively() {
+        // Tags differing only in case should also be deduplicated
+        EnrichmentMetadata metadata = buildMetadata(
+                suggestion("imageClassification", "Landscape"),
+                suggestion("namedEntityImage", "landscape", "LANDSCAPE"));
+
+        Set<String> tags = consumer.collectTagValues(metadata);
+        assertEquals(1, tags.size());
+        assertTrue(tags.contains("Landscape")); // first version kept
+    }
+
+    @Test
+    public void shouldSkipDescriptionSuggestionsEvenIfPresent() {
+        // Defensive: if a description-bearing suggestion ever appears in the labels stream (it shouldn't, the
+        // provider strips them) we must NOT tag the document with the full description paragraph.
+        EnrichmentMetadata metadata = buildMetadata(
+                suggestion("imageDescription", "A very long generated description that should never become a tag"),
+                suggestion("textSummary", "An even longer summary paragraph that also must not become a tag"),
+                suggestion("imageClassification", "landscape"));
+
+        Set<String> tags = consumer.collectTagValues(metadata);
         assertEquals(Collections.singleton("landscape"), tags);
     }
 
-    // ---------------------------------------------------------------------------------------------------------------
-    // applyDescription - full behavioural test against a mocked DocumentModel
-    // ---------------------------------------------------------------------------------------------------------------
-
     @Test
-    public void shouldWriteImageDescriptionWhenPropertyIsEmpty() {
-        DocumentModel doc = mock(DocumentModel.class);
-        when(doc.getPropertyValue(StoreContentIntelligenceMetadata.DESCRIPTION_PROPERTY)).thenReturn(null);
-
-        boolean dirty = consumer.applyDescription(doc, buildMetadata(label("imageDescription", "A sunset in Paris")));
-
-        assertTrue(dirty);
-        verify(doc).setPropertyValue(StoreContentIntelligenceMetadata.DESCRIPTION_PROPERTY, "A sunset in Paris");
+    public void shouldHandleMetadataWithoutLabels() {
+        BlobTextFromDocument blobText = buildBlobText();
+        EnrichmentMetadata empty = new EnrichmentMetadata.Builder("/classification/imageLabels", "test", blobText)
+                .withLabels(Collections.emptyList())
+                .build();
+        assertTrue(consumer.collectTagValues(empty).isEmpty());
     }
 
     @Test
-    public void shouldWriteTextSummaryWhenPropertyIsEmpty() {
-        DocumentModel doc = mock(DocumentModel.class);
-        when(doc.getPropertyValue(StoreContentIntelligenceMetadata.DESCRIPTION_PROPERTY)).thenReturn("");
+    public void shouldIgnoreNullValuesAndBlankNames() {
+        // The provider should never produce these, but be defensive.
+        List<AIMetadata.Label> mixed = Arrays.asList(
+                new AIMetadata.Label("real-value", 1.0F),
+                new AIMetadata.Label("", 1.0F),
+                new AIMetadata.Label("   ", 1.0F));
+        LabelSuggestion s = new LabelSuggestion("namedEntityImage", mixed);
+        EnrichmentMetadata metadata = new EnrichmentMetadata.Builder("/classification/imageLabels", "test",
+                buildBlobText())
+                .withLabels(Collections.singletonList(s))
+                .build();
 
-        boolean dirty = consumer.applyDescription(doc,
-                buildMetadata(label("textSummary", "Quarterly sales report for 2026")));
-
-        assertTrue(dirty);
-        verify(doc).setPropertyValue(StoreContentIntelligenceMetadata.DESCRIPTION_PROPERTY,
-                "Quarterly sales report for 2026");
-    }
-
-    @Test
-    public void shouldNotOverwriteExistingDescription() {
-        DocumentModel doc = mock(DocumentModel.class);
-        when(doc.getPropertyValue(StoreContentIntelligenceMetadata.DESCRIPTION_PROPERTY)).thenReturn(
-                "Curated by a human");
-        when(doc.getId()).thenReturn("doc-1");
-
-        boolean dirty = consumer.applyDescription(doc,
-                buildMetadata(label("imageDescription", "Auto-generated description")));
-
-        assertFalse(dirty);
-        // Only the read happened - we must never call setPropertyValue on a doc that already has a description.
-        verify(doc).getPropertyValue(StoreContentIntelligenceMetadata.DESCRIPTION_PROPERTY);
-        verify(doc).getId();
-        verifyNoMoreInteractions(doc);
-    }
-
-    @Test
-    public void shouldReturnFalseWhenNoDescriptionLabel() {
-        DocumentModel doc = mock(DocumentModel.class);
-        EnrichmentMetadata metadata = buildMetadata(label("imageClassification", "landscape"),
-                label("namedEntityText", "Jane Doe"));
-
-        assertFalse(consumer.applyDescription(doc, metadata));
-        // No property reads, no writes - we short-circuit before touching the doc at all.
-        verifyNoMoreInteractions(doc);
+        Set<String> tags = consumer.collectTagValues(metadata);
+        assertEquals(Collections.singleton("real-value"), tags);
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -244,18 +193,19 @@ public class TestStoreContentIntelligenceMetadata {
         return blobText;
     }
 
-    /** Packs the given {@code action/value} labels into a single {@link LabelSuggestion} ready for assertion. */
-    protected EnrichmentMetadata buildMetadata(AIMetadata.Label... labels) {
-        List<AIMetadata.Label> values = new ArrayList<>(Arrays.asList(labels));
-        LabelSuggestion suggestion = new LabelSuggestion("file:content", values);
-        return new EnrichmentMetadata.Builder("/classification/imageLabels", "test", buildBlobText())
-                                                                                                    .withLabels(
-                                                                                                            Collections.singletonList(
-                                                                                                                    suggestion))
-                                                                                                    .build();
+    /** Packs an {@code action -> values...} suggestion in the new label-suggestion shape used by the provider. */
+    protected LabelSuggestion suggestion(String action, String... values) {
+        List<AIMetadata.Label> labels = new ArrayList<>(values.length);
+        for (String v : values) {
+            labels.add(new AIMetadata.Label(v, 1.0F));
+        }
+        return new LabelSuggestion(action, labels);
     }
 
-    protected AIMetadata.Label label(String action, String value) {
-        return new AIMetadata.Label(action + "/" + value, 1.0F);
+    /** Wraps any number of {@link LabelSuggestion} into a complete {@link EnrichmentMetadata} ready for assertion. */
+    protected EnrichmentMetadata buildMetadata(LabelSuggestion... suggestions) {
+        return new EnrichmentMetadata.Builder("/classification/imageLabels", "test", buildBlobText())
+                .withLabels(Arrays.asList(suggestions))
+                .build();
     }
 }

@@ -24,8 +24,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -38,6 +40,7 @@ import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
@@ -65,6 +68,21 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     public static final String DEFAULT_CONFIG_NAME = "default";
 
     public static final String DEFAULT_ACTIONS = "image-description";
+
+    /**
+     * Hyland CI action keys whose result is a long-form description / summary. These never become tags; they are
+     * persisted to {@code dc:description} by {@link ContentIntelligenceDescriptionListener} via the raw blob, and
+     * are deliberately omitted from the {@link LabelSuggestion} list so that any downstream tag-writer
+     * (e.g. {@code StoreLabelsAsTags} when {@code nuxeo.enrichment.save.tags=true}) cannot turn the description
+     * paragraph into a giant tag.
+     */
+    public static final Set<String> DESCRIPTION_ACTION_KEYS = Set.of("imageDescription", "textSummary");
+
+    /** Registered name of the image-pipeline enrichment provider (see {@code ai-content-intelligence-config.xml.nxftl}). */
+    public static final String IMAGE_PROVIDER_NAME = "ai.contentintelligence";
+
+    /** Registered name of the document-pipeline enrichment provider (see {@code ai-content-intelligence-config.xml.nxftl}). */
+    public static final String DOCUMENTS_PROVIDER_NAME = "ai.contentintelligence.documents";
 
     private static final Log log = LogFactory.getLog(ContentIntelligenceEnrichmentProvider.class);
 
@@ -195,11 +213,11 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
             if (entry == null) {
                 continue;
             }
-            List<AIMetadata.Label> labels = toLabels(entry);
-            if (labels.isEmpty()) {
+            List<LabelSuggestion> suggestions = toLabelSuggestions(entry);
+            if (suggestions.isEmpty()) {
                 continue;
             }
-            metadata.add(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(asLabels(labels))
+            metadata.add(new EnrichmentMetadata.Builder(kind, name, blobTextFromDoc).withLabels(suggestions)
                                                                                     .withRawKey(rawKey)
                                                                                     .withDocumentProperties(
                                                                                             Collections.singleton(xPath))
@@ -209,41 +227,56 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     }
 
     /**
-     * Converts each action result block ({@code imageDescription}, {@code imageClassification},
-     * {@code namedEntityImage}, {@code textSummary}, ...) into {@link AIMetadata.Label} entries. Supported shapes:
+     * Converts each successful action result block ({@code imageClassification}, {@code namedEntityImage},
+     * {@code textClassification}, ...) into a {@link LabelSuggestion} whose {@link LabelSuggestion#getProperty()
+     * property} is the Hyland action key and whose values are the plain extracted strings (no {@code action/} prefix).
+     * <p>
+     * Action keys listed in {@link #DESCRIPTION_ACTION_KEYS} ({@code imageDescription}, {@code textSummary}) are
+     * deliberately skipped: their result is a long-form paragraph that does not belong in the labels stream. It is
+     * persisted to {@code dc:description} out-of-band by {@link ContentIntelligenceDescriptionListener}, which reads
+     * the raw JSON blob.
+     * <p>
+     * Supported {@code result} shapes:
      * <ul>
-     *   <li>{@code String}: single label ({@code action/value}).</li>
+     *   <li>{@code String}: one label.</li>
      *   <li>{@code JSONArray} of strings: one label per entry.</li>
      *   <li>{@code JSONObject} of {@code String -> (String | JSONArray&lt;String&gt;)}: flattens each entry, useful for
-     *       entity buckets like {@code {"locations":["New York"],"persons":["Jane"]}} returned by
-     *       {@code named-entity-recognition-image}.</li>
+     *       entity buckets like {@code {"locations":["New York"],"persons":["Jane"]}}.</li>
      * </ul>
      * Numeric embedding arrays (e.g. {@code imageEmbeddings}) are preserved only in the raw blob.
      */
-    protected List<AIMetadata.Label> toLabels(JSONObject entry) {
-        List<AIMetadata.Label> labels = new ArrayList<>();
+    protected List<LabelSuggestion> toLabelSuggestions(JSONObject entry) {
+        Map<String, List<AIMetadata.Label>> labelsByAction = new LinkedHashMap<>();
         for (String key : entry.keySet()) {
-            if ("objectKey".equals(key)) {
+            if ("objectKey".equals(key) || DESCRIPTION_ACTION_KEYS.contains(key)) {
                 continue;
             }
             JSONObject action = entry.optJSONObject(key);
             if (action == null || !action.optBoolean("isSuccess", false) || !action.has("result")) {
                 continue;
             }
-            collectFromResult(labels, key, action.get("result"));
+            List<AIMetadata.Label> labels = labelsByAction.computeIfAbsent(key, k -> new ArrayList<>());
+            collectFromResult(labels, action.get("result"));
         }
-        return labels;
+        List<LabelSuggestion> suggestions = new ArrayList<>(labelsByAction.size());
+        for (Map.Entry<String, List<AIMetadata.Label>> e : labelsByAction.entrySet()) {
+            if (!e.getValue().isEmpty()) {
+                suggestions.add(new LabelSuggestion(e.getKey(), e.getValue()));
+            }
+        }
+        return suggestions;
     }
 
     /**
-     * Recursively flattens a {@code result} value into labels keyed by {@code action}. Strings become a single label,
+     * Recursively flattens a Hyland CI {@code result} value into clean-name labels. Strings become a single label,
      * {@link JSONArray} entries are visited one by one (any non-string member is ignored to avoid picking up
-     * numeric vectors), and {@link JSONObject} entries are visited value-by-value.
+     * numeric vectors), and {@link JSONObject} entries are visited value-by-value. The label name carries only the
+     * extracted value (no action prefix); the action is carried by the enclosing {@link LabelSuggestion#getProperty()}.
      */
-    protected void collectFromResult(List<AIMetadata.Label> labels, String action, Object raw) {
+    protected void collectFromResult(List<AIMetadata.Label> labels, Object raw) {
         if (raw instanceof String value) {
             if (StringUtils.isNotBlank(value)) {
-                labels.add(new AIMetadata.Label(action + "/" + value.trim(), 1.0F));
+                labels.add(new AIMetadata.Label(value.trim(), 1.0F));
             }
             return;
         }
@@ -251,14 +284,14 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
             for (int i = 0; i < array.length(); i++) {
                 Object item = array.get(i);
                 if (item instanceof String || item instanceof JSONArray || item instanceof JSONObject) {
-                    collectFromResult(labels, action, item);
+                    collectFromResult(labels, item);
                 }
             }
             return;
         }
         if (raw instanceof JSONObject object) {
             for (String childKey : object.keySet()) {
-                collectFromResult(labels, action, object.get(childKey));
+                collectFromResult(labels, object.get(childKey));
             }
         }
     }

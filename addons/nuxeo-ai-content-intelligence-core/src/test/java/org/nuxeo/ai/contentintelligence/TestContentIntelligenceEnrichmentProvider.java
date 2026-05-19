@@ -30,6 +30,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +41,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
+import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -141,7 +144,7 @@ public class TestContentIntelligenceEnrichmentProvider {
     }
 
     @Test
-    public void shouldMapSuccessfulResponseToLabels() throws IOException {
+    public void shouldMapSuccessfulResponseToLabelSuggestions() throws IOException {
         when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
                 nullable(String.class), nullable(String.class))).thenReturn(new ServiceCallResult(SUCCESS_RESPONSE));
 
@@ -150,15 +153,30 @@ public class TestContentIntelligenceEnrichmentProvider {
         assertEquals(1, metadata.size());
 
         EnrichmentMetadata single = metadata.iterator().next();
-        List<AIMetadata.Label> labels = single.getLabels().get(0).getValues();
-        // imageDescription (1) + imageClassification (1) + namedEntityImage (3 entities across 2 buckets);
-        // numeric imageEmbeddings stays in the raw blob only.
-        assertEquals(5, labels.size());
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("imageDescription/A small test image")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("imageClassification/test-class")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("namedEntityImage/New York")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("namedEntityImage/Paris")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("namedEntityImage/Jane Doe")));
+        List<LabelSuggestion> suggestions = single.getLabels();
+
+        // One suggestion per action, with the action as the suggestion property. imageDescription is intentionally
+        // absent from the labels stream (the description listener pulls it from the raw blob), and numeric
+        // imageEmbeddings never produces taggable values.
+        Set<String> actions = suggestions.stream().map(LabelSuggestion::getProperty).collect(Collectors.toSet());
+        assertEquals(Set.of("imageClassification", "namedEntityImage"), actions);
+
+        // Label names carry only the clean value (no "action/" prefix) so downstream consumers can tag them as-is.
+        List<String> classification = valuesOf(suggestions, "imageClassification");
+        assertEquals(List.of("test-class"), classification);
+
+        List<String> entities = valuesOf(suggestions, "namedEntityImage");
+        assertEquals(3, entities.size());
+        assertTrue(entities.contains("New York"));
+        assertTrue(entities.contains("Paris"));
+        assertTrue(entities.contains("Jane Doe"));
+
+        // Description text MUST never be exposed as a label - even with the description action key as a prefix.
+        assertTrue(suggestions.stream().noneMatch(s -> "imageDescription".equals(s.getProperty())));
+        assertTrue(suggestions.stream()
+                              .flatMap(s -> s.getValues().stream())
+                              .noneMatch(l -> l.getName().contains("A small test image")));
+
         assertEquals("test-raw-blob-key", single.getRawKey());
     }
 
@@ -198,12 +216,12 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     /**
      * Covers the document (PDF / DOCX / XLSX / PPTX / text) pipeline: verifies that {@code text-*} action results and
-     * the {@code named-entity-recognition-text} entity buckets are flattened into the same label shape as their
-     * image counterparts. Numeric {@code textEmbeddings} and the unsuccessful {@code textMetadataGeneration} block
-     * must be dropped.
+     * the {@code named-entity-recognition-text} entity buckets are flattened into the new per-action
+     * {@link LabelSuggestion} shape. Description text ({@code textSummary}) must never reach the labels stream;
+     * numeric {@code textEmbeddings} and the unsuccessful {@code textMetadataGeneration} block must also be dropped.
      */
     @Test
-    public void shouldMapTextSuccessResponseToLabels() throws IOException {
+    public void shouldMapTextSuccessResponseToLabelSuggestions() throws IOException {
         when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
                 nullable(String.class), nullable(String.class))).thenReturn(
                         new ServiceCallResult(TEXT_SUCCESS_RESPONSE));
@@ -212,17 +230,28 @@ public class TestContentIntelligenceEnrichmentProvider {
         assertNotNull(metadata);
         assertEquals(1, metadata.size());
 
-        List<AIMetadata.Label> labels = metadata.iterator().next().getLabels().get(0).getValues();
-        // textSummary (1) + textClassification (1) + namedEntityText (3 entities across 2 buckets);
-        // numeric textEmbeddings + unsuccessful textMetadataGeneration stay out.
-        assertEquals(5, labels.size());
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("textSummary/A sample contract document")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("textClassification/contract")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("namedEntityText/Acme Corp")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("namedEntityText/Globex")));
-        assertTrue(labels.stream().anyMatch(l -> l.getName().equals("namedEntityText/Jane Doe")));
-        // Failed action must never leak into the label list.
-        assertTrue(labels.stream().noneMatch(l -> l.getName().startsWith("textMetadataGeneration")));
+        List<LabelSuggestion> suggestions = metadata.iterator().next().getLabels();
+        // textClassification + namedEntityText only. textSummary (description) is delegated to the listener;
+        // numeric textEmbeddings + unsuccessful textMetadataGeneration must stay out.
+        Set<String> actions = suggestions.stream().map(LabelSuggestion::getProperty).collect(Collectors.toSet());
+        assertEquals(Set.of("textClassification", "namedEntityText"), actions);
+
+        assertEquals(List.of("contract"), valuesOf(suggestions, "textClassification"));
+
+        List<String> entities = valuesOf(suggestions, "namedEntityText");
+        assertEquals(3, entities.size());
+        assertTrue(entities.contains("Acme Corp"));
+        assertTrue(entities.contains("Globex"));
+        assertTrue(entities.contains("Jane Doe"));
+
+        // Description text MUST never leak through as a label.
+        assertTrue(suggestions.stream().noneMatch(s -> "textSummary".equals(s.getProperty())));
+        assertTrue(suggestions.stream()
+                              .flatMap(s -> s.getValues().stream())
+                              .noneMatch(l -> l.getName().contains("A sample contract document")));
+
+        // Failed action must never leak.
+        assertTrue(suggestions.stream().noneMatch(s -> "textMetadataGeneration".equals(s.getProperty())));
     }
 
     @Test
@@ -260,10 +289,23 @@ public class TestContentIntelligenceEnrichmentProvider {
         for (String mimeType : mimeTypes) {
             Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc(mimeType));
             assertEquals("expected enrichment for MIME type " + mimeType, 1, metadata.size());
-            List<AIMetadata.Label> labels = metadata.iterator().next().getLabels().get(0).getValues();
-            assertTrue("expected textSummary label for " + mimeType,
-                    labels.stream().anyMatch(l -> l.getName().startsWith("textSummary/")));
+            List<LabelSuggestion> suggestions = metadata.iterator().next().getLabels();
+            // We never expose the long-form summary as a label. Classification and entities are the taggable
+            // signal for any text-bearing MIME type.
+            assertTrue("textSummary must not leak as a label for " + mimeType,
+                    suggestions.stream().noneMatch(s -> "textSummary".equals(s.getProperty())));
+            assertTrue("expected textClassification for " + mimeType,
+                    suggestions.stream().anyMatch(s -> "textClassification".equals(s.getProperty())));
         }
+    }
+
+    /** Returns every value carried by the suggestion whose {@code property} equals {@code action}. */
+    protected static List<String> valuesOf(List<LabelSuggestion> suggestions, String action) {
+        return suggestions.stream()
+                          .filter(s -> action.equals(s.getProperty()))
+                          .flatMap(s -> s.getValues().stream())
+                          .map(AIMetadata.Label::getName)
+                          .collect(Collectors.toList());
     }
 
     protected EnrichmentDescriptor buildDescriptor(Map<String, String> options) {
