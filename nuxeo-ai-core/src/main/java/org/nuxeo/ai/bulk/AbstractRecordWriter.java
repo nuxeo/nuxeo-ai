@@ -78,6 +78,10 @@ public abstract class AbstractRecordWriter implements RecordWriter, Initializabl
         this.blobProviderName = options.get(BLOB_PROVIDER_OPT);
     }
 
+    /*
+    Test CI
+     */
+
     @Override
     public Optional<Blob> complete(String id) throws IOException {
         KeyValueStore kvStore = Framework.getService(KeyValueService.class).getKeyValueStore(RECORD_STREAM_KV);
