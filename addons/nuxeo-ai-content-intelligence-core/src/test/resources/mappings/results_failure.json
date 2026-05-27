@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/fail/content/process/[^/]+/results"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "mock-job-id",
+      "status": "FAILURE",
+      "results": []
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

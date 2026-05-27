@@ -51,6 +51,7 @@ permissions:
 env:
   REGISTRY: docker-internal.packages.nuxeo.com
   REPOSITORY: nuxeo/nuxeo-ai
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -120,7 +121,7 @@ jobs:
         run: mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
       - name: Publish Test Report
         if: ${{ always() }}
-        uses: scacap/action-surefire-report@v1
+        uses: ScalableCapital/action-surefire-report@v2
       - name: Publish with Maven
         if: ${{ inputs.should-push }}
         run:
@@ -144,7 +145,8 @@ jobs:
           packages=('nuxeo-ai-core-package/target/nuxeo-ai-core-'
                     'addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-'
                     'addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-'
-                    'addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-')
+                    'addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-'
+                    'addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-')
 
           for pkg in "${packages[@]}"; do
             PACKAGE=${pkg}${{ env.VERSION }}.zip

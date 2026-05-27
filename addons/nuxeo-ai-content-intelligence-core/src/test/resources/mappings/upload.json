@@ -1,0 +1,12 @@
+{
+  "request": {
+    "method": "PUT",
+    "urlPattern": "/upload/.*"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
