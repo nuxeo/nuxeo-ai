@@ -11,6 +11,10 @@
   <packaging>zip</packaging>
   <name>Ai core package - Ai core</name>
 
+  <properties>
+    <sonar.skip>true</sonar.skip>
+  </properties>
+
   <dependencies>
     <!-- Base distribution(s) for the MP -->
     <dependency>
@@ -65,6 +69,23 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.14</version>
+        <executions>
+          <execution>
+            <id>report-aggregate</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report-aggregate</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.reporting.outputDirectory}/${jacoco.aggregateReportDirectory}</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.nuxeo.build</groupId>
         <artifactId>ant-assembly-maven-plugin</artifactId>
