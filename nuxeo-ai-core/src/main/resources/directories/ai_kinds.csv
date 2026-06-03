@@ -8,6 +8,7 @@
 "localizer","Object Localizer","tagging","0"
 "celebrity","Celebrity Detection","tagging","0"
 "imageLabels","Object Detection in images","classification","0"
+"textLabels","Text Content Labels","classification","0"
 "sentiment","Sentiment Analysis","classification","0"
 "keyphrase","Keyphrase Extraction","classification","0"
 "entities","Entities Analysis","classification","0"

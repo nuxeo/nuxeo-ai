@@ -57,6 +57,7 @@ nuxeo:
       nuxeo.ai.insight.client.target.url=https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io/nuxeo
       nuxeo.ai.insight.client.token=${env:AI_INSIGHT_CLIENT_TOKEN}
       nuxeo.ai.insight.datasource.label=dev
+      nuxeo.ai.insight.enrichment.enabled=false
       nuxeo.url=${PREVIEW_URL}/nuxeo
       nuxeo.cors.urls=${PREVIEW_URL} https://nuxeo-ai-dev-dev.apps.prod.nuxeo.io
     customEnvs:

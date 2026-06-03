@@ -27,6 +27,11 @@ permissions:
   checks: write
   pull-requests: write
 
+env:
+  REGISTRY: docker-internal.packages.nuxeo.com
+  REPOSITORY: nuxeo/nuxeo-ai
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   properties:
     runs-on: ubuntu-latest

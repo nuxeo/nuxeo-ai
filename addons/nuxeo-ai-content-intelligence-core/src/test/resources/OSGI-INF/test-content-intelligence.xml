@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.contentintelligence.test">
+
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <enrichment name="ai.contentintelligence.mock" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.contentintelligence.ContentIntelligenceEnrichmentProvider">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="configName">default</option>
+      <option name="actions">image-description,image-classification</option>
+    </enrichment>
+  </extension>
+
+  <!-- Point the Content Intelligence connector at the WireMock server started by the test. -->
+  <extension target="org.nuxeo.hyland.content.intelligence.HylandKEService" point="knowledgeEnrichment">
+    <knowledgeEnrichment>
+      <name>default</name>
+      <authenticationBaseUrl>http://localhost:5079</authenticationBaseUrl>
+      <baseUrl>http://localhost:5079</baseUrl>
+      <tokenGrantType>client_credentials</tokenGrantType>
+      <tokenScope>environment_authorization</tokenScope>
+      <clientId>TEST_CLIENT_ID</clientId>
+      <clientSecret>TEST_CLIENT_SECRET</clientSecret>
+    </knowledgeEnrichment>
+  </extension>
+
+</component>
