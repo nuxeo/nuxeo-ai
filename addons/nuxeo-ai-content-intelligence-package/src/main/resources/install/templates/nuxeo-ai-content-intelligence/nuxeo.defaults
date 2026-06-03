@@ -1,0 +1,53 @@
+# Set list of templates to include, comma separated values.
+nuxeo.template.includes=common
+
+# Hyland Content Intelligence (Knowledge Enrichment) credentials.
+# Consume these values from the Content Innovation Cloud application configuration.
+nuxeo.hyland.cic.auth.baseUrl=
+nuxeo.hyland.cic.contextEnrichment.baseUrl=
+nuxeo.hyland.cic.enrichment.clientId=
+nuxeo.hyland.cic.enrichment.clientSecret=
+
+# Hyland Content Intelligence result-polling budget.
+# The upstream connector defaults to ~10 tries x ~3 s = ~30 s, which is fine for image-* actions but routinely
+# too short for the text-* actions (text-summarization / named-entity-recognition-text)
+# on PDF / DOCX / XLSX / PPTX / TXT inputs, where Hyland CI processing typically takes 60-120 s. We raise the
+# budget here to 60 x 3 s = 180 s so document pipelines do not fall off the polling cliff and return PROCESSING.
+# Any deployment may override these in nuxeo.conf if their workload needs a different envelope.
+nuxeo.hyland.cic.pullResultsMaxTries=60
+nuxeo.hyland.cic.pullResultsSleepInterval=3000
+
+# Hyland CI text/document actions routinely take > 60s, so the core's default 60s Failsafe
+# timeout causes spurious retries and partial results. Raise it for this provider.
+nuxeo.ai.enrichment.call.timeout.seconds=180
+
+# Ensure image uploads flow into the AI pipeline so enrichment is triggered automatically.
+nuxeo.ai.images.enabled=true
+
+# Master switch: when true, enrichment runs on every image upload and results are persisted on the document
+# (dc:description from image-description; dc:tags from named-entity-recognition-image).
+nuxeo.ai.contentintelligence.enabled=true
+
+# Knowledge Enrichment actions requested by the default image provider.
+# named-entity-recognition-image adds any detected entities (persons, locations, organisations, ...) as tags.
+nuxeo.ai.contentintelligence.actions=image-description,named-entity-recognition-image
+# No client-side blob size cap is enforced for this provider: ContentIntelligenceEnrichmentProvider#supportsSize()
+# always returns true so every eligible blob reaches the Hyland CI API and CIC enforces its own ceiling.
+# (Historical knob nuxeo.ai.contentintelligence.maxSize is no longer read; remove it from your nuxeo.conf.)
+
+# -----------------------------------------------------------------------------
+# Document pipeline: PDFs, Word, Excel, PowerPoint, plain text.
+# Uses the Hyland CI text-* actions and writes the summary to dc:description
+# and named entities as dc:tags.
+# -----------------------------------------------------------------------------
+nuxeo.ai.contentintelligence.documents.enabled=true
+nuxeo.ai.contentintelligence.documents.actions=text-summarization,named-entity-recognition-text
+# Comma-separated list of blob MIME types routed into the document CI pipeline. This list is the single source
+# of truth: the FreeMarker template emits both the pipe-filter regex and the enrichment descriptor's
+# <mimeTypes> entries from it, so the two can never drift.
+nuxeo.ai.contentintelligence.documents.mimeTypes=application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain
+# No client-side blob size cap is enforced for the document provider either (same rationale as the image provider above).
+# (Historical knob nuxeo.ai.contentintelligence.documents.maxSize is no longer read; remove it from your nuxeo.conf.)
+
+# Enable the optional secondary provider that requests the full action set (embeddings, metadata generation, ...).
+nuxeo.ai.contentintelligence.all=false

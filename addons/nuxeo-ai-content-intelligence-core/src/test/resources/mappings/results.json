@@ -1,0 +1,35 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/content/process/[^/]+/results"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "mock-job-id",
+      "status": "SUCCESS",
+      "results": [
+        {
+          "objectKey": "mock-object-key",
+          "imageDescription": {
+            "isSuccess": true,
+            "result": "A small test image"
+          },
+          "namedEntityImage": {
+            "isSuccess": true,
+            "result": {
+              "locations": ["New York"]
+            }
+          },
+          "imageEmbeddings": {
+            "isSuccess": true,
+            "result": [0.1, 0.2, 0.3]
+          }
+        }
+      ]
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

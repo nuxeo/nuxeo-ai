@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<#--
+  Document MIME types are configured once (nuxeo.ai.contentintelligence.documents.mimeTypes in nuxeo.defaults).
+  We derive both the pipe filter regex and the enrichment descriptor's <mimeTypes> list from that single list so
+  the two cannot drift. All regex metacharacters are escaped so user-extensible MIME types (which may contain
+  '+', '.', etc.) produce a correct alternation pattern.
+-->
+<#assign docMimeTypesRaw = "${nuxeo.ai.contentintelligence.documents.mimeTypes}"?split(",") />
+<#assign docMimeRegex>^(<#list docMimeTypesRaw as mime>${mime?trim?replace('\\', '\\\\')?replace('.', '\\.')?replace('+', '\\+')?replace('[', '\\[')?replace(']', '\\]')?replace('(', '\\(')?replace(')', '\\)')?replace('{', '\\{')?replace('}', '\\}')?replace('?', '\\?')?replace('*', '\\*')?replace('|', '\\|')?replace('^', '\\^')?replace('$', '\\$')}<#if mime?has_next>|</#if></#list>)$</#assign>
+<component name="org.nuxeo.ai.contentintelligence.config" version="1.0">
+  <require>org.nuxeo.ai.services.AIComponent</require>
+  <require>org.nuxeo.hyland.content.intelligence.HylandKEService</require>
+  <require>org.nuxeo.ai.Pipeline.defaultConfig</require>
+
+  <!-- ============================================================ -->
+  <!-- Image pipeline: image-description + NER                       -->
+  <!-- ============================================================ -->
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <!--
+      No maxSize is declared: ContentIntelligenceEnrichmentProvider#supportsSize() is overridden to
+      accept any blob size and let the upstream Hyland CI API enforce its own ceiling, so the
+      framework's default 5 MB pre-cap would only be a misleading silent drop here.
+    -->
+    <enrichment name="ai.contentintelligence" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.contentintelligence.ContentIntelligenceEnrichmentProvider">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="configName">default</option>
+      <option name="actions">${nuxeo.ai.contentintelligence.actions}</option>
+    </enrichment>
+  </extension>
+
+<#if "${nuxeo.ai.contentintelligence.enabled}" == "true">
+  <!-- Run the provider on every image that enters the AI pipeline (pipe.images/pipe.pictures in nuxeo-ai-core). -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="contentIntelligenceProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="3" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
+      <option name="enrichmentProviderName">ai.contentintelligence</option>
+      <option name="cache">true</option>
+    </streamProcessor>
+  </extension>
+
+  <!--
+    Tag-writing consumer for Hyland Content Intelligence enrichments.
+    
+    IMPORTANT: This consumer is DISABLED when nuxeo.enrichment.save.tags=true because in that case the upstream
+    StoreLabelsAsTags consumer (from nuxeo-ai-core) will write tags for ALL enrichments including Hyland CI.
+    Running both consumers would cause duplicate tags with slightly different sanitization:
+      - StoreLabelsAsTags removes spaces:      "high contrast" -> "highcontrast"
+      - This consumer hyphenates spaces:       "high contrast" -> "high-contrast"
+    
+    When nuxeo.enrichment.save.tags=false (the default for environments using only Hyland CI), this consumer handles
+    tag-writing with better formatting (hyphenated multi-word tags for readability).
+    
+    Note: dc:description is handled separately by ContentIntelligenceDescriptionListener listening on the
+    enrichmentMetadataCreated event, regardless of this consumer's status.
+  -->
+<#if "${nuxeo.enrichment.save.tags}" != "true">
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="storeContentIntelligenceMetadataProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.contentintelligence.StoreContentIntelligenceMetadata">
+      <policy name="default" maxRetries="3" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
+      <option name="source">ai/${nuxeo.enrichment.source.stream}</option>
+    </streamProcessor>
+  </extension>
+</#if>
+</#if>
+
+  <!-- ============================================================ -->
+  <!-- Document pipeline: PDFs, Word, Excel, PowerPoint, plain text  -->
+  <!-- Uses the Hyland CI text-* actions                             -->
+  <!-- ============================================================ -->
+<#if "${nuxeo.ai.contentintelligence.documents.enabled}" == "true">
+  <!-- New pipe: any non-image, non-folder blob whose mime-type matches our document list is pushed
+       to the ai/documents stream. Mirrors pipe.images but for document formats. -->
+  <extension point="pipes" target="org.nuxeo.ai.Pipeline">
+    <pipe id="pipe.contentintelligence.documents" enabled="${nuxeo.ai.contentintelligence.documents.enabled}">
+      <supplier>
+        <event name="documentCreated">
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+            <option name="excludedFacets">Folderish</option>
+          </filter>
+          <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
+            <option name="mimePattern">${docMimeRegex}</option>
+            <option name="properties">file:content</option>
+          </filter>
+        </event>
+        <event name="documentModified">
+          <filter class="org.nuxeo.ai.pipes.filters.NotSystemOrProxyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.NoVersionFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.DirtyPropertyFilter"/>
+          <filter class="org.nuxeo.ai.pipes.filters.FacetFilter">
+            <option name="excludedFacets">Folderish</option>
+          </filter>
+          <filter class="org.nuxeo.ai.pipes.filters.MimeBlobPropertyFilter">
+            <option name="mimePattern">${docMimeRegex}</option>
+          </filter>
+          <option name="properties">file:content</option>
+        </event>
+      </supplier>
+      <consumer>
+        <stream name="ai/documents"/>
+      </consumer>
+      <transformer class="org.nuxeo.ai.pipes.functions.PropertiesToStream">
+        <option name="blobProperties">file:content</option>
+        <option name="blobPropertiesType">img</option>
+      </transformer>
+    </pipe>
+  </extension>
+
+  <!-- Document-specific enrichment provider (text-* actions). Uses /classification/textLabels, contributed
+       by nuxeo-ai-core's ai_kinds.csv vocabulary. -->
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <!-- See note on ai.contentintelligence above: no maxSize, CIC enforces its own ceiling. -->
+    <enrichment name="ai.contentintelligence.documents" kind="/classification/textLabels"
+                class="org.nuxeo.ai.contentintelligence.ContentIntelligenceEnrichmentProvider">
+      <mimeTypes>
+<#list docMimeTypesRaw as mime>
+        <mimeType name="${mime?trim}" normalized="true"/>
+</#list>
+      </mimeTypes>
+      <option name="configName">default</option>
+      <option name="actions">${nuxeo.ai.contentintelligence.documents.actions}</option>
+    </enrichment>
+  </extension>
+
+  <!-- Run the document provider on every doc that enters the ai/documents stream. -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="contentIntelligenceDocumentsProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="3" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
+      <option name="source">ai/documents</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
+      <option name="enrichmentProviderName">ai.contentintelligence.documents</option>
+      <option name="cache">true</option>
+    </streamProcessor>
+  </extension>
+
+  <!-- NOTE: the output stream is the same one already consumed by storeContentIntelligenceMetadataProcessor
+       above, so the same StoreContentIntelligenceMetadata consumer will pick up document enrichment results
+       and map them onto dc:description + dc:tags. -->
+</#if>
+
+<#if "${nuxeo.ai.contentintelligence.all}" == "true">
+  <!-- Optional full-feature provider (description + embeddings + metadata generation). -->
+  <extension point="enrichment" target="org.nuxeo.ai.services.AIComponent">
+    <!-- See note on ai.contentintelligence above: no maxSize, CIC enforces its own ceiling. -->
+    <enrichment name="ai.contentintelligence.all" kind="/classification/imageLabels"
+                class="org.nuxeo.ai.contentintelligence.ContentIntelligenceEnrichmentProvider">
+      <mimeTypes>
+        <mimeType name="image/jpeg" normalized="true"/>
+        <mimeType name="image/png" normalized="true"/>
+      </mimeTypes>
+      <option name="configName">default</option>
+      <option name="actions">image-description,image-embeddings,image-metadata-generation</option>
+    </enrichment>
+  </extension>
+</#if>
+
+</component>

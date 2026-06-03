@@ -64,6 +64,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.auth.NuxeoClaim;
+import org.nuxeo.ai.keystore.JWKService;
 import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
@@ -183,7 +184,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             claims.put(NuxeoClaim.GROUP, groups);
             claims.put(JWTClaims.DATASOURCE, datasource);
 
-            String token = jwt.generateJWT(descriptor.projectId, claims);
+            String token = generateJwtToken(jwt, descriptor.projectId, claims);
             Authentication authentication = new Authentication(token);
             InsightConfiguration configuration = new InsightConfiguration.Builder().setAuthentication(authentication)
                                                                                    .setUrl(descriptor.url)
@@ -206,6 +207,27 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                     "Authentication/Connection issue with Insight cloud: please verify JWT configuration with project {} and Insight url {}",
                     descriptor.projectId, descriptor.url);
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Generates a JWT token, bootstrapping the JWK keystore on demand if it has not been
+     * initialized yet.
+     * <p>
+     * {@code nuxeo-jwt-authenticator-core}'s {@code JWKLocalComponent#getKeyInUse} dereferences
+     * the bytes returned by the underlying {@code KeyValueStore} without a null check, so any
+     * call to {@code generateJWT} made before the scheduled bootstrap listener has stored the
+     * first key (e.g. early during component start, or in test harnesses where listener
+     * registration races with the first cloud-client invocation) blows up with an NPE. We catch
+     * that specific failure mode, force-create a key pair, and retry once.
+     */
+    protected String generateJwtToken(JWTKeyService jwt, String projectId, Map<String, Serializable> claims) {
+        try {
+            return jwt.generateJWT(projectId, claims);
+        } catch (NullPointerException npe) {
+            log.warn("JWT keystore not initialized yet; bootstrapping a key pair and retrying", npe);
+            Framework.getService(JWKService.class).generateKeyPair();
+            return jwt.generateJWT(projectId, claims);
         }
     }
 
