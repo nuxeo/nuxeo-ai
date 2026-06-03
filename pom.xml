@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>2023.47</version>
+    <version>2023.48</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
@@ -26,6 +26,14 @@
     <nuxeo.ai.jwt.version>2.0.0</nuxeo.ai.jwt.version>
     <grpc-netty.version>1.75.0</grpc-netty.version>
     <google.protobuf.version>4.29.6</google.protobuf.version>
+    <!-- JaCoCo Configuration -->
+    <jacoco.aggregateReportDirectory>jacoco-aggregate</jacoco.aggregateReportDirectory>
+    <!-- SonarCloud Configuration -->
+    <sonar.organization>nuxeo</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.projectKey>nuxeo_nuxeo-ai</sonar.projectKey>
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/nuxeo-ai-core-package/target/site/${jacoco.aggregateReportDirectory}/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
   </properties>
 
   <modules>
@@ -251,6 +259,21 @@
   </dependencyManagement>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.14</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>

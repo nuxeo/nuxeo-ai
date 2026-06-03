@@ -1,52 +1,31 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
-
-name: Java CI with Maven
+name: Build and Test
 
 on:
-  workflow_call:
-    inputs:
-      aws-account:
-        required: true
-        type: string
-      aws-region:
-        required: false
-        type: string
-        default: us-east-1
-      should-push:
-        required: false
-        type: boolean
-        default: false
-      preview:
-        required: false
-        type: boolean
-        default: false
-    secrets:
-      aws-access-key-id:
-        required: true
-      aws-secret-access-key:
-        required: true
-      packages-auth-user:
-        required: true
-      packages-auth-token:
-        required: true
-      connect-auth-user:
-        required: true
-      connect-auth-token:
-        required: true
-      google-creds:
-        required: true
-      DOCKER_USERNAME:
-        required: true
-      DOCKER_PASSWORD:
-        required: true
-      NUXEO_CLID:
-        required: true
+  push:
+    branches:
+      - '2023'
+      - '2025'
+  pull_request:
+    branches:
+      - '2023'
+      - '2025'
+
+concurrency:
+  group: build-${{ github.ref }}
+  # Only cancel in-progress for PRs; branch pushes must not be interrupted mid-publish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  MAVEN_OPTS: >-
+    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    -Daether.syncContext.named.time=600
+    -Xms512m
+    -Xmx1536m
 
 permissions:
   contents: read
-  pull-requests: write
   checks: write
+  pull-requests: write
 
 env:
   REGISTRY: docker-internal.packages.nuxeo.com
@@ -54,32 +33,76 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  properties:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.env.outputs.VERSION }}
+      IS_BRANCH_PUSH: ${{ steps.env.outputs.IS_BRANCH_PUSH }}
+      JAVA_VERSION: ${{ steps.env.outputs.JAVA_VERSION }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Resolve version info
+        id: env
+        run: |
+          set -e
+
+          # Skip <parent> block to extract the project's own <version> without needing Maven
+          CURRENT_VERSION=$(sed -n '/<parent>/,/<\/parent>/d; s/.*<version>\(.*\)<\/version>.*/\1/p' pom.xml | head -1 | xargs)
+
+          if [[ -z "$CURRENT_VERSION" ]]; then
+            echo "::error::Failed to resolve version from pom.xml"
+            exit 1
+          fi
+
+          BASE_VERSION=${CURRENT_VERSION%-SNAPSHOT}
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            VERSION="${BASE_VERSION}-pr.${{ github.event.number }}.${{ github.run_number }}"
+            IS_BRANCH_PUSH=false
+            TARGET_BRANCH="${{ github.base_ref }}"
+          else
+            # Keep -SNAPSHOT so mvn deploy publishes to snapshots, not releases
+            VERSION="${CURRENT_VERSION}"
+            IS_BRANCH_PUSH=true
+            TARGET_BRANCH="${{ github.ref_name }}"
+          fi
+
+          # 2025 → Java 21, everything else → Java 17
+          case "$TARGET_BRANCH" in
+            2025*) JAVA_VERSION=21 ;;
+            *)     JAVA_VERSION=17 ;;
+          esac
+
+          {
+            echo "VERSION=$VERSION"
+            echo "IS_BRANCH_PUSH=$IS_BRANCH_PUSH"
+            echo "JAVA_VERSION=$JAVA_VERSION"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Version=$VERSION | Java=$JAVA_VERSION | Branch push=$IS_BRANCH_PUSH"
+
   build:
-    name: "Build"
+    needs: properties
     runs-on: ubuntu-latest
     env:
-      MAVEN_OPTS: "-Xms1g -Xmx1536m"
-    outputs:
-      version: ${{ steps.project.outputs.version }}
+      VERSION: ${{ needs.properties.outputs.VERSION }}
     steps:
-      - uses: actions/checkout@v4
-      - name: 'Set java version'
-        id: java-version
-        run: |
-          if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
-            echo "java-version=11" >> $GITHUB_OUTPUT
-          elif [[ "${{github.base_ref}}" == "master-10.10" || "${{github.ref}}" == "refs/heads/master-10.10" ]]; then
-              echo "java-version=8" >> $GITHUB_OUTPUT
-          else
-                echo "java-version=17" >> $GITHUB_OUTPUT
-          fi
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          java-version:  ${{ steps.java-version.outputs.java-version }}
-          distribution: "zulu"
-          cache: maven
-      - name: "Install dependencies"
+          fetch-depth: 0
+
+      - name: Setup Maven build
+        uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@v0.9.0
+        with:
+          java-version: ${{ needs.properties.outputs.JAVA_VERSION }}
+          java-distribution: 'temurin'
+          maven-settings: '.github/maven-settings.xml'
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Install system dependencies
         run: |
           sudo apt-get -y update && sudo apt-get install -y --no-install-recommends \
             perl \
@@ -92,91 +115,141 @@ jobs:
             ghostscript \
             ffmpeg \
             x264
-      - name: "Update settings.xml with server configuration"
-        run: |
-          echo '<settings>
-              <servers>
-                <server>
-                  <id>maven-internal</id>
-                  <username>${{ secrets.packages-auth-user }}</username>
-                  <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-                <server>
-                  <id>maven-public-snapshots</id>
-                  <username>${{ secrets.packages-auth-user }}</username>
-                  <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-                <server>
-                  <id>maven-public-releases</id>
-                  <username>${{ secrets.packages-auth-user }}</username>
-                  <password>${{ secrets.packages-auth-token }}</password>
-                </server>
-              </servers>
-              </settings>' > ~/.m2/settings.xml
-      - name: Clean stale Maven locks
-        run: find .m2/repository/.locks -type f -delete || true
+
       - name: Build with Maven
-        run: mvn install -fae -B -DskipTests
-      - name: Run Tests with Maven
-        run: mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
-      - name: Publish Test Report
-        if: ${{ always() }}
-        uses: ScalableCapital/action-surefire-report@v2
-      - name: Publish with Maven
-        if: ${{ inputs.should-push }}
-        run:
-          mvn deploy -DskipTests
-      - name: Get project version
-        run: echo "VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec | xargs echo -n)" >> $GITHUB_ENV
-      - run: ls -alR | grep ".*package.*.zip"
-      - run: ls -alR | grep ".*nuxeo-ai-core-.*.zip"
-      - name: Upload packages build artifact
-        uses: actions/upload-artifact@v4
+        id: build
+        run: |
+          set -e
+          echo "::group::Building $VERSION"
+          mvn $MAVEN_ARGS versions:set -DnewVersion="$VERSION"
+          mvn $MAVEN_ARGS install -fae -B -DskipTests
+          echo "::endgroup::"
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+          MAVEN_ARGS: "-B -V -nsu --no-transfer-progress -DgenerateBackupPoms=false"
+
+      - name: Run Tests
+        id: test
+        run: |
+          mvn install --fail-never -nsu -B -Dnuxeo.test.elasticsearch.addressList=http://localhost:9200
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Publish test results
+        if: always() && steps.test.outcome != 'skipped'
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2.23.0
         with:
-          name: nuxeo-ai-github-packages-build
+          files: |
+            **/target/*-reports/*.xml
+            **/target/surefire-reports/*.xml
+          check_name: Test Results
+
+      - name: Generate JaCoCo Aggregate Report
+        if: always() && steps.test.outcome == 'success'
+        run: |
+          mvn $MAVEN_ARGS -pl :nuxeo-ai-core-package -am verify -DskipTests
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+          MAVEN_ARGS: "-B -V -nsu --no-transfer-progress"
+
+      - name: SonarCloud Analysis
+        if: always() && steps.test.outcome == 'success'
+        continue-on-error: true
+        run: |
+          SONAR_PARAMS="-Dsonar.verbose=false"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            SONAR_PARAMS="$SONAR_PARAMS -Dsonar.pullrequest.key=${{ github.event.number }}"
+            SONAR_PARAMS="$SONAR_PARAMS -Dsonar.pullrequest.branch=${{ github.head_ref }}"
+            SONAR_PARAMS="$SONAR_PARAMS -Dsonar.pullrequest.base=${{ github.base_ref }}"
+          else
+            SONAR_PARAMS="$SONAR_PARAMS -Dsonar.branch.name=${{ github.ref_name }}"
+          fi
+          mvn $MAVEN_ARGS -DskipTests sonar:sonar $SONAR_PARAMS
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+          MAVEN_ARGS: "-B -V -nsu --no-transfer-progress"
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # Upload even on failure to help debug broken builds
+      - name: Upload build artifacts
+        if: always() && steps.build.outcome != 'skipped'
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        with:
+          name: nuxeo-ai-build
           path: |
             ./**/target/**/*package*.zip
             ./nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip
-      - name: Publish packages to Production Connect Marketplace
-        if: ${{ inputs.should-push }}
-        env:
-          CONNECT_URL: https://connect.nuxeo.com/nuxeo
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Publish packages to Maven
+        if: needs.properties.outputs.IS_BRANCH_PUSH == 'true'
         run: |
-          packages=('nuxeo-ai-core-package/target/nuxeo-ai-core-'
-                    'addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-'
-                    'addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-'
-                    'addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-'
-                    'addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-')
+          mvn deploy -B -nsu --no-transfer-progress -DskipTests
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Publish packages to Preprod Marketplace
+        if: needs.properties.outputs.IS_BRANCH_PUSH == 'true'
+        run: |
+          set -e
+          failed=false
+          packages=(
+            "nuxeo-ai-core-package/target/nuxeo-ai-core-${{ env.VERSION }}.zip"
+            "addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-${{ env.VERSION }}.zip"
+            "addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-${{ env.VERSION }}.zip"
+            "addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip"
+            "addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-${{ env.VERSION }}.zip"
+          )
 
           for pkg in "${packages[@]}"; do
-            PACKAGE=${pkg}${{ env.VERSION }}.zip
-            curl -i -u "${{ secrets.connect-auth-user }}:${{ secrets.connect-auth-token }}" -F package=@$PACKAGE "$CONNECT_URL/site/marketplace/upload?batch=true"
+            if [[ -f "$pkg" ]]; then
+              echo "Publishing: $(basename "$pkg")"
+              STATUS_CODE=$(curl -i --silent --output /dev/null -w "%{http_code}" \
+                -u "${{ secrets.CONNECT_PREPROD_USERNAME }}:${{ secrets.CONNECT_PREPROD_PASSWORD }}" \
+                -F "package=@${pkg}" \
+                "https://nos-preprod-connect.nuxeocloud.com/nuxeo/site/marketplace/upload?batch=true")
+              if [[ "$STATUS_CODE" != "200" ]]; then
+                echo "::error::Failed to publish $(basename "$pkg") — HTTP $STATUS_CODE"
+                failed=true
+              fi
+            else
+              echo "Skipping $(basename "$pkg") — not found"
+            fi
           done
+          if [[ "$failed" == "true" ]]; then
+            echo "::error::One or more preprod marketplace uploads failed"
+            exit 1
+          fi
 
-      # --- Prepare Docker build context ---
       - name: Build & Push Docker Preview Image
-        if: ${{ inputs.preview }}
+        if: github.event_name == 'pull_request' && contains(join(github.event.pull_request.labels.*.name, ','), 'preview')
         uses: ./.github/actions/docker-build-preview
         with:
           version: ${{ env.VERSION }}
-          registry: ${{ env.REGISTRY }}
-          repository: ${{ env.REPOSITORY }}
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          nuxeo-clid: ${{ secrets.NUXEO_CLID }}
-
-      # --- End Docker steps ----
+          registry: docker-internal.packages.nuxeo.com
+          repository: nuxeo/nuxeo-ai
+          docker-username: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          docker-password: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+          nuxeo-clid: ${{ secrets.DEVOPS_CLID }}
 
   notify-on-error:
     runs-on: ubuntu-latest
-    needs: [build]
-    if: ${{ failure() && inputs.should-push }}
+    needs: [properties, build]
+    if: >-
+      failure() &&
+      (needs.properties.result == 'failure' || needs.build.result == 'failure') &&
+      (github.event_name == 'push')
     steps:
       - name: Slack Notification
-        id: slack
         uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844
         with:
           channel-id: "C9W4P9RKM"
-          slack-message: "Nuxeo AI Core ${{ github.workflow }} workflow failed!\n${{ github.event.head_commit.url }}\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          slack-message: "Nuxeo AI ${{ github.workflow }} workflow failed!\n${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_NOTIFICATION_BOT_TOKEN }}
