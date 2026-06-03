@@ -31,6 +31,15 @@
     <jakarta.validation.version>3.0.2</jakarta.validation.version>
     <jakarta.mail.api.version>2.0.1</jakarta.mail.api.version>
     <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
+    <!-- JaCoCo Configuration -->
+    <jacoco.version>0.8.14</jacoco.version>
+    <jacoco.aggregateReportDirectory>jacoco-aggregate</jacoco.aggregateReportDirectory>
+    <!-- SonarCloud Configuration -->
+    <sonar.organization>nuxeo</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.projectKey>nuxeo_nuxeo-ai</sonar.projectKey>
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/nuxeo-ai-core-package/target/site/${jacoco.aggregateReportDirectory}/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
   </properties>
 
   <modules>
@@ -271,6 +280,21 @@
   </dependencyManagement>
 
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
