@@ -16,7 +16,10 @@
 package org.nuxeo.ai.contentintelligence;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +28,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,6 +40,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +53,7 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -508,6 +518,127 @@ public class TestContentIntelligenceEnrichmentProvider {
         assertTrue("100 MB must be accepted", provider.supportsSize(100L * 1024 * 1024));
         assertTrue("10 GB must be accepted", provider.supportsSize(10L * 1024 * 1024 * 1024));
         assertTrue("Long.MAX_VALUE must be accepted", provider.supportsSize(Long.MAX_VALUE));
+    }
+
+    /**
+     * Hyland CI's image-* actions only support JPEG/PNG/TIFF natively. The provider must transcode any other
+     * {@code image/*} blob (here BMP) to JPEG before handing it to the service, otherwise the API rejects it and
+     * users get no enrichment at all.
+     */
+    @Test
+    public void shouldTranscodeBmpToJpegBeforeSending() throws IOException {
+        ContentIntelligenceEnrichmentProvider provider = new ContentIntelligenceEnrichmentProvider();
+        Blob bmp = buildSyntheticImageBlob("bmp", "image/bmp", "sample.bmp");
+
+        Blob transcoded = provider.transcodeIfNeeded(bmp);
+
+        assertNotSame("BMP must be transcoded, not returned as-is", bmp, transcoded);
+        assertEquals(ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE, transcoded.getMimeType());
+        assertEquals("sample.jpg", transcoded.getFilename());
+        assertTrue("transcoded blob must carry real JPEG bytes", transcoded.getLength() > 0);
+    }
+
+    @Test
+    public void shouldNotTranscodeNativelySupportedImageFormats() throws IOException {
+        ContentIntelligenceEnrichmentProvider provider = new ContentIntelligenceEnrichmentProvider();
+        for (String mime : ContentIntelligenceEnrichmentProvider.CIC_NATIVE_IMAGE_MIME_TYPES) {
+            Blob original = new org.nuxeo.ecm.core.api.impl.blob.StringBlob("native", mime);
+            assertSame("CIC-native image MIME " + mime + " must pass through unchanged", original,
+                    provider.transcodeIfNeeded(original));
+        }
+    }
+
+    @Test
+    public void shouldNotTranscodeNonImageBlobs() {
+        ContentIntelligenceEnrichmentProvider provider = new ContentIntelligenceEnrichmentProvider();
+        Blob pdf = new org.nuxeo.ecm.core.api.impl.blob.StringBlob("not an image", "application/pdf");
+        assertSame("document blobs must pass through unchanged", pdf, provider.transcodeIfNeeded(pdf));
+    }
+
+    @Test
+    public void shouldNotTranscodeWhenMimeTypeIsMissing() {
+        ContentIntelligenceEnrichmentProvider provider = new ContentIntelligenceEnrichmentProvider();
+        Blob blank = new org.nuxeo.ecm.core.api.impl.blob.StringBlob("bytes", null);
+        assertSame("blobs without a MIME type must pass through unchanged", blank, provider.transcodeIfNeeded(blank));
+    }
+
+    /**
+     * If ImageIO has no reader for the given bytes (e.g. WebP without the TwelveMonkeys plugin), the provider must
+     * fall back to sending the original blob and not crash the enrichment.
+     */
+    @Test
+    public void shouldFallBackToOriginalWhenBytesAreNotDecodable() {
+        ContentIntelligenceEnrichmentProvider provider = new ContentIntelligenceEnrichmentProvider();
+        Blob garbage = new org.nuxeo.ecm.core.api.impl.blob.StringBlob("definitely-not-an-image", "image/bmp");
+        Blob result = provider.transcodeIfNeeded(garbage);
+        assertSame("undecodable bytes must round-trip unchanged so CIC can surface the error", garbage, result);
+    }
+
+    /**
+     * End-to-end check: a BMP blob goes through {@link ContentIntelligenceEnrichmentProvider#enrich(BlobTextFromDocument)}
+     * and reaches {@link HylandKEService} as a JPEG payload, which is exactly what the CIC API expects.
+     */
+    @Test
+    public void enrichShouldSendTranscodedBlobForBmpInput() throws IOException {
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(SUCCESS_RESPONSE));
+
+        ContentIntelligenceEnrichmentProvider bmpProvider = new ContentIntelligenceEnrichmentProvider() {
+            @Override
+            protected HylandKEService getService() {
+                return service;
+            }
+
+            @Override
+            protected Blob resolveBlob(ManagedBlob managedBlob) {
+                try {
+                    return buildSyntheticImageBlob("bmp", "image/bmp", "sample.bmp");
+                } catch (IOException e) {
+                    throw new AssertionError(e);
+                }
+            }
+
+            @Override
+            public String saveJsonAsRawBlob(String rawJson) {
+                return "test-raw-blob-key";
+            }
+        };
+        bmpProvider.init(buildDescriptor(Map.of(
+                ContentIntelligenceEnrichmentProvider.OPTION_CONFIG_NAME, "default",
+                ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description,named-entity-recognition-image")));
+
+        BlobTextFromDocument doc = buildBlobTextFromDoc("image/bmp");
+        Collection<EnrichmentMetadata> metadata = bmpProvider.enrich(doc);
+        assertEquals(1, metadata.size());
+
+        org.mockito.ArgumentCaptor<Blob> sent = org.mockito.ArgumentCaptor.forClass(Blob.class);
+        org.mockito.Mockito.verify(service)
+                           .enrich(anyString(), sent.capture(), anyList(), anyList(), nullable(String.class),
+                                   nullable(String.class));
+        assertEquals("BMP must reach CIC as JPEG",
+                ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE, sent.getValue().getMimeType());
+        assertNotEquals("transcoded payload must not be the BMP source", "image/bmp", sent.getValue().getMimeType());
+    }
+
+    /** Builds a real {@code image/*} blob whose bytes are a valid solid-color picture in the given ImageIO format. */
+    protected Blob buildSyntheticImageBlob(String imageioFormat, String mimeType, String filename) throws IOException {
+        BufferedImage img = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = img.createGraphics();
+        try {
+            g.setColor(Color.RED);
+            g.fillRect(0, 0, 8, 8);
+        } finally {
+            g.dispose();
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        if (!ImageIO.write(img, imageioFormat, out)) {
+            throw new IOException("ImageIO has no writer for format " + imageioFormat);
+        }
+        // Use ByteArrayBlob directly so the unit test does not need a running Nuxeo Framework for tmp-file creation.
+        Blob blob = new org.nuxeo.ecm.core.api.impl.blob.ByteArrayBlob(out.toByteArray(), mimeType);
+        blob.setFilename(filename);
+        return blob;
     }
 
     /** Returns every value carried by the suggestion whose {@code property} equals {@code action}. */

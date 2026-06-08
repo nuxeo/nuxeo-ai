@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!--
+  Extends the Nuxeo platform thumbnail converters with the same image MIME types that the Content Intelligence
+  enrichment pipeline accepts (see nuxeo.ai.contentintelligence.images.mimeTypes).
+
+  Why this is needed:
+    Out of the box the platform's `pdfAndImageToThumbnail` and `anyToThumbnail` converters only declare
+    image/jpeg, image/png, image/gif and image/tiff as source MIME types. When a BMP / WebP / x-ms-bmp blob is
+    uploaded, the thumbnail listener invokes the conversion service which throws:
+        ConversionException: image/bmp mime type not supported by anyToThumbnail converter
+    leaving the document without a thumbnail.
+
+  How this works:
+    Nuxeo's ConverterDescriptor#merge() iterates the new descriptor's sourceMimeTypes and APPENDS any missing
+    entry to the existing list (see org.nuxeo.ecm.core.convert.extension.ConverterDescriptor). Re-contributing
+    the same converter name with extra <sourceMimeType> elements therefore extends the supported set without
+    touching the rest of the descriptor (class, destination MIME type, parameters).
+
+  Why the underlying converters accept the extra MIME types:
+    - pdfAndImageToThumbnail (ThumbnailDocumentConverter) shells out to the `toThumbnail` ImageMagick command,
+      which handles BMP / WebP natively.
+    - anyToThumbnail (AnyToThumbnailConverter) inspects the MIME type prefix and routes any "image/*" blob to
+      pdfAndImageToThumbnail, so once the latter accepts the new types the former does too.
+-->
+<component name="org.nuxeo.ai.contentintelligence.thumbnail.mimetypes" version="1.0">
+
+  <require>org.nuxeo.ecm.platform.thumbnail.convert</require>
+
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl" point="converter">
+
+    <converter name="pdfAndImageToThumbnail"
+               class="org.nuxeo.ecm.platform.thumbnail.converter.ThumbnailDocumentConverter">
+      <sourceMimeType>image/bmp</sourceMimeType>
+      <sourceMimeType>image/x-ms-bmp</sourceMimeType>
+      <sourceMimeType>image/webp</sourceMimeType>
+      <destinationMimeType>image/png</destinationMimeType>
+    </converter>
+
+    <converter name="anyToThumbnail"
+               class="org.nuxeo.ecm.platform.thumbnail.converter.AnyToThumbnailConverter">
+      <sourceMimeType>image/bmp</sourceMimeType>
+      <sourceMimeType>image/x-ms-bmp</sourceMimeType>
+      <sourceMimeType>image/webp</sourceMimeType>
+      <destinationMimeType>image/png</destinationMimeType>
+    </converter>
+
+  </extension>
+
+</component>

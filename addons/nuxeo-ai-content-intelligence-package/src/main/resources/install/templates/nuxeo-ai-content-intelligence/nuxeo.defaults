@@ -31,6 +31,14 @@ nuxeo.ai.contentintelligence.enabled=true
 # Knowledge Enrichment actions requested by the default image provider.
 # named-entity-recognition-image adds any detected entities (persons, locations, organisations, ...) as tags.
 nuxeo.ai.contentintelligence.actions=image-description,named-entity-recognition-image
+# Comma-separated list of image MIME types routed into the image CI pipeline. This list is the single source of
+# truth: the FreeMarker template emits it into the enrichment descriptor's <mimeTypes> entries so the upstream
+# AI framework's MIME-type pre-filter does not silently drop these blobs before the provider is invoked.
+#
+# Hyland CI's image-* actions natively support only JPEG, PNG and TIFF. For other image formats (BMP, GIF, WebP,
+# ...) ContentIntelligenceEnrichmentProvider transparently transcodes the blob to JPEG before calling the API,
+# so the list below can safely include every image format you want to enrich end-to-end.
+nuxeo.ai.contentintelligence.images.mimeTypes=image/jpeg,image/png,image/tiff,image/bmp,image/gif,image/webp,image/x-ms-bmp
 # No client-side blob size cap is enforced for this provider: ContentIntelligenceEnrichmentProvider#supportsSize()
 # always returns true so every eligible blob reaches the Hyland CI API and CIC enforces its own ceiling.
 # (Historical knob nuxeo.ai.contentintelligence.maxSize is no longer read; remove it from your nuxeo.conf.)

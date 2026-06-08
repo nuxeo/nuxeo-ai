@@ -8,4 +8,5 @@ Bundle-ManifestVersion: 2
 Require-Bundle: org.nuxeo.ai.ai-core,
  nuxeo-content-intelligence-connector-core
 Bundle-SymbolicName: org.nuxeo.ai.nuxeo-ai-content-intelligence-core;singleton=true
-Nuxeo-Component: OSGI-INF/listener-contrib.xml
+Nuxeo-Component: OSGI-INF/listener-contrib.xml,
+ OSGI-INF/thumbnail-mimetypes-contrib.xml

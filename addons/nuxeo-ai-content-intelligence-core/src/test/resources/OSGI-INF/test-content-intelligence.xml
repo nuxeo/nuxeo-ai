@@ -7,6 +7,10 @@
       <mimeTypes>
         <mimeType name="image/jpeg" normalized="true"/>
         <mimeType name="image/png" normalized="true"/>
+        <mimeType name="image/tiff" normalized="true"/>
+        <mimeType name="image/bmp" normalized="true"/>
+        <mimeType name="image/gif" normalized="true"/>
+        <mimeType name="image/webp" normalized="true"/>
       </mimeTypes>
       <option name="configName">default</option>
       <option name="actions">image-description,named-entity-recognition-image</option>

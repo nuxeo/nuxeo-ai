@@ -106,7 +106,7 @@ You can set these in your `nuxeo.conf`.
 <tr>
 <td colspan="1"><code>nuxeo.hyland.cic.pullResultsMaxTries</code></td>
 <td colspan="1">Number of polling attempts against <code>GET /content/process/{id}/results</code>.</td>
-<td colspan="1"><code>40</code></td>
+<td colspan="1"><code>60</code></td>
 <td colspan="1">Since 5.0.2</td>
 </tr>
 <tr>

@@ -220,13 +220,26 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
      * first key (e.g. early during component start, or in test harnesses where listener
      * registration races with the first cloud-client invocation) blows up with an NPE. We catch
      * that specific failure mode, force-create a key pair, and retry once.
+     * <p>
+     * Both {@link JWTKeyService} and {@link JWKService} are validated explicitly: if either is
+     * unavailable we surface a clear {@link NuxeoException} so the caller sees the real root
+     * cause instead of a downstream NPE.
      */
     protected String generateJwtToken(JWTKeyService jwt, String projectId, Map<String, Serializable> claims) {
+        if (jwt == null) {
+            throw new NuxeoException(
+                    "JWTKeyService is not available; nuxeo-jwt-authenticator-core may not be deployed.");
+        }
         try {
             return jwt.generateJWT(projectId, claims);
         } catch (NullPointerException npe) {
             log.warn("JWT keystore not initialized yet; bootstrapping a key pair and retrying", npe);
-            Framework.getService(JWKService.class).generateKeyPair();
+            JWKService jwk = Framework.getService(JWKService.class);
+            if (jwk == null) {
+                throw new NuxeoException(
+                        "JWKService is not available; cannot bootstrap JWT keystore after initial NPE.", npe);
+            }
+            jwk.generateKeyPair();
             return jwt.generateJWT(projectId, claims);
         }
     }

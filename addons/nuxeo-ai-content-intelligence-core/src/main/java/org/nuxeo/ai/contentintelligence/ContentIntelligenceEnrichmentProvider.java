@@ -20,14 +20,22 @@ import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DESC
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +52,7 @@ import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.impl.blob.ByteArrayBlob;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.hyland.content.intelligence.http.ServiceCallResult;
 import org.nuxeo.hyland.content.intelligence.service.enrichment.HylandKEService;
@@ -87,6 +96,19 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     protected static final String STATUS_PARTIAL_SUCCESS = "PARTIAL_SUCCESS";
 
     protected static final String STATUS_PARTIAL_FAILURE = "PARTIAL_FAILURE";
+
+    /**
+     * Image MIME types Hyland CI's {@code image-*} actions accept natively (per the connector documentation). Any
+     * other {@code image/*} blob is transparently transcoded to JPEG by {@link #transcodeIfNeeded(Blob)} before being
+     * sent to the API, so the deployment can route formats like BMP, GIF, WebP, ... through the enrichment pipeline
+     * end-to-end. Compared case-insensitively.
+     */
+    protected static final Set<String> CIC_NATIVE_IMAGE_MIME_TYPES = Set.of("image/jpeg", "image/png", "image/tiff");
+
+    /** MIME type and ImageIO format used when an unsupported image format must be transcoded. */
+    protected static final String TRANSCODE_TARGET_MIME_TYPE = "image/jpeg";
+
+    protected static final String TRANSCODE_TARGET_FORMAT = "jpg";
 
     private static final Logger log = LogManager.getLogger(ContentIntelligenceEnrichmentProvider.class);
 
@@ -139,6 +161,74 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
         return getBlobFromProvider(managedBlob);
     }
 
+    /**
+     * Hyland CI's {@code image-*} actions only accept JPEG, PNG and TIFF natively. For any other {@code image/*}
+     * blob (BMP, GIF, WebP, ...) we transcode the bytes to JPEG via {@link ImageIO} so the blob can still be
+     * enriched end-to-end. Non-image blobs and natively-supported image blobs are returned unchanged. If transcoding
+     * fails for any reason (unreadable bytes, missing ImageIO plugin, I/O error) we log a warning and return the
+     * original blob so the upstream CIC API can either accept it or surface the error.
+     */
+    protected Blob transcodeIfNeeded(Blob blob) {
+        if (blob == null) {
+            return null;
+        }
+        String mimeType = blob.getMimeType();
+        if (StringUtils.isBlank(mimeType)) {
+            return blob;
+        }
+        String normalized = mimeType.toLowerCase(Locale.ROOT);
+        if (!normalized.startsWith("image/") || CIC_NATIVE_IMAGE_MIME_TYPES.contains(normalized)) {
+            return blob;
+        }
+        try (InputStream in = blob.getStream()) {
+            BufferedImage source = ImageIO.read(in);
+            if (source == null) {
+                log.warn("ImageIO has no reader for blob {} (mime={}); sending the original bytes to Hyland CI",
+                        blob.getFilename(), mimeType);
+                return blob;
+            }
+            // BMP/GIF/PNG may carry an alpha channel or be indexed - JPEG cannot encode either of those, so we
+            // composite onto a solid background to keep the colors faithful and avoid ImageIO returning a 0-byte
+            // result.
+            BufferedImage rgb = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = rgb.createGraphics();
+            try {
+                g.drawImage(source, 0, 0, null);
+            } finally {
+                g.dispose();
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            if (!ImageIO.write(rgb, TRANSCODE_TARGET_FORMAT, out)) {
+                log.warn("ImageIO could not write blob {} as {}; sending the original bytes to Hyland CI",
+                        blob.getFilename(), TRANSCODE_TARGET_FORMAT);
+                return blob;
+            }
+            // ByteArrayBlob keeps the JPEG bytes in memory: avoids spilling another temp file on every transcode
+            // and works in unit tests where no Nuxeo Framework is initialised to allocate them.
+            Blob transcoded = new ByteArrayBlob(out.toByteArray(), TRANSCODE_TARGET_MIME_TYPE);
+            transcoded.setFilename(replaceExtension(blob.getFilename(), TRANSCODE_TARGET_FORMAT));
+            log.debug("Transcoded blob {} from {} to {} ({} bytes) for Hyland CI image enrichment",
+                    blob.getFilename(), mimeType, TRANSCODE_TARGET_MIME_TYPE, transcoded.getLength());
+            return transcoded;
+        } catch (IOException e) {
+            log.warn("Failed to transcode blob {} (mime={}) to JPEG, sending original bytes: {}", blob.getFilename(),
+                    mimeType, e.getMessage());
+            return blob;
+        }
+    }
+
+    /** Replaces (or appends) the filename extension so the transcoded blob carries a coherent {@code .jpg} suffix. */
+    protected String replaceExtension(String filename, String extension) {
+        if (StringUtils.isBlank(filename)) {
+            return "image." + extension;
+        }
+        int idx = filename.lastIndexOf('.');
+        if (idx > 0) {
+            return filename.substring(0, idx) + "." + extension;
+        }
+        return filename + "." + extension;
+    }
+
     /** Resolves the {@link HylandKEService}. Overridable for testing. */
     protected HylandKEService getService() {
         HylandKEService service = Framework.getService(HylandKEService.class);
@@ -165,9 +255,11 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
                 continue;
             }
 
+            Blob payload = transcodeIfNeeded(blob);
+
             ServiceCallResult result;
             try {
-                result = service.enrich(configName, blob, actions, Collections.emptyList(), similarMetadata,
+                result = service.enrich(configName, payload, actions, Collections.emptyList(), similarMetadata,
                         extraJsonPayload);
             } catch (IOException e) {
                 throw new NuxeoException(
