@@ -36,14 +36,16 @@
       <option name="source">ai/bulkEnriched</option>
       <option name="sink">test/enrichment-in</option>
       <option name="enrichmentProviderName">insight.customModel</option>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
     </streamProcessor>
   </extension>
 
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="saveEnrichmentProcessor" defaultConcurrency="1" defaultPartitions="1"
-                     class="org.nuxeo.ai.functions.SaveEnrichmentFunction">
+                     class="org.nuxeo.ai.functions.SaveEnrichmentFunction"
+                     logConfig="bulk">
       <option name="source">test/enrichment-in</option>
-      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="false"/>
+      <policy name="default" maxRetries="2" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
     </streamProcessor>
   </extension>
 </component>

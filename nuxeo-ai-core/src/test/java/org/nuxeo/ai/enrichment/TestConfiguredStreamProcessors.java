@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -109,17 +110,20 @@ public class TestConfiguredStreamProcessors {
     protected BlobManager blobManager;
 
     /**
-     * Wait until there is no lag or timesout. This is a temporary solution until this logic is available in the
-     * framework.
+     * Wait until there is no lag or timeout. Captures the initial {@code upper()} offset and waits until new records
+     * have appeared ({@code upper() > startUpper}) and have all been consumed ({@code lag() == 0}). This prevents
+     * returning prematurely when lag is already zero before records arrive. The caller must append records before
+     * calling this method; the method relies on {@code upper()} advancing to detect new records.
      */
     public static void waitForNoLag(LogManager manager, Name name, Name group, Duration timeout)
             throws InterruptedException {
-
+        LogLag initial = manager.getLag(name, group);
+        long startUpper = initial.upper();
         final long deadline = System.currentTimeMillis() + timeout.toMillis();
         while (System.currentTimeMillis() < deadline) {
-            Thread.sleep(1000);
+            TimeUnit.MILLISECONDS.sleep(500);
             LogLag lag = manager.getLag(name, group);
-            if (lag.upper() == 1 && lag.lag() == 0) {
+            if (lag.upper() > startUpper && lag.lag() == 0) {
                 return;
             }
         }

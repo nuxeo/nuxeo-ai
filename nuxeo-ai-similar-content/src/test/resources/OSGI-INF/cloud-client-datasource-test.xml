@@ -10,4 +10,8 @@
       <authentication token="20344556"/>
     </config>
   </extension>
+
+  <extension target="org.nuxeo.ai.keystore.JWTKeyService" point="keys">
+    <key id="mockTestProject" expiresAt="3600000" audience="nuxeo" />
+  </extension>
 </component>

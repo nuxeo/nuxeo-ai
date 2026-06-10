@@ -8,4 +8,11 @@
       <authentication token="20344556"/>
     </config>
   </extension>
+
+  <!-- Extend the JWT TTL so the NuxeoCloudClient's InsightClient cache does not expire
+       mid-test. The default (5 s) causes cache misses that trigger a JWK key-regeneration
+       path which can NPE when the KeyValueStore is empty. -->
+  <extension target="org.nuxeo.ai.keystore.JWTKeyService" point="keys">
+    <key id="mockTestProject" expiresAt="3600000" audience="nuxeo" />
+  </extension>
 </component>

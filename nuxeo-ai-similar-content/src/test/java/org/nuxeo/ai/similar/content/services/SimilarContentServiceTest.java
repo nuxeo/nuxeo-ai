@@ -34,12 +34,15 @@ import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.keystore.JWKService;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.bulk.BulkService;
@@ -81,6 +84,14 @@ public class SimilarContentServiceTest {
 
     @Inject
     protected TransactionalFeature txf;
+
+    @Before
+    public void setUp() {
+        JWKService jwk = Framework.getService(JWKService.class);
+        if (jwk != null) {
+            jwk.generateKeyPair();
+        }
+    }
 
     @Test
     public void shouldContainConfiguration() {
