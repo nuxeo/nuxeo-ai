@@ -24,12 +24,15 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
 import org.nuxeo.ecm.core.api.CoreInstance;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentNotFoundException;
 import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.api.Framework;
@@ -39,6 +42,8 @@ import net.jodah.failsafe.RetryPolicy;
 
 public class InsightProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
+    private static final Logger log = LogManager.getLogger(InsightProvider.class);
+
     @Override
     public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
         return makeKeyUsingBlobDigests(blobTextFromDoc, name);
@@ -47,7 +52,13 @@ public class InsightProvider extends AbstractEnrichmentProvider implements Enric
     @Override
     public Collection<EnrichmentMetadata> enrich(BlobTextFromDocument btfd) {
         return TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(btfd.getRepositoryName(), session -> {
-            DocumentModel doc = session.getDocument(new IdRef(btfd.getId()));
+            DocumentModel doc;
+            try {
+                doc = session.getDocument(new IdRef(btfd.getId()));
+            } catch (DocumentNotFoundException e) {
+                log.warn("Document {} no longer exists, skipping enrichment", btfd.getId());
+                return Collections.emptyList();
+            }
 
             ModelServingService mss = Framework.getService(ModelServingService.class);
             List<EnrichmentMetadata> metadata = mss.predict(doc);

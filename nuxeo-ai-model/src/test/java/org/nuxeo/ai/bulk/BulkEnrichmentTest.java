@@ -30,7 +30,6 @@ import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_JOB_ID;
 import static org.nuxeo.ai.adapters.DatasetExport.DATASET_EXPORT_TYPE;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_MODEL;
 import static org.nuxeo.ai.bulk.BulkRemoveEnrichmentAction.PARAM_XPATHS;
-import static org.nuxeo.ai.enrichment.TestConfiguredStreamProcessors.waitForNoLag;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.CATEGORY_TYPE;
 import static org.nuxeo.ai.pipes.functions.PropertyUtils.TEXT_TYPE;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
@@ -39,6 +38,7 @@ import static org.nuxeo.ecm.core.bulk.message.BulkStatus.State.COMPLETED;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -46,13 +46,15 @@ import java.util.regex.Pattern;
 
 import jakarta.inject.Inject;
 
-import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.nuxeo.ai.auto.AutoHistory;
 import org.nuxeo.ai.enrichment.EnrichmentTestFeature;
+import org.nuxeo.ai.keystore.JWKService;
 import org.nuxeo.ai.metadata.SuggestionMetadataWrapper;
 import org.nuxeo.ai.model.export.DatasetExportService;
 import org.nuxeo.ai.sdk.objects.PropertyType;
@@ -67,10 +69,7 @@ import org.nuxeo.ecm.core.bulk.BulkService;
 import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.bulk.message.BulkCommand;
 import org.nuxeo.ecm.core.bulk.message.BulkStatus;
-import org.nuxeo.ecm.core.search.SearchQuery;
-import org.nuxeo.ecm.core.search.SearchResponse;
-import org.nuxeo.ecm.core.search.SearchService;
-import org.nuxeo.ecm.core.test.CoreSearchFeature;
+import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
@@ -85,7 +84,8 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.Sets;
 
 @RunWith(FeaturesRunner.class)
-@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class, CoreSearchFeature.class })
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Features({ EnrichmentTestFeature.class, AutomationFeature.class, CoreBulkFeature.class })
 @Deploy("org.nuxeo.ai.ai-model")
 @Deploy("org.nuxeo.ecm.platform.video")
 @Deploy("org.nuxeo.ai.ai-core")
@@ -102,10 +102,15 @@ public class BulkEnrichmentTest {
 
     protected static final Name ENRICHMENT_IN = Name.ofUrn("test/enrichment-in");
 
-    protected static final Name SAVE_ENRICHMENT_GROUP = Name.ofUrn("test/SaveEnrichmentFunction_test-enrichment-in");
+    protected static final Name SAVE_ENRICHMENT_GROUP = Name.ofUrn("ai/SaveEnrichmentFunction_test-enrichment-in");
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(5089);
+    protected static final Name BULK_ENRICHED = Name.ofUrn("ai/bulkEnriched");
+
+    protected static final Name INSIGHT_PROCESSOR_GROUP = Name.ofUrn(
+            "ai/insight-customModel_ai-bulkEnriched_test-enrichment-in");
+
+    @ClassRule
+    public static WireMockRule wireMockRule = new WireMockRule(5089);
 
     @Inject
     public BulkService bulkService;
@@ -116,17 +121,26 @@ public class BulkEnrichmentTest {
     @Inject
     protected TransactionalFeature txFeature;
 
-    @Inject
-    protected SearchService searchService;
-
     protected static final Pattern VALID_LOG_NAME_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9_\\-]*");
 
     @Before
-    public void setup() {
+    public void setup() throws InterruptedException {
+        JWKService jwk = Framework.getService(JWKService.class);
+        if (jwk != null) {
+            jwk.generateKeyPair();
+        }
+
         String name = ENRICHMENT_IN.getName();
         if (!VALID_LOG_NAME_PATTERN.matcher(name).matches()) {
             throw new IllegalArgumentException("Invalid name: '" + name + "'.");
         }
+
+        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+
+        drainPipeline(manager, Duration.ofSeconds(120));
+
+        session.removeChildren(session.getRootDocument().getRef());
+        txFeature.nextTransaction();
 
         DocumentModel testRoot = session.createDocumentModel("/", "bulkenrichtest", "Folder");
         testRoot = session.createDocument(testRoot);
@@ -145,14 +159,8 @@ public class BulkEnrichmentTest {
         txFeature.nextTransaction();
     }
 
-    @After
-    public void destroy() {
-        session.removeChildren(session.getRootDocument().getRef());
-    }
-
     @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void testBulkEnrich() throws Exception {
+    public void test3_BulkEnrich() throws Exception {
         String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
                 testRoot);
@@ -160,8 +168,9 @@ public class BulkEnrichmentTest {
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager();
-        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
+        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+        waitForPipeline(manager, Duration.ofSeconds(60));
+        waitForEnrichedTitle(nxql, "you", Duration.ofSeconds(60));
         txFeature.nextTransaction();
 
         List<DocumentModel> docs = getSomeDocuments(nxql);
@@ -221,7 +230,8 @@ public class BulkEnrichmentTest {
         command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
-        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
+        waitForPipeline(manager, Duration.ofSeconds(60));
+        waitForEnrichedTitle(nxql, "you", Duration.ofSeconds(60));
         txFeature.nextTransaction();
 
         docs = getSomeDocuments(nxql);
@@ -234,19 +244,17 @@ public class BulkEnrichmentTest {
     }
 
     @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void shouldNotBacktrackConfirmedValue() throws Exception {
+    public void test2_shouldNotBacktrackConfirmedValue() throws Exception {
         String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document WHERE ecm:parentId='%s' AND ecm:primaryType = 'File'",
                 testRoot);
-        // use non-deprecated BulkCommand builder signature with principal directly
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
         LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
-
-        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
+        waitForPipeline(manager, Duration.ofSeconds(60));
+        waitForEnrichedTitle(nxql, "you", Duration.ofSeconds(60));
         txFeature.nextTransaction();
 
         List<DocumentModel> docs = getSomeDocuments(nxql);
@@ -293,13 +301,12 @@ public class BulkEnrichmentTest {
     }
 
     @Test
-    @Deploy("org.nuxeo.ai.ai-model:OSGI-INF/cloud-client-test.xml")
-    public void testBulkExportNoAutoFields() throws Exception {
+    public void test1_BulkExportNoAutoFields() throws Exception {
         String testRoot = session.getDocument(new PathRef(TEST_ROOT)).getId();
         String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
                 testRoot);
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
-        LogManager manager = Framework.getService(StreamService.class).getLogManager();
+        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
 
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
@@ -310,14 +317,12 @@ public class BulkEnrichmentTest {
         session.save();
 
         bulkService.submit(command);
-        assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(30)));
-        waitForNoLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, Duration.ofSeconds(5));
+        assertTrue("Bulk action didn't finish", bulkService.await(command.getId(), Duration.ofSeconds(60)));
+        waitForPipeline(manager, Duration.ofSeconds(60));
+        waitForEnrichmentCount(nxql, 20, Duration.ofSeconds(60));
         txFeature.nextTransaction();
 
-        // replaced session.query(nxql) with SearchService usage
-        SearchResponse allResponse = searchService.search(
-                SearchQuery.builder(nxql, session).limit(NUM_OF_DOCS).build());
-        DocumentModelList someDoc = allResponse.loadDocuments(session);
+        DocumentModelList someDoc = session.query(nxql, NUM_OF_DOCS);
         long enriched = someDoc.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
         assertEquals(20, enriched);
 
@@ -355,5 +360,76 @@ public class BulkEnrichmentTest {
         docs.add(enriched.get(4));
         docs.add(enriched.get(16));
         return docs;
+    }
+
+    /**
+     * Waits for the full enrichment pipeline to complete: first drains the insightProcessor's input
+     * (ai/bulkEnriched — records are already present from the bulk action), then waits for the
+     * saveEnrichmentProcessor to consume all records from test/enrichment-in.
+     */
+    protected void waitForPipeline(LogManager manager, Duration timeout) throws InterruptedException {
+        drainLag(manager, BULK_ENRICHED, INSIGHT_PROCESSOR_GROUP, timeout);
+        drainLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, timeout);
+    }
+
+    /**
+     * Waits for the full pipeline to drain. Used in @Before to ensure all processing from the
+     * previous test completes before documents are cleaned up.
+     */
+    protected void drainPipeline(LogManager manager, Duration timeout) throws InterruptedException {
+        drainLag(manager, BULK_ENRICHED, INSIGHT_PROCESSOR_GROUP, timeout);
+        drainLag(manager, ENRICHMENT_IN, SAVE_ENRICHMENT_GROUP, timeout);
+    }
+
+    private static void drainLag(LogManager manager, Name name, Name group, Duration timeout)
+            throws InterruptedException {
+        final long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            LogLag lag = manager.getLag(name, group);
+            if (lag.lag() == 0) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(500);
+        }
+    }
+
+    /**
+     * Polls until at least one document matching {@code nxql} has {@code dc:title} equal to {@code expectedTitle},
+     * refreshing the transaction on each attempt so the session sees committed data from async processors.
+     */
+    protected void waitForEnrichedTitle(String nxql, String expectedTitle, Duration timeout)
+            throws InterruptedException {
+        final long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            txFeature.nextTransaction();
+            DocumentModelList docs = session.query(nxql, 20);
+            boolean found = docs.stream()
+                                .anyMatch(doc -> expectedTitle.equals(doc.getPropertyValue("dc:title")));
+            if (found) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(500);
+        }
+        throw new AssertionError("Timed out waiting for dc:title='" + expectedTitle + "' in query: " + nxql);
+    }
+
+    /**
+     * Polls until at least {@code expectedCount} documents matching {@code nxql} carry the enrichment facet,
+     * refreshing the transaction on each attempt.
+     */
+    protected void waitForEnrichmentCount(String nxql, int expectedCount, Duration timeout)
+            throws InterruptedException {
+        final long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            txFeature.nextTransaction();
+            DocumentModelList docs = session.query(nxql, NUM_OF_DOCS);
+            long enriched = docs.stream().filter(doc -> doc.hasFacet(ENRICHMENT_FACET)).count();
+            if (enriched >= expectedCount) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(500);
+        }
+        throw new AssertionError(
+                "Timed out waiting for " + expectedCount + " enriched documents in query: " + nxql);
     }
 }

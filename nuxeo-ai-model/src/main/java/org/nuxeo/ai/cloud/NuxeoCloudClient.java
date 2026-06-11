@@ -207,6 +207,10 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
                     "Authentication/Connection issue with Insight cloud: please verify JWT configuration with project {} and Insight url {}",
                     descriptor.projectId, descriptor.url);
             return Optional.empty();
+        } catch (Exception e) {
+            log.warn("Failed to configure Insight cloud client for project {}: {}",
+                    descriptor.projectId, e.getMessage(), e);
+            return Optional.empty();
         }
     }
 
@@ -268,7 +272,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             }
 
             return insightClient;
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | com.google.common.util.concurrent.UncheckedExecutionException e) {
             log.warn("User {} attempts to acquire nonexistent client", actingUser, e);
             return Optional.empty();
         }
