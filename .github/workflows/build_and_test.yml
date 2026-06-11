@@ -21,16 +21,14 @@ env:
     -Daether.syncContext.named.time=600
     -Xms512m
     -Xmx1536m
+  REGISTRY: docker-internal.packages.nuxeo.com
+  REPOSITORY: nuxeo/nuxeo-ai
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read
   checks: write
   pull-requests: write
-
-env:
-  REGISTRY: docker-internal.packages.nuxeo.com
-  REPOSITORY: nuxeo/nuxeo-ai
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   properties:
