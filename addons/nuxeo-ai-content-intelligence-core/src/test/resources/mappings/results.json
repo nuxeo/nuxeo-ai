@@ -15,9 +15,11 @@
             "isSuccess": true,
             "result": "A small test image"
           },
-          "imageClassification": {
+          "namedEntityImage": {
             "isSuccess": true,
-            "result": "test-class"
+            "result": {
+              "locations": ["New York"]
+            }
           },
           "imageEmbeddings": {
             "isSuccess": true,

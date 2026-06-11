@@ -44,7 +44,7 @@ public class TestContentIntelligenceDescriptionListener {
             + "\"id\":\"job-1\",\"status\":\"SUCCESS\","
             + "\"results\":[{"
             + "\"imageDescription\":{\"isSuccess\":true,\"result\":\"A sunset over Paris\"},"
-            + "\"imageClassification\":{\"isSuccess\":true,\"result\":\"landscape\"}"
+            + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":{\"locations\":[\"Paris\"]}}"
             + "}]"
             + "}}";
 
@@ -54,7 +54,7 @@ public class TestContentIntelligenceDescriptionListener {
             + "\"id\":\"job-2\",\"status\":\"SUCCESS\","
             + "\"results\":[{"
             + "\"textSummary\":{\"isSuccess\":true,\"result\":\"Quarterly sales report for 2026\"},"
-            + "\"textClassification\":{\"isSuccess\":true,\"result\":\"report\"}"
+            + "\"namedEntityText\":{\"isSuccess\":true,\"result\":{\"organisations\":[\"Acme Corp\"]}}"
             + "}]"
             + "}}";
 
@@ -63,7 +63,7 @@ public class TestContentIntelligenceDescriptionListener {
             + "\"response\":{"
             + "\"id\":\"job-3\",\"status\":\"SUCCESS\","
             + "\"results\":[{"
-            + "\"imageClassification\":{\"isSuccess\":true,\"result\":\"landscape\"}"
+            + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":{\"locations\":[\"Paris\"]}}"
             + "}]"
             + "}}";
 
@@ -73,7 +73,7 @@ public class TestContentIntelligenceDescriptionListener {
             + "\"id\":\"job-4\",\"status\":\"PARTIAL_FAILURE\","
             + "\"results\":[{"
             + "\"imageDescription\":{\"isSuccess\":false,\"result\":null,\"error\":\"upstream\"},"
-            + "\"imageClassification\":{\"isSuccess\":true,\"result\":\"landscape\"}"
+            + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":{\"locations\":[\"Paris\"]}}"
             + "}]"
             + "}}";
 
@@ -88,7 +88,7 @@ public class TestContentIntelligenceDescriptionListener {
     public static final String SECOND_ENTRY_HAS_DESCRIPTION = "{"
             + "\"response\":{"
             + "\"results\":[{"
-            + "\"imageClassification\":{\"isSuccess\":true,\"result\":\"city\"}"
+            + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":{\"locations\":[\"city\"]}}"
             + "},{"
             + "\"imageDescription\":{\"isSuccess\":true,\"result\":\"A second image description\"}"
             + "}]"

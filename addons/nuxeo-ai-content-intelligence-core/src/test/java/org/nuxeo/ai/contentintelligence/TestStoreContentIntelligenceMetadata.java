@@ -107,7 +107,7 @@ public class TestStoreContentIntelligenceMetadata {
     @Test
     public void shouldCollectEveryNonDescriptionLabelAsATag() {
         EnrichmentMetadata metadata = buildMetadata(
-                suggestion("textClassification", "contract"),
+                suggestion("namedEntityImage", "contract"),
                 suggestion("namedEntityText", "Acme Corp", "Jane Doe"));
 
         Set<String> tags = consumer.collectTagValues(metadata);
@@ -120,7 +120,7 @@ public class TestStoreContentIntelligenceMetadata {
     @Test
     public void shouldDeduplicateRepeatedLabelValuesAcrossSuggestions() {
         EnrichmentMetadata metadata = buildMetadata(
-                suggestion("imageClassification", "landscape"),
+                suggestion("namedEntityText", "landscape"),
                 suggestion("namedEntityImage", "landscape"));
         Set<String> tags = consumer.collectTagValues(metadata);
         assertEquals(1, tags.size());
@@ -130,9 +130,9 @@ public class TestStoreContentIntelligenceMetadata {
     @Test
     public void shouldDeduplicateNearDuplicatesWithDifferentHyphenation() {
         EnrichmentMetadata metadata = buildMetadata(
-                suggestion("imageClassification", "high-contrast", "very-sharp"),
+                suggestion("imageMetadataGeneration", "high-contrast", "very-sharp"),
                 suggestion("namedEntityImage", "highcontrast", "verysharp", "photographic-film"),
-                suggestion("textClassification", "photographicfilm"));
+                suggestion("namedEntityText", "photographicfilm"));
 
         Set<String> tags = consumer.collectTagValues(metadata);
         assertEquals(3, tags.size());
@@ -147,7 +147,7 @@ public class TestStoreContentIntelligenceMetadata {
     @Test
     public void shouldDeduplicateCaseInsensitively() {
         EnrichmentMetadata metadata = buildMetadata(
-                suggestion("imageClassification", "Landscape"),
+                suggestion("namedEntityText", "Landscape"),
                 suggestion("namedEntityImage", "landscape", "LANDSCAPE"));
 
         Set<String> tags = consumer.collectTagValues(metadata);
@@ -160,7 +160,7 @@ public class TestStoreContentIntelligenceMetadata {
         EnrichmentMetadata metadata = buildMetadata(
                 suggestion("imageDescription", "A very long generated description that should never become a tag"),
                 suggestion("textSummary", "An even longer summary paragraph that also must not become a tag"),
-                suggestion("imageClassification", "landscape"));
+                suggestion("namedEntityImage", "landscape"));
 
         Set<String> tags = consumer.collectTagValues(metadata);
         assertEquals(Collections.singleton("landscape"), tags);
@@ -195,7 +195,7 @@ public class TestStoreContentIntelligenceMetadata {
     public void shouldDropTagThatSanitizesToBlank() {
         // "%%" -> "" -> dropped.
         EnrichmentMetadata metadata = buildMetadata(
-                suggestion("imageClassification", "%%", "valid-tag"));
+                suggestion("namedEntityImage", "%%", "valid-tag"));
 
         Set<String> tags = consumer.collectTagValues(metadata);
         assertEquals(Collections.singleton("valid-tag"), tags);
