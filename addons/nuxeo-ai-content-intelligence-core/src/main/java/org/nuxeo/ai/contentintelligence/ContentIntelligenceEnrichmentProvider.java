@@ -21,6 +21,7 @@ import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,7 +36,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -123,6 +128,26 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
 
     protected static final String TRANSCODE_TARGET_FORMAT = "jpg";
 
+    /**
+     * Hyland CI's image-* actions reject blobs over 5 MB with {@code ValidationError: Image size exceeds 5 MB}.
+     * This is a hard server-side cap, not negotiable per request, so we re-encode (and if needed downscale)
+     * oversized images locally before the upload.
+     */
+    protected static final long CIC_IMAGE_MAX_BYTES = 5L * 1024 * 1024;
+
+    /**
+     * JPEG quality steps the transcoder walks down before falling back to dimension halving. Stops at the first
+     * level that yields a payload under {@link #imageMaxBytes}. 0.85 is virtually lossless for photographs, 0.40
+     * is the lower bound past which artefacts become visible to a downstream OCR / classifier.
+     */
+    protected static final float[] JPEG_QUALITY_STEPS = { 0.85f, 0.7f, 0.55f, 0.4f };
+
+    /** Lower bound on the longer edge after dimension halving. Below this, downscaling does more harm than good. */
+    protected static final int MIN_DOWNSCALE_DIMENSION = 256;
+
+    /** Cap on dimension-halving iterations (1/2^8 of the original = ~0.4 %) to keep the loop bounded. */
+    protected static final int MAX_DOWNSCALE_ITERATIONS = 8;
+
     private static final Logger log = LogManager.getLogger(ContentIntelligenceEnrichmentProvider.class);
 
     protected String configName;
@@ -132,6 +157,13 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     protected String similarMetadata;
 
     protected String extraJsonPayload;
+
+    /**
+     * Effective byte budget enforced on image blobs sent to Hyland CI. Defaults to {@link #CIC_IMAGE_MAX_BYTES};
+     * unit tests override via {@link #setImageMaxBytes(long)} to exercise the downscale path on small synthetic
+     * fixtures.
+     */
+    protected long imageMaxBytes = CIC_IMAGE_MAX_BYTES;
 
     @Override
     public void init(EnrichmentDescriptor descriptor) {
@@ -175,11 +207,21 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     }
 
     /**
-     * Hyland CI's {@code image-*} actions only accept JPEG, PNG and TIFF natively. For any other {@code image/*}
-     * blob (BMP, GIF, WebP, ...) we transcode the bytes to JPEG via {@link ImageIO} so the blob can still be
-     * enriched end-to-end. Non-image blobs and natively-supported image blobs are returned unchanged. If transcoding
-     * fails for any reason (unreadable bytes, missing ImageIO plugin, I/O error) we log a warning and return the
-     * original blob so the upstream CIC API can either accept it or surface the error.
+     * Prepares {@code image/*} blobs for Hyland CI's image-* actions, which only accept JPEG / PNG / TIFF natively
+     * AND enforce a hard {@value #CIC_IMAGE_MAX_BYTES}-byte ceiling (response: {@code ValidationError: Image size
+     * exceeds 5 MB}). The blob is re-encoded as JPEG whenever it is either in an unsupported format OR over the
+     * byte budget; the encoder walks down {@link #JPEG_QUALITY_STEPS} and, if still too large, halves the
+     * dimensions up to {@link #MAX_DOWNSCALE_ITERATIONS} times. Non-image blobs and natively-supported,
+     * under-cap image blobs are returned unchanged.
+     * <p>
+     * Returns:
+     * <ul>
+     * <li>the original blob when no work is needed, or when ImageIO has no reader / writer (best-effort: let CIC
+     * surface the issue)</li>
+     * <li>a JPEG-encoded {@link ByteArrayBlob} otherwise</li>
+     * <li>{@code null} when even the fully downscaled image cannot fit under the byte budget; callers MUST treat
+     * {@code null} as "skip this blob"</li>
+     * </ul>
      */
     protected Blob transcodeIfNeeded(Blob blob) {
         if (blob == null) {
@@ -190,44 +232,148 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
             return blob;
         }
         String normalized = mimeType.toLowerCase(Locale.ROOT);
-        if (!normalized.startsWith("image/") || CIC_NATIVE_IMAGE_MIME_TYPES.contains(normalized)) {
+        if (!normalized.startsWith("image/")) {
             return blob;
         }
+        boolean nativeFormat = CIC_NATIVE_IMAGE_MIME_TYPES.contains(normalized);
+        boolean withinCap = blob.getLength() <= imageMaxBytes;
+        if (nativeFormat && withinCap) {
+            return blob;
+        }
+
+        BufferedImage source;
         try (InputStream in = blob.getStream()) {
-            BufferedImage source = ImageIO.read(in);
-            if (source == null) {
-                log.warn("ImageIO has no reader for blob {} (mime={}); sending the original bytes to Hyland CI",
-                        blob.getFilename(), mimeType);
-                return blob;
-            }
-            // BMP/GIF/PNG may carry an alpha channel or be indexed - JPEG cannot encode either of those, so we
-            // composite onto a solid background to keep the colors faithful and avoid ImageIO returning a 0-byte
-            // result.
-            BufferedImage rgb = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = rgb.createGraphics();
-            try {
-                g.drawImage(source, 0, 0, null);
-            } finally {
-                g.dispose();
-            }
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            if (!ImageIO.write(rgb, TRANSCODE_TARGET_FORMAT, out)) {
-                log.warn("ImageIO could not write blob {} as {}; sending the original bytes to Hyland CI",
-                        blob.getFilename(), TRANSCODE_TARGET_FORMAT);
-                return blob;
-            }
-            // ByteArrayBlob keeps the JPEG bytes in memory: avoids spilling another temp file on every transcode
-            // and works in unit tests where no Nuxeo Framework is initialised to allocate them.
-            Blob transcoded = new ByteArrayBlob(out.toByteArray(), TRANSCODE_TARGET_MIME_TYPE);
-            transcoded.setFilename(replaceExtension(blob.getFilename(), TRANSCODE_TARGET_FORMAT));
-            log.debug("Transcoded blob {} from {} to {} ({} bytes) for Hyland CI image enrichment",
-                    blob.getFilename(), mimeType, TRANSCODE_TARGET_MIME_TYPE, transcoded.getLength());
-            return transcoded;
+            source = ImageIO.read(in);
         } catch (IOException e) {
-            log.warn("Failed to transcode blob {} (mime={}) to JPEG, sending original bytes: {}", blob.getFilename(),
-                    mimeType, e.getMessage());
+            log.warn("Failed to read blob {} (mime={}) for Hyland CI image enrichment, sending original bytes: {}",
+                    blob.getFilename(), mimeType, e.getMessage());
             return blob;
         }
+        if (source == null) {
+            log.warn("ImageIO has no reader for blob {} (mime={}); sending the original bytes to Hyland CI",
+                    blob.getFilename(), mimeType);
+            return blob;
+        }
+
+        byte[] jpegBytes;
+        try {
+            jpegBytes = encodeJpegWithinBudget(source, imageMaxBytes);
+        } catch (IOException e) {
+            log.warn("Failed to JPEG-encode blob {} (mime={}) for Hyland CI, sending original bytes: {}",
+                    blob.getFilename(), mimeType, e.getMessage());
+            return blob;
+        }
+        if (jpegBytes == null) {
+            log.warn(
+                    "Blob {} (mime={}, {} bytes, {}x{}) cannot be fit under Hyland CI's {} byte image cap even at "
+                            + "lowest JPEG quality and {} downscale iterations; skipping. Document will not be enriched.",
+                    blob.getFilename(), mimeType, blob.getLength(), source.getWidth(), source.getHeight(),
+                    imageMaxBytes, MAX_DOWNSCALE_ITERATIONS);
+            return null;
+        }
+
+        Blob transcoded = new ByteArrayBlob(jpegBytes, TRANSCODE_TARGET_MIME_TYPE);
+        transcoded.setFilename(replaceExtension(blob.getFilename(), TRANSCODE_TARGET_FORMAT));
+        log.debug("Prepared blob {} for Hyland CI: {} ({} bytes) -> {} ({} bytes)", blob.getFilename(), mimeType,
+                blob.getLength(), TRANSCODE_TARGET_MIME_TYPE, transcoded.getLength());
+        return transcoded;
+    }
+
+    /**
+     * Encodes the image as JPEG, progressively lowering quality and then halving dimensions, until the resulting
+     * byte payload fits {@code maxBytes}. Returns {@code null} when no admissible encoding can be produced (a
+     * pathological case for solid-noise images that JPEG cannot compress).
+     */
+    protected byte[] encodeJpegWithinBudget(BufferedImage source, long maxBytes) throws IOException {
+        BufferedImage current = toRgb(source);
+        byte[] bytes = tryEncodeAtAllQualities(current, maxBytes);
+        if (bytes != null) {
+            return bytes;
+        }
+        // Quality alone was not enough; halve dimensions and retry the quality ladder each iteration.
+        for (int i = 0; i < MAX_DOWNSCALE_ITERATIONS; i++) {
+            int w = Math.max(MIN_DOWNSCALE_DIMENSION, current.getWidth() / 2);
+            int h = Math.max(MIN_DOWNSCALE_DIMENSION, current.getHeight() / 2);
+            if (w == current.getWidth() && h == current.getHeight()) {
+                break;
+            }
+            current = downscale(current, w, h);
+            bytes = tryEncodeAtAllQualities(current, maxBytes);
+            if (bytes != null) {
+                return bytes;
+            }
+        }
+        return null;
+    }
+
+    /** Walks {@link #JPEG_QUALITY_STEPS} once, returning the first payload that fits {@code maxBytes}. */
+    protected byte[] tryEncodeAtAllQualities(BufferedImage img, long maxBytes) throws IOException {
+        for (float quality : JPEG_QUALITY_STEPS) {
+            byte[] bytes = encodeJpeg(img, quality);
+            if (bytes.length <= maxBytes) {
+                return bytes;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * BMP / GIF / PNG sources can be indexed or carry an alpha channel - JPEG cannot encode either of those, so we
+     * composite onto a solid background. The result is always {@link BufferedImage#TYPE_INT_RGB}, which the JPEG
+     * writer accepts unconditionally.
+     */
+    protected BufferedImage toRgb(BufferedImage source) {
+        if (source.getType() == BufferedImage.TYPE_INT_RGB) {
+            return source;
+        }
+        BufferedImage rgb = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = rgb.createGraphics();
+        try {
+            g.drawImage(source, 0, 0, null);
+        } finally {
+            g.dispose();
+        }
+        return rgb;
+    }
+
+    /** Bicubic-resamples {@code source} into a new {@link BufferedImage#TYPE_INT_RGB} target of size {@code w x h}. */
+    protected BufferedImage downscale(BufferedImage source, int w, int h) {
+        BufferedImage scaled = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = scaled.createGraphics();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g.drawImage(source, 0, 0, w, h, null);
+        } finally {
+            g.dispose();
+        }
+        return scaled;
+    }
+
+    /**
+     * Encodes {@code img} as JPEG with the requested compression quality (0.0 - 1.0). Uses explicit-mode write
+     * params because {@link ImageIO#write} hard-codes a quality of ~0.75 with no override.
+     */
+    protected byte[] encodeJpeg(BufferedImage img, float quality) throws IOException {
+        ImageWriter writer = ImageIO.getImageWritersByFormatName(TRANSCODE_TARGET_FORMAT).next();
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try (ImageOutputStream ios = ImageIO.createImageOutputStream(out)) {
+                writer.setOutput(ios);
+                ImageWriteParam param = writer.getDefaultWriteParam();
+                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                param.setCompressionQuality(quality);
+                writer.write(null, new IIOImage(img, null, null), param);
+            }
+            return out.toByteArray();
+        } finally {
+            writer.dispose();
+        }
+    }
+
+    /** Test-only hook so unit tests can exercise the downscale ladder with small synthetic fixtures. */
+    protected void setImageMaxBytes(long imageMaxBytes) {
+        this.imageMaxBytes = imageMaxBytes;
     }
 
     /** Replaces (or appends) the filename extension so the transcoded blob carries a coherent {@code .jpg} suffix. */
@@ -269,6 +415,12 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
             }
 
             Blob payload = transcodeIfNeeded(blob);
+            if (payload == null) {
+                // transcodeIfNeeded already logged a structured WARN explaining why the blob is unenrichable
+                // (e.g. cannot fit Hyland CI's 5 MB image cap even fully downscaled); skip it cleanly so the
+                // framework does not retry-storm on a deterministic failure.
+                continue;
+            }
 
             ServiceCallResult result;
             try {

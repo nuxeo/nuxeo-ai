@@ -596,9 +596,10 @@ public class TestContentIntelligenceEnrichmentProvider {
     }
 
     /**
-     * The provider must accept blobs of any size, including blobs well past the framework's default 5 MB cap and past
-     * any historical {@code nuxeo.ai.contentintelligence.*maxSize} value, so that every eligible blob reaches the
-     * Hyland CI API and CIC enforces its own ceiling instead of EnrichingStreamProcessor silently dropping the blob.
+     * The framework-level {@code supportsSize} pre-filter must remain permissive so every eligible blob reaches the
+     * provider: the real image-byte budget is enforced by {@code transcodeIfNeeded} via re-encoding / downscaling,
+     * not by short-circuiting in {@code EnrichingStreamProcessor}. Document blobs have no client-side cap at all
+     * (CIC text-* actions accept much larger payloads than image-* actions do).
      */
     @Test
     public void shouldNotEnforceClientSideSizeCap() {
@@ -609,6 +610,148 @@ public class TestContentIntelligenceEnrichmentProvider {
         assertTrue("100 MB must be accepted", provider.supportsSize(100L * 1024 * 1024));
         assertTrue("10 GB must be accepted", provider.supportsSize(10L * 1024 * 1024 * 1024));
         assertTrue("Long.MAX_VALUE must be accepted", provider.supportsSize(Long.MAX_VALUE));
+    }
+
+    /**
+     * Hyland CI's image-* actions reject blobs over 5 MB with {@code ValidationError: Image size exceeds 5 MB}.
+     * When the source bytes are already over the budget the provider must JPEG-re-encode (and if needed downscale)
+     * the image so it slips under the cap, instead of round-tripping the original to a guaranteed-rejection call.
+     * <p>
+     * Uses a 1024x1024 random-noise fixture (worst-case for JPEG compression) so the test cannot accidentally
+     * pass by relying on a degenerate compressible input. Budget is sized for the downscale ladder to land at
+     * 256x256 (the {@code MIN_DOWNSCALE_DIMENSION} floor) at the lowest quality step.
+     */
+    @Test
+    public void shouldReencodeOversizedImageWithinByteBudget() throws IOException {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        long budget = 32 * 1024L; // 32 KB - achievable for a 256x256 q=0.4 noisy JPEG
+        p.setImageMaxBytes(budget);
+        Blob oversized = buildNoisyImageBlob(1024, "jpg", "image/jpeg", "huge.jpg");
+        assertTrue("fixture must exceed test budget to exercise the encoder",
+                oversized.getLength() > budget);
+
+        Blob fitted = p.transcodeIfNeeded(oversized);
+
+        assertNotNull("oversize but compressible images must produce a fitted payload, not be skipped", fitted);
+        assertNotSame("oversized blob must be re-encoded, not passed through as-is", oversized, fitted);
+        assertEquals(ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE, fitted.getMimeType());
+        assertTrue("re-encoded payload must fit within the configured byte budget (got " + fitted.getLength() + ")",
+                fitted.getLength() <= budget);
+    }
+
+    /**
+     * If even maximum downscale + minimum JPEG quality cannot make the image fit, the provider must signal "skip"
+     * (return {@code null}) instead of sending a doomed call to CIC.
+     */
+    @Test
+    public void shouldReturnNullWhenImageCannotFitByteBudget() throws IOException {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        // 1-byte budget: not even a minimal JPEG header fits.
+        p.setImageMaxBytes(1L);
+        Blob oversized = buildNoisyImageBlob(64, "jpg", "image/jpeg", "uncompressible.jpg");
+
+        Blob result = p.transcodeIfNeeded(oversized);
+
+        assertEquals("unsatisfiable budget must yield null so enrich() can skip the blob", null, result);
+    }
+
+    /**
+     * Natively-supported, under-cap blobs must short-circuit (no re-encode, no allocation) — that path is the hot
+     * loop and any regression here means we'd waste CPU on every well-formed JPEG / PNG / TIFF upload.
+     */
+    @Test
+    public void shouldShortCircuitForNativeUnderCapBlobs() throws IOException {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        Blob tiny = buildSyntheticImageBlob("jpg", "image/jpeg", "tiny.jpg");
+        assertTrue("fixture must be well under the 5 MB cap",
+                tiny.getLength() < ContentIntelligenceEnrichmentProvider.CIC_IMAGE_MAX_BYTES);
+
+        assertSame("native + under-cap blob must pass through unchanged", tiny, p.transcodeIfNeeded(tiny));
+    }
+
+    /**
+     * End-to-end: an oversize image is downscaled, sent to CIC as a JPEG within the byte budget, and the resulting
+     * enrichment metadata is returned normally - the caller never sees the resize happen.
+     */
+    @Test
+    public void enrichShouldSendDownscaledBlobForOversizedImageInput() throws IOException {
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(SUCCESS_RESPONSE));
+
+        ContentIntelligenceEnrichmentProvider bigProvider = new ContentIntelligenceEnrichmentProvider() {
+            @Override
+            protected HylandKEService getService() {
+                return service;
+            }
+
+            @Override
+            protected Blob resolveBlob(ManagedBlob managedBlob) {
+                try {
+                    return buildNoisyImageBlob(1024, "jpg", "image/jpeg", "huge.jpg");
+                } catch (IOException e) {
+                    throw new AssertionError(e);
+                }
+            }
+
+            @Override
+            public String saveJsonAsRawBlob(String rawJson) {
+                return "test-raw-blob-key";
+            }
+        };
+        bigProvider.init(buildDescriptor(Map.of(
+                ContentIntelligenceEnrichmentProvider.OPTION_CONFIG_NAME, "default",
+                ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description,named-entity-recognition-image")));
+        long budget = 32 * 1024L;
+        bigProvider.setImageMaxBytes(budget);
+
+        BlobTextFromDocument doc = buildBlobTextFromDoc("image/jpeg");
+        Collection<EnrichmentMetadata> metadata = bigProvider.enrich(doc);
+        assertEquals(1, metadata.size());
+
+        org.mockito.ArgumentCaptor<Blob> sent = org.mockito.ArgumentCaptor.forClass(Blob.class);
+        org.mockito.Mockito.verify(service)
+                           .enrich(anyString(), sent.capture(), anyList(), anyList(), nullable(String.class),
+                                   nullable(String.class));
+        assertTrue("oversized image must reach CIC under the byte budget (sent " + sent.getValue().getLength() + ")",
+                sent.getValue().getLength() <= budget);
+        assertEquals("re-encoded payload must be JPEG", ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE,
+                sent.getValue().getMimeType());
+    }
+
+    /**
+     * When the blob is unfit even after maximum downscale, the provider must NOT call CIC at all — wasted API
+     * calls are not free, and CIC just rejects with a deterministic ValidationError.
+     */
+    @Test
+    public void enrichShouldSkipBlobThatCannotFitByteBudget() throws IOException {
+        ContentIntelligenceEnrichmentProvider bigProvider = new ContentIntelligenceEnrichmentProvider() {
+            @Override
+            protected HylandKEService getService() {
+                return service;
+            }
+
+            @Override
+            protected Blob resolveBlob(ManagedBlob managedBlob) {
+                try {
+                    return buildNoisyImageBlob(64, "jpg", "image/jpeg", "huge.jpg");
+                } catch (IOException e) {
+                    throw new AssertionError(e);
+                }
+            }
+        };
+        bigProvider.init(buildDescriptor(Map.of(
+                ContentIntelligenceEnrichmentProvider.OPTION_CONFIG_NAME, "default",
+                ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description,named-entity-recognition-image")));
+        bigProvider.setImageMaxBytes(1L);
+
+        Collection<EnrichmentMetadata> metadata = bigProvider.enrich(buildBlobTextFromDoc("image/jpeg"));
+        assertEquals("doomed blobs must be skipped without producing metadata", 0, metadata.size());
+
+        org.mockito.Mockito.verify(service, org.mockito.Mockito.never())
+                           .enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                                   nullable(String.class));
     }
 
     /**
@@ -727,6 +870,30 @@ public class TestContentIntelligenceEnrichmentProvider {
             throw new IOException("ImageIO has no writer for format " + imageioFormat);
         }
         // Use ByteArrayBlob directly so the unit test does not need a running Nuxeo Framework for tmp-file creation.
+        Blob blob = new org.nuxeo.ecm.core.api.impl.blob.ByteArrayBlob(out.toByteArray(), mimeType);
+        blob.setFilename(filename);
+        return blob;
+    }
+
+    /**
+     * Builds an N x N RGB blob whose pixels are pseudo-random noise so the encoder cannot compress it down to a
+     * handful of bytes. Used to drive {@link ContentIntelligenceEnrichmentProvider#transcodeIfNeeded(Blob)} over
+     * the configurable byte budget on a deterministic fixture.
+     */
+    protected Blob buildNoisyImageBlob(int side, String imageioFormat, String mimeType, String filename)
+            throws IOException {
+        BufferedImage img = new BufferedImage(side, side, BufferedImage.TYPE_INT_RGB);
+        // Seeded so the test is deterministic but the pixels are non-uniform (no run-length compression wins).
+        java.util.Random rng = new java.util.Random(0xC1CL);
+        for (int y = 0; y < side; y++) {
+            for (int x = 0; x < side; x++) {
+                img.setRGB(x, y, rng.nextInt() & 0xFFFFFF);
+            }
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        if (!ImageIO.write(img, imageioFormat, out)) {
+            throw new IOException("ImageIO has no writer for format " + imageioFormat);
+        }
         Blob blob = new org.nuxeo.ecm.core.api.impl.blob.ByteArrayBlob(out.toByteArray(), mimeType);
         blob.setFilename(filename);
         return blob;

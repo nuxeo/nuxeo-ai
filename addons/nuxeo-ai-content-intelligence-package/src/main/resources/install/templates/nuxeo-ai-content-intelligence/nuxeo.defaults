@@ -39,8 +39,11 @@ nuxeo.ai.contentintelligence.actions=image-description,named-entity-recognition-
 # ...) ContentIntelligenceEnrichmentProvider transparently transcodes the blob to JPEG before calling the API,
 # so the list below can safely include every image format you want to enrich end-to-end.
 nuxeo.ai.contentintelligence.images.mimeTypes=image/jpeg,image/png,image/tiff,image/bmp,image/gif,image/webp,image/x-ms-bmp
-# No client-side blob size cap is enforced for this provider: ContentIntelligenceEnrichmentProvider#supportsSize()
-# always returns true so every eligible blob reaches the Hyland CI API and CIC enforces its own ceiling.
+# Hyland CI's image-* actions enforce a hard 5 MB ceiling server-side
+# (ValidationError: "Image size exceeds 5 MB"). ContentIntelligenceEnrichmentProvider transparently re-encodes
+# oversized images as JPEG, progressively walking down the quality ladder and then halving dimensions, until the
+# payload fits the 5 MB budget - so a 50 MB high-res photo still enriches end-to-end without an extra config knob.
+# Images that cannot be fit even at the smallest reasonable dimensions are logged once at WARN and skipped.
 # (Historical knob nuxeo.ai.contentintelligence.maxSize is no longer read; remove it from your nuxeo.conf.)
 
 # -----------------------------------------------------------------------------

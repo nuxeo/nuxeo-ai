@@ -135,7 +135,7 @@ You can set these in your `nuxeo.conf`.
 </tr>
 <tr>
 <td colspan="1"><code>nuxeo.ai.contentintelligence.maxSize</code></td>
-<td colspan="1">Removed. The provider no longer enforces a client-side blob size cap: <code>ContentIntelligenceEnrichmentProvider#supportsSize()</code> always returns <code>true</code> so every eligible blob reaches the Hyland CI API, and CIC enforces its own ceiling. Remove this property from your <code>nuxeo.conf</code>.</td>
+<td colspan="1">Removed. The provider no longer enforces a client-side blob size cap: <code>ContentIntelligenceEnrichmentProvider#supportsSize()</code> always returns <code>true</code> so every eligible blob reaches the provider. Hyland CI's image-* actions enforce a hard 5 MB ceiling server-side (<code>ValidationError: "Image size exceeds 5 MB"</code>); when the source exceeds that, the provider transparently JPEG-re-encodes and (if needed) downscales the image so it slips under the cap. No knob to tune &mdash; the 5 MB limit is the CIC contract. Remove this property from your <code>nuxeo.conf</code>.</td>
 <td colspan="1">&mdash;</td>
 <td colspan="1">Removed in 5.0.2</td>
 </tr>
