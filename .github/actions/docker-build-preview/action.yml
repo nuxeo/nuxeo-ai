@@ -41,15 +41,13 @@ runs:
         fi
 
         # Optional addon packages (copy if present)
-        cp addons/nuxeo-ai-image-quality-package/target/*package*.zip docker/ 2>/dev/null || echo "image-quality package not found"
-        cp addons/nuxeo-ai-aws-package/target/*package*.zip docker/ 2>/dev/null || echo "aws package not found"
-        cp addons/nuxeo-ai-gcp-package/target/*package*.zip docker/ 2>/dev/null || echo "gcp package not found"
-
+        cp addons/nuxeo-ai-content-intelligence-package/target/*package*.zip docker/ 2>/dev/null || echo "content-intelligence package not found"
+        
         echo "Docker context contents:"
         ls -al docker || true
 
     - name: Build Nuxeo image
-      uses: nuxeo/gh-build-tools/.github/actions/nuxeo-docker-build@v0.8.0
+      uses: nuxeo/gh-build-tools/.github/actions/nuxeo-docker-build@v0.9.0
       with:
         base-image-tag: 2025
         base-registry-username: ${{ inputs.docker-username }}
