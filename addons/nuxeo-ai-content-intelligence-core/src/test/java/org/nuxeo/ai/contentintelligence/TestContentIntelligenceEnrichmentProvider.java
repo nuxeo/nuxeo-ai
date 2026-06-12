@@ -171,6 +171,28 @@ public class TestContentIntelligenceEnrichmentProvider {
             + "\"response\":{\"id\":\"job-x\",\"status\":\"FAILURE\",\"results\":[]}"
             + "}";
 
+    /**
+     * Mirrors the production failure shape: terminal FAILURE with every requested action carrying an
+     * {@code error} block. Used by the cleanup tests to verify the WARN summary is structured rather than a raw
+     * JSON dump.
+     */
+    public static final String FAILURE_RESPONSE_WITH_ACTION_ERRORS = "{"
+            + "\"responseCode\":200,"
+            + "\"responseMessage\":\"OK\","
+            + "\"objectKeysMapping\":[],"
+            + "\"response\":{"
+            + "\"id\":\"f2f942f5-e7cb-4566\",\"status\":\"FAILURE\","
+            + "\"results\":[{"
+            + "\"objectKey\":\"ok1\","
+            + "\"textSummary\":{\"isSuccess\":false,\"result\":null,"
+            + "\"error\":{\"errorType\":\"UnexpectedError\","
+            + "\"message\":\"An error occured while processing the request\"}},"
+            + "\"namedEntityText\":{\"isSuccess\":false,\"result\":null,"
+            + "\"error\":{\"errorType\":\"UnexpectedError\","
+            + "\"message\":\"An error occured while processing the request\"}}"
+            + "}]"
+            + "}}";
+
     public static final String PROCESSING_RESPONSE = "{"
             + "\"responseCode\":200,"
             + "\"responseMessage\":\"OK\","
@@ -301,6 +323,75 @@ public class TestContentIntelligenceEnrichmentProvider {
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
+    }
+
+    /**
+     * A FAILURE response that carries per-action {@code error} blocks (the shape Hyland CI actually returns for
+     * server-side issues) must still drop cleanly: empty metadata, no exception, and no retry storm. The richer
+     * WARN content is observed via {@link #shouldSummarizeActionErrorsFromFailureResponse()}.
+     */
+    @Test
+    public void shouldReturnEmptyOnFailureStatusWithActionErrors() throws IOException {
+        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
+                nullable(String.class), nullable(String.class))).thenReturn(
+                        new ServiceCallResult(FAILURE_RESPONSE_WITH_ACTION_ERRORS));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    /**
+     * The per-action error summary must list the action name and the {@code errorType: message} pair so an operator
+     * can triage CIC server-side failures without grepping the full JSON dump.
+     */
+    @Test
+    public void shouldSummarizeActionErrorsFromFailureResponse() {
+        org.json.JSONObject body = new org.json.JSONObject(FAILURE_RESPONSE_WITH_ACTION_ERRORS);
+        org.json.JSONObject response = body.getJSONObject("response");
+
+        String summary = provider.summarizeActionErrors(response);
+
+        assertTrue("summary should call out textSummary: " + summary,
+                summary.contains("textSummary[UnexpectedError: An error occured while processing the request]"));
+        assertTrue("summary should call out namedEntityText: " + summary,
+                summary.contains("namedEntityText[UnexpectedError: An error occured while processing the request]"));
+    }
+
+    /**
+     * Responses without per-action errors (e.g. PROCESSING with empty results) must yield an empty summary so the
+     * caller can fall back to a status-only WARN instead of an awkward {@code Action errors: } trailer.
+     */
+    @Test
+    public void shouldReturnEmptySummaryWhenNoActionErrorsPresent() {
+        org.json.JSONObject body = new org.json.JSONObject(PROCESSING_RESPONSE);
+        org.json.JSONObject response = body.getJSONObject("response");
+
+        assertEquals("", provider.summarizeActionErrors(response));
+    }
+
+    /**
+     * Wide actions lists must not produce 1 KB+ WARN lines: the summary truncates at
+     * {@link ContentIntelligenceEnrichmentProvider#MAX_ERRORS_IN_SUMMARY} entries and appends a {@code ...}
+     * marker so the reader knows there are more.
+     */
+    @Test
+    public void shouldTruncateActionErrorSummary() {
+        StringBuilder json = new StringBuilder("{\"id\":\"job-many\",\"status\":\"FAILURE\",\"results\":[{");
+        json.append("\"objectKey\":\"ok1\"");
+        int actionCount = ContentIntelligenceEnrichmentProvider.MAX_ERRORS_IN_SUMMARY + 3;
+        for (int i = 0; i < actionCount; i++) {
+            json.append(",\"action").append(i)
+                .append("\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}");
+        }
+        json.append("}]}");
+        org.json.JSONObject response = new org.json.JSONObject(json.toString());
+
+        String summary = provider.summarizeActionErrors(response);
+
+        assertTrue("summary should end with ellipsis when truncated: " + summary, summary.endsWith("..."));
+        long entries = summary.chars().filter(c -> c == ',').count();
+        // MAX_ERRORS_IN_SUMMARY entries + "..." separator = MAX commas
+        assertEquals(ContentIntelligenceEnrichmentProvider.MAX_ERRORS_IN_SUMMARY, entries);
     }
 
     @Test

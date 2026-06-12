@@ -97,6 +97,19 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
 
     protected static final String STATUS_PARTIAL_FAILURE = "PARTIAL_FAILURE";
 
+    protected static final String STATUS_PROCESSING = "PROCESSING";
+
+    protected static final String JSON_KEY_ID = "id";
+
+    protected static final String JSON_KEY_ERROR = "error";
+
+    protected static final String JSON_KEY_ERROR_TYPE = "errorType";
+
+    protected static final String JSON_KEY_ERROR_MESSAGE = "message";
+
+    /** Max number of action-level errors quoted in a non-terminal-status WARN before truncation. */
+    protected static final int MAX_ERRORS_IN_SUMMARY = 5;
+
     /**
      * Image MIME types Hyland CI's {@code image-*} actions accept natively (per the connector documentation). Any
      * other {@code image/*} blob is transparently transcoded to JPEG by {@link #transcodeIfNeeded(Blob)} before being
@@ -327,7 +340,7 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
         if (!status.isEmpty() && !STATUS_SUCCESS.equalsIgnoreCase(status)
                 && !STATUS_PARTIAL_SUCCESS.equalsIgnoreCase(status)
                 && !STATUS_PARTIAL_FAILURE.equalsIgnoreCase(status)) {
-            log.warn("Knowledge Enrichment returned status '{}', skipping. Response body: {}", status, rawJson);
+            logNonTerminalStatus(blobTextFromDoc, xPath, status, response, rawJson);
             return emptyList();
         }
 
@@ -358,6 +371,79 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
                                                                                     .build());
         }
         return metadata;
+    }
+
+    /**
+     * Emits a single, structured WARN line for a non-terminal Hyland CI status (FAILURE, PROCESSING, ...) and
+     * relegates the full response body to DEBUG so production logs do not get flooded with multi-KB JSON dumps for
+     * every server-side hiccup. The summary carries the bits an operator actually needs to triage the failure: the
+     * document + xPath being enriched, the CIC job ID, and the per-action {@code errorType: message} pairs (capped
+     * at {@link #MAX_ERRORS_IN_SUMMARY} so a wide actions list cannot blow the line length out).
+     * <p>
+     * {@code PROCESSING} gets a tailored message pointing at the polling-budget knobs because the remediation is
+     * different (raise the budget) from terminal {@code FAILURE} (typically a transient CIC server-side issue).
+     */
+    protected void logNonTerminalStatus(BlobTextFromDocument blobTextFromDoc, String xPath, String status,
+            JSONObject response, String rawJson) {
+        String jobId = response.optString(JSON_KEY_ID, "?");
+        String errorSummary = summarizeActionErrors(response);
+        String docId = blobTextFromDoc.getId();
+        if (STATUS_PROCESSING.equalsIgnoreCase(status)) {
+            log.warn("Knowledge Enrichment still PROCESSING after polling budget exhausted for {}/{} (jobId={}). "
+                    + "The result may arrive later but will be discarded; consider raising "
+                    + "nuxeo.hyland.cic.pullResultsMaxTries / pullResultsSleepInterval if this recurs.", docId, xPath,
+                    jobId);
+        } else if (errorSummary.isEmpty()) {
+            log.warn("Knowledge Enrichment returned status '{}' for {}/{} (jobId={}), skipping.", status, docId, xPath,
+                    jobId);
+        } else {
+            log.warn("Knowledge Enrichment returned status '{}' for {}/{} (jobId={}), skipping. Action errors: {}",
+                    status, docId, xPath, jobId, errorSummary);
+        }
+        log.debug("Full Knowledge Enrichment response body for {}/{}: {}", docId, xPath, rawJson);
+    }
+
+    /**
+     * Flattens the {@code response.results[*]} action blocks into a compact {@code action[errorType: message], ...}
+     * string covering only the actions that actually failed ({@code isSuccess=false} or carry an {@code error} block).
+     * Returns an empty string when the response carries no per-action errors (e.g. a {@code PROCESSING} payload).
+     */
+    protected String summarizeActionErrors(JSONObject response) {
+        JSONArray results = response.optJSONArray(JSON_KEY_RESULTS);
+        if (results == null || results.length() == 0) {
+            return "";
+        }
+        List<String> errors = new ArrayList<>();
+        outer:
+        for (int i = 0; i < results.length(); i++) {
+            JSONObject entry = results.optJSONObject(i);
+            if (entry == null) {
+                continue;
+            }
+            for (String key : entry.keySet()) {
+                if (JSON_KEY_OBJECT_KEY.equals(key)) {
+                    continue;
+                }
+                JSONObject action = entry.optJSONObject(key);
+                if (action == null) {
+                    continue;
+                }
+                if (action.optBoolean(JSON_KEY_IS_SUCCESS, true)) {
+                    continue;
+                }
+                JSONObject err = action.optJSONObject(JSON_KEY_ERROR);
+                String errorType = err == null ? "?" : err.optString(JSON_KEY_ERROR_TYPE, "?");
+                String message = err == null ? "" : err.optString(JSON_KEY_ERROR_MESSAGE, "");
+                String formatted = message.isEmpty() ? String.format("%s[%s]", key, errorType)
+                        : String.format("%s[%s: %s]", key, errorType, message);
+                errors.add(formatted);
+                if (errors.size() >= MAX_ERRORS_IN_SUMMARY) {
+                    errors.add("...");
+                    break outer;
+                }
+            }
+        }
+        return String.join(", ", errors);
     }
 
     /**
