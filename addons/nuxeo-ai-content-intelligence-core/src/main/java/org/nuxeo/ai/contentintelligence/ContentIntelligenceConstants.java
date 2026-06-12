@@ -32,6 +32,9 @@ public final class ContentIntelligenceConstants {
     /** Registered name of the document-pipeline enrichment provider. */
     public static final String DOCUMENTS_PROVIDER_NAME = "ai.contentintelligence.documents";
 
+    /** Registered name of the optional full-feature enrichment provider (embeddings + metadata generation). */
+    public static final String ALL_PROVIDER_NAME = "ai.contentintelligence.all";
+
     /** Nuxeo document property used to persist the AI-generated description. */
     public static final String DESCRIPTION_PROPERTY = "dc:description";
 

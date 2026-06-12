@@ -16,9 +16,11 @@
 package org.nuxeo.ai.contentintelligence;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -171,6 +173,28 @@ public class TestContentIntelligenceEnrichmentProvider {
             + "\"response\":{\"id\":\"job-x\",\"status\":\"FAILURE\",\"results\":[]}"
             + "}";
 
+    /**
+     * Mirrors the production failure shape: terminal FAILURE with every requested action carrying an
+     * {@code error} block. Used by the cleanup tests to verify the WARN summary is structured rather than a raw
+     * JSON dump.
+     */
+    public static final String FAILURE_RESPONSE_WITH_ACTION_ERRORS = "{"
+            + "\"responseCode\":200,"
+            + "\"responseMessage\":\"OK\","
+            + "\"objectKeysMapping\":[],"
+            + "\"response\":{"
+            + "\"id\":\"f2f942f5-e7cb-4566\",\"status\":\"FAILURE\","
+            + "\"results\":[{"
+            + "\"objectKey\":\"ok1\","
+            + "\"textSummary\":{\"isSuccess\":false,\"result\":null,"
+            + "\"error\":{\"errorType\":\"UnexpectedError\","
+            + "\"message\":\"An error occured while processing the request\"}},"
+            + "\"namedEntityText\":{\"isSuccess\":false,\"result\":null,"
+            + "\"error\":{\"errorType\":\"UnexpectedError\","
+            + "\"message\":\"An error occured while processing the request\"}}"
+            + "}]"
+            + "}}";
+
     public static final String PROCESSING_RESPONSE = "{"
             + "\"responseCode\":200,"
             + "\"responseMessage\":\"OK\","
@@ -301,6 +325,75 @@ public class TestContentIntelligenceEnrichmentProvider {
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
+    }
+
+    /**
+     * A FAILURE response that carries per-action {@code error} blocks (the shape Hyland CI actually returns for
+     * server-side issues) must still drop cleanly: empty metadata, no exception, and no retry storm. The richer
+     * WARN content is observed via {@link #shouldSummarizeActionErrorsFromFailureResponse()}.
+     */
+    @Test
+    public void shouldReturnEmptyOnFailureStatusWithActionErrors() throws IOException {
+        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
+                nullable(String.class), nullable(String.class))).thenReturn(
+                        new ServiceCallResult(FAILURE_RESPONSE_WITH_ACTION_ERRORS));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    /**
+     * The per-action error summary must list the action name and the {@code errorType: message} pair so an operator
+     * can triage CIC server-side failures without grepping the full JSON dump.
+     */
+    @Test
+    public void shouldSummarizeActionErrorsFromFailureResponse() {
+        org.json.JSONObject body = new org.json.JSONObject(FAILURE_RESPONSE_WITH_ACTION_ERRORS);
+        org.json.JSONObject response = body.getJSONObject("response");
+
+        String summary = provider.summarizeActionErrors(response);
+
+        assertTrue("summary should call out textSummary: " + summary,
+                summary.contains("textSummary[UnexpectedError: An error occured while processing the request]"));
+        assertTrue("summary should call out namedEntityText: " + summary,
+                summary.contains("namedEntityText[UnexpectedError: An error occured while processing the request]"));
+    }
+
+    /**
+     * Responses without per-action errors (e.g. PROCESSING with empty results) must yield an empty summary so the
+     * caller can fall back to a status-only WARN instead of an awkward {@code Action errors: } trailer.
+     */
+    @Test
+    public void shouldReturnEmptySummaryWhenNoActionErrorsPresent() {
+        org.json.JSONObject body = new org.json.JSONObject(PROCESSING_RESPONSE);
+        org.json.JSONObject response = body.getJSONObject("response");
+
+        assertEquals("", provider.summarizeActionErrors(response));
+    }
+
+    /**
+     * Wide actions lists must not produce 1 KB+ WARN lines: the summary truncates at
+     * {@link ContentIntelligenceEnrichmentProvider#MAX_ERRORS_IN_SUMMARY} entries and appends a {@code ...}
+     * marker so the reader knows there are more.
+     */
+    @Test
+    public void shouldTruncateActionErrorSummary() {
+        StringBuilder json = new StringBuilder("{\"id\":\"job-many\",\"status\":\"FAILURE\",\"results\":[{");
+        json.append("\"objectKey\":\"ok1\"");
+        int actionCount = ContentIntelligenceEnrichmentProvider.MAX_ERRORS_IN_SUMMARY + 3;
+        for (int i = 0; i < actionCount; i++) {
+            json.append(",\"action").append(i)
+                .append("\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}");
+        }
+        json.append("}]}");
+        org.json.JSONObject response = new org.json.JSONObject(json.toString());
+
+        String summary = provider.summarizeActionErrors(response);
+
+        assertTrue("summary should end with ellipsis when truncated: " + summary, summary.endsWith("..."));
+        long entries = summary.chars().filter(c -> c == ',').count();
+        // MAX_ERRORS_IN_SUMMARY entries + "..." separator = MAX commas
+        assertEquals(ContentIntelligenceEnrichmentProvider.MAX_ERRORS_IN_SUMMARY, entries);
     }
 
     @Test
@@ -619,6 +712,210 @@ public class TestContentIntelligenceEnrichmentProvider {
         assertEquals("BMP must reach CIC as JPEG",
                 ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE, sent.getValue().getMimeType());
         assertNotEquals("transcoded payload must not be the BMP source", "image/bmp", sent.getValue().getMimeType());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // transcodeIfNeeded - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnNullWhenTranscodingNullBlob() {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        assertNull(p.transcodeIfNeeded(null));
+    }
+
+    @Test
+    public void shouldFallBackToOriginalOnIOExceptionDuringTranscode() {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        Blob failBlob = new org.nuxeo.ecm.core.api.impl.blob.StringBlob("content", "image/gif") {
+            @Override
+            public java.io.InputStream getStream() throws IOException {
+                throw new IOException("test I/O failure");
+            }
+        };
+        failBlob.setFilename("broken.gif");
+        Blob result = p.transcodeIfNeeded(failBlob);
+        assertSame("I/O failure must return the original blob", failBlob, result);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // replaceExtension - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnDefaultFilenameWhenOriginalIsBlank() {
+        assertEquals("image.jpg", provider.replaceExtension(null, "jpg"));
+        assertEquals("image.jpg", provider.replaceExtension("", "jpg"));
+        assertEquals("image.jpg", provider.replaceExtension("   ", "jpg"));
+    }
+
+    @Test
+    public void shouldAppendExtensionWhenFilenameHasNoDot() {
+        assertEquals("photo.jpg", provider.replaceExtension("photo", "jpg"));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // enrich - null blob from resolveBlob
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldSkipBlobWhenResolveReturnsNull() throws IOException {
+        ContentIntelligenceEnrichmentProvider nullBlobProvider = new ContentIntelligenceEnrichmentProvider() {
+            @Override
+            protected HylandKEService getService() {
+                return service;
+            }
+
+            @Override
+            protected Blob resolveBlob(ManagedBlob managedBlob) {
+                return null;
+            }
+
+            @Override
+            public String saveJsonAsRawBlob(String rawJson) {
+                return "key";
+            }
+        };
+        nullBlobProvider.init(buildDescriptor(Map.of(
+                ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS, "image-description")));
+
+        Collection<EnrichmentMetadata> metadata = nullBlobProvider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // handleFailedCall - null result
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test(expected = NuxeoException.class)
+    public void shouldThrowOnNullServiceResult() throws IOException {
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(null);
+        provider.enrich(buildBlobTextFromDoc());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // processResponse - results edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnEmptyWhenResultsKeyIsMissing() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\"}"
+                + "}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    @Test
+    public void shouldReturnEmptyWhenResultsArrayIsEmptyWithSuccessStatus() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\",\"results\":[]}"
+                + "}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // toLabelSuggestions - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldSkipNonObjectAndResultlessActionsInResults() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\","
+                + "\"results\":[{\"objectKey\":\"ok1\","
+                + "\"scalarField\":42,"
+                + "\"noResult\":{\"isSuccess\":true},"
+                + "\"validAction\":{\"isSuccess\":true,\"result\":{\"items\":[\"val1\"]}}"
+                + "}]}}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(1, metadata.size());
+        List<LabelSuggestion> suggestions = metadata.iterator().next().getLabels();
+        assertEquals(1, suggestions.size());
+        assertEquals("validAction", suggestions.get(0).getProperty());
+    }
+
+    @Test
+    public void shouldFlattenNestedArrayAndObjectValuesInResults() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\","
+                + "\"results\":[{\"objectKey\":\"ok1\","
+                + "\"deepAction\":{\"isSuccess\":true,\"result\":[[\"nested-val\"],{\"key\":\"obj-val\"}]}"
+                + "}]}}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(1, metadata.size());
+        List<String> values = valuesOf(metadata.iterator().next().getLabels(), "deepAction");
+        assertTrue(values.contains("nested-val"));
+        assertTrue(values.contains("obj-val"));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // summarizeActionErrors - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldSkipSuccessfulActionsInErrorSummary() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"okAction\":{\"isSuccess\":true,\"result\":\"fine\"},"
+                + "\"failAction\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertTrue(summary.contains("failAction"));
+        assertFalse(summary.contains("okAction"));
+    }
+
+    @Test
+    public void shouldHandleActionWithoutErrorBlock() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"brokenAction\":{\"isSuccess\":false}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertTrue("missing error block should use '?': " + summary, summary.contains("brokenAction[?]"));
+    }
+
+    @Test
+    public void shouldSkipNonObjectActionEntriesInSummary() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"scalarAction\":42,"
+                + "\"arrayAction\":[1,2,3],"
+                + "\"realFail\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertTrue(summary.contains("realFail"));
+        assertFalse(summary.contains("scalarAction"));
+        assertFalse(summary.contains("arrayAction"));
+    }
+
+    @Test
+    public void shouldHandleActionErrorWithEmptyMessage() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"action\":{\"isSuccess\":false,\"error\":{\"errorType\":\"Timeout\"}}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertEquals("action[Timeout]", summary);
     }
 
     /** Builds a real {@code image/*} blob whose bytes are a valid solid-color picture in the given ImageIO format. */

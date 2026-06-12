@@ -141,7 +141,7 @@ public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer
      * are treated as the same tag.
      */
     protected String normalizeForDedup(String tag) {
-        return HYPHENS.matcher(tag.toLowerCase()).replaceAll("");
+        return HYPHENS.matcher(tag.toLowerCase(java.util.Locale.ROOT)).replaceAll("");
     }
 
     protected String sanitizeTag(String rawTag) {

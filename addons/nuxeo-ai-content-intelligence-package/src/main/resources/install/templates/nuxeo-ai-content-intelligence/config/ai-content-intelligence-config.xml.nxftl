@@ -87,7 +87,7 @@
   Note: dc:description is handled separately by ContentIntelligenceDescriptionListener listening on the
   enrichmentMetadataCreated event, regardless of this consumer's status.
 -->
-<#if ("${nuxeo.ai.contentintelligence.enabled}" == "true" || "${nuxeo.ai.contentintelligence.documents.enabled}" == "true") && "${nuxeo.enrichment.save.tags}" != "true">
+<#if ("${nuxeo.ai.contentintelligence.enabled}" == "true" || "${nuxeo.ai.contentintelligence.documents.enabled}" == "true" || "${nuxeo.ai.contentintelligence.all}" == "true") && "${nuxeo.enrichment.save.tags}" != "true">
   <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
     <streamProcessor name="storeContentIntelligenceMetadataProcessor" defaultConcurrency="1" defaultPartitions="4"
                      class="org.nuxeo.ai.contentintelligence.StoreContentIntelligenceMetadata">
@@ -188,6 +188,18 @@
       <option name="configName">default</option>
       <option name="actions">image-description,image-embeddings,image-metadata-generation</option>
     </enrichment>
+  </extension>
+
+  <!-- Run the full-feature provider on every image that enters the AI pipeline. -->
+  <extension target="org.nuxeo.runtime.stream.service" point="streamProcessor">
+    <streamProcessor name="contentIntelligenceAllProcessor" defaultConcurrency="1" defaultPartitions="4"
+                     class="org.nuxeo.ai.enrichment.EnrichingStreamProcessor">
+      <policy name="default" maxRetries="3" delay="200ms" maxDelay="2s" continueOnFailure="true"/>
+      <option name="source">ai/images</option>
+      <option name="sink">ai/${nuxeo.enrichment.source.stream}</option>
+      <option name="enrichmentProviderName">ai.contentintelligence.all</option>
+      <option name="cache">true</option>
+    </streamProcessor>
   </extension>
 </#if>
 

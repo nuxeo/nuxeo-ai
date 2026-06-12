@@ -17,6 +17,7 @@ package org.nuxeo.ai.contentintelligence;
 
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DESCRIPTION_ACTION_KEYS;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DESCRIPTION_PROPERTY;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.ALL_PROVIDER_NAME;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DOCUMENTS_PROVIDER_NAME;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.IMAGE_PROVIDER_NAME;
 import static org.nuxeo.ai.functions.RaiseEnrichmentEvent.ENRICHMENT_METADATA;
@@ -59,7 +60,8 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 public class ContentIntelligenceDescriptionListener implements PostCommitEventListener {
 
     /** Provider names this listener will act on; anything else (AWS, GCP, Sightengine, Insight, ...) is ignored. */
-    public static final Set<String> HANDLED_PROVIDERS = Set.of(IMAGE_PROVIDER_NAME, DOCUMENTS_PROVIDER_NAME);
+    public static final Set<String> HANDLED_PROVIDERS = Set.of(IMAGE_PROVIDER_NAME, DOCUMENTS_PROVIDER_NAME,
+            ALL_PROVIDER_NAME);
 
     /**
      * Framework property that caps the description length written to {@code dc:description}. Empty / zero / negative

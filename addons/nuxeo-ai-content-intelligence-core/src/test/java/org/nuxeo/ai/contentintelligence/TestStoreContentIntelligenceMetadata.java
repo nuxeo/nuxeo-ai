@@ -19,21 +19,38 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.CoreInstance;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentNotFoundException;
+import org.nuxeo.ecm.core.api.IdRef;
+import org.nuxeo.ecm.platform.tag.TagService;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * Unit tests for {@link StoreContentIntelligenceMetadata}. The consumer is strictly a tag-writer: long-form
@@ -203,8 +220,138 @@ public class TestStoreContentIntelligenceMetadata {
 
     @Test
     public void shouldHandleAcceptWithNullMetadataWithoutThrowing() {
-        // Defensive: a null metadata must not propagate as an exception; the consumer just logs and returns.
         consumer.accept(null);
+    }
+
+    @Test
+    public void shouldHandleAcceptWithNullContext() {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        // metadata.context is null by default in a mock
+        consumer.accept(metadata);
+    }
+
+    @Test
+    public void shouldHandleAcceptWithNullRepository() throws Exception {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        setContext(metadata, new org.nuxeo.ai.metadata.AIMetadata.Context(null, "doc-1", null, null));
+        consumer.accept(metadata);
+    }
+
+    @Test
+    public void shouldHandleAcceptWithBlankDocumentRef() throws Exception {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        setContext(metadata, new org.nuxeo.ai.metadata.AIMetadata.Context("repo", "", null, null));
+        consumer.accept(metadata);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // applyTags - direct protected-method tests
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldApplyTagsFromCollectedValues() {
+        try (MockedStatic<Framework> fw = mockStatic(Framework.class)) {
+            TagService tagService = mock(TagService.class);
+            fw.when(() -> Framework.getService(TagService.class)).thenReturn(tagService);
+
+            CoreSession session = mock(CoreSession.class);
+            DocumentModel doc = mock(DocumentModel.class);
+            when(doc.getId()).thenReturn("doc-1");
+
+            EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape", "sunset"));
+
+            consumer.applyTags(session, doc, metadata);
+
+            verify(tagService).tag(session, "doc-1", "landscape");
+            verify(tagService).tag(session, "doc-1", "sunset");
+        }
+    }
+
+    @Test
+    public void shouldSkipApplyTagsWhenTagServiceIsNull() {
+        try (MockedStatic<Framework> fw = mockStatic(Framework.class)) {
+            fw.when(() -> Framework.getService(TagService.class)).thenReturn(null);
+
+            CoreSession session = mock(CoreSession.class);
+            DocumentModel doc = mock(DocumentModel.class);
+            when(doc.getId()).thenReturn("doc-1");
+
+            EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape"));
+
+            consumer.applyTags(session, doc, metadata);
+            verifyNoInteractions(session);
+        }
+    }
+
+    @Test
+    public void shouldSkipApplyTagsWhenNoTagValues() {
+        try (MockedStatic<Framework> fw = mockStatic(Framework.class)) {
+            TagService tagService = mock(TagService.class);
+            fw.when(() -> Framework.getService(TagService.class)).thenReturn(tagService);
+
+            CoreSession session = mock(CoreSession.class);
+            DocumentModel doc = mock(DocumentModel.class);
+
+            EnrichmentMetadata metadata = buildMetadata(suggestion("imageDescription", "A long description"));
+
+            consumer.applyTags(session, doc, metadata);
+            verifyNoInteractions(tagService);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // accept - full transactional path
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void shouldAcceptValidMetadataAndApplyTags() {
+        EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape"));
+
+        CoreSession mockSession = mock(CoreSession.class);
+        DocumentModel mockDoc = mock(DocumentModel.class);
+        when(mockDoc.getId()).thenReturn("doc-1");
+        when(mockSession.getDocument(any(IdRef.class))).thenReturn(mockDoc);
+        TagService tagService = mock(TagService.class);
+
+        try (MockedStatic<TransactionHelper> th = mockStatic(TransactionHelper.class);
+                MockedStatic<CoreInstance> ci = mockStatic(CoreInstance.class);
+                MockedStatic<Framework> fw = mockStatic(Framework.class)) {
+            th.when(() -> TransactionHelper.runInTransaction(any(Runnable.class))).thenAnswer(inv -> {
+                ((Runnable) inv.getArgument(0)).run();
+                return null;
+            });
+            ci.when(() -> CoreInstance.doPrivileged(anyString(), any(Consumer.class))).thenAnswer(inv -> {
+                ((Consumer<CoreSession>) inv.getArgument(1)).accept(mockSession);
+                return null;
+            });
+            fw.when(() -> Framework.getService(TagService.class)).thenReturn(tagService);
+
+            consumer.accept(metadata);
+        }
+        verify(tagService).tag(mockSession, "doc-1", "landscape");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void shouldHandleDocumentNotFoundInAccept() {
+        EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape"));
+
+        CoreSession mockSession = mock(CoreSession.class);
+        when(mockSession.getDocument(any(IdRef.class))).thenThrow(new DocumentNotFoundException("not found"));
+
+        try (MockedStatic<TransactionHelper> th = mockStatic(TransactionHelper.class);
+                MockedStatic<CoreInstance> ci = mockStatic(CoreInstance.class)) {
+            th.when(() -> TransactionHelper.runInTransaction(any(Runnable.class))).thenAnswer(inv -> {
+                ((Runnable) inv.getArgument(0)).run();
+                return null;
+            });
+            ci.when(() -> CoreInstance.doPrivileged(anyString(), any(Consumer.class))).thenAnswer(inv -> {
+                ((Consumer<CoreSession>) inv.getArgument(1)).accept(mockSession);
+                return null;
+            });
+            consumer.accept(metadata);
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -230,5 +377,12 @@ public class TestStoreContentIntelligenceMetadata {
         return new EnrichmentMetadata.Builder("/classification/imageLabels", "test", buildBlobText())
                 .withLabels(Arrays.asList(suggestions))
                 .build();
+    }
+
+    private void setContext(EnrichmentMetadata metadata, org.nuxeo.ai.metadata.AIMetadata.Context ctx)
+            throws Exception {
+        java.lang.reflect.Field contextField = org.nuxeo.ai.metadata.AIMetadata.class.getDeclaredField("context");
+        contextField.setAccessible(true);
+        contextField.set(metadata, ctx);
     }
 }

@@ -143,6 +143,10 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     @Override
     public boolean test(String config, DocumentModel doc) {
         if (!dedupDescriptors.containsKey(config)) {
+            if (StringUtils.isBlank(config)) {
+                log.warn("Deduplication configuration name is null or blank");
+                return false;
+            }
             if (warnedMissingConfigs.add(config)) {
                 log.warn(
                         "No such deduplication configuration: '{}'. Check the value of '{}' in nuxeo.conf and ensure a"
