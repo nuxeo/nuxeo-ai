@@ -28,6 +28,7 @@ import static org.nuxeo.ai.pipes.functions.PropertyUtils.isStrictModeEnabled;
 import static org.nuxeo.ai.sdk.rest.Common.DISTANCE_PARAM;
 import static org.nuxeo.ai.sdk.rest.Common.UID;
 import static org.nuxeo.ai.sdk.rest.Common.XPATH_PARAM;
+import static org.nuxeo.ai.similar.content.DedupConstants.CONF_DEDUPLICATION_CONFIGURATION;
 import static org.nuxeo.ai.similar.content.DedupConstants.DEDUPLICATION_FACET;
 import static org.nuxeo.ai.similar.content.pipelines.IndexAction.INDEX_ACTION_NAME;
 import static org.nuxeo.ai.similar.content.utils.PictureUtils.resize;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -110,6 +112,13 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
 
     protected final Map<String, DeduplicationDescriptor> dedupDescriptors = new HashMap<>();
 
+    /**
+     * Tracks deduplication configuration names that were referenced via
+     * {@value org.nuxeo.ai.similar.content.DedupConstants#CONF_DEDUPLICATION_CONFIGURATION} but have no matching
+     * contribution. Used to log a clear warning only once per missing name instead of on every event.
+     */
+    protected final Set<String> warnedMissingConfigs = ConcurrentHashMap.newKeySet();
+
     protected String operationID = null;
 
     @Override
@@ -117,6 +126,9 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
         if (DEDUPLICATION_CONFIG_XP.equals(xp)) {
             DeduplicationDescriptor desc = (DeduplicationDescriptor) contribution;
             dedupDescriptors.put(desc.getName(), desc);
+            // A configuration we previously flagged as "missing" may have just been deployed; allow the warning to
+            // fire once again if it ever disappears later.
+            warnedMissingConfigs.remove(desc.getName());
         } else if (DEDUPLICATION_OPERATION_XP.equals(xp)) {
             OperationDescriptor desc = (OperationDescriptor) contribution;
             if (StringUtils.isNotEmpty(operationID)) {
@@ -131,7 +143,19 @@ public class SimilarServiceComponent extends DefaultComponent implements Similar
     @Override
     public boolean test(String config, DocumentModel doc) {
         if (!dedupDescriptors.containsKey(config)) {
-            log.warn("No such configuration: {}", config);
+            if (StringUtils.isBlank(config)) {
+                log.warn("Deduplication configuration name is null or blank");
+                return false;
+            }
+            if (warnedMissingConfigs.add(config)) {
+                log.warn(
+                        "No such deduplication configuration: '{}'. Check the value of '{}' in nuxeo.conf and ensure a"
+                                + " matching <deduplication name=\"{}\"> contribution is deployed. Known configurations:"
+                                + " {}. Further occurrences for this name will be logged at DEBUG.",
+                        config, CONF_DEDUPLICATION_CONFIGURATION, config, dedupDescriptors.keySet());
+            } else {
+                log.debug("No such deduplication configuration: {}", config);
+            }
             return false;
         }
 

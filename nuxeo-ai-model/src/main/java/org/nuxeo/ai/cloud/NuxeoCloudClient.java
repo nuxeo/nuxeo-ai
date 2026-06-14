@@ -64,6 +64,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.auth.NuxeoClaim;
+import org.nuxeo.ai.keystore.JWKService;
 import org.nuxeo.ai.keystore.JWTKeyService;
 import org.nuxeo.ai.sdk.objects.AICorpus;
 import org.nuxeo.ai.sdk.objects.CorporaParameters;
@@ -183,7 +184,7 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             claims.put(NuxeoClaim.GROUP, groups);
             claims.put(JWTClaims.DATASOURCE, datasource);
 
-            String token = jwt.generateJWT(descriptor.projectId, claims);
+            String token = generateJwtToken(jwt, descriptor.projectId, claims);
             Authentication authentication = new Authentication(token);
             InsightConfiguration configuration = new InsightConfiguration.Builder().setAuthentication(authentication)
                                                                                    .setUrl(descriptor.url)
@@ -210,6 +211,40 @@ public class NuxeoCloudClient extends DefaultComponent implements CloudClient {
             log.warn("Failed to configure Insight cloud client for project {}: {}",
                     descriptor.projectId, e.getMessage(), e);
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Generates a JWT token, bootstrapping the JWK keystore on demand if it has not been
+     * initialized yet.
+     * <p>
+     * {@code nuxeo-jwt-authenticator-core}'s {@code JWKLocalComponent#getKeyInUse} dereferences
+     * the bytes returned by the underlying {@code KeyValueStore} without a null check, so any
+     * call to {@code generateJWT} made before the scheduled bootstrap listener has stored the
+     * first key (e.g. early during component start, or in test harnesses where listener
+     * registration races with the first cloud-client invocation) blows up with an NPE. We catch
+     * that specific failure mode, force-create a key pair, and retry once.
+     * <p>
+     * Both {@link JWTKeyService} and {@link JWKService} are validated explicitly: if either is
+     * unavailable we surface a clear {@link NuxeoException} so the caller sees the real root
+     * cause instead of a downstream NPE.
+     */
+    protected String generateJwtToken(JWTKeyService jwt, String projectId, Map<String, Serializable> claims) {
+        if (jwt == null) {
+            throw new NuxeoException(
+                    "JWTKeyService is not available; nuxeo-jwt-authenticator-core may not be deployed.");
+        }
+        try {
+            return jwt.generateJWT(projectId, claims);
+        } catch (NullPointerException npe) {
+            log.warn("JWT keystore not initialized yet; bootstrapping a key pair and retrying", npe);
+            JWKService jwk = Framework.getService(JWKService.class);
+            if (jwk == null) {
+                throw new NuxeoException(
+                        "JWKService is not available; cannot bootstrap JWT keystore after initial NPE.", npe);
+            }
+            jwk.generateKeyPair();
+            return jwt.generateJWT(projectId, claims);
         }
     }
 
