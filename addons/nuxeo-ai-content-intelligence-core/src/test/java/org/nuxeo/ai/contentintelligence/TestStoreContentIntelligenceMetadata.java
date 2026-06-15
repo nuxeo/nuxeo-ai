@@ -19,6 +19,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +38,11 @@ import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
 import org.nuxeo.ai.metadata.LabelSuggestion;
 import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentNotFoundException;
+import org.nuxeo.ecm.core.api.IdRef;
+import org.nuxeo.ecm.platform.tag.TagService;
 
 /**
  * Unit tests for {@link StoreContentIntelligenceMetadata}. The consumer is strictly a tag-writer: long-form
@@ -70,20 +79,16 @@ public class TestStoreContentIntelligenceMetadata {
 
     @Test
     public void shouldTrimLeadingHyphenAfterPercentStrip() {
-        // "% 50 percent" -> trim -> "% 50 percent" -> WHITESPACE -> "%-50-percent"
-        // -> TAG_SANITIZER strips % -> "-50-percent" -> EDGE_HYPHENS strips leading hyphen -> "50-percent".
         assertEquals("50-percent", consumer.sanitizeTag("% 50 percent"));
     }
 
     @Test
     public void shouldTrimTrailingHyphenAfterPercentStrip() {
-        // Symmetric case for the trailing edge.
         assertEquals("50-percent", consumer.sanitizeTag("50 percent %"));
     }
 
     @Test
     public void shouldTrimMultipleEdgeHyphens() {
-        // Path-style inputs can produce multiple leading/trailing hyphens after sanitisation.
         assertEquals("alpha-beta", consumer.sanitizeTag("// alpha beta //"));
     }
 
@@ -193,7 +198,6 @@ public class TestStoreContentIntelligenceMetadata {
 
     @Test
     public void shouldDropTagThatSanitizesToBlank() {
-        // "%%" -> "" -> dropped.
         EnrichmentMetadata metadata = buildMetadata(
                 suggestion("namedEntityImage", "%%", "valid-tag"));
 
@@ -201,15 +205,143 @@ public class TestStoreContentIntelligenceMetadata {
         assertEquals(Collections.singleton("valid-tag"), tags);
     }
 
+    // ---------------------------------------------------------------------------------------------------------------
+    // accept - null/blank guard paths
+    // ---------------------------------------------------------------------------------------------------------------
+
     @Test
     public void shouldHandleAcceptWithNullMetadataWithoutThrowing() {
-        // Defensive: a null metadata must not propagate as an exception; the consumer just logs and returns.
         consumer.accept(null);
+    }
+
+    @Test
+    public void shouldHandleAcceptWithNullContext() {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        consumer.accept(metadata);
+    }
+
+    @Test
+    public void shouldHandleAcceptWithNullRepository() throws Exception {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        setContext(metadata, new org.nuxeo.ai.metadata.AIMetadata.Context(null, "doc-1", null, null));
+        consumer.accept(metadata);
+    }
+
+    @Test
+    public void shouldHandleAcceptWithBlankDocumentRef() throws Exception {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        setContext(metadata, new org.nuxeo.ai.metadata.AIMetadata.Context("repo", "", null, null));
+        consumer.accept(metadata);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // applyTags - via overridable getTagService
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldApplyTagsFromCollectedValues() {
+        TagService tagService = mock(TagService.class);
+        StoreContentIntelligenceMetadata testConsumer = consumerWithTagService(tagService);
+
+        CoreSession session = mock(CoreSession.class);
+        DocumentModel doc = mock(DocumentModel.class);
+        when(doc.getId()).thenReturn("doc-1");
+
+        EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape", "sunset"));
+        testConsumer.applyTags(session, doc, metadata);
+
+        verify(tagService).tag(session, "doc-1", "landscape");
+        verify(tagService).tag(session, "doc-1", "sunset");
+    }
+
+    @Test
+    public void shouldSkipApplyTagsWhenTagServiceIsNull() {
+        StoreContentIntelligenceMetadata testConsumer = consumerWithTagService(null);
+
+        CoreSession session = mock(CoreSession.class);
+        DocumentModel doc = mock(DocumentModel.class);
+        when(doc.getId()).thenReturn("doc-1");
+
+        EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape"));
+        testConsumer.applyTags(session, doc, metadata);
+        verifyNoInteractions(session);
+    }
+
+    @Test
+    public void shouldSkipApplyTagsWhenNoTagValues() {
+        TagService tagService = mock(TagService.class);
+        StoreContentIntelligenceMetadata testConsumer = consumerWithTagService(tagService);
+
+        CoreSession session = mock(CoreSession.class);
+        DocumentModel doc = mock(DocumentModel.class);
+
+        EnrichmentMetadata metadata = buildMetadata(suggestion("imageDescription", "A long description"));
+        testConsumer.applyTags(session, doc, metadata);
+        verifyNoInteractions(tagService);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // accept - full transactional path via method override
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldAcceptValidMetadataAndApplyTags() {
+        TagService tagService = mock(TagService.class);
+        CoreSession mockSession = mock(CoreSession.class);
+        DocumentModel mockDoc = mock(DocumentModel.class);
+        when(mockDoc.getId()).thenReturn("doc-1");
+        when(mockSession.getDocument(new IdRef("doc-1"))).thenReturn(mockDoc);
+
+        StoreContentIntelligenceMetadata testConsumer = consumerWithTransactionalOverride(tagService, mockSession);
+        EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape"));
+        testConsumer.accept(metadata);
+
+        verify(tagService).tag(mockSession, "doc-1", "landscape");
+    }
+
+    @Test
+    public void shouldHandleDocumentNotFoundInAccept() {
+        CoreSession mockSession = mock(CoreSession.class);
+        when(mockSession.getDocument(new IdRef("doc-1"))).thenThrow(new DocumentNotFoundException("not found"));
+
+        StoreContentIntelligenceMetadata testConsumer = consumerWithTransactionalOverride(null, mockSession);
+        EnrichmentMetadata metadata = buildMetadata(suggestion("namedEntityImage", "landscape"));
+        testConsumer.accept(metadata);
     }
 
     // ---------------------------------------------------------------------------------------------------------------
     // helpers
     // ---------------------------------------------------------------------------------------------------------------
+
+    protected StoreContentIntelligenceMetadata consumerWithTagService(TagService tagService) {
+        return new StoreContentIntelligenceMetadata() {
+            @Override
+            protected TagService getTagService() {
+                return tagService;
+            }
+        };
+    }
+
+    protected StoreContentIntelligenceMetadata consumerWithTransactionalOverride(TagService tagService,
+            CoreSession session) {
+        return new StoreContentIntelligenceMetadata() {
+            @Override
+            protected TagService getTagService() {
+                return tagService;
+            }
+
+            @Override
+            protected void acceptInTransaction(EnrichmentMetadata metadata) {
+                DocumentModel doc;
+                try {
+                    doc = session.getDocument(new IdRef(metadata.context.documentRef));
+                } catch (DocumentNotFoundException e) {
+                    return;
+                }
+                applyTags(session, doc, metadata);
+            }
+        };
+    }
 
     protected BlobTextFromDocument buildBlobText() {
         BlobTextFromDocument blobText = new BlobTextFromDocument();
@@ -230,5 +362,12 @@ public class TestStoreContentIntelligenceMetadata {
         return new EnrichmentMetadata.Builder("/classification/imageLabels", "test", buildBlobText())
                 .withLabels(Arrays.asList(suggestions))
                 .build();
+    }
+
+    private void setContext(EnrichmentMetadata metadata, org.nuxeo.ai.metadata.AIMetadata.Context ctx)
+            throws Exception {
+        java.lang.reflect.Field contextField = org.nuxeo.ai.metadata.AIMetadata.class.getDeclaredField("context");
+        contextField.setAccessible(true);
+        contextField.set(metadata, ctx);
     }
 }

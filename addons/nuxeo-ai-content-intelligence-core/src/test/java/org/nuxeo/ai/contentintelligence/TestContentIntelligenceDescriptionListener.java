@@ -23,12 +23,26 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.nuxeo.ai.functions.RaiseEnrichmentEvent.ENRICHMENT_METADATA;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.nuxeo.ai.enrichment.EnrichmentMetadata;
+import org.nuxeo.ai.pipes.types.BlobTextFromDocument;
+import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.blob.StringBlob;
+import org.nuxeo.ecm.core.event.Event;
+import org.nuxeo.ecm.core.event.EventBundle;
+import org.nuxeo.ecm.core.event.EventContext;
+import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 
 /**
  * Unit tests for {@link ContentIntelligenceDescriptionListener}. The listener's runtime path requires a Nuxeo
@@ -273,9 +287,6 @@ public class TestContentIntelligenceDescriptionListener {
 
     @Test
     public void shouldDefaultToZeroWhenFrameworkPropertyUnavailable() {
-        // In a plain unit-test context Framework may not be initialised; readMaxLength must degrade gracefully.
-        // We don't assert a specific value (it depends on the surrounding test runner), only that no exception is
-        // raised.
         listener.readMaxLength();
     }
 
@@ -291,5 +302,297 @@ public class TestContentIntelligenceDescriptionListener {
                 ContentIntelligenceConstants.DOCUMENTS_PROVIDER_NAME));
         assertFalse(ContentIntelligenceDescriptionListener.HANDLED_PROVIDERS.contains("aws.imageLabels"));
         assertFalse(ContentIntelligenceDescriptionListener.HANDLED_PROVIDERS.contains("gcp.imageLabels"));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // handleEvent
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnEarlyForNullEventBundle() {
+        listener.handleEvent(null);
+    }
+
+    @Test
+    public void shouldReturnEarlyForEmptyEventBundle() {
+        EventBundle bundle = mock(EventBundle.class);
+        when(bundle.isEmpty()).thenReturn(true);
+        listener.handleEvent(bundle);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void shouldIterateEventsInBundle() {
+        Event event = mock(Event.class);
+        when(event.getContext()).thenReturn(null);
+        EventBundle bundle = mock(EventBundle.class);
+        when(bundle.isEmpty()).thenReturn(false);
+        when(bundle.iterator()).thenReturn((Iterator) List.of(event).iterator());
+        listener.handleEvent(bundle);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // handleSingle - early return branches
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldIgnoreEventWithNullContext() {
+        Event event = mock(Event.class);
+        when(event.getContext()).thenReturn(null);
+        listener.handleSingle(event);
+    }
+
+    @Test
+    public void shouldIgnoreEventWithNonMetadataProperty() {
+        Event event = mock(Event.class);
+        EventContext ctx = mock(EventContext.class);
+        when(event.getContext()).thenReturn(ctx);
+        when(ctx.getProperty(ENRICHMENT_METADATA)).thenReturn("not-a-metadata-object");
+        listener.handleSingle(event);
+    }
+
+    @Test
+    public void shouldIgnoreMetadataFromUnhandledProvider() {
+        Event event = mockEventWith(buildEM("aws.imageLabels", "repo", "doc-1"));
+        listener.handleSingle(event);
+    }
+
+    @Test
+    public void shouldIgnoreMetadataWithBlankRepositoryOrDocRef() throws Exception {
+        EnrichmentMetadata metadata = mock(EnrichmentMetadata.class);
+        when(metadata.getModelName()).thenReturn(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME);
+        java.lang.reflect.Field contextField = org.nuxeo.ai.metadata.AIMetadata.class.getDeclaredField("context");
+        contextField.setAccessible(true);
+        contextField.set(metadata, new org.nuxeo.ai.metadata.AIMetadata.Context("", "", null, null));
+        Event event = mockEventWith(metadata);
+        listener.handleSingle(event);
+    }
+
+    @Test
+    public void shouldIgnoreMetadataWhenExtractedDescriptionIsBlank() {
+        ContentIntelligenceDescriptionListener stubListener = new ContentIntelligenceDescriptionListener() {
+            @Override
+            protected String extractDescription(EnrichmentMetadata metadata) {
+                return null;
+            }
+        };
+        Event event = mockEventWith(buildEM(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "repo", "doc-1"));
+        stubListener.handleSingle(event);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // extractDescription - edge cases via method overrides
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnNullFromExtractDescriptionWithBlankRawKey() {
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, null);
+        assertNull(listener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullFromExtractDescriptionWithEmptyRawKey() {
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "");
+        assertNull(listener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullFromExtractDescriptionWithWhitespaceRawKey() {
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "   ");
+        assertNull(listener.extractDescription(metadata));
+    }
+
+    /**
+     * Exercises the full extractDescription happy path by subclassing the listener to bypass Framework.getService.
+     */
+    @Test
+    public void shouldExtractDescriptionFromTransientStoreBlob() {
+        Blob blob = new StringBlob(IMAGE_RESPONSE, "application/json");
+        TransientStore mockStore = mock(TransientStore.class);
+        when(mockStore.getBlobs("raw-key-1")).thenReturn(List.of(blob));
+
+        ContentIntelligenceDescriptionListener testListener = listenerWithStore(mockStore);
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "raw-key-1");
+        assertEquals("A sunset over Paris", testListener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullWhenTransientStoreIsNull() {
+        ContentIntelligenceDescriptionListener testListener = listenerWithStore(null);
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "raw-key-1");
+        assertNull(testListener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullWhenBlobsAreEmpty() {
+        TransientStore mockStore = mock(TransientStore.class);
+        when(mockStore.getBlobs("raw-key-1")).thenReturn(Collections.emptyList());
+
+        ContentIntelligenceDescriptionListener testListener = listenerWithStore(mockStore);
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "raw-key-1");
+        assertNull(testListener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullWhenBlobsAreNull() {
+        TransientStore mockStore = mock(TransientStore.class);
+        when(mockStore.getBlobs("raw-key-1")).thenReturn(null);
+
+        ContentIntelligenceDescriptionListener testListener = listenerWithStore(mockStore);
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "raw-key-1");
+        assertNull(testListener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullFromExtractDescriptionOnIOException() {
+        Blob badBlob = mock(Blob.class);
+        try {
+            when(badBlob.getString()).thenThrow(new IOException("test IO error"));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+        TransientStore mockStore = mock(TransientStore.class);
+        when(mockStore.getBlobs("raw-key-1")).thenReturn(List.of(badBlob));
+
+        ContentIntelligenceDescriptionListener testListener = listenerWithStore(mockStore);
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "raw-key-1");
+        assertNull(testListener.extractDescription(metadata));
+    }
+
+    @Test
+    public void shouldReturnNullFromExtractDescriptionOnRuntimeException() {
+        TransientStore mockStore = mock(TransientStore.class);
+        when(mockStore.getBlobs("raw-key-1")).thenThrow(new RuntimeException("boom"));
+
+        ContentIntelligenceDescriptionListener testListener = listenerWithStore(mockStore);
+        EnrichmentMetadata metadata = buildEMWithRawKey(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "raw-key-1");
+        assertNull(testListener.extractDescription(metadata));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // handleSingle - full transactional path via method overrides
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldWriteDescriptionThroughTransactionalPath() {
+        DocumentModel mockDoc = mock(DocumentModel.class);
+        when(mockDoc.getPropertyValue(ContentIntelligenceConstants.DESCRIPTION_PROPERTY)).thenReturn(null);
+
+        ContentIntelligenceDescriptionListener testListener = listenerForTransactionalPath(
+                "AI-generated description", mockDoc);
+
+        EnrichmentMetadata metadata = buildEM(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "repo", "doc-1");
+        Event event = mockEventWith(metadata);
+        testListener.handleSingle(event);
+
+        verify(mockDoc).setPropertyValue(ContentIntelligenceConstants.DESCRIPTION_PROPERTY,
+                "AI-generated description");
+    }
+
+    @Test
+    public void shouldHandleDocumentNotFoundInTransactionalPath() {
+        final boolean[] called = { false };
+        ContentIntelligenceDescriptionListener testListener = new ContentIntelligenceDescriptionListener() {
+            @Override
+            protected String extractDescription(EnrichmentMetadata metadata) {
+                return "AI-generated description";
+            }
+
+            @Override
+            protected int readMaxLength() {
+                return 0;
+            }
+
+            @Override
+            protected void writeDescriptionInTransaction(String repoName, String docId, String description) {
+                called[0] = true;
+            }
+        };
+        EnrichmentMetadata metadata = buildEM(ContentIntelligenceConstants.IMAGE_PROVIDER_NAME, "repo", "doc-1");
+        Event event = mockEventWith(metadata);
+        testListener.handleSingle(event);
+        assertTrue("writeDescriptionInTransaction must be called", called[0]);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // readMaxLength - via override patterns
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldParseValidMaxLengthProperty() {
+        assertEquals(500, listenerWithMaxLength(500).readMaxLength());
+    }
+
+    @Test
+    public void shouldReturnZeroForMaxLengthDefault() {
+        assertEquals(0, listenerWithMaxLength(0).readMaxLength());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // helpers
+    // ---------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Creates a listener that bypasses Framework.getService for extractDescription by directly injecting a
+     * TransientStore mock.
+     */
+    protected ContentIntelligenceDescriptionListener listenerWithStore(TransientStore store) {
+        return new ContentIntelligenceDescriptionListener() {
+            @Override
+            protected TransientStore getTransientStore(String providerName) {
+                return store;
+            }
+        };
+    }
+
+    /**
+     * Creates a listener for the full handleSingle transactional path, bypassing Framework/Transaction statics.
+     */
+    protected ContentIntelligenceDescriptionListener listenerForTransactionalPath(String description,
+            DocumentModel doc) {
+        return new ContentIntelligenceDescriptionListener() {
+            @Override
+            protected String extractDescription(EnrichmentMetadata metadata) {
+                return description;
+            }
+
+            @Override
+            protected int readMaxLength() {
+                return 0;
+            }
+
+            @Override
+            protected void writeDescriptionInTransaction(String repoName, String docId,
+                    String descriptionValue) {
+                writeDescription(doc, descriptionValue);
+                // Simulate the session.saveDocument call
+            }
+        };
+    }
+
+    private Event mockEventWith(EnrichmentMetadata metadata) {
+        Event event = mock(Event.class);
+        EventContext ctx = mock(EventContext.class);
+        when(event.getContext()).thenReturn(ctx);
+        when(ctx.getProperty(ENRICHMENT_METADATA)).thenReturn(metadata);
+        return event;
+    }
+
+    private EnrichmentMetadata buildEM(String modelName, String repositoryName, String docRef) {
+        BlobTextFromDocument blobText = new BlobTextFromDocument();
+        if (repositoryName != null) {
+            blobText.setRepositoryName(repositoryName);
+        }
+        if (docRef != null) {
+            blobText.setId(docRef);
+        }
+        return new EnrichmentMetadata.Builder("/kind", modelName, blobText).build();
+    }
+
+    private EnrichmentMetadata buildEMWithRawKey(String modelName, String rawKey) {
+        BlobTextFromDocument blobText = new BlobTextFromDocument();
+        blobText.setRepositoryName("repo");
+        blobText.setId("doc-1");
+        return new EnrichmentMetadata.Builder("/kind", modelName, blobText).withRawKey(rawKey).build();
     }
 }

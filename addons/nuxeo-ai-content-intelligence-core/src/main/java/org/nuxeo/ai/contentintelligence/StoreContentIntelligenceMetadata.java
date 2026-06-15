@@ -75,6 +75,10 @@ public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer
             return;
         }
 
+        acceptInTransaction(metadata);
+    }
+
+    protected void acceptInTransaction(EnrichmentMetadata metadata) {
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
             DocumentModel doc;
             try {
@@ -94,7 +98,7 @@ public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer
         if (tags.isEmpty()) {
             return;
         }
-        TagService tagService = Framework.getService(TagService.class);
+        TagService tagService = getTagService();
         if (tagService == null) {
             log.warn("TagService not available, skipping tag creation for {}", doc.getId());
             return;
@@ -102,6 +106,10 @@ public class StoreContentIntelligenceMetadata extends AbstractEnrichmentConsumer
         for (String tag : tags) {
             tagService.tag(session, doc.getId(), tag);
         }
+    }
+
+    protected TagService getTagService() {
+        return Framework.getService(TagService.class);
     }
 
     /**
