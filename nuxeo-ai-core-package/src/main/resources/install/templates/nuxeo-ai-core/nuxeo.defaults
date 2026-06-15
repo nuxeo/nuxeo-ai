@@ -72,3 +72,8 @@ nuxeo.ai.similar.content.listener.enable=false
 
 # KV Store storage timeout (default 48 hours)
 nuxeo.ai.timeout.kv.store=172800
+
+# Per-call Failsafe timeout (seconds) wrapping a single enrichment provider invocation.
+# The default matches the historical hard-coded cap. Override in provider-specific addon
+# templates (e.g. nuxeo-ai-content-intelligence) if a provider routinely needs longer.
+nuxeo.ai.enrichment.call.timeout.seconds=60

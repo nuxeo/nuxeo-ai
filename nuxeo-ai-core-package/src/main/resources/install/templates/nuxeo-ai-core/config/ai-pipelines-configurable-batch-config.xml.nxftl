@@ -1,7 +1,15 @@
 <?xml version="1.0"?>
 <component name="org.nuxeo.ai.pipeline.batch.config">
-
+<#--
+  Only require org.nuxeo.ai.bulk.services when the export batch features are actually configured.
+  When nuxeo.ai.export.batch.size / bucket.size / training.batch.size are empty (the default),
+  no extensions contribute anything, so the hard require would cause a startup failure if the
+  nuxeo-ai-model bundle is not deployed or hasn't registered its component yet.
+-->
+<#assign exportConfigured = ("${nuxeo.ai.export.batch.size}" != "" && "${nuxeo.ai.export.bucket.size}" != "") || "${nuxeo.ai.export.training.batch.size}" != "" />
+<#if exportConfigured>
   <require>org.nuxeo.ai.bulk.services</require>
+</#if>
     <extension target="org.nuxeo.ecm.core.bulk" point="actions">
     <#if "${nuxeo.ai.export.batch.size}" != "" && "${nuxeo.ai.export.bucket.size}" != "">
       <action name="bulkDatasetExport"
