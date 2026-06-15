@@ -95,16 +95,19 @@ public class ContentIntelligenceDescriptionListener implements PostCommitEventLi
             return;
         }
         String capped = applyMaxLength(description);
-        TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
+        writeDescriptionInTransaction(metadata.context.repositoryName, metadata.context.documentRef, capped);
+    }
+
+    protected void writeDescriptionInTransaction(String repoName, String docId, String description) {
+        TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(repoName, session -> {
             DocumentModel doc;
             try {
-                doc = session.getDocument(new IdRef(metadata.context.documentRef));
+                doc = session.getDocument(new IdRef(docId));
             } catch (DocumentNotFoundException e) {
-                log.warn("Document {} no longer exists, dropping Content Intelligence description",
-                        metadata.context.documentRef);
+                log.warn("Document {} no longer exists, dropping Content Intelligence description", docId);
                 return;
             }
-            if (writeDescription(doc, capped)) {
+            if (writeDescription(doc, description)) {
                 session.saveDocument(doc);
             }
         }));
@@ -138,11 +141,7 @@ public class ContentIntelligenceDescriptionListener implements PostCommitEventLi
         }
         Blob blob;
         try {
-            AIComponent aiComponent = Framework.getService(AIComponent.class);
-            if (aiComponent == null) {
-                return null;
-            }
-            TransientStore transientStore = aiComponent.getTransientStoreForEnrichmentProvider(metadata.getModelName());
+            TransientStore transientStore = getTransientStore(metadata.getModelName());
             if (transientStore == null) {
                 return null;
             }
@@ -164,6 +163,14 @@ public class ContentIntelligenceDescriptionListener implements PostCommitEventLi
                     e.getMessage());
             return null;
         }
+    }
+
+    protected TransientStore getTransientStore(String providerName) {
+        AIComponent aiComponent = Framework.getService(AIComponent.class);
+        if (aiComponent == null) {
+            return null;
+        }
+        return aiComponent.getTransientStoreForEnrichmentProvider(providerName);
     }
 
     /**

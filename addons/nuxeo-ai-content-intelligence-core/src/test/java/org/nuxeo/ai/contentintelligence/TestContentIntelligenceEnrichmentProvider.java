@@ -16,9 +16,11 @@
 package org.nuxeo.ai.contentintelligence;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -853,6 +855,210 @@ public class TestContentIntelligenceEnrichmentProvider {
         assertEquals("BMP must reach CIC as JPEG",
                 ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE, sent.getValue().getMimeType());
         assertNotEquals("transcoded payload must not be the BMP source", "image/bmp", sent.getValue().getMimeType());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // transcodeIfNeeded - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnNullWhenTranscodingNullBlob() {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        assertNull(p.transcodeIfNeeded(null));
+    }
+
+    @Test
+    public void shouldFallBackToOriginalOnIOExceptionDuringTranscode() {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        Blob failBlob = new org.nuxeo.ecm.core.api.impl.blob.StringBlob("content", "image/gif") {
+            @Override
+            public java.io.InputStream getStream() throws IOException {
+                throw new IOException("test I/O failure");
+            }
+        };
+        failBlob.setFilename("broken.gif");
+        Blob result = p.transcodeIfNeeded(failBlob);
+        assertSame("I/O failure must return the original blob", failBlob, result);
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // replaceExtension - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnDefaultFilenameWhenOriginalIsBlank() {
+        assertEquals("image.jpg", provider.replaceExtension(null, "jpg"));
+        assertEquals("image.jpg", provider.replaceExtension("", "jpg"));
+        assertEquals("image.jpg", provider.replaceExtension("   ", "jpg"));
+    }
+
+    @Test
+    public void shouldAppendExtensionWhenFilenameHasNoDot() {
+        assertEquals("photo.jpg", provider.replaceExtension("photo", "jpg"));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // enrich - null blob from resolveBlob
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldSkipBlobWhenResolveReturnsNull() throws IOException {
+        ContentIntelligenceEnrichmentProvider nullBlobProvider = new ContentIntelligenceEnrichmentProvider() {
+            @Override
+            protected HylandKEService getService() {
+                return service;
+            }
+
+            @Override
+            protected Blob resolveBlob(ManagedBlob managedBlob) {
+                return null;
+            }
+
+            @Override
+            public String saveJsonAsRawBlob(String rawJson) {
+                return "key";
+            }
+        };
+        nullBlobProvider.init(buildDescriptor(Map.of(
+                ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS, "image-description")));
+
+        Collection<EnrichmentMetadata> metadata = nullBlobProvider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // handleFailedCall - null result
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test(expected = NuxeoException.class)
+    public void shouldThrowOnNullServiceResult() throws IOException {
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(null);
+        provider.enrich(buildBlobTextFromDoc());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // processResponse - results edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldReturnEmptyWhenResultsKeyIsMissing() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\"}"
+                + "}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    @Test
+    public void shouldReturnEmptyWhenResultsArrayIsEmptyWithSuccessStatus() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\",\"results\":[]}"
+                + "}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // toLabelSuggestions - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldSkipNonObjectAndResultlessActionsInResults() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\","
+                + "\"results\":[{\"objectKey\":\"ok1\","
+                + "\"scalarField\":42,"
+                + "\"noResult\":{\"isSuccess\":true},"
+                + "\"validAction\":{\"isSuccess\":true,\"result\":{\"items\":[\"val1\"]}}"
+                + "}]}}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(1, metadata.size());
+        List<LabelSuggestion> suggestions = metadata.iterator().next().getLabels();
+        assertEquals(1, suggestions.size());
+        assertEquals("validAction", suggestions.get(0).getProperty());
+    }
+
+    @Test
+    public void shouldFlattenNestedArrayAndObjectValuesInResults() throws IOException {
+        String json = "{"
+                + "\"responseCode\":200,\"responseMessage\":\"OK\","
+                + "\"objectKeysMapping\":[],"
+                + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\","
+                + "\"results\":[{\"objectKey\":\"ok1\","
+                + "\"deepAction\":{\"isSuccess\":true,\"result\":[[\"nested-val\"],{\"key\":\"obj-val\"}]}"
+                + "}]}}";
+        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
+                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(1, metadata.size());
+        List<String> values = valuesOf(metadata.iterator().next().getLabels(), "deepAction");
+        assertTrue(values.contains("nested-val"));
+        assertTrue(values.contains("obj-val"));
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // summarizeActionErrors - edge cases
+    // ---------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void shouldSkipSuccessfulActionsInErrorSummary() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"okAction\":{\"isSuccess\":true,\"result\":\"fine\"},"
+                + "\"failAction\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertTrue(summary.contains("failAction"));
+        assertFalse(summary.contains("okAction"));
+    }
+
+    @Test
+    public void shouldHandleActionWithoutErrorBlock() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"brokenAction\":{\"isSuccess\":false}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertTrue("missing error block should use '?': " + summary, summary.contains("brokenAction[?]"));
+    }
+
+    @Test
+    public void shouldSkipNonObjectActionEntriesInSummary() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"scalarAction\":42,"
+                + "\"arrayAction\":[1,2,3],"
+                + "\"realFail\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertTrue(summary.contains("realFail"));
+        assertFalse(summary.contains("scalarAction"));
+        assertFalse(summary.contains("arrayAction"));
+    }
+
+    @Test
+    public void shouldHandleActionErrorWithEmptyMessage() {
+        String json = "{\"results\":[{\"objectKey\":\"ok1\","
+                + "\"action\":{\"isSuccess\":false,\"error\":{\"errorType\":\"Timeout\"}}"
+                + "}]}";
+        org.json.JSONObject response = new org.json.JSONObject(json);
+        String summary = provider.summarizeActionErrors(response);
+        assertEquals("action[Timeout]", summary);
     }
 
     /** Builds a real {@code image/*} blob whose bytes are a valid solid-color picture in the given ImageIO format. */
