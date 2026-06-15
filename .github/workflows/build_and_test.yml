@@ -155,7 +155,6 @@ jobs:
 
       - name: SonarCloud Analysis
         if: always() && steps.test.outcome == 'success'
-        continue-on-error: true
         run: |
           SONAR_PARAMS="-Dsonar.verbose=false"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
