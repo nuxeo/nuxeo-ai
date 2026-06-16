@@ -1,0 +1,45 @@
+name: Upload Package to Marketplace
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 4.0.4)'
+        required: true
+      package_artifact_id:
+        description: 'Maven artifact ID of the package'
+        required: true
+        default: 'nuxeo-ai-content-intelligence-package'
+      maven_group_path:
+        description: 'Maven group path (slashes, e.g. org/nuxeo/ai)'
+        required: true
+        default: 'org/nuxeo/ai'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download package from Maven repository
+        run: |
+          set -e
+          ARTIFACT_URL="https://packages.nuxeo.com/repository/maven-public-releases/${{ inputs.maven_group_path }}/${{ inputs.package_artifact_id }}/${{ inputs.version }}/${{ inputs.package_artifact_id }}-${{ inputs.version }}.zip"
+          echo "Downloading: $ARTIFACT_URL"
+          curl -f -u "${{ secrets.REPOSITORY_MANAGER_USERNAME }}:${{ secrets.REPOSITORY_MANAGER_PASSWORD }}" \
+            -O "$ARTIFACT_URL"
+          ls -lh "${{ inputs.package_artifact_id }}-${{ inputs.version }}.zip"
+
+      - name: Upload to Nuxeo Marketplace
+        run: |
+          set -e
+          PACKAGE="${{ inputs.package_artifact_id }}-${{ inputs.version }}.zip"
+          echo "Publishing: $PACKAGE"
+          STATUS_CODE=$(curl -i --silent --output /dev/null -w "%{http_code}" \
+            -u "${{ secrets.CONNECT_USERNAME }}:${{ secrets.CONNECT_PASSWORD }}" \
+            -F "package=@${PACKAGE}" \
+            "https://connect.nuxeo.com/nuxeo/site/marketplace/upload?batch=true")
+          echo "HTTP Status: $STATUS_CODE"
+          if [[ "$STATUS_CODE" != "200" ]]; then
+            echo "::error::Upload failed with HTTP $STATUS_CODE"
+            exit 1
+          fi
+          echo "Successfully uploaded $PACKAGE to Nuxeo Marketplace"

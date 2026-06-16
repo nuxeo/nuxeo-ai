@@ -267,6 +267,7 @@ jobs:
             addons/nuxeo-ai-aws-package/target/nuxeo-ai-aws-package-${{ env.VERSION }}.zip
             addons/nuxeo-ai-gcp-package/target/nuxeo-ai-gcp-package-${{ env.VERSION }}.zip
             addons/nuxeo-ai-image-quality-package/target/nuxeo-ai-image-quality-package-${{ env.VERSION }}.zip
+            addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-${{ env.VERSION }}.zip
           retention-days: 30
           if-no-files-found: warn
           compression-level: 0
