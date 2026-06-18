@@ -1,0 +1,100 @@
+name: Republish Content Intelligence Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to publish (e.g. 4.0.4)'
+        required: true
+      branch:
+        description: 'Branch to build from'
+        required: true
+        default: '2023'
+
+concurrency:
+  group: republish-ci-package
+  cancel-in-progress: false
+
+env:
+  MAVEN_OPTS: >-
+    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    -Daether.syncContext.named.time=600
+    -Xms512m
+    -Xmx1536m
+
+permissions:
+  contents: read
+
+jobs:
+  republish:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.version }}
+    steps:
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '${{ github.event.inputs.version }}' does not match expected format X.Y.Z"
+            exit 1
+          fi
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 1
+
+      - name: Setup Maven build
+        uses: nuxeo/gh-build-tools/.github/actions/setup-maven-build@v0.9.0
+        with:
+          java-version: 17
+          java-distribution: 'temurin'
+          maven-settings: '.github/maven-settings.xml'
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Set release version across all modules
+        run: |
+          mvn -B -nsu versions:set -DnewVersion="${VERSION}" -DgenerateBackupPoms=false
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Build content-intelligence package and its dependencies
+        run: |
+          mvn -B -V -nsu -T 1C --no-transfer-progress -DskipTests clean install \
+            -pl addons/nuxeo-ai-content-intelligence-package -am
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Verify package was built
+        run: |
+          PACKAGE="addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-${VERSION}.zip"
+          if [[ ! -f "$PACKAGE" ]]; then
+            echo "::error::Package not found at $PACKAGE"
+            exit 1
+          fi
+          echo "Package built successfully: $(ls -lh "$PACKAGE")"
+
+      - name: Deploy content-intelligence package to Maven repository
+        run: |
+          mvn -B -nsu --no-transfer-progress -DskipTests deploy \
+            -pl addons/nuxeo-ai-content-intelligence-package
+        env:
+          MVN_REPO_USERNAME: ${{ secrets.REPOSITORY_MANAGER_USERNAME }}
+          MVN_REPO_PASSWORD: ${{ secrets.REPOSITORY_MANAGER_PASSWORD }}
+
+      - name: Publish to Nuxeo Marketplace
+        run: |
+          PACKAGE="addons/nuxeo-ai-content-intelligence-package/target/nuxeo-ai-content-intelligence-package-${VERSION}.zip"
+          echo "Publishing $(basename "$PACKAGE") to Nuxeo Marketplace..."
+          STATUS_CODE=$(curl -i --silent --output /dev/null -w "%{http_code}" \
+            -u "${{ secrets.CONNECT_USERNAME }}:${{ secrets.CONNECT_PASSWORD }}" \
+            -F "package=@${PACKAGE}" \
+            "https://connect.nuxeo.com/nuxeo/site/marketplace/upload?batch=true")
+          if [[ "$STATUS_CODE" != "200" ]]; then
+            echo "::error::Marketplace upload failed — HTTP $STATUS_CODE"
+            exit 1
+          fi
+          echo "Successfully published to Nuxeo Marketplace"
