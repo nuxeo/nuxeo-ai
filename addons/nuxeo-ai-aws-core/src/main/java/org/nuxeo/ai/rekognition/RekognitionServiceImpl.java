@@ -53,19 +53,16 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     protected RekognitionServiceFacade rekognitionFacade;
 
-    protected AWSMetrics awsMetrics;
+    protected volatile RekognitionClient rekognitionClient;
 
-    protected RekognitionClient rekognitionClient; // underlying AWS client for legacy operations
+    protected AWSMetrics awsMetrics;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        // Get facade through registry - no AWS SDK dependencies
         AWSServiceRegistry registry = Framework.getService(AWSServiceRegistry.class);
         rekognitionFacade = registry.getRekognitionService();
         awsMetrics = Framework.getService(AWSMetrics.class);
-        // Legacy client access
-        rekognitionClient = Framework.getService(org.nuxeo.ai.aws.AWSClientFactory.class).getRekognitionClient();
     }
 
     @Override
@@ -114,6 +111,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     // Legacy async video label detection
     @Override
     public String startLabelDetection(ManagedBlob blob, float minConfidence) {
+        getClient();
         Video video = AWSHelper.getInstance().getVideo(blob);
         if (video == null) {
             throw new NuxeoException("Blob is not a video (no video reference available)");
@@ -213,6 +211,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     // Legacy synchronous DetectFacesResponse (AWS SDK) for providers still using AWS classes
     @Override
     public DetectFacesResponse detectFaces(ManagedBlob blob) {
+        getClient();
         Image image = AWSHelper.getInstance().getImage(blob);
         DetectFacesRequest.Builder builder = DetectFacesRequest.builder().image(image);
         DetectFacesResponse response = rekognitionClient.detectFaces(builder.build());
@@ -243,6 +242,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     // Legacy synchronous AWS RecognizeCelebritiesResponse
     @Override
     public RecognizeCelebritiesResponse detectCelebrities(ManagedBlob blob) {
+        getClient();
         Image image = AWSHelper.getInstance().getImage(blob);
         RecognizeCelebritiesRequest request = RecognizeCelebritiesRequest.builder().image(image).build();
         RecognizeCelebritiesResponse response = rekognitionClient.recognizeCelebrities(request);
@@ -254,6 +254,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     @Override
     public String startDetectFaces(ManagedBlob blob) {
+        getClient();
         Video video = AWSHelper.getInstance().getVideo(blob);
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
@@ -265,6 +266,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     @Override
     public String startDetectCelebrities(ManagedBlob blob) {
+        getClient();
         Video video = AWSHelper.getInstance().getVideo(blob);
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
@@ -276,6 +278,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     @Override
     public String startDetectUnsafeImages(ManagedBlob blob) {
+        getClient();
         Video video = AWSHelper.getInstance().getVideo(blob);
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
@@ -287,6 +290,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     @Override
     public String startVideoSegmentDetection(ManagedBlob blob, SegmentType segmentType) {
+        getClient();
         Video video = AWSHelper.getInstance().getVideo(blob);
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
@@ -301,6 +305,14 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
     @Override
     public RekognitionClient getClient() {
+        if (rekognitionClient == null) {
+            synchronized (this) {
+                if (rekognitionClient == null) {
+                    rekognitionClient = Framework.getService(
+                            org.nuxeo.ai.aws.AWSClientFactory.class).getRekognitionClient();
+                }
+            }
+        }
         return rekognitionClient;
     }
 

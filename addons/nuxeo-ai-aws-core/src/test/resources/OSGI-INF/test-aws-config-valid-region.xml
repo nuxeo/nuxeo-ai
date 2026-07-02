@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.test.valid-region">
+
+  <extension target="org.nuxeo.runtime.aws.AWSConfigurationService" point="configuration">
+    <configuration id="nuxeo-ai-aws">
+      <accessKeyId>FAKE_ACCESS_KEY_FOR_TESTS</accessKeyId>
+      <secretKey>FAKE_SECRET_KEY_FOR_TESTS</secretKey>
+      <sessionToken>FAKE_SESSION_TOKEN_FOR_TESTS</sessionToken>
+      <region>us-east-1</region>
+    </configuration>
+  </extension>
+
+  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+    <property name="nuxeo.enrichment.aws.s3">false</property>
+  </extension>
+
+</component>

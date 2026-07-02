@@ -40,6 +40,9 @@ import com.google.cloud.vision.v1.ImageAnnotatorSettings;
  * Centralized GCP Client Factory - Single point of GCP SDK dependency management. This factory isolates all GCP SDK
  * client creation and configuration logic. Benefits: - All GCP SDK dependencies are managed in one place - Easy to
  * upgrade GCP SDK versions - Consistent client configuration across all services - Easy to add new GCP services
+ * <p>
+ * The factory degrades gracefully when GCP is not configured (no credentials). It will start without error and only
+ * fail when a caller actually tries to obtain a GCP client.
  */
 public class GCPClientFactory extends DefaultComponent {
 
@@ -52,15 +55,25 @@ public class GCPClientFactory extends DefaultComponent {
     // Volatile for thread-safety with double-checked locking
     private volatile ImageAnnotatorClient imageAnnotatorClient;
 
+    private volatile boolean available;
+
     // Common configuration
     private GoogleCredentials credentials;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        // Initialize common configuration
-        this.credentials = initializeCredentials();
-        log.info("GCP Client Factory started");
+        try {
+            this.credentials = initializeCredentials();
+            this.available = true;
+            log.info("GCP Client Factory started");
+        } catch (Exception e) {
+            this.available = false;
+            log.info("GCP Client Factory started in degraded mode (GCP not configured). "
+                    + "GCP AI services will not be available until credentials are configured. "
+                    + "Cause: {}", e.getMessage());
+            log.debug("GCP credential initialization failure details", e);
+        }
     }
 
     @Override
@@ -71,12 +84,30 @@ public class GCPClientFactory extends DefaultComponent {
 
         // Reset references
         imageAnnotatorClient = null;
+        available = false;
+    }
+
+    /**
+     * @return {@code true} if GCP credentials are configured and clients can be created
+     */
+    public boolean isAvailable() {
+        return available;
+    }
+
+    private void checkAvailable() {
+        if (!available) {
+            throw new NuxeoException(
+                    "GCP AI services are not configured. "
+                            + "Please set GCP credentials via the " + GOOGLE_CREDENTIALS_CONFIG + " nuxeo.conf property "
+                            + "or provide a " + DEFAULT_CREDENTIALS_FILE + " file before using GCP AI features.");
+        }
     }
 
     /**
      * Get ImageAnnotator client with lazy initialization and thread safety
      */
     public ImageAnnotatorClient getImageAnnotatorClient() {
+        checkAvailable();
         if (imageAnnotatorClient == null) {
             synchronized (this) {
                 if (imageAnnotatorClient == null) {
@@ -147,9 +178,9 @@ public class GCPClientFactory extends DefaultComponent {
         if (client != null) {
             try {
                 client.close();
-                log.debug("Closed " + serviceName + " client");
+                log.debug("Closed {} client", serviceName);
             } catch (Exception e) {
-                log.warn("Error closing " + serviceName + " client", e);
+                log.warn("Error closing {} client", serviceName, e);
             }
         }
     }

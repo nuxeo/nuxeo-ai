@@ -38,7 +38,7 @@
     <sonar.organization>nuxeo</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.projectKey>nuxeo_nuxeo-ai</sonar.projectKey>
-    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/nuxeo-ai-core-package/target/site/${jacoco.aggregateReportDirectory}/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/nuxeo-ai-core-package/target/site/${jacoco.aggregateReportDirectory}/jacoco.xml,${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
   </properties>
 

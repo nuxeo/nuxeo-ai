@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.gcp.GCPClientFactory">
+
+  <implementation class="org.nuxeo.ai.gcp.GCPClientFactory"/>
+
+  <service>
+    <provide interface="org.nuxeo.ai.gcp.GCPClientFactory"/>
+  </service>
+
+</component>
