@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.aws.AWSClientFactory;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
@@ -71,6 +71,9 @@ public class NotificationComponent extends DefaultComponent implements Notificat
                 subscribe(topic.getTopicArn(), getURI(topic.getPath()));
             } catch (URISyntaxException e) {
                 log.error("Failed to subscribe to {} with path {}", topic.getTopicArn(), topic.getPath(), e);
+            } catch (Exception e) {
+                log.warn("Could not subscribe to SNS topic {} (AWS may not be configured): {}",
+                        topic.getTopicArn(), e.getMessage(), e);
             }
         });
     }
@@ -117,10 +120,9 @@ public class NotificationComponent extends DefaultComponent implements Notificat
         }
 
         synchronized (this) {
-            amazonSNS = SnsClient.builder()
-                                 .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())
-                                 .region(AWSHelper.getInstance().getRegion())
-                                 .build();
+            if (amazonSNS == null) {
+                amazonSNS = Framework.getService(AWSClientFactory.class).getSnsClient();
+            }
             return amazonSNS;
         }
     }

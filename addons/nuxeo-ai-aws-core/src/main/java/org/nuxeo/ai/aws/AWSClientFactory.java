@@ -15,9 +15,10 @@
  */
 package org.nuxeo.ai.aws;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.DefaultComponent;
 
@@ -33,10 +34,13 @@ import software.amazon.awssdk.services.translate.TranslateClient;
  * Centralized AWS Client Factory - Single point of AWS SDK dependency management. This factory isolates all AWS SDK
  * client creation and configuration logic. Benefits: - All AWS SDK dependencies are managed in one place - Easy to
  * upgrade AWS SDK versions - Consistent client configuration across all services - Easy to add new AWS services
+ * <p>
+ * The factory degrades gracefully when AWS is not configured (no region). It will start without error and only fail when
+ * a caller actually tries to obtain an AWS client.
  */
 public class AWSClientFactory extends DefaultComponent {
 
-    private static final Log log = LogFactory.getLog(AWSClientFactory.class);
+    private static final Logger log = LogManager.getLogger(AWSClientFactory.class);
 
     // Volatile for thread-safety with double-checked locking
     private volatile ComprehendClient comprehendClient;
@@ -51,15 +55,43 @@ public class AWSClientFactory extends DefaultComponent {
 
     private volatile SnsClient snsClient;
 
-    // Common configuration
+    private volatile boolean available;
+
+    // Common configuration - resolved lazily or during start if AWS is configured
     private Region region;
 
     @Override
     public void start(ComponentContext context) {
         super.start(context);
-        // Initialize common configuration
-        this.region = AWSHelper.getInstance().getRegion();
-        log.info("AWS Client Factory started with region: " + region);
+        try {
+            this.region = AWSHelper.getInstance().getRegion();
+            this.available = true;
+            log.info("AWS Client Factory started with region: {}", region);
+        } catch (Exception e) {
+            this.available = false;
+            log.info("AWS Client Factory started in degraded mode (AWS not configured). "
+                    + "AWS AI services will not be available until the AWS region is configured. "
+                    + "Cause: {}", e.getMessage());
+            log.debug("AWS region resolution failure details", e);
+        }
+    }
+
+    /**
+     * @return {@code true} if the AWS region could be resolved and clients can be created
+     */
+    public boolean isAvailable() {
+        return available;
+    }
+
+    private void checkAvailable() {
+        if (!available) {
+            throw new NuxeoException(
+                    "AWS AI services are not configured. "
+                            + "Please set the AWS region via the AWS_REGION environment variable, "
+                            + "the aws.region system property, or nuxeo.aws.region in nuxeo.conf, "
+                            + "and ensure valid AWS credentials are available "
+                            + "before using AWS AI features.");
+        }
     }
 
     @Override
@@ -80,12 +112,14 @@ public class AWSClientFactory extends DefaultComponent {
         translateClient = null;
         transcribeClient = null;
         snsClient = null;
+        available = false;
     }
 
     /**
      * Get Comprehend client with lazy initialization and thread safety
      */
     public ComprehendClient getComprehendClient() {
+        checkAvailable();
         if (comprehendClient == null) {
             synchronized (this) {
                 if (comprehendClient == null) {
@@ -105,6 +139,7 @@ public class AWSClientFactory extends DefaultComponent {
      * Get Rekognition client with lazy initialization and thread safety
      */
     public RekognitionClient getRekognitionClient() {
+        checkAvailable();
         if (rekognitionClient == null) {
             synchronized (this) {
                 if (rekognitionClient == null) {
@@ -124,6 +159,7 @@ public class AWSClientFactory extends DefaultComponent {
      * Get Textract client with lazy initialization and thread safety
      */
     public TextractClient getTextractClient() {
+        checkAvailable();
         if (textractClient == null) {
             synchronized (this) {
                 if (textractClient == null) {
@@ -143,6 +179,7 @@ public class AWSClientFactory extends DefaultComponent {
      * Get Translate client with lazy initialization and thread safety
      */
     public TranslateClient getTranslateClient() {
+        checkAvailable();
         if (translateClient == null) {
             synchronized (this) {
                 if (translateClient == null) {
@@ -162,6 +199,7 @@ public class AWSClientFactory extends DefaultComponent {
      * Get Transcribe client with lazy initialization and thread safety
      */
     public TranscribeClient getTranscribeClient() {
+        checkAvailable();
         if (transcribeClient == null) {
             synchronized (this) {
                 if (transcribeClient == null) {
@@ -181,6 +219,7 @@ public class AWSClientFactory extends DefaultComponent {
      * Get SNS client with lazy initialization and thread safety
      */
     public SnsClient getSnsClient() {
+        checkAvailable();
         if (snsClient == null) {
             synchronized (this) {
                 if (snsClient == null) {
@@ -202,9 +241,9 @@ public class AWSClientFactory extends DefaultComponent {
         if (client != null) {
             try {
                 client.close();
-                log.debug("Closed " + serviceName + " client");
+                log.debug("Closed {} client", serviceName);
             } catch (Exception e) {
-                log.warn("Error closing " + serviceName + " client", e);
+                log.warn("Error closing {} client", serviceName, e);
             }
         }
     }
