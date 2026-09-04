@@ -27,7 +27,7 @@
     <gcp.version>26.87.0</gcp.version>
     <aws.sdk.version>2.54.7</aws.sdk.version>
     <grpc-netty.version>1.83.1</grpc-netty.version>
-    <google.protobuf.version>4.36.0</google.protobuf.version>
+    <google.protobuf.version>4.36.1</google.protobuf.version>
     <jakarta.validation.version>3.0.2</jakarta.validation.version>
     <jakarta.mail.api.version>2.0.1</jakarta.mail.api.version>
     <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
