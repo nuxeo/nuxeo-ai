@@ -1,13 +1,7 @@
 <?xml version="1.0"?>
 <!--
-  Registers WebP at the platform level so that uploaded WebP blobs actually reach the Content Intelligence
-  enrichment pipeline.
-
-  What this contributes:
-    - MimetypeRegistry: registers image/webp and the `webp` extension so the platform can sniff / resolve the
-      MIME type from the blob filename.
-    - FileManager: re-contributes the platform's Imageplugin with merge="true" to APPEND image/webp to its
-      filter list, so WebP uploads are created as Picture documents and flow into the image enrichment pipeline.
+  Routes uploaded WebP blobs to Picture documents so they flow into the image enrichment pipeline, by
+  re-contributing the platform's Imageplugin with merge="true" to APPEND image/webp to its filter list.
 
   Why the plugin declares no class and requires the picture contribution:
     The base Imageplugin (class org.nuxeo.ecm.platform.picture.extension.ImagePlugin) is contributed by the
@@ -18,23 +12,14 @@
         which has merge="false", would replace ours and the image/webp filter would be silently dropped);
       - omit the class attribute so this contribution never references ImagePlugin directly (avoiding any
         ClassNotFound if the imaging bundle is absent) and simply inherits it through the merge.
--->
-<component name="org.nuxeo.ai.contentintelligence.webp.support" version="1.0">
 
-  <require>org.nuxeo.ecm.platform.mimetype.service.MimetypeRegistryService</require>
+  This contribution is deliberately separate from org.nuxeo.ai.contentintelligence.webp.mimetype: the WebP
+  MIME-type registration must stay always-on and must not be gated on the imaging/picture bundle.
+-->
+<component name="org.nuxeo.ai.contentintelligence.webp.filemanager" version="1.0">
+
   <require>org.nuxeo.ecm.platform.filemanager.service.FileManagerService</require>
   <require>org.nuxeo.ecm.platform.picture.filemanager.contrib</require>
-
-  <extension target="org.nuxeo.ecm.platform.mimetype.service.MimetypeRegistryService" point="mimetype">
-    <mimetype normalized="image/webp" binary="true" iconPath="image.gif">
-      <mimetypes>
-        <mimetype>image/webp</mimetype>
-      </mimetypes>
-      <extensions>
-        <extension>webp</extension>
-      </extensions>
-    </mimetype>
-  </extension>
 
   <extension target="org.nuxeo.ecm.platform.filemanager.service.FileManagerService" point="plugins">
     <plugin name="Imageplugin" merge="true">

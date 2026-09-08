@@ -10,4 +10,5 @@ Require-Bundle: org.nuxeo.ai.ai-core,
 Bundle-SymbolicName: org.nuxeo.ai.nuxeo-ai-content-intelligence-core;singleton=true
 Nuxeo-Component: OSGI-INF/listener-contrib.xml,
  OSGI-INF/thumbnail-mimetypes-contrib.xml,
- OSGI-INF/webp-support-contrib.xml
+ OSGI-INF/webp-mimetype-contrib.xml,
+ OSGI-INF/webp-filemanager-contrib.xml
