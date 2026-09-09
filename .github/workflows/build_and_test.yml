@@ -156,6 +156,8 @@ jobs:
       - name: SonarCloud Analysis
         if: always() && steps.test.outcome == 'success'
         run: |
+          export JAVA_HOME="$JAVA_HOME_21_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
           SONAR_PARAMS="-Dsonar.verbose=false"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             SONAR_PARAMS="$SONAR_PARAMS -Dsonar.pullrequest.key=${{ github.event.number }}"

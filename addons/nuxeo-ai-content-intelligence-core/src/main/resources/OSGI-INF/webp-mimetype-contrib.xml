@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<!--
+  Registers WebP at the platform level so the platform can sniff / resolve the MIME type from a WebP blob or
+  its `webp` file extension. This is a prerequisite for uploaded WebP blobs to be recognised as images and
+  reach the Content Intelligence enrichment pipeline.
+
+  This contribution is intentionally always-on: it only depends on the MimetypeRegistry service and must NOT
+  be gated on the imaging/picture bundle, so image/webp is registered even in distributions where the picture
+  FileManager plugin is absent. The picture-dependent part (routing WebP to Picture documents) lives in the
+  separate org.nuxeo.ai.contentintelligence.webp.filemanager component.
+-->
+<component name="org.nuxeo.ai.contentintelligence.webp.mimetype" version="1.0">
+
+  <require>org.nuxeo.ecm.platform.mimetype.service.MimetypeRegistryService</require>
+
+  <extension target="org.nuxeo.ecm.platform.mimetype.service.MimetypeRegistryService" point="mimetype">
+    <mimetype normalized="image/webp" binary="true" iconPath="image.gif">
+      <mimetypes>
+        <mimetype>image/webp</mimetype>
+      </mimetypes>
+      <extensions>
+        <extension>webp</extension>
+      </extensions>
+    </mimetype>
+  </extension>
+
+</component>
