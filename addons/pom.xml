@@ -12,9 +12,6 @@
   <description>Nuxeo AI Addons parent POM</description>
 
   <properties>
-    <wiremock.version>2.27.2</wiremock.version>
-    <gcp.version>26.88.1</gcp.version>
-    <aws.sdk.version>2.26.0</aws.sdk.version>
     <nuxeo.content.intelligence.connector.version>2025.0.0</nuxeo.content.intelligence.connector.version>
   </properties>
 
@@ -32,16 +29,6 @@
   <dependencyManagement>
     <dependencies>
       <!-- Only manage project-specific dependencies here; AWS SDK dependencies are managed by the BOM in the root POM and should not be listed here. -->
-      <dependency>
-        <groupId>org.nuxeo.ai</groupId>
-        <artifactId>nuxeo-ai-core</artifactId>
-        <version>${nuxeo.ai.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.nuxeo.ai</groupId>
-        <artifactId>nuxeo-ai-pipes</artifactId>
-        <version>${nuxeo.ai.version}</version>
-      </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-ai-aws-core</artifactId>
@@ -66,18 +53,6 @@
         <groupId>org.nuxeo.content.intelligence</groupId>
         <artifactId>nuxeo-content-intelligence-connector-core</artifactId>
         <version>${nuxeo.content.intelligence.connector.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.github.tomakehurst</groupId>
-        <artifactId>wiremock-standalone</artifactId>
-        <version>${wiremock.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>libraries-bom</artifactId>
-        <version>${gcp.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
