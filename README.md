@@ -1,5 +1,7 @@
 # Nuxeo AI Core
 
+<!-- NXCON-375: preview environment testing (lts-2025) -->
+
 Core functionality for using AI with the Nuxeo Platform.
 
 This repository provides 3 packages:
