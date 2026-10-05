@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MAVEN_OPTS: >-
     -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
     -Daether.syncContext.named.time=600
@@ -222,7 +223,7 @@ jobs:
           fi
 
       - name: Build & Push Docker Preview Image
-        if: github.event_name == 'pull_request' && contains(join(github.event.pull_request.labels.*.name, ','), 'preview')
+        if: github.event_name == 'pull_request' && steps.build.outcome == 'success' && contains(join(github.event.pull_request.labels.*.name, ','), 'preview')
         uses: ./.github/actions/docker-build-preview
         with:
           version: ${{ env.VERSION }}
