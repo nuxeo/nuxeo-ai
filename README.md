@@ -1,6 +1,9 @@
 # Nuxeo AI Core
 
 <!-- NXCON-375: preview environment testing (lts-2025) -->
+<!-- NXCON-375: preview Docker image includes nuxeo-ai-core and nuxeo-ai-aws only -->
+<!-- NXCON-375: validate AWS Rekognition video enrichment after preview deploy (S3 + SNS required) -->
+<!-- NXCON-375: target platform branch 2025 — primary repro for NXCON-375 (S3 blob provider on LTS 2025) -->
 
 Core functionality for using AI with the Nuxeo Platform.
 
