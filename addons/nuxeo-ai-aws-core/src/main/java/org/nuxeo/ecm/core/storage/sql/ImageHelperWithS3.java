@@ -19,6 +19,8 @@
 package org.nuxeo.ecm.core.storage.sql;
 
 import java.util.function.BiFunction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.blob.s3.S3BlobProvider;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
@@ -32,6 +34,8 @@ import com.amazonaws.services.textract.model.Document;
  * A Helper which takes advantage of the S3BinaryManager
  */
 public class ImageHelperWithS3 {
+
+    private static final Logger log = LogManager.getLogger(ImageHelperWithS3.class);
 
     public ImageHelperWithS3() {
     }
@@ -84,15 +88,28 @@ public class ImageHelperWithS3 {
      * Gets the S3Object from the S3BinaryManager
      */
     public <R> R getS3Object(ManagedBlob blob, BiFunction<BlobProvider, String, R> s3ObjectSupplier) {
-        BlobProvider blobProvider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
+        BlobManager blobManager = Framework.getService(BlobManager.class);
+        BlobProvider blobProvider = blobManager.getBlobProvider(blob.getProviderId());
+        // NXCON-375 diagnostics: temporary, for preview environment investigation
+        log.warn("[NXCON-375] getS3Object blobClass={} providerId={} key={} digest={} resolvedProvider={}",
+                blob.getClass().getName(), blob.getProviderId(), blob.getKey(), blob.getDigest(),
+                blobProvider == null ? null : blobProvider.getClass().getName());
         if (blobProvider instanceof S3BinaryManager) {
             S3BinaryManager s3BinaryManager = (S3BinaryManager) blobProvider;
+            log.warn("[NXCON-375] matched S3BinaryManager bucket={} prefix={}", s3BinaryManager.bucketName,
+                    s3BinaryManager.getBucketPrefix());
             return s3ObjectSupplier.apply(s3BinaryManager, s3BinaryManager.getBucketPrefix() + blob.getKey());
         } else if (blobProvider instanceof S3BlobProvider) {
             S3BlobProvider provider = (S3BlobProvider) blobProvider;
+            log.warn("[NXCON-375] matched S3BlobProvider bucket={} prefix={}", provider.config.bucketName,
+                    provider.config.bucketPrefix);
             return s3ObjectSupplier.apply(provider, provider.config.bucketPrefix + blob.getKey());
         }
 
+        log.warn("[NXCON-375] no S3 provider matched for providerId={}; registered providers:", blob.getProviderId());
+        blobManager.getBlobProviders()
+                   .forEach((id, p) -> log.warn("[NXCON-375]   provider id={} class={} superclass={}", id,
+                           p.getClass().getName(), p.getClass().getSuperclass().getName()));
         return null;
     }
 

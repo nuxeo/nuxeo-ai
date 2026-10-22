@@ -90,7 +90,11 @@ public class AWSHelper {
             imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ?
                     null :
                     new ImageHelperWithS3();
+            // NXCON-375 diagnostics: temporary, for preview environment investigation
+            log.warn("[NXCON-375] {} found, {}={}, s3Helper created={}", S3_MANAGER_NAME, CONFIG_USE_S3,
+                    Framework.getProperty(CONFIG_USE_S3), imageHelperWithS3 != null);
         } catch (ClassNotFoundException e) {
+            log.warn("[NXCON-375] {} not found, s3Helper disabled", S3_MANAGER_NAME);
             imageHelperWithS3 = null;
         }
         this.s3Helper = imageHelperWithS3;
@@ -176,9 +180,12 @@ public class AWSHelper {
      */
     public Video getVideo(ManagedBlob managedBlob) {
         if (s3Helper != null) {
-            return s3Helper.getVideo(managedBlob);
+            Video video = s3Helper.getVideo(managedBlob);
+            log.warn("[NXCON-375] getVideo key={} video={}", managedBlob.getKey(), video);
+            return video;
         }
 
+        log.warn("[NXCON-375] getVideo key={} s3Helper is null, no video reference", managedBlob.getKey());
         return null;
     }
 
