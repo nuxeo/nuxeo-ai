@@ -82,6 +82,9 @@ public class ImageHelperWithS3 {
      * Gets the S3Object from the S3BlobProvider
      */
     public <R> R getS3Object(ManagedBlob blob, BiFunction<BlobProvider, String, R> s3ObjectSupplier) {
+        if (blob == null) {
+            return null;
+        }
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
         if (provider instanceof S3BlobProvider) {
             S3BlobProvider s3 = (S3BlobProvider) provider;
