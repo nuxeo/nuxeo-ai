@@ -144,7 +144,7 @@ jobs:
             **/target/surefire-reports/*.xml
           check_name: Test Results
 
-      - name: Generate JaCoCo Aggregate Report
+      - name: Generate JaCoCo Aggregate  Report
         if: always() && steps.test.outcome == 'success'
         run: |
           mvn $MAVEN_ARGS -pl :nuxeo-ai-core-package -am verify -DskipTests
