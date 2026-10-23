@@ -20,9 +20,13 @@ package org.nuxeo.ai;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.core.storage.sql.ImageHelperWithS3;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -53,5 +57,13 @@ public class TestAWSHelper {
     @Test(expected = ClassNotFoundException.class)
     public void testS3BinaryManagerRemoved() throws ClassNotFoundException {
         Class.forName("org.nuxeo.ecm.core.storage.sql.S3BinaryManager");
+    }
+
+    @Test
+    public void testNoVideoReferenceWithoutS3BlobProvider() {
+        ImageHelperWithS3 s3Helper = new ImageHelperWithS3();
+        assertNull(s3Helper.getVideo(null));
+        ManagedBlob blob = new BlobMetaImpl("test", "video/mp4", "aKey", "aDigest", null, 1L);
+        assertNull(s3Helper.getVideo(blob));
     }
 }
