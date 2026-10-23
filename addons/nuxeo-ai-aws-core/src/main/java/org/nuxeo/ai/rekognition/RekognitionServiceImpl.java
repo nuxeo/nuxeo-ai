@@ -222,6 +222,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
             }
             return result;
         }
+        // NXCON-375 diagnostics: temporary, for preview environment investigation
+        log.warn("[NXCON-375] startDetectWith skipped AWS call, no video for key={}, returning null jobId",
+                blob.getKey());
         return null;
     }
 
