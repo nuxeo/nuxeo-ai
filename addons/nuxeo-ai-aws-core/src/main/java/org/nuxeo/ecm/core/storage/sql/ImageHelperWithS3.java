@@ -39,7 +39,7 @@ public class ImageHelperWithS3 {
     }
 
     /**
-     * Gets the image from the S3BinaryManager as a reference to an S3 object
+     * Gets the image from the S3BlobProvider as a reference to an S3 object
      */
     public Image getImage(ManagedBlob blob) {
         software.amazon.awssdk.services.rekognition.model.S3Object s3Object = getS3Object(blob,
@@ -52,7 +52,7 @@ public class ImageHelperWithS3 {
     }
 
     /**
-     * Gets the image from the S3BinaryManager as a reference to an S3 object
+     * Gets the image from the S3BlobProvider as a reference to an S3 object
      */
     public Video getVideo(ManagedBlob blob) {
         software.amazon.awssdk.services.rekognition.model.S3Object s3Object = getS3Object(blob,
@@ -65,7 +65,7 @@ public class ImageHelperWithS3 {
     }
 
     /**
-     * Gets the image from the S3BinaryManager as a reference to an S3 object as a Document
+     * Gets the image from the S3BlobProvider as a reference to an S3 object as a Document
      *
      * @since 2.1.2
      */
@@ -79,7 +79,7 @@ public class ImageHelperWithS3 {
     }
 
     /**
-     * Gets the S3Object from the S3BinaryManager
+     * Gets the S3Object from the S3BlobProvider
      */
     public <R> R getS3Object(ManagedBlob blob, BiFunction<BlobProvider, String, R> s3ObjectSupplier) {
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());

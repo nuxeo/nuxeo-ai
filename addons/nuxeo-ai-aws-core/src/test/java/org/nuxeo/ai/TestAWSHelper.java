@@ -19,6 +19,7 @@
 package org.nuxeo.ai;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,5 +42,16 @@ public class TestAWSHelper {
                 AWSHelper.getInstance().getCredentialsProvider().resolveCredentials().accessKeyId());
         assertEquals("MY_XML_SECRET_KEY",
                 AWSHelper.getInstance().getCredentialsProvider().resolveCredentials().secretAccessKey());
+    }
+
+    @Test
+    public void testS3DetectionClassExists() throws ClassNotFoundException {
+        // S3BinaryManager is gone in LTS 2025, S3 support must be detected from S3BlobProvider (NXCON-375)
+        assertNotNull(Class.forName(AWSHelper.S3_BLOB_PROVIDER_NAME));
+    }
+
+    @Test(expected = ClassNotFoundException.class)
+    public void testS3BinaryManagerRemoved() throws ClassNotFoundException {
+        Class.forName("org.nuxeo.ecm.core.storage.sql.S3BinaryManager");
     }
 }

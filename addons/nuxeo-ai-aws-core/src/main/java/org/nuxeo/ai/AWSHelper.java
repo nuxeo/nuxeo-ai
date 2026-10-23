@@ -64,7 +64,8 @@ public class AWSHelper {
 
     public static final String CONFIG_USE_S3 = "nuxeo.enrichment.aws.s3";
 
-    public static final String S3_MANAGER_NAME = "org.nuxeo.ecm.core.storage.sql.S3BinaryManager";
+    // S3BinaryManager was removed in LTS 2025, S3BlobProvider is the S3 blob provider to detect (NXCON-375)
+    public static final String S3_BLOB_PROVIDER_NAME = "org.nuxeo.ecm.blob.s3.S3BlobProvider";
 
     public static final String NEW_LINE = "\n";
 
@@ -89,7 +90,7 @@ public class AWSHelper {
 
         ImageHelperWithS3 imageHelperWithS3;
         try {
-            Class.forName(S3_MANAGER_NAME);
+            Class.forName(S3_BLOB_PROVIDER_NAME);
             imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ? null
                     : new ImageHelperWithS3();
         } catch (ClassNotFoundException e) {
