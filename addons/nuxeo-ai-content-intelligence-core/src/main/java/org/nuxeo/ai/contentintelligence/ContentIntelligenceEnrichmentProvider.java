@@ -16,6 +16,7 @@
 package org.nuxeo.ai.contentintelligence;
 
 import static java.util.Collections.emptyList;
+import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DESCRIPTION_ACTION_KEYS;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
@@ -519,9 +520,21 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
         }
     }
 
+    /**
+     * Keys the cache on the blob digests and on a fingerprint of the options that shape the Knowledge Enrichment
+     * response, so that changing them (e.g. {@code maxWordCount} in {@code extraJsonPayload}) calls the service again
+     * instead of returning the result cached for the previous configuration.
+     */
     @Override
     public String getCacheKey(BlobTextFromDocument blobTextFromDoc) {
-        return makeKeyUsingBlobDigests(blobTextFromDoc, name);
+        String key = makeKeyUsingBlobDigests(blobTextFromDoc, name);
+        if (key == null) {
+            return null;
+        }
+        String config = String.join("\n", "configName=" + configName, "actions=" + String.join(",", actions),
+                "similarMetadata=" + StringUtils.defaultString(similarMetadata),
+                "extraJsonPayload=" + StringUtils.defaultString(extraJsonPayload));
+        return key + "_" + sha256Hex(config);
     }
 
 }
