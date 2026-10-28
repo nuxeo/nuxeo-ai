@@ -595,6 +595,116 @@ public class TestContentIntelligenceEnrichmentProvider {
         BlobTextFromDocument doc = buildBlobTextFromDoc();
         String key = provider.getCacheKey(doc);
         assertNotNull(key);
+        assertTrue(key.matches("ai\\.contentintelligence\\.testdigest_[a-f0-9]{64}"));
+    }
+
+    /**
+     * NXCON-348: re-enriching the same file after changing {@code maxWordCount} in {@code extraJsonPayload} must not
+     * hit the entry cached for the previous configuration.
+     */
+    @Test
+    public void shouldChangeCacheKeyWhenExtraJsonPayloadChanges() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String key500 = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_EXTRA_JSON_PAYLOAD,
+                "{\"maxWordCount\":500}")).getCacheKey(doc);
+        String key100 = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_EXTRA_JSON_PAYLOAD,
+                "{\"maxWordCount\":100}")).getCacheKey(doc);
+        String keyNone = newProvider(Map.of()).getCacheKey(doc);
+        assertNotEquals(key500, key100);
+        assertNotEquals(key500, keyNone);
+        assertNotEquals(key100, keyNone);
+    }
+
+    @Test
+    public void shouldChangeCacheKeyWhenActionsChange() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String descriptionOnly = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS, "image-description")).getCacheKey(doc);
+        String withNer = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description,named-entity-recognition-image")).getCacheKey(doc);
+        assertNotEquals(descriptionOnly, withNer);
+    }
+
+    @Test
+    public void shouldChangeCacheKeyWhenSimilarMetadataChanges() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String none = newProvider(Map.of()).getCacheKey(doc);
+        String some = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_SIMILAR_METADATA,
+                "[{\"title\":\"a\"}]")).getCacheKey(doc);
+        assertNotEquals(none, some);
+    }
+
+    @Test
+    public void shouldChangeCacheKeyWhenConfigNameChanges() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String defaultConfig = newProvider(Map.of()).getCacheKey(doc);
+        String otherConfig = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_CONFIG_NAME, "other")).getCacheKey(doc);
+        assertNotEquals(defaultConfig, otherConfig);
+    }
+
+    /** Hyland CI returns one result block per action, so the order the actions are declared in must not matter. */
+    @Test
+    public void shouldIgnoreActionsOrderInCacheKey() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String descriptionFirst = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description,named-entity-recognition-image")).getCacheKey(doc);
+        String nerFirst = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "named-entity-recognition-image,image-description")).getCacheKey(doc);
+        assertEquals(descriptionFirst, nerFirst);
+    }
+
+    /** The same value must not produce the same key whether it is passed as one option or another. */
+    @Test
+    public void shouldNotConfuseOptionsInCacheKey() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String asSimilarMetadata = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_SIMILAR_METADATA, "{}")).getCacheKey(doc);
+        String asExtraJsonPayload = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_EXTRA_JSON_PAYLOAD, "{}")).getCacheKey(doc);
+        assertNotEquals(asSimilarMetadata, asExtraJsonPayload);
+    }
+
+    /** An unchanged configuration must keep producing the same key so that cache hits keep working across nodes. */
+    @Test
+    public void shouldKeepCacheKeyStableForSameConfiguration() {
+        Map<String, String> options = Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description", ContentIntelligenceEnrichmentProvider.OPTION_EXTRA_JSON_PAYLOAD,
+                "{\"maxWordCount\":100}");
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String key = newProvider(options).getCacheKey(doc);
+        assertEquals(key, newProvider(options).getCacheKey(doc));
+        assertEquals(key, newProvider(options).getCacheKey(buildBlobTextFromDoc()));
+    }
+
+    @Test
+    public void shouldChangeCacheKeyWhenBlobDigestChanges() {
+        BlobTextFromDocument other = new BlobTextFromDocument();
+        other.setRepositoryName("test");
+        other.setId("doc-1");
+        other.addBlob("file:content", "img",
+                new BlobMetaImpl("test", "image/jpeg", "test-key", "other-digest", null, 1024L));
+        assertNotEquals(provider.getCacheKey(buildBlobTextFromDoc()), provider.getCacheKey(other));
+    }
+
+    /** Without blob digests there is nothing to cache on: the key must stay null, whatever the configuration. */
+    @Test
+    public void shouldReturnNullCacheKeyWhenNoBlobDigest() {
+        BlobTextFromDocument empty = new BlobTextFromDocument();
+        empty.setRepositoryName("test");
+        empty.setId("doc-1");
+        assertNull(provider.getCacheKey(empty));
+    }
+
+    /** The configuration is fingerprinted, so a verbose payload does not leak into or inflate the key. */
+    @Test
+    public void shouldNotEmbedRawConfigurationInCacheKey() {
+        String payload = "{\"maxWordCount\":100,\"padding\":\"" + "x".repeat(4096) + "\"}";
+        ContentIntelligenceEnrichmentProvider p = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_EXTRA_JSON_PAYLOAD, payload));
+        String key = p.getCacheKey(buildBlobTextFromDoc());
+        assertFalse(key.contains("maxWordCount"));
+        assertTrue(key.length() < 200);
     }
 
     /**
@@ -1120,6 +1230,12 @@ public class TestContentIntelligenceEnrichmentProvider {
         descriptor.kind = "/classification/imageLabels";
         descriptor.options = new HashMap<>(options);
         return descriptor;
+    }
+
+    protected ContentIntelligenceEnrichmentProvider newProvider(Map<String, String> options) {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        p.init(buildDescriptor(options));
+        return p;
     }
 
     /** Default builder: image blob, kept for backwards compatibility with the legacy image tests. */
