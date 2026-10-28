@@ -65,6 +65,7 @@ import org.nuxeo.runtime.api.Framework;
  */
 public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
+    // Options that shape the Knowledge Enrichment response must also be part of the fingerprint in getCacheKey.
     public static final String OPTION_CONFIG_NAME = "configName";
 
     public static final String OPTION_ACTIONS = "actions";
@@ -531,7 +532,8 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
         if (key == null) {
             return null;
         }
-        String config = String.join("\n", "configName=" + configName, "actions=" + String.join(",", actions),
+        String config = String.join("\n", "configName=" + configName,
+                "actions=" + String.join(",", actions.stream().sorted().toList()),
                 "similarMetadata=" + StringUtils.defaultString(similarMetadata),
                 "extraJsonPayload=" + StringUtils.defaultString(extraJsonPayload));
         return key + "_" + sha256Hex(config);

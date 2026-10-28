@@ -595,7 +595,7 @@ public class TestContentIntelligenceEnrichmentProvider {
         BlobTextFromDocument doc = buildBlobTextFromDoc();
         String key = provider.getCacheKey(doc);
         assertNotNull(key);
-        assertTrue(key.startsWith("ai.contentintelligence.testdigest"));
+        assertTrue(key.matches("ai\\.contentintelligence\\.testdigest_[a-f0-9]{64}"));
     }
 
     /**
@@ -641,6 +641,17 @@ public class TestContentIntelligenceEnrichmentProvider {
         String otherConfig = newProvider(
                 Map.of(ContentIntelligenceEnrichmentProvider.OPTION_CONFIG_NAME, "other")).getCacheKey(doc);
         assertNotEquals(defaultConfig, otherConfig);
+    }
+
+    /** Hyland CI returns one result block per action, so the order the actions are declared in must not matter. */
+    @Test
+    public void shouldIgnoreActionsOrderInCacheKey() {
+        BlobTextFromDocument doc = buildBlobTextFromDoc();
+        String descriptionFirst = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "image-description,named-entity-recognition-image")).getCacheKey(doc);
+        String nerFirst = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                "named-entity-recognition-image,image-description")).getCacheKey(doc);
+        assertEquals(descriptionFirst, nerFirst);
     }
 
     /** The same value must not produce the same key whether it is passed as one option or another. */
