@@ -28,13 +28,18 @@ import static org.nuxeo.ai.pipes.services.JacksonUtil.fromRecord;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toJsonString;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.toRecord;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
@@ -50,6 +55,7 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 
@@ -92,6 +98,27 @@ public class RecordsTest {
         assertNotNull(blob);
         assertEquals(7, blob.getLength());
         assertEquals(TEST_MIME_TYPE, blob.getMimeType());
+
+        // Async enrichments store the deserialized doc with Java serialization
+        BlobTextFromDocument stored = javaSerializeAndBack(andBack);
+        ManagedBlob storedBlob = stored.computePropertyBlobs().get(new PropertyType("file:content", "txt"));
+        assertNotNull(storedBlob);
+        assertEquals(blob.getKey(), storedBlob.getKey());
+        assertEquals(blob.getProviderId(), storedBlob.getProviderId());
+        assertEquals(blob.getDigest(), storedBlob.getDigest());
+        assertEquals(7, storedBlob.getLength());
+        assertEquals(TEST_MIME_TYPE, storedBlob.getMimeType());
+    }
+
+    protected static BlobTextFromDocument javaSerializeAndBack(BlobTextFromDocument doc)
+            throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(doc);
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
+            return (BlobTextFromDocument) ois.readObject();
+        }
     }
 
     @Test(expected = NuxeoException.class)

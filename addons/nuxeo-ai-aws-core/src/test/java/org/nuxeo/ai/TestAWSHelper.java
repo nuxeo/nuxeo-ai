@@ -19,13 +19,24 @@
 package org.nuxeo.ai;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.enrichment.FatalEnrichmentError;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
+import org.nuxeo.ecm.core.blob.ManagedBlob;
+import org.nuxeo.ecm.core.storage.sql.ImageHelperWithS3;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
 @RunWith(FeaturesRunner.class)
 @Features({ PlatformFeature.class })
@@ -41,5 +52,41 @@ public class TestAWSHelper {
                 AWSHelper.getInstance().getCredentialsProvider().resolveCredentials().accessKeyId());
         assertEquals("MY_XML_SECRET_KEY",
                 AWSHelper.getInstance().getCredentialsProvider().resolveCredentials().secretAccessKey());
+    }
+
+    @Test
+    public void testS3DetectionClassExists() throws ClassNotFoundException {
+        // S3BinaryManager is gone in LTS 2025, S3 support must be detected from S3BlobProvider
+        assertNotNull(Class.forName(AWSHelper.S3_BLOB_PROVIDER_NAME));
+    }
+
+    @Test(expected = ClassNotFoundException.class)
+    public void testS3BinaryManagerRemoved() throws ClassNotFoundException {
+        Class.forName("org.nuxeo.ecm.core.storage.sql.S3BinaryManager");
+    }
+
+    @Test
+    public void testAccessDeniedIsFatal() {
+        AwsServiceException accessDenied = AwsServiceException.builder()
+                                                              .awsErrorDetails(
+                                                                      AwsErrorDetails.builder()
+                                                                                     .errorCode("AccessDeniedException")
+                                                                                     .serviceName("Rekognition")
+                                                                                     .build())
+                                                              .build();
+        assertThrows(FatalEnrichmentError.class, () -> AWSHelper.handlingExceptions(() -> {
+            throw accessDenied;
+        }));
+        assertThrows(FatalEnrichmentError.class, () -> AWSHelper.handlingExceptions(() -> {
+            throw new NuxeoException(accessDenied);
+        }));
+    }
+
+    @Test
+    public void testNoVideoReferenceWithoutS3BlobProvider() {
+        ImageHelperWithS3 s3Helper = new ImageHelperWithS3();
+        assertNull(s3Helper.getVideo(null));
+        ManagedBlob blob = new BlobMetaImpl("test", "video/mp4", "aKey", "aDigest", null, 1L);
+        assertNull(s3Helper.getVideo(blob));
     }
 }
