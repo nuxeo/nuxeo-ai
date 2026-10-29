@@ -31,6 +31,7 @@ import org.nuxeo.ai.aws.dto.LabelsResult;
 import org.nuxeo.ai.aws.dto.RekognitionResult;
 import org.nuxeo.ai.aws.dto.TextDetectionResult;
 import org.nuxeo.ai.metrics.AWSMetrics;
+import org.nuxeo.ai.sns.NotificationService;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.runtime.api.Framework;
@@ -39,7 +40,24 @@ import org.nuxeo.runtime.model.DefaultComponent;
 
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
-import software.amazon.awssdk.services.rekognition.model.*;
+import software.amazon.awssdk.services.rekognition.model.DetectFacesRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectFacesResponse;
+import software.amazon.awssdk.services.rekognition.model.Image;
+import software.amazon.awssdk.services.rekognition.model.NotificationChannel;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesRequest;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesResponse;
+import software.amazon.awssdk.services.rekognition.model.SegmentType;
+import software.amazon.awssdk.services.rekognition.model.StartCelebrityRecognitionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartCelebrityRecognitionResponse;
+import software.amazon.awssdk.services.rekognition.model.StartContentModerationRequest;
+import software.amazon.awssdk.services.rekognition.model.StartContentModerationResponse;
+import software.amazon.awssdk.services.rekognition.model.StartFaceDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartFaceDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.StartLabelDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartLabelDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.StartSegmentDetectionRequest;
+import software.amazon.awssdk.services.rekognition.model.StartSegmentDetectionResponse;
+import software.amazon.awssdk.services.rekognition.model.Video;
 
 /**
  * Rekognition Service Implementation - NOW USES ABSTRACTION LAYER! NO AWS SDK IMPORTS! All AWS SDK dependencies are
@@ -119,6 +137,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         StartLabelDetectionRequest request = StartLabelDetectionRequest.builder()
                                                                        .video(video)
                                                                        .minConfidence(minConfidence)
+                                                                       .notificationChannel(getChannel())
                                                                        .build();
         StartLabelDetectionResponse response = rekognitionClient.startLabelDetection(request);
         return response.jobId();
@@ -259,7 +278,10 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
         }
-        StartFaceDetectionRequest request = StartFaceDetectionRequest.builder().video(video).build();
+        StartFaceDetectionRequest request = StartFaceDetectionRequest.builder()
+                                                                     .video(video)
+                                                                     .notificationChannel(getChannel())
+                                                                     .build();
         StartFaceDetectionResponse resp = rekognitionClient.startFaceDetection(request);
         return resp.jobId();
     }
@@ -271,7 +293,10 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
         }
-        StartCelebrityRecognitionRequest request = StartCelebrityRecognitionRequest.builder().video(video).build();
+        StartCelebrityRecognitionRequest request = StartCelebrityRecognitionRequest.builder()
+                                                                                   .video(video)
+                                                                                   .notificationChannel(getChannel())
+                                                                                   .build();
         StartCelebrityRecognitionResponse resp = rekognitionClient.startCelebrityRecognition(request);
         return resp.jobId();
     }
@@ -283,7 +308,10 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         if (video == null) {
             throw new NuxeoException("Blob is not a video");
         }
-        StartContentModerationRequest request = StartContentModerationRequest.builder().video(video).build();
+        StartContentModerationRequest request = StartContentModerationRequest.builder()
+                                                                             .video(video)
+                                                                             .notificationChannel(getChannel())
+                                                                             .build();
         StartContentModerationResponse resp = rekognitionClient.startContentModeration(request);
         return resp.jobId();
     }
@@ -298,9 +326,19 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         StartSegmentDetectionRequest request = StartSegmentDetectionRequest.builder()
                                                                            .video(video)
                                                                            .segmentTypes(segmentType)
+                                                                           .notificationChannel(getChannel())
                                                                            .build();
         StartSegmentDetectionResponse resp = rekognitionClient.startSegmentDetection(request);
         return resp.jobId();
+    }
+
+    protected NotificationChannel getChannel() {
+        NotificationService ns = Framework.getService(NotificationService.class);
+        String arn = (String) Framework.getProperties().get("nuxeo.ai.aws.rekognition.role.arn");
+        if (arn == null || arn.isBlank()) {
+            throw new NuxeoException("Missing Role ARN; Add `nuxeo.ai.aws.rekognition.role.arn` to nuxeo.conf");
+        }
+        return NotificationChannel.builder().snsTopicArn(ns.getTopicArnFor(DETECT_SNS_TOPIC)).roleArn(arn).build();
     }
 
     @Override
@@ -308,8 +346,8 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
         if (rekognitionClient == null) {
             synchronized (this) {
                 if (rekognitionClient == null) {
-                    rekognitionClient = Framework.getService(
-                            org.nuxeo.ai.aws.AWSClientFactory.class).getRekognitionClient();
+                    rekognitionClient = Framework.getService(org.nuxeo.ai.aws.AWSClientFactory.class)
+                                                 .getRekognitionClient();
                 }
             }
         }
@@ -326,16 +364,10 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
         // Check if it's an S3 reference
         if (image.s3Object() != null) {
-            return new RekognitionRequest.DetectFaces(
-                image.s3Object().bucket(),
-                image.s3Object().name(),
-                includeAttributes
-            );
+            return new RekognitionRequest.DetectFaces(image.s3Object().bucket(), image.s3Object().name(),
+                    includeAttributes);
         } else if (image.bytes() != null) {
-            return new RekognitionRequest.DetectFaces(
-                image.bytes().asByteArray(),
-                includeAttributes
-            );
+            return new RekognitionRequest.DetectFaces(image.bytes().asByteArray(), includeAttributes);
         } else {
             throw new NuxeoException("Image has neither S3 reference nor bytes data");
         }
@@ -352,18 +384,10 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
         // Check if it's an S3 reference
         if (image.s3Object() != null) {
-            return new RekognitionRequest.DetectLabels(
-                image.s3Object().bucket(),
-                image.s3Object().name(),
-                maxLabels,
-                minConfidence
-            );
+            return new RekognitionRequest.DetectLabels(image.s3Object().bucket(), image.s3Object().name(), maxLabels,
+                    minConfidence);
         } else if (image.bytes() != null) {
-            return new RekognitionRequest.DetectLabels(
-                image.bytes().asByteArray(),
-                maxLabels,
-                minConfidence
-            );
+            return new RekognitionRequest.DetectLabels(image.bytes().asByteArray(), maxLabels, minConfidence);
         } else {
             throw new NuxeoException("Image has neither S3 reference nor bytes data");
         }
@@ -378,14 +402,9 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
         // Check if it's an S3 reference
         if (image.s3Object() != null) {
-            return new RekognitionRequest.DetectText(
-                image.s3Object().bucket(),
-                image.s3Object().name()
-            );
+            return new RekognitionRequest.DetectText(image.s3Object().bucket(), image.s3Object().name());
         } else if (image.bytes() != null) {
-            return new RekognitionRequest.DetectText(
-                image.bytes().asByteArray()
-            );
+            return new RekognitionRequest.DetectText(image.bytes().asByteArray());
         } else {
             throw new NuxeoException("Image has neither S3 reference nor bytes data");
         }
