@@ -26,7 +26,7 @@
     <google.cloud.bom.version>26.90.0</google.cloud.bom.version>
     <grpc-netty.version>1.85.1</grpc-netty.version>
     <!-- JaCoCo Configuration -->
-    <jacoco.version>0.8.15</jacoco.version>
+    <jacoco.version>0.8.16</jacoco.version>
     <jacoco.aggregateReportDirectory>jacoco-aggregate</jacoco.aggregateReportDirectory>
     <!-- SonarCloud Configuration -->
     <sonar.organization>nuxeo</sonar.organization>
