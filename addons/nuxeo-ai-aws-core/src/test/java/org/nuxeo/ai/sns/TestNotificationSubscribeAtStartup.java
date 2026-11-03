@@ -17,6 +17,8 @@ package org.nuxeo.ai.sns;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.aws.AWSClientFactory;
@@ -31,7 +33,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
  * the subscription fails silently and Rekognition video callbacks never reach Nuxeo.
  */
 @RunWith(FeaturesRunner.class)
-@Features(PlatformFeature.class)
+@Features({ FakeSnsFeature.class, PlatformFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-config-valid-region.xml")
@@ -49,11 +51,12 @@ public class TestNotificationSubscribeAtStartup {
     }
 
     @Test
-    public void snsClientIsCreatedWhenSubscribingAtStartup() {
-        NotificationComponent notification = (NotificationComponent) Framework.getRuntime()
-                                                                              .getComponent(
-                                                                                      "org.nuxeo.ai.sns.NotificationService");
-        // start() subscribes to the test topic: the SNS client must have been created at that time
-        assertThat(notification.amazonSNS).isNotNull();
+    public void topicIsSubscribedAtStartup() {
+        assertThat(FakeSnsServer.getRequests()).hasSize(1);
+        Map<String, String> subscribe = FakeSnsServer.getRequests().get(0);
+        assertThat(subscribe).containsEntry("Action", "Subscribe")
+                             .containsEntry("TopicArn", "arn:aws:sns:us-east-1:783725821734:ai-rekognition-test-topic")
+                             .containsEntry("Protocol", "http");
+        assertThat(subscribe.get("Endpoint")).endsWith("/ai/test/endpoint");
     }
 }

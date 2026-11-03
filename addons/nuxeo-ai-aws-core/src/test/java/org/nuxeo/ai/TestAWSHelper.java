@@ -55,14 +55,15 @@ public class TestAWSHelper {
     }
 
     @Test
-    public void testS3DetectionClassExists() throws ClassNotFoundException {
-        // S3BinaryManager is gone in LTS 2025, S3 support must be detected from S3BlobProvider
-        assertNotNull(Class.forName(AWSHelper.S3_BLOB_PROVIDER_NAME));
+    @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-s3-enabled.xml")
+    public void testS3HelperCreatedWhenS3Enabled() {
+        // fresh instance, the AWSHelper singleton may have been created with another configuration
+        assertNotNull(new AWSHelper().s3Helper);
     }
 
-    @Test(expected = ClassNotFoundException.class)
-    public void testS3BinaryManagerRemoved() throws ClassNotFoundException {
-        Class.forName("org.nuxeo.ecm.core.storage.sql.S3BinaryManager");
+    @Test
+    public void testNoS3HelperWhenS3Disabled() {
+        assertNull(new AWSHelper().s3Helper);
     }
 
     @Test

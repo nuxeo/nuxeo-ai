@@ -24,23 +24,29 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ai.sns.NotificationComponent;
 import org.nuxeo.ai.sns.NotificationService;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.LogCaptureFeature;
+import org.nuxeo.runtime.test.runner.WithFrameworkProperty;
 
 /**
- * NXCON-300: Verifies that NotificationComponent handles topic subscription failures gracefully
- * when AWS is not configured. The test-aws-sns.xml registers a topic, triggering the subscribe()
- * path in start() which must catch the exception from the unavailable AWSClientFactory.
+ * NXCON-300: Verifies that NotificationComponent handles topic subscription failures gracefully when AWS is not
+ * configured. The test-aws-sns.xml registers a topic, triggering the subscribe() path in start() which must catch the
+ * exception from the unavailable AWSClientFactory.
  */
 @RunWith(FeaturesRunner.class)
-@Features(PlatformFeature.class)
+@Features({ PlatformFeature.class, LogCaptureFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-sns.xml")
 public class TestNotificationComponentGracefulDegradation {
+
+    @Inject
+    protected LogCaptureFeature.Result logResult;
 
     @BeforeClass
     public static void assumeNoAWSConfig() {
@@ -60,5 +66,21 @@ public class TestNotificationComponentGracefulDegradation {
     @Test
     public void topicArnIsStillRegistered() {
         assertThat(notificationService.getTopicArnFor("detect")).isNotNull();
+    }
+
+    @Test
+    @LogCaptureFeature.FilterOn(loggerClass = NotificationComponent.class, logLevel = "WARN")
+    public void subscriptionFailureIsWarnWhenVideoDisabled() {
+        ((NotificationComponent) notificationService).start(null);
+        logResult.assertHasEvent();
+    }
+
+    @Test
+    @WithFrameworkProperty(name = NotificationComponent.AWS_VIDEO_ENABLED, value = "true")
+    @LogCaptureFeature.FilterOn(loggerClass = NotificationComponent.class, logLevel = "ERROR")
+    public void subscriptionFailureIsErrorWhenVideoEnabled() {
+        // video results can't come back without the subscription
+        ((NotificationComponent) notificationService).start(null);
+        logResult.assertHasEvent();
     }
 }

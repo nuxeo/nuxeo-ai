@@ -57,6 +57,9 @@ public class AWSClientFactory extends DefaultComponent {
 
     private volatile boolean available;
 
+    // no lazy region resolution once stopped, to not create clients that would never be closed
+    private volatile boolean stopped;
+
     // Common configuration - resolved lazily or during start if AWS is configured
     private Region region;
 
@@ -69,6 +72,7 @@ public class AWSClientFactory extends DefaultComponent {
     @Override
     public void start(ComponentContext context) {
         super.start(context);
+        stopped = false;
         try {
             this.region = AWSHelper.getInstance().getRegion();
             this.available = true;
@@ -83,6 +87,23 @@ public class AWSClientFactory extends DefaultComponent {
     }
 
     /**
+     * Resolves the AWS region again if it wasn't available at start, e.g. when a client is requested before this
+     * component is started or once the region has been configured.
+     */
+    protected synchronized void resolveRegion() {
+        if (available || stopped) {
+            return;
+        }
+        try {
+            region = AWSHelper.getInstance().getRegion();
+            available = true;
+            log.info("AWS Client Factory resolved region: {}", region);
+        } catch (Exception e) {
+            log.debug("AWS region still not resolvable", e);
+        }
+    }
+
+    /**
      * @return {@code true} if the AWS region could be resolved and clients can be created
      */
     public boolean isAvailable() {
@@ -90,6 +111,9 @@ public class AWSClientFactory extends DefaultComponent {
     }
 
     private void checkAvailable() {
+        if (!available) {
+            resolveRegion();
+        }
         if (!available) {
             throw new NuxeoException("AWS AI services are not configured. "
                     + "Please set the AWS region via the AWS_REGION environment variable, "
@@ -101,22 +125,26 @@ public class AWSClientFactory extends DefaultComponent {
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
         super.stop(context);
-        // Clean up all clients
-        closeClient(comprehendClient, "Comprehend");
-        closeClient(rekognitionClient, "Rekognition");
-        closeClient(textractClient, "Textract");
-        closeClient(translateClient, "Translate");
-        closeClient(transcribeClient, "Transcribe");
-        closeClient(snsClient, "SNS");
+        // same lock as resolveRegion() and the client creation, so no client is created once cleaned up
+        synchronized (this) {
+            stopped = true;
+            // Clean up all clients
+            closeClient(comprehendClient, "Comprehend");
+            closeClient(rekognitionClient, "Rekognition");
+            closeClient(textractClient, "Textract");
+            closeClient(translateClient, "Translate");
+            closeClient(transcribeClient, "Transcribe");
+            closeClient(snsClient, "SNS");
 
-        // Reset references
-        comprehendClient = null;
-        rekognitionClient = null;
-        textractClient = null;
-        translateClient = null;
-        transcribeClient = null;
-        snsClient = null;
-        available = false;
+            // Reset references
+            comprehendClient = null;
+            rekognitionClient = null;
+            textractClient = null;
+            translateClient = null;
+            transcribeClient = null;
+            snsClient = null;
+            available = false;
+        }
     }
 
     /**
@@ -127,6 +155,8 @@ public class AWSClientFactory extends DefaultComponent {
         if (comprehendClient == null) {
             synchronized (this) {
                 if (comprehendClient == null) {
+                    // may have been stopped since the first check
+                    checkAvailable();
                     comprehendClient = ComprehendClient.builder()
                                                        .region(region)
                                                        .credentialsProvider(
@@ -147,6 +177,8 @@ public class AWSClientFactory extends DefaultComponent {
         if (rekognitionClient == null) {
             synchronized (this) {
                 if (rekognitionClient == null) {
+                    // may have been stopped since the first check
+                    checkAvailable();
                     rekognitionClient = RekognitionClient.builder()
                                                          .region(region)
                                                          .credentialsProvider(
@@ -167,6 +199,8 @@ public class AWSClientFactory extends DefaultComponent {
         if (textractClient == null) {
             synchronized (this) {
                 if (textractClient == null) {
+                    // may have been stopped since the first check
+                    checkAvailable();
                     textractClient = TextractClient.builder()
                                                    .region(region)
                                                    .credentialsProvider(
@@ -187,6 +221,8 @@ public class AWSClientFactory extends DefaultComponent {
         if (translateClient == null) {
             synchronized (this) {
                 if (translateClient == null) {
+                    // may have been stopped since the first check
+                    checkAvailable();
                     translateClient = TranslateClient.builder()
                                                      .region(region)
                                                      .credentialsProvider(
@@ -207,6 +243,8 @@ public class AWSClientFactory extends DefaultComponent {
         if (transcribeClient == null) {
             synchronized (this) {
                 if (transcribeClient == null) {
+                    // may have been stopped since the first check
+                    checkAvailable();
                     transcribeClient = TranscribeClient.builder()
                                                        .region(region)
                                                        .credentialsProvider(
@@ -227,6 +265,8 @@ public class AWSClientFactory extends DefaultComponent {
         if (snsClient == null) {
             synchronized (this) {
                 if (snsClient == null) {
+                    // may have been stopped since the first check
+                    checkAvailable();
                     snsClient = SnsClient.builder()
                                          .region(region)
                                          .credentialsProvider(AWSHelper.getInstance().getCredentialsProvider())

@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.AWSHelper;
+import org.nuxeo.ai.sns.FakeSnsFeature;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -50,7 +51,7 @@ import software.amazon.awssdk.services.rekognition.model.Video;
  * otherwise the results never reach Nuxeo.
  */
 @RunWith(FeaturesRunner.class)
-@Features(PlatformFeature.class)
+@Features({ FakeSnsFeature.class, PlatformFeature.class })
 @Deploy("org.nuxeo.runtime.aws")
 @Deploy("org.nuxeo.ai.aws.aws-core")
 @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-config-valid-region.xml")
@@ -125,6 +126,15 @@ public class TestRekognitionNotificationChannel {
     public void videoJobFailsWithoutRoleArn() {
         assertThatThrownBy(() -> rekognitionService.startLabelDetection(video, 0.5f)).isInstanceOf(
                 NuxeoException.class).hasMessageContaining("nuxeo.ai.aws.rekognition.role.arn");
+        assertThat(requests).isEmpty();
+    }
+
+    @Test
+    @WithFrameworkProperty(name = "nuxeo.ai.aws.rekognition.role.arn", value = ROLE_ARN)
+    @Deploy("org.nuxeo.ai.aws.aws-core:OSGI-INF/test-aws-sns-blank-topic.xml")
+    public void videoJobFailsWithoutTopicArn() {
+        assertThatThrownBy(() -> rekognitionService.startLabelDetection(video, 0.5f)).isInstanceOf(
+                NuxeoException.class).hasMessageContaining("nuxeo.enrichment.aws.sns.topic.arn");
         assertThat(requests).isEmpty();
     }
 

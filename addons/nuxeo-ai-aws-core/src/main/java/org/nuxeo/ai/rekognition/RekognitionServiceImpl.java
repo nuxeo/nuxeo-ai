@@ -21,6 +21,7 @@ package org.nuxeo.ai.rekognition;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ai.AWSHelper;
@@ -333,12 +334,15 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
     }
 
     protected NotificationChannel getChannel() {
-        NotificationService ns = Framework.getService(NotificationService.class);
-        String arn = (String) Framework.getProperties().get("nuxeo.ai.aws.rekognition.role.arn");
-        if (arn == null || arn.isBlank()) {
+        String arn = Framework.getProperty("nuxeo.ai.aws.rekognition.role.arn");
+        if (StringUtils.isBlank(arn)) {
             throw new NuxeoException("Missing Role ARN; Add `nuxeo.ai.aws.rekognition.role.arn` to nuxeo.conf");
         }
-        return NotificationChannel.builder().snsTopicArn(ns.getTopicArnFor(DETECT_SNS_TOPIC)).roleArn(arn).build();
+        String topicArn = Framework.getService(NotificationService.class).getTopicArnFor(DETECT_SNS_TOPIC);
+        if (StringUtils.isBlank(topicArn)) {
+            throw new NuxeoException("Missing SNS topic ARN; Add `nuxeo.enrichment.aws.sns.topic.arn` to nuxeo.conf");
+        }
+        return NotificationChannel.builder().snsTopicArn(topicArn).roleArn(arn).build();
     }
 
     @Override

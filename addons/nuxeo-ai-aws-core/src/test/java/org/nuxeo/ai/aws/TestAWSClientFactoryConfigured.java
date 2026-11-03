@@ -16,12 +16,16 @@
 package org.nuxeo.ai.aws;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.inject.Inject;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ai.sns.NotificationService;
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
@@ -57,6 +61,48 @@ public class TestAWSClientFactoryConfigured {
         assertThat(clientFactory.getTranslateClient()).isNotNull();
         assertThat(clientFactory.getTranscribeClient()).isNotNull();
         assertThat(clientFactory.getSnsClient()).isNotNull();
+    }
+
+    @Test
+    public void factoryResolvesRegionWhenClientRequestedBeforeStart() {
+        // e.g. a component with a lower start order asking for a client before the factory is started
+        AWSClientFactory notStarted = new AWSClientFactory();
+        assertThat(notStarted.isAvailable()).isFalse();
+        assertThat(notStarted.getSnsClient()).isNotNull();
+        assertThat(notStarted.isAvailable()).isTrue();
+    }
+
+    @Test
+    public void clientNotCreatedWhenStoppedWhileWaitingForCreation() throws InterruptedException {
+        AWSClientFactory factory = new AWSClientFactory();
+        assertThat(factory.getComprehendClient()).isNotNull(); // factory is now available
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread caller = new Thread(() -> {
+            try {
+                factory.getSnsClient();
+            } catch (NuxeoException e) {
+                error.set(e);
+            }
+        });
+        synchronized (factory) {
+            // the caller passes the availability check, then waits for the lock to create the client
+            caller.start();
+            long deadline = System.currentTimeMillis() + 5000;
+            while (caller.getState() != Thread.State.BLOCKED && System.currentTimeMillis() < deadline) {
+                Thread.sleep(10);
+            }
+            assertThat(caller.getState()).isEqualTo(Thread.State.BLOCKED);
+            factory.stop(null);
+        }
+        caller.join(5000);
+        assertThat(error.get()).isInstanceOf(NuxeoException.class);
+    }
+
+    @Test
+    public void stoppedFactoryDoesNotCreateClients() throws InterruptedException {
+        AWSClientFactory stopped = new AWSClientFactory();
+        stopped.stop(null);
+        assertThatThrownBy(stopped::getSnsClient).isInstanceOf(NuxeoException.class);
     }
 
     @Test

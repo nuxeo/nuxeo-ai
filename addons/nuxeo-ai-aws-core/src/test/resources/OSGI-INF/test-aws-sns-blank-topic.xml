@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.sns.test.blank-topic">
+
+  <require>org.nuxeo.ai.aws.sns.test</require>
+
+  <!-- same as nuxeo.enrichment.aws.sns.topic.arn left empty in nuxeo.conf -->
+  <extension target="org.nuxeo.ai.sns.NotificationService" point="topics">
+    <topic type="detect" topicArn="" path="/ai/test/endpoint"/>
+  </extension>
+
+</component>
