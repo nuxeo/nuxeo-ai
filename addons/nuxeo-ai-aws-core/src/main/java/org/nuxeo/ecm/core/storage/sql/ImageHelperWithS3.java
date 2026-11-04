@@ -18,9 +18,9 @@
  */
 package org.nuxeo.ecm.core.storage.sql;
 
-import java.util.function.BiFunction;
-
+import org.nuxeo.ecm.blob.s3.S3BlobKey;
 import org.nuxeo.ecm.blob.s3.S3BlobProvider;
+import org.nuxeo.ecm.blob.s3.S3BlobStoreConfiguration;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
@@ -42,26 +42,16 @@ public class ImageHelperWithS3 {
      * Gets the image from the S3BlobProvider as a reference to an S3 object
      */
     public Image getImage(ManagedBlob blob) {
-        software.amazon.awssdk.services.rekognition.model.S3Object s3Object = getS3Object(blob,
-                (provider,
-                        key) -> software.amazon.awssdk.services.rekognition.model.S3Object.builder()
-                                                                                          .bucket(bucketName(provider))
-                                                                                          .name(key)
-                                                                                          .build());
-        return s3Object != null ? Image.builder().s3Object(s3Object).build() : null;
+        S3BlobStoreConfiguration config = getConfiguration(blob);
+        return config != null ? getImage(config, blob.getKey()) : null;
     }
 
     /**
      * Gets the image from the S3BlobProvider as a reference to an S3 object
      */
     public Video getVideo(ManagedBlob blob) {
-        software.amazon.awssdk.services.rekognition.model.S3Object s3Object = getS3Object(blob,
-                (provider,
-                        key) -> software.amazon.awssdk.services.rekognition.model.S3Object.builder()
-                                                                                          .bucket(bucketName(provider))
-                                                                                          .name(key)
-                                                                                          .build());
-        return s3Object != null ? Video.builder().s3Object(s3Object).build() : null;
+        S3BlobStoreConfiguration config = getConfiguration(blob);
+        return config != null ? getVideo(config, blob.getKey()) : null;
     }
 
     /**
@@ -70,34 +60,59 @@ public class ImageHelperWithS3 {
      * @since 2.1.2
      */
     public Document getDocument(ManagedBlob blob) {
-        software.amazon.awssdk.services.textract.model.S3Object s3Object = getS3Object(blob,
-                (provider, key) -> software.amazon.awssdk.services.textract.model.S3Object.builder()
-                                                                                          .bucket(bucketName(provider))
-                                                                                          .name(key)
-                                                                                          .build());
-        return s3Object != null ? Document.builder().s3Object(s3Object).build() : null;
+        S3BlobStoreConfiguration config = getConfiguration(blob);
+        return config != null ? getDocument(config, blob.getKey()) : null;
+    }
+
+    protected Image getImage(S3BlobStoreConfiguration config, String blobKey) {
+        return Image.builder().s3Object(rekognitionS3Object(config, blobKey)).build();
+    }
+
+    protected Video getVideo(S3BlobStoreConfiguration config, String blobKey) {
+        return Video.builder().s3Object(rekognitionS3Object(config, blobKey)).build();
+    }
+
+    protected Document getDocument(S3BlobStoreConfiguration config, String blobKey) {
+        S3BlobKey s3Key = getS3Key(config, blobKey);
+        return Document.builder()
+                       .s3Object(software.amazon.awssdk.services.textract.model.S3Object.builder()
+                                                                                        .bucket(config.bucketName)
+                                                                                        .name(s3Key.bucketKey())
+                                                                                        .version(s3Key.versionId())
+                                                                                        .build())
+                       .build();
+    }
+
+    protected software.amazon.awssdk.services.rekognition.model.S3Object rekognitionS3Object(
+            S3BlobStoreConfiguration config, String blobKey) {
+        S3BlobKey s3Key = getS3Key(config, blobKey);
+        return software.amazon.awssdk.services.rekognition.model.S3Object.builder()
+                                                                         .bucket(config.bucketName)
+                                                                         .name(s3Key.bucketKey())
+                                                                         .version(s3Key.versionId())
+                                                                         .build();
     }
 
     /**
-     * Gets the S3Object from the S3BlobProvider
+     * Gets the key of the S3 object of a blob key, like the S3BlobStore does to read a blob: without the provider
+     * prefix, with the bucket prefix and sub directories, and with its version on a versioned bucket.
      */
-    public <R> R getS3Object(ManagedBlob blob, BiFunction<BlobProvider, String, R> s3ObjectSupplier) {
-        if (blob == null) {
+    protected S3BlobKey getS3Key(S3BlobStoreConfiguration config, String blobKey) {
+        int colon = blobKey.indexOf(':');
+        return new S3BlobKey(config, colon >= 0 ? blobKey.substring(colon + 1) : blobKey);
+    }
+
+    /**
+     * Gets the configuration of the S3BlobProvider of the blob
+     *
+     * @return the configuration, or {@code null} if the blob isn't stored with a S3BlobProvider
+     */
+    protected S3BlobStoreConfiguration getConfiguration(ManagedBlob blob) {
+        if (blob == null || blob.getKey() == null) {
             return null;
         }
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
-        if (provider instanceof S3BlobProvider) {
-            S3BlobProvider s3 = (S3BlobProvider) provider;
-            return s3ObjectSupplier.apply(s3, s3.config.bucketPrefix + blob.getKey());
-        }
-        return null;
-    }
-
-    public String bucketName(BlobProvider provider) {
-        if (provider instanceof S3BlobProvider) {
-            return ((S3BlobProvider) provider).config.bucketName;
-        }
-        return null;
+        return provider instanceof S3BlobProvider ? ((S3BlobProvider) provider).config : null;
     }
 
 }
