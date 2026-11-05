@@ -368,7 +368,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
         // Check if it's an S3 reference
         if (image.s3Object() != null) {
-            return new RekognitionRequest.DetectFaces(image.s3Object().bucket(), image.s3Object().name(),
+            return RekognitionRequest.DetectFaces.ofS3(image.s3Object().bucket(), image.s3Object().name(),
                     image.s3Object().version(), includeAttributes);
         } else if (image.bytes() != null) {
             return new RekognitionRequest.DetectFaces(image.bytes().asByteArray(), includeAttributes);
@@ -388,7 +388,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
         // Check if it's an S3 reference
         if (image.s3Object() != null) {
-            return new RekognitionRequest.DetectLabels(image.s3Object().bucket(), image.s3Object().name(),
+            return RekognitionRequest.DetectLabels.ofS3(image.s3Object().bucket(), image.s3Object().name(),
                     image.s3Object().version(), maxLabels, minConfidence);
         } else if (image.bytes() != null) {
             return new RekognitionRequest.DetectLabels(image.bytes().asByteArray(), maxLabels, minConfidence);
@@ -406,7 +406,7 @@ public class RekognitionServiceImpl extends DefaultComponent implements Rekognit
 
         // Check if it's an S3 reference
         if (image.s3Object() != null) {
-            return new RekognitionRequest.DetectText(image.s3Object().bucket(), image.s3Object().name(),
+            return RekognitionRequest.DetectText.ofS3(image.s3Object().bucket(), image.s3Object().name(),
                     image.s3Object().version());
         } else if (image.bytes() != null) {
             return new RekognitionRequest.DetectText(image.bytes().asByteArray());

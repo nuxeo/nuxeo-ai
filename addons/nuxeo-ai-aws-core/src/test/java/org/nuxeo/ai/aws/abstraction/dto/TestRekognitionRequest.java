@@ -34,7 +34,7 @@ public class TestRekognitionRequest {
         assertThat(s3.isS3Reference()).isTrue();
         assertThat(s3.s3Version()).isNull();
 
-        RekognitionRequest.DetectLabels versioned = new RekognitionRequest.DetectLabels("bucket", "key", "v7", 10,
+        RekognitionRequest.DetectLabels versioned = RekognitionRequest.DetectLabels.ofS3("bucket", "key", "v7", 10,
                 0.5f);
         assertThat(versioned.isS3Reference()).isTrue();
         assertThat(versioned.s3Version()).isEqualTo("v7");
@@ -51,7 +51,7 @@ public class TestRekognitionRequest {
         assertThat(s3.isS3Reference()).isTrue();
         assertThat(s3.s3Version()).isNull();
 
-        RekognitionRequest.DetectFaces versioned = new RekognitionRequest.DetectFaces("bucket", "key", "v7", true);
+        RekognitionRequest.DetectFaces versioned = RekognitionRequest.DetectFaces.ofS3("bucket", "key", "v7", true);
         assertThat(versioned.s3Version()).isEqualTo("v7");
         assertThat(versioned.includeAttributes()).isTrue();
     }
@@ -66,7 +66,36 @@ public class TestRekognitionRequest {
         assertThat(s3.isS3Reference()).isTrue();
         assertThat(s3.s3Version()).isNull();
 
-        RekognitionRequest.DetectText versioned = new RekognitionRequest.DetectText("bucket", "key", "v7");
+        RekognitionRequest.DetectText versioned = RekognitionRequest.DetectText.ofS3("bucket", "key", "v7");
         assertThat(versioned.s3Version()).isEqualTo("v7");
+    }
+
+    @Test
+    public void constructorsOfTheOldApiAreKept() throws NoSuchMethodException {
+        // callers compiled against these signatures must keep working
+        assertThat(RekognitionRequest.DetectLabels.class.getConstructor(byte[].class, String.class, String.class,
+                int.class, float.class)).isNotNull();
+        assertThat(RekognitionRequest.DetectFaces.class.getConstructor(byte[].class, String.class, String.class,
+                boolean.class)).isNotNull();
+        assertThat(RekognitionRequest.DetectText.class.getConstructor(byte[].class, String.class,
+                String.class)).isNotNull();
+    }
+
+    @Test
+    public void argumentsOfTheOldApiAreNotShifted() {
+        RekognitionRequest.DetectLabels labels = new RekognitionRequest.DetectLabels(null, "bucket", "key", 10, 0.5f);
+        assertThat(labels.s3Bucket()).isEqualTo("bucket");
+        assertThat(labels.s3Key()).isEqualTo("key");
+        assertThat(labels.s3Version()).isNull();
+
+        RekognitionRequest.DetectFaces faces = new RekognitionRequest.DetectFaces(null, "bucket", "key", true);
+        assertThat(faces.s3Bucket()).isEqualTo("bucket");
+        assertThat(faces.s3Key()).isEqualTo("key");
+        assertThat(faces.s3Version()).isNull();
+
+        RekognitionRequest.DetectText text = new RekognitionRequest.DetectText(null, "bucket", "key");
+        assertThat(text.s3Bucket()).isEqualTo("bucket");
+        assertThat(text.s3Key()).isEqualTo("key");
+        assertThat(text.s3Version()).isNull();
     }
 }

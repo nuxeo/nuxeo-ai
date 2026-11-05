@@ -16,17 +16,22 @@ public class RekognitionRequest {
 
     public static record DetectLabels(byte[] imageData, String s3Bucket, String s3Key, String s3Version, int maxLabels,
             float minConfidence) {
-        // convenience constructors preserving old API
+        // constructors preserving old API
+        public DetectLabels(byte[] imageData, String s3Bucket, String s3Key, int maxLabels, float minConfidence) {
+            this(imageData, s3Bucket, s3Key, null, maxLabels, minConfidence);
+        }
+
         public DetectLabels(byte[] imageData, int maxLabels, float minConfidence) {
-            this(imageData, null, null, null, maxLabels, minConfidence);
+            this(imageData, null, null, maxLabels, minConfidence);
         }
 
         public DetectLabels(String s3Bucket, String s3Key, int maxLabels, float minConfidence) {
-            this(s3Bucket, s3Key, null, maxLabels, minConfidence);
+            this(null, s3Bucket, s3Key, maxLabels, minConfidence);
         }
 
-        public DetectLabels(String s3Bucket, String s3Key, String s3Version, int maxLabels, float minConfidence) {
-            this(null, s3Bucket, s3Key, s3Version, maxLabels, minConfidence);
+        public static DetectLabels ofS3(String s3Bucket, String s3Key, String s3Version, int maxLabels,
+                float minConfidence) {
+            return new DetectLabels(null, s3Bucket, s3Key, s3Version, maxLabels, minConfidence);
         }
 
         public boolean isS3Reference() {
@@ -36,16 +41,21 @@ public class RekognitionRequest {
 
     public static record DetectFaces(byte[] imageData, String s3Bucket, String s3Key, String s3Version,
             boolean includeAttributes) {
+        // constructors preserving old API
+        public DetectFaces(byte[] imageData, String s3Bucket, String s3Key, boolean includeAttributes) {
+            this(imageData, s3Bucket, s3Key, null, includeAttributes);
+        }
+
         public DetectFaces(byte[] imageData, boolean includeAttributes) {
-            this(imageData, null, null, null, includeAttributes);
+            this(imageData, null, null, includeAttributes);
         }
 
         public DetectFaces(String s3Bucket, String s3Key, boolean includeAttributes) {
-            this(s3Bucket, s3Key, null, includeAttributes);
+            this(null, s3Bucket, s3Key, includeAttributes);
         }
 
-        public DetectFaces(String s3Bucket, String s3Key, String s3Version, boolean includeAttributes) {
-            this(null, s3Bucket, s3Key, s3Version, includeAttributes);
+        public static DetectFaces ofS3(String s3Bucket, String s3Key, String s3Version, boolean includeAttributes) {
+            return new DetectFaces(null, s3Bucket, s3Key, s3Version, includeAttributes);
         }
 
         public boolean isS3Reference() {
@@ -54,16 +64,21 @@ public class RekognitionRequest {
     }
 
     public static record DetectText(byte[] imageData, String s3Bucket, String s3Key, String s3Version) {
+        // constructors preserving old API
+        public DetectText(byte[] imageData, String s3Bucket, String s3Key) {
+            this(imageData, s3Bucket, s3Key, null);
+        }
+
         public DetectText(byte[] imageData) {
-            this(imageData, null, null, null);
+            this(imageData, null, null);
         }
 
         public DetectText(String s3Bucket, String s3Key) {
-            this(s3Bucket, s3Key, null);
+            this(null, s3Bucket, s3Key);
         }
 
-        public DetectText(String s3Bucket, String s3Key, String s3Version) {
-            this(null, s3Bucket, s3Key, s3Version);
+        public static DetectText ofS3(String s3Bucket, String s3Key, String s3Version) {
+            return new DetectText(null, s3Bucket, s3Key, s3Version);
         }
 
         public boolean isS3Reference() {
