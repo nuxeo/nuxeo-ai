@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ai.aws.AWSClientFactory;
@@ -52,6 +53,8 @@ public class NotificationComponent extends DefaultComponent implements Notificat
 
     public static final String TOPICS_XP = "topics";
 
+    public static final String AWS_VIDEO_ENABLED = "nuxeo.enrichment.aws.video";
+
     @Override
     public void registerContribution(Object contribution, String xp, ComponentInstance component) {
         if (TOPICS_XP.equals(xp)) {
@@ -72,7 +75,9 @@ public class NotificationComponent extends DefaultComponent implements Notificat
             } catch (URISyntaxException e) {
                 log.error("Failed to subscribe to {} with path {}", topic.getTopicArn(), topic.getPath(), e);
             } catch (Exception e) {
-                log.warn("Could not subscribe to SNS topic {} (AWS may not be configured): {}",
+                // video enrichment results only come back through this subscription
+                Level level = Framework.isBooleanPropertyTrue(AWS_VIDEO_ENABLED) ? Level.ERROR : Level.WARN;
+                log.log(level, "Could not subscribe to SNS topic {} (AWS may not be configured): {}",
                         topic.getTopicArn(), e.getMessage(), e);
             }
         });

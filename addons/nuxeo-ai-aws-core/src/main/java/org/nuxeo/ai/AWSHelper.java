@@ -64,7 +64,8 @@ public class AWSHelper {
 
     public static final String CONFIG_USE_S3 = "nuxeo.enrichment.aws.s3";
 
-    public static final String S3_MANAGER_NAME = "org.nuxeo.ecm.core.storage.sql.S3BinaryManager";
+    // S3BlobProvider is the S3 blob provider since LTS 2025, S3BinaryManager was removed
+    public static final String S3_BLOB_PROVIDER_NAME = "org.nuxeo.ecm.blob.s3.S3BlobProvider";
 
     public static final String NEW_LINE = "\n";
 
@@ -89,7 +90,7 @@ public class AWSHelper {
 
         ImageHelperWithS3 imageHelperWithS3;
         try {
-            Class.forName(S3_MANAGER_NAME);
+            Class.forName(S3_BLOB_PROVIDER_NAME);
             imageHelperWithS3 = Framework.getService(ConfigurationService.class).isBooleanFalse(CONFIG_USE_S3) ? null
                     : new ImageHelperWithS3();
         } catch (ClassNotFoundException e) {
@@ -111,9 +112,9 @@ public class AWSHelper {
     /**
      * A wrapper for enrichment that handles errors, deciding if they are fatal or not.
      * <p>
-     * Catches {@link SdkServiceException} directly, and also inspects the cause chain
-     * of any {@link RuntimeException} (e.g. {@link org.nuxeo.ecm.core.api.NuxeoException})
-     * in case an intermediate layer wrapped the original AWS SDK exception.
+     * Catches {@link SdkServiceException} directly, and also inspects the cause chain of any {@link RuntimeException}
+     * (e.g. {@link org.nuxeo.ecm.core.api.NuxeoException}) in case an intermediate layer wrapped the original AWS SDK
+     * exception.
      */
     public static <T> T handlingExceptions(Supplier<T> supplier) {
         try {
@@ -166,9 +167,10 @@ public class AWSHelper {
         if (e instanceof AwsServiceException) {
             String errorCode = ((AwsServiceException) e).awsErrorDetails().errorCode();
             String serviceName = ((AwsServiceException) e).awsErrorDetails().serviceName();
-            log.error("Fatal AWS error [{}] from service [{}]: {}. "
-                      + "Verify that the IAM role has the required permissions.",
-                      errorCode, serviceName, e.getMessage());
+            log.error(
+                    "Fatal AWS error [{}] from service [{}]: {}. "
+                            + "Verify that the IAM role has the required permissions.",
+                    errorCode, serviceName, e.getMessage());
         }
     }
 
