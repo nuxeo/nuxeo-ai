@@ -14,15 +14,19 @@ package org.nuxeo.ai.aws.abstraction.dto;
  */
 public class RekognitionRequest {
 
-    public static record DetectLabels(byte[] imageData, String s3Bucket, String s3Key, int maxLabels,
+    public static record DetectLabels(byte[] imageData, String s3Bucket, String s3Key, String s3Version, int maxLabels,
             float minConfidence) {
         // convenience constructors preserving old API
         public DetectLabels(byte[] imageData, int maxLabels, float minConfidence) {
-            this(imageData, null, null, maxLabels, minConfidence);
+            this(imageData, null, null, null, maxLabels, minConfidence);
         }
 
         public DetectLabels(String s3Bucket, String s3Key, int maxLabels, float minConfidence) {
-            this(null, s3Bucket, s3Key, maxLabels, minConfidence);
+            this(s3Bucket, s3Key, null, maxLabels, minConfidence);
+        }
+
+        public DetectLabels(String s3Bucket, String s3Key, String s3Version, int maxLabels, float minConfidence) {
+            this(null, s3Bucket, s3Key, s3Version, maxLabels, minConfidence);
         }
 
         public boolean isS3Reference() {
@@ -30,13 +34,18 @@ public class RekognitionRequest {
         }
     }
 
-    public static record DetectFaces(byte[] imageData, String s3Bucket, String s3Key, boolean includeAttributes) {
+    public static record DetectFaces(byte[] imageData, String s3Bucket, String s3Key, String s3Version,
+            boolean includeAttributes) {
         public DetectFaces(byte[] imageData, boolean includeAttributes) {
-            this(imageData, null, null, includeAttributes);
+            this(imageData, null, null, null, includeAttributes);
         }
 
         public DetectFaces(String s3Bucket, String s3Key, boolean includeAttributes) {
-            this(null, s3Bucket, s3Key, includeAttributes);
+            this(s3Bucket, s3Key, null, includeAttributes);
+        }
+
+        public DetectFaces(String s3Bucket, String s3Key, String s3Version, boolean includeAttributes) {
+            this(null, s3Bucket, s3Key, s3Version, includeAttributes);
         }
 
         public boolean isS3Reference() {
@@ -44,13 +53,17 @@ public class RekognitionRequest {
         }
     }
 
-    public static record DetectText(byte[] imageData, String s3Bucket, String s3Key) {
+    public static record DetectText(byte[] imageData, String s3Bucket, String s3Key, String s3Version) {
         public DetectText(byte[] imageData) {
-            this(imageData, null, null);
+            this(imageData, null, null, null);
         }
 
         public DetectText(String s3Bucket, String s3Key) {
-            this(null, s3Bucket, s3Key);
+            this(s3Bucket, s3Key, null);
+        }
+
+        public DetectText(String s3Bucket, String s3Key, String s3Version) {
+            this(null, s3Bucket, s3Key, s3Version);
         }
 
         public boolean isS3Reference() {

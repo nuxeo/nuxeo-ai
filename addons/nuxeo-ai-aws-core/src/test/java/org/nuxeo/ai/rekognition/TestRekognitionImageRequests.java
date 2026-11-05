@@ -84,7 +84,23 @@ public class TestRekognitionImageRequests {
         assertThat(requests).allSatisfy(request -> {
             assertThat(request).hasFieldOrPropertyWithValue("s3Bucket", "bucket");
             assertThat(request).hasFieldOrPropertyWithValue("s3Key", "prefix/imageKey");
+            assertThat(request).hasFieldOrPropertyWithValue("s3Version", null);
             assertThat(request).hasFieldOrPropertyWithValue("imageData", null);
+        });
+    }
+
+    @Test
+    public void versionOfS3ImageIsSentToRekognition() {
+        ImageAWSHelper.install(
+                Image.builder()
+                     .s3Object(S3Object.builder().bucket("bucket").name("prefix/imageKey").version("v7").build())
+                     .build());
+        callAllImageOperations();
+
+        assertThat(requests).hasSize(5);
+        assertThat(requests).allSatisfy(request -> {
+            assertThat(request).hasFieldOrPropertyWithValue("s3Key", "prefix/imageKey");
+            assertThat(request).hasFieldOrPropertyWithValue("s3Version", "v7");
         });
     }
 
