@@ -12,9 +12,11 @@
     <operation class="org.nuxeo.ai.auto.AutoPropertiesOperation"/>
   </extension>
 
-  <extension target="org.nuxeo.ecm.platform.audit.service.NXAuditEventsService" point="event">
-    <event name="AUTO_FILLED"/>
-    <event name="AUTO_CORRECTED"/>
+  <extension target="org.nuxeo.audit.service.AuditComponent" point="routes">
+    <route name="default">
+      <event name="AUTO_FILLED"/>
+      <event name="AUTO_CORRECTED"/>
+    </route>
   </extension>
 
 </component>
