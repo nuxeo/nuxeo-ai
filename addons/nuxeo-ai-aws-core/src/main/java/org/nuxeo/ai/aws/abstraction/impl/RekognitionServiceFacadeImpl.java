@@ -26,7 +26,14 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.services.rekognition.RekognitionClient;
-import software.amazon.awssdk.services.rekognition.model.*;
+import software.amazon.awssdk.services.rekognition.model.Attribute;
+import software.amazon.awssdk.services.rekognition.model.DetectFacesRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectLabelsRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectModerationLabelsRequest;
+import software.amazon.awssdk.services.rekognition.model.DetectTextRequest;
+import software.amazon.awssdk.services.rekognition.model.Image;
+import software.amazon.awssdk.services.rekognition.model.RecognizeCelebritiesRequest;
+import software.amazon.awssdk.services.rekognition.model.S3Object;
 
 /**
  * Implementation of RekognitionServiceFacade that isolates ALL AWS SDK dependencies. This is the ONLY class that
@@ -42,7 +49,7 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key(), request.s3Version());
 
             DetectLabelsRequest awsRequest = DetectLabelsRequest.builder()
                                                                 .image(image)
@@ -68,7 +75,7 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key(), request.s3Version());
 
             DetectFacesRequest.Builder awsRequestBuilder = DetectFacesRequest.builder().image(image);
 
@@ -92,7 +99,7 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key(), request.s3Version());
 
             DetectTextRequest awsRequest = DetectTextRequest.builder().image(image).build();
 
@@ -112,7 +119,7 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key(), request.s3Version());
 
             DetectModerationLabelsRequest awsRequest = DetectModerationLabelsRequest.builder()
                                                                                     .image(image)
@@ -136,7 +143,7 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
             AWSClientFactory clientFactory = Framework.getService(AWSClientFactory.class);
             RekognitionClient client = clientFactory.getRekognitionClient();
 
-            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key());
+            Image image = buildImage(request.imageData(), request.s3Bucket(), request.s3Key(), request.s3Version());
 
             RecognizeCelebritiesRequest awsRequest = RecognizeCelebritiesRequest.builder().image(image).build();
 
@@ -153,11 +160,11 @@ public class RekognitionServiceFacadeImpl extends DefaultComponent implements Re
     /**
      * Helper method to build AWS SDK Image object from our abstraction
      */
-    private Image buildImage(byte[] imageData, String s3Bucket, String s3Key) {
+    static Image buildImage(byte[] imageData, String s3Bucket, String s3Key, String s3Version) {
         if (imageData != null) {
             return Image.builder().bytes(SdkBytes.fromByteArray(imageData)).build();
         } else if (s3Bucket != null && s3Key != null) {
-            S3Object s3Object = S3Object.builder().bucket(s3Bucket).name(s3Key).build();
+            S3Object s3Object = S3Object.builder().bucket(s3Bucket).name(s3Key).version(s3Version).build();
             return Image.builder().s3Object(s3Object).build();
         } else {
             throw new NuxeoException("Either image data or S3 reference must be provided");

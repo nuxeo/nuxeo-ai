@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.aws.test.s3-enabled">
+
+  <require>org.nuxeo.ai.aws.test</require>
+
+  <extension target="org.nuxeo.runtime.ConfigurationService" point="configuration">
+    <property name="nuxeo.enrichment.aws.s3">true</property>
+  </extension>
+
+</component>

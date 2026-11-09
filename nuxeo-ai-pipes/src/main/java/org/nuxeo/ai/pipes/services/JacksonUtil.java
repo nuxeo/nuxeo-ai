@@ -20,19 +20,17 @@ package org.nuxeo.ai.pipes.services;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.ecm.core.event.Event;
 import org.nuxeo.ecm.core.event.impl.DocumentEventContext;
@@ -122,9 +120,7 @@ public class JacksonUtil {
             return Class.forName("software.amazon.awssdk.core.SdkPojo");
         } catch (ClassNotFoundException primary) {
             try {
-                return Thread.currentThread()
-                             .getContextClassLoader()
-                             .loadClass("software.amazon.awssdk.core.SdkPojo");
+                return Thread.currentThread().getContextClassLoader().loadClass("software.amazon.awssdk.core.SdkPojo");
             } catch (Exception secondary) {
                 return null;
             }
@@ -329,58 +325,14 @@ public class JacksonUtil {
         }
     }
 
-    // Custom deserializer for ManagedBlob creating a lightweight dynamic proxy exposing metadata
+    // Custom deserializer for ManagedBlob creating a serializable BlobMetaImpl exposing metadata,
+    // it must stay serializable as async enrichments store it in a KeyValueStore
     public static class ManagedBlobDeserializer extends JsonDeserializer<ManagedBlob> {
         @Override
         public ManagedBlob deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode node = p.getCodec().readTree(p);
-            final String mimeType = text(node, "mimeType");
-            final String encoding = text(node, "encoding");
-            final String digest = text(node, "digest");
-            final String providerId = text(node, "providerId");
-            final String key = text(node, "key");
-            final long length = longVal(node, "length");
-            InvocationHandler handler = (proxy, method, args) -> {
-                switch (method.getName()) {
-                    case "getMimeType":
-                        return mimeType;
-                    case "getEncoding":
-                        return encoding;
-                    case "getDigest":
-                        return digest;
-                    case "getProviderId":
-                        return providerId;
-                    case "getKey":
-                        return key;
-                    case "getLength":
-                        return length;
-                    case "toString":
-                        return "ManagedBlob{" + key + "," + mimeType + "," + length + "}";
-                    case "equals":
-                        if (args != null && args.length == 1 && args[0] != null
-                                && Proxy.isProxyClass(args[0].getClass())) {
-                            // Compare metadata of other proxy
-                            Object other = args[0];
-                            try {
-                                String otherKey = (String) other.getClass().getMethod("getKey").invoke(other);
-                                String otherDigest = (String) other.getClass().getMethod("getDigest").invoke(other);
-                                Long otherLength = (Long) other.getClass().getMethod("getLength").invoke(other);
-                                return Objects.equals(key, otherKey) && Objects.equals(digest, otherDigest)
-                                        && Objects.equals(length, otherLength);
-                            } catch (Exception ignore) {
-                                // Ignore reflection exceptions - fall through to standard equals comparison
-                            }
-                        }
-                        return proxy == args[0];
-                    case "hashCode":
-                        return Objects.hash(key, digest, length);
-                    default:
-                        // Unsupported operations return null
-                        return null;
-                }
-            };
-            return (ManagedBlob) Proxy.newProxyInstance(ManagedBlob.class.getClassLoader(),
-                    new Class[] { ManagedBlob.class }, handler);
+            return new BlobMetaImpl(text(node, "providerId"), text(node, "mimeType"), text(node, "key"),
+                    text(node, "digest"), text(node, "encoding"), longVal(node, "length"));
         }
 
         private String text(JsonNode node, String field) {
