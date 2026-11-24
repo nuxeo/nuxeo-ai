@@ -20,7 +20,7 @@ https://github.com/nuxeo/nuxeo-ai/blob/master/nuxeo-ai-core/src/main/java/org/nu
 See [Custom enrichment services](https://github.com/nuxeo/nuxeo-ai#custom-enrichment-services).
 
 To enrich documents in a nuxeo-stream the enrichment service needs to be registered as a Stream processor.
-See [Enrichment stream processor](https://github.com/nuxeo/nuxeo-ai#enrichment-stream-processing).
+See[Enrichment stream processor](https://github.com/nuxeo/nuxeo-ai#enrichment-stream-processing).
 
 # License
 
