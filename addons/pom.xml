@@ -12,7 +12,7 @@
   <description>Nuxeo AI Addons parent POM</description>
 
   <properties>
-    <nuxeo.content.intelligence.connector.version>2025.0.0</nuxeo.content.intelligence.connector.version>
+    <cic-java-sdk.version>1.1.0</cic-java-sdk.version>
   </properties>
 
   <modules>
@@ -50,9 +50,14 @@
         <version>${nuxeo.ai.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.nuxeo.content.intelligence</groupId>
-        <artifactId>nuxeo-content-intelligence-connector-core</artifactId>
-        <version>${nuxeo.content.intelligence.connector.version}</version>
+        <groupId>org.hyland.sdk</groupId>
+        <artifactId>cic-ke</artifactId>
+        <version>${cic-java-sdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hyland.sdk</groupId>
+        <artifactId>cic-http-client-jackson2</artifactId>
+        <version>${cic-java-sdk.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -29,7 +29,7 @@
 </#list>
 <component name="org.nuxeo.ai.contentintelligence.config" version="1.0">
   <require>org.nuxeo.ai.services.AIComponent</require>
-  <require>org.nuxeo.hyland.content.intelligence.HylandKEService</require>
+  <require>org.nuxeo.ai.contentintelligence.ContentIntelligenceService</require>
   <require>org.nuxeo.ai.Pipeline.defaultConfig</require>
 
   <!-- ============================================================ -->

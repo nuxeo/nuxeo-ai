@@ -24,8 +24,14 @@
       <artifactId>nuxeo-core-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.nuxeo.content.intelligence</groupId>
-      <artifactId>nuxeo-content-intelligence-connector-core</artifactId>
+      <groupId>org.hyland.sdk</groupId>
+      <artifactId>cic-ke</artifactId>
+    </dependency>
+    <dependency>
+      <!-- provides the ServiceLoader JSON SerializerFactory of the SDK: without it every call fails with "No CICReader found" -->
+      <groupId>org.hyland.sdk</groupId>
+      <artifactId>cic-http-client-jackson2</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.nuxeo.ecm.platform</groupId>
@@ -34,11 +40,6 @@
     </dependency>
 
     <!-- Test dependencies -->
-    <dependency>
-      <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock-standalone</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.nuxeo.ecm.platform</groupId>
       <artifactId>nuxeo-platform-test</artifactId>
