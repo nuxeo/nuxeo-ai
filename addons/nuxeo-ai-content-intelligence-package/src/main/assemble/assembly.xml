@@ -6,7 +6,7 @@
   <target name="build" description="Build Nuxeo Package">
     <property name="outdir" value="${maven.project.build.directory}"/>
     <!-- Include your artifacts in the graph adding your groupId to groupPrefixes -->
-    <artifact:nuxeo-expand includeTestScope="true" groupPrefixes="org.nuxeo,org.nuxeo.ai,org.nuxeo.content.intelligence"/>
+    <artifact:nuxeo-expand includeTestScope="true" groupPrefixes="org.nuxeo,org.nuxeo.ai"/>
     <artifact:print output="${outdir}/nuxeo-ai-content-intelligence-artifacts.properties" mode="sdk"/>
     <artifact:print output="${outdir}/nuxeo-ai-content-intelligence-test-artifacts.properties" mode="sdk" scopes="test"/>
     <!-- Prints the graph for debugging purpose -->
@@ -40,9 +40,8 @@
         <includes>
           <artifact groupId="org.nuxeo*"/>
           <artifact groupId="nuxeo-studio"/>
-          <!-- Include AI and Content Intelligence artifacts -->
+          <!-- Include AI artifacts -->
           <artifact groupId="org.nuxeo.ai*"/>
-          <artifact groupId="org.nuxeo.content.intelligence*"/>
         </includes>
         <excludes>
           <artifact groupId="${maven.project.groupId}" artifactId="${maven.project.artifactId}"
@@ -68,7 +67,6 @@
           <artifact groupId="nuxeo-studio"/>
           <!-- Filter out first-party artifacts (re-added via groupId filters above) -->
           <artifact groupId="org.nuxeo.ai*"/>
-          <artifact groupId="org.nuxeo.content.intelligence*"/>
         </excludes>
       </artifact:set>
     </copy>

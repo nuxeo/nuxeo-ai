@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.contentintelligence.test.knowledgeEnrichment">
+
+  <extension target="org.nuxeo.ai.contentintelligence.ContentIntelligenceService" point="knowledgeEnrichment">
+    <knowledgeEnrichment>
+      <name>other</name>
+      <authenticationBaseUrl>http://localhost:1/auth</authenticationBaseUrl>
+      <baseUrl>http://localhost:1/ke</baseUrl>
+      <clientId>client</clientId>
+      <clientSecret>secret</clientSecret>
+    </knowledgeEnrichment>
+  </extension>
+
+</component>

@@ -7,12 +7,15 @@ nuxeo.hyland.cic.auth.baseUrl=
 nuxeo.hyland.cic.contextEnrichment.baseUrl=
 nuxeo.hyland.cic.enrichment.clientId=
 nuxeo.hyland.cic.enrichment.clientSecret=
+# Optional OAuth settings of the client credentials (defaults shown).
+#nuxeo.hyland.cic.enrichment.auth.grantType=client_credentials
+#nuxeo.hyland.cic.enrichment.auth.scope=environment_authorization
 
 # Hyland Content Intelligence result-polling budget.
-# The upstream connector defaults to ~10 tries x ~3 s = ~30 s, which is fine for image-* actions but routinely
+# A ~30 s budget is fine for image-* actions but routinely
 # too short for the text-* actions (text-summarization / named-entity-recognition-text)
-# on PDF / DOCX / XLSX / PPTX / TXT inputs, where Hyland CI processing typically takes 60-120 s. We raise the
-# budget here to 60 x 3 s = 180 s so document pipelines do not fall off the polling cliff and return PROCESSING.
+# on PDF / DOCX / XLSX / PPTX / TXT inputs, where Hyland CI processing typically takes 60-120 s. The budget is
+# 60 x 3 s = 180 s so document pipelines do not fall off the polling cliff and return PROCESSING.
 # Any deployment may override these in nuxeo.conf if their workload needs a different envelope.
 nuxeo.hyland.cic.pullResultsMaxTries=60
 nuxeo.hyland.cic.pullResultsSleepInterval=3000
