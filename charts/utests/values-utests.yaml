@@ -50,28 +50,6 @@ nuxeo:
       effect: NoSchedule
     nodeSelector:
       team: ai
-  elasticsearch:
-    deploy: true
-    persistence:
-      enabled: false
-    labels:
-      branch: "$BRANCH_NAME_LABEL"
-      resource: pod
-      team: ai
-      usage: test
-    service:
-      labels:
-        branch: "$BRANCH_NAME_LABEL"
-        resource: service
-        team: ai
-        usage: test
-    tolerations:
-    - key: team
-      operator: Equal
-      value: ai
-      effect: NoSchedule
-    nodeSelector:
-      team: ai
   kafka:
     deploy: true
     persistence:
@@ -116,8 +94,37 @@ nuxeo:
       nodeSelector:
         team: ai
 
+# LTS 2027 dropped Elasticsearch / OpenSearch 1: tests use an external OpenSearch 3 (same version as nuxeo-lts CI)
+opensearch:
+  singleNode: true
+  image:
+    tag: "3.7.0"
+  persistence:
+    enabled: false
+  opensearchJavaOpts: "-Xms1g -Xmx1g"
+  config:
+    opensearch.yml:
+      plugins:
+        security:
+          disabled: true
+  extraEnvs:
+  - name: DISABLE_INSTALL_DEMO_CONFIG
+    value: "true"
+  labels:
+    branch: "$BRANCH_NAME_LABEL"
+    resource: pod
+    team: ai
+    usage: test
+  tolerations:
+  - key: team
+    operator: Equal
+    value: ai
+    effect: NoSchedule
+  nodeSelector:
+    team: ai
+
 tags:
   mongodb: true
-  elasticsearch: true
+  elasticsearch: false
   kafka: true
   redis: false

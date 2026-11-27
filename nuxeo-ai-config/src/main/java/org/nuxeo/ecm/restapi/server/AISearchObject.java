@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import jakarta.annotation.Nonnull;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -39,7 +40,6 @@ import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.nuxeo.ai.services.SearchAdapterService;
 import org.nuxeo.ai.services.SearchOptions;
 import org.nuxeo.ai.services.SearchSummary;
@@ -138,7 +138,7 @@ public class AISearchObject extends AbstractResource<ResourceTypeImpl> {
         return out.toString();
     }
 
-    @NotNull
+    @Nonnull
     protected String filterEventIds(String eventIds) {
         if (eventIds == null || eventIds.isEmpty()) {
             return DEFAULT_EVENT_IDS;

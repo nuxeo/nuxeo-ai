@@ -20,6 +20,10 @@ import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DESC
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.ALL_PROVIDER_NAME;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DOCUMENTS_PROVIDER_NAME;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.IMAGE_PROVIDER_NAME;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optArray;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optBoolean;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optObject;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.readObject;
 import static org.nuxeo.ai.functions.RaiseEnrichmentEvent.ENRICHMENT_METADATA;
 
 import java.io.IOException;
@@ -29,9 +33,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.services.AIComponent;
 import org.nuxeo.ecm.core.api.Blob;
@@ -46,6 +47,11 @@ import org.nuxeo.ecm.core.event.PostCommitEventListener;
 import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Persists the Hyland CI long-form description ({@code imageDescription} / {@code textSummary}) to
@@ -161,7 +167,7 @@ public class ContentIntelligenceDescriptionListener implements PostCommitEventLi
 
         try {
             return parseDescription(blob.getString());
-        } catch (IOException | JSONException e) {
+        } catch (IOException e) {
             log.warn("Unable to parse raw enrichment blob for {} / {}: {}", metadata.getModelName(), rawKey,
                     e.getMessage());
             return null;
@@ -176,31 +182,34 @@ public class ContentIntelligenceDescriptionListener implements PostCommitEventLi
         if (StringUtils.isBlank(rawJson)) {
             return null;
         }
-        JSONObject root;
+        ObjectNode root;
         try {
-            root = new JSONObject(rawJson);
-        } catch (JSONException e) {
-            log.warn("Malformed JSON in raw enrichment blob, cannot extract description: {}", e.getMessage());
+            root = readObject(rawJson);
+        } catch (JsonProcessingException e) {
+            log.warn("Malformed JSON in raw enrichment blob, cannot extract description: {}", e.getOriginalMessage());
             return null;
         }
-        JSONObject response = root.optJSONObject("response");
-        JSONArray results = response != null ? response.optJSONArray("results") : root.optJSONArray("results");
+        if (root == null) {
+            log.warn("Raw enrichment blob is not a JSON object, cannot extract description");
+            return null;
+        }
+        ObjectNode response = optObject(root, "response");
+        ArrayNode results = response != null ? optArray(response, "results") : optArray(root, "results");
         if (results == null) {
             return null;
         }
-        for (int i = 0; i < results.length(); i++) {
-            JSONObject entry = results.optJSONObject(i);
-            if (entry == null) {
+        for (JsonNode item : results) {
+            if (!(item instanceof ObjectNode entry)) {
                 continue;
             }
             for (String actionKey : DESCRIPTION_ACTION_KEYS) {
-                JSONObject action = entry.optJSONObject(actionKey);
-                if (action == null || !action.optBoolean("isSuccess", false)) {
+                ObjectNode action = optObject(entry, actionKey);
+                if (action == null || !optBoolean(action, "isSuccess", false)) {
                     continue;
                 }
-                Object result = action.opt("result");
-                if (result instanceof String value && StringUtils.isNotBlank(value)) {
-                    return value.trim();
+                JsonNode result = action.get("result");
+                if (result != null && result.isTextual() && StringUtils.isNotBlank(result.textValue())) {
+                    return result.textValue().trim();
                 }
             }
         }

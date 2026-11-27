@@ -259,7 +259,6 @@ public class DocMetadataServiceImpl extends DefaultComponent implements DocMetad
         DocumentEventContext ctx = new DocumentEventContext(doc.getCoreSession(), doc.getCoreSession().getPrincipal(),
                 doc);
         ctx.setProperty(CoreEventConstants.REPOSITORY_NAME, doc.getRepositoryName());
-        ctx.setProperty(CoreEventConstants.SESSION_ID, doc.getSessionId());
 
         String paths = null;
         if (xPaths != null && !xPaths.isEmpty()) {

@@ -62,7 +62,6 @@ public class RaiseEnrichmentEvent extends AbstractEnrichmentConsumer implements 
         TransactionHelper.runInTransaction(() -> CoreInstance.doPrivileged(metadata.context.repositoryName, session -> {
             EventContextImpl ctx = getEventContext(metadata, session);
             ctx.setProperty(CoreEventConstants.REPOSITORY_NAME, metadata.context.repositoryName);
-            ctx.setProperty(CoreEventConstants.SESSION_ID, session.getSessionId());
             ctx.setProperty(CATEGORY, DocumentEventCategories.EVENT_DOCUMENT_CATEGORY);
             ctx.setProperty(ENRICHMENT_METADATA, metadata);
             Event event = ctx.newEvent(eventName);

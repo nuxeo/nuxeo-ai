@@ -4,13 +4,20 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>nuxeo-ai-addons</artifactId>
-    <version>5.0.5-SNAPSHOT</version>
+    <version>6.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-content-intelligence-core</artifactId>
   <name>Nuxeo AI Content Intelligence core</name>
   <description>Nuxeo AI enrichment provider using Hyland Content Intelligence Knowledge Enrichment APIs</description>
 
   <dependencies>
+    <dependency>
+      <!-- only for the connector ServiceCallResult constructors used by the tests (NXCON-475) -->
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20250107</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.nuxeo.ai</groupId>
       <artifactId>nuxeo-ai-pipes</artifactId>

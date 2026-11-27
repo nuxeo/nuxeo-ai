@@ -112,7 +112,7 @@ public class ImageHelperWithS3 {
             return null;
         }
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider(blob.getProviderId());
-        return provider instanceof S3BlobProvider ? ((S3BlobProvider) provider).config : null;
+        return provider instanceof S3BlobProvider ? ((S3BlobProvider) provider).getConfig() : null;
     }
 
 }

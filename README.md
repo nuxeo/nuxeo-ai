@@ -450,6 +450,7 @@ runs the `custom1` enrichment service on each record and sends the result to the
 
 Nuxeo AI adds additional metrics to the
 standard [Nuxeo Metrics reporting](https://doc.nuxeo.com/nxdoc/metrics-and-monitoring/#metrics).
+Since LTS 2027 their Prometheus names change, see [PROMETHEUS.md](PROMETHEUS.md).
 
 | Metric name | Metric
 | --- | --- |
