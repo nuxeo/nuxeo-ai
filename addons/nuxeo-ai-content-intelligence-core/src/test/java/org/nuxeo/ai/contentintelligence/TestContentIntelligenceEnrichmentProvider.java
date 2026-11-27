@@ -28,7 +28,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -62,6 +65,9 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.hyland.content.intelligence.http.ServiceCallResult;
 import org.nuxeo.hyland.content.intelligence.service.enrichment.HylandKEService;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
  * Unit tests for {@link ContentIntelligenceEnrichmentProvider}. The HTTP surface is owned by the
  * upstream Content Intelligence connector; here we focus on the response-to-metadata mapping and
@@ -69,6 +75,11 @@ import org.nuxeo.hyland.content.intelligence.service.enrichment.HylandKEService;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TestContentIntelligenceEnrichmentProvider {
+
+    /** Raw (unwrapped) Knowledge Enrichment response, for the 3-arg ServiceCallResult constructor. */
+    public static final String SIMPLE_NER_RESPONSE = "{\"id\":\"j\",\"status\":\"SUCCESS\","
+            + "\"results\":[{\"objectKey\":\"ok1\","
+            + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":[\"Paris\"]}}]}";
 
     public static final String SUCCESS_RESPONSE = "{"
             + "\"responseCode\":200,"
@@ -348,8 +359,8 @@ public class TestContentIntelligenceEnrichmentProvider {
      */
     @Test
     public void shouldSummarizeActionErrorsFromFailureResponse() {
-        org.json.JSONObject body = new org.json.JSONObject(FAILURE_RESPONSE_WITH_ACTION_ERRORS);
-        org.json.JSONObject response = body.getJSONObject("response");
+        ObjectNode body = json(FAILURE_RESPONSE_WITH_ACTION_ERRORS);
+        ObjectNode response = (ObjectNode) body.get("response");
 
         String summary = provider.summarizeActionErrors(response);
 
@@ -365,8 +376,8 @@ public class TestContentIntelligenceEnrichmentProvider {
      */
     @Test
     public void shouldReturnEmptySummaryWhenNoActionErrorsPresent() {
-        org.json.JSONObject body = new org.json.JSONObject(PROCESSING_RESPONSE);
-        org.json.JSONObject response = body.getJSONObject("response");
+        ObjectNode body = json(PROCESSING_RESPONSE);
+        ObjectNode response = (ObjectNode) body.get("response");
 
         assertEquals("", provider.summarizeActionErrors(response));
     }
@@ -386,7 +397,7 @@ public class TestContentIntelligenceEnrichmentProvider {
                 .append("\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}");
         }
         json.append("}]}");
-        org.json.JSONObject response = new org.json.JSONObject(json.toString());
+        ObjectNode response = json(json.toString());
 
         String summary = provider.summarizeActionErrors(response);
 
@@ -535,6 +546,66 @@ public class TestContentIntelligenceEnrichmentProvider {
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
+    }
+
+    /**
+     * The connector re-serializes the response for the raw blob; when that fails the response is dropped like an
+     * unparseable one instead of surfacing as a (retried) call failure.
+     */
+    @Test
+    public void shouldReturnEmptyWhenRawJsonSerializationFails() throws IOException {
+        ServiceCallResult result = spy(new ServiceCallResult(SIMPLE_NER_RESPONSE, 200, "OK"));
+        doThrow(new NuxeoException("boom")).when(result).toJsonString();
+        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
+                nullable(String.class), nullable(String.class))).thenReturn(result);
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(0, metadata.size());
+        assertEquals(0, rawBlobsSaved.get());
+    }
+
+    /** Lenient syntax accepted by org.json (and by the connector upstream) must still be interpreted. */
+    @Test
+    public void shouldAcceptTrailingCommaLikeOrgJson() throws IOException {
+        String raw = "{\"id\":\"j\",\"status\":\"SUCCESS\",\"results\":[{\"objectKey\":\"ok1\","
+                + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":[\"Paris\",\"Rome\",]}}]}";
+        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
+                nullable(String.class), nullable(String.class))).thenReturn(new ServiceCallResult(raw, 200, "OK"));
+
+        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        assertEquals(1, metadata.size());
+        assertEquals(List.of("Paris", "Rome"),
+                valuesOf(metadata.iterator().next().getLabels(), "namedEntityImage"));
+        assertEquals(1, rawBlobsSaved.get());
+    }
+
+    /** Suggestions and their values follow the response document order. */
+    @Test
+    public void shouldKeepDocumentOrderForSuggestions() {
+        ObjectNode entry = json("{\"objectKey\":\"ok1\","
+                + "\"namedEntityText\":{\"isSuccess\":true,"
+                + "\"result\":{\"persons\":[\"Zoe\"],\"organisations\":[\"Acme\"]}},"
+                + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":{\"locations\":[\"paris\"]}},"
+                + "\"keywords\":{\"isSuccess\":true,\"result\":[\"Paris\"]}}");
+
+        List<LabelSuggestion> suggestions = provider.toLabelSuggestions(entry);
+
+        assertEquals(List.of("namedEntityText", "namedEntityImage", "keywords"),
+                suggestions.stream().map(LabelSuggestion::getProperty).toList());
+        assertEquals(List.of("Zoe", "Acme"), valuesOf(suggestions, "namedEntityText"));
+    }
+
+    @Test
+    public void shouldKeepDocumentOrderInErrorSummary() {
+        StringBuilder json = new StringBuilder("{\"results\":[{\"objectKey\":\"ok1\"");
+        for (int i = 6; i >= 0; i--) {
+            json.append(",\"action").append(i)
+                .append("\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}");
+        }
+        json.append("}]}");
+
+        assertEquals("action6[E: m], action5[E: m], action4[E: m], action3[E: m], action2[E: m], ...",
+                provider.summarizeActionErrors(json(json.toString())));
     }
 
     /**
@@ -988,7 +1059,7 @@ public class TestContentIntelligenceEnrichmentProvider {
                 + "\"okAction\":{\"isSuccess\":true,\"result\":\"fine\"},"
                 + "\"failAction\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}"
                 + "}]}";
-        org.json.JSONObject response = new org.json.JSONObject(json);
+        ObjectNode response = json(json);
         String summary = provider.summarizeActionErrors(response);
         assertTrue(summary.contains("failAction"));
         assertFalse(summary.contains("okAction"));
@@ -999,7 +1070,7 @@ public class TestContentIntelligenceEnrichmentProvider {
         String json = "{\"results\":[{\"objectKey\":\"ok1\","
                 + "\"brokenAction\":{\"isSuccess\":false}"
                 + "}]}";
-        org.json.JSONObject response = new org.json.JSONObject(json);
+        ObjectNode response = json(json);
         String summary = provider.summarizeActionErrors(response);
         assertTrue("missing error block should use '?': " + summary, summary.contains("brokenAction[?]"));
     }
@@ -1011,7 +1082,7 @@ public class TestContentIntelligenceEnrichmentProvider {
                 + "\"arrayAction\":[1,2,3],"
                 + "\"realFail\":{\"isSuccess\":false,\"error\":{\"errorType\":\"E\",\"message\":\"m\"}}"
                 + "}]}";
-        org.json.JSONObject response = new org.json.JSONObject(json);
+        ObjectNode response = json(json);
         String summary = provider.summarizeActionErrors(response);
         assertTrue(summary.contains("realFail"));
         assertFalse(summary.contains("scalarAction"));
@@ -1023,7 +1094,7 @@ public class TestContentIntelligenceEnrichmentProvider {
         String json = "{\"results\":[{\"objectKey\":\"ok1\","
                 + "\"action\":{\"isSuccess\":false,\"error\":{\"errorType\":\"Timeout\"}}"
                 + "}]}";
-        org.json.JSONObject response = new org.json.JSONObject(json);
+        ObjectNode response = json(json);
         String summary = provider.summarizeActionErrors(response);
         assertEquals("action[Timeout]", summary);
     }
@@ -1087,5 +1158,13 @@ public class TestContentIntelligenceEnrichmentProvider {
         ManagedBlob blob = new BlobMetaImpl("test", mimeType, "test-key", "digest", null, 1024L);
         doc.addBlob("file:content", "img", blob);
         return doc;
+    }
+
+    protected static ObjectNode json(String value) {
+        try {
+            return (ObjectNode) MAPPER.readTree(value);
+        } catch (JsonProcessingException e) {
+            throw new AssertionError("Invalid test JSON", e);
+        }
     }
 }
