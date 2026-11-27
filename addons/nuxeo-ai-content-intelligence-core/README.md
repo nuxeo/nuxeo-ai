@@ -1,9 +1,8 @@
 # Nuxeo AI Content Intelligence integration
 
 An enrichment provider that calls the [Hyland Content Intelligence](https://hyland.com/) Knowledge Enrichment APIs from
-the Content Innovation Cloud and maps the response onto Nuxeo document metadata (`dc:description` + tags). It is built
-on top of the upstream `nuxeo-content-intelligence-connector-core` and integrates with the standard `nuxeo-ai-core`
-pipeline.
+the Content Innovation Cloud and maps the response onto Nuxeo document metadata (`dc:description` + tags). It calls the
+API through the Hyland CIC Java SDK (`org.hyland.sdk:cic-ke`) and integrates with the standard `nuxeo-ai-core` pipeline.
 
 Currently, provides the following enrichment services:
 
@@ -104,6 +103,18 @@ You can set these in your `nuxeo.conf`.
 <td colspan="1">Since 5.0.2</td>
 </tr>
 <tr>
+<td colspan="1"><code>nuxeo.hyland.cic.enrichment.auth.grantType</code></td>
+<td colspan="1">OAuth grant type used to obtain a token against the CIC auth endpoint.</td>
+<td colspan="1"><code>client_credentials</code></td>
+<td colspan="1">Since 5.0.5</td>
+</tr>
+<tr>
+<td colspan="1"><code>nuxeo.hyland.cic.enrichment.auth.scope</code></td>
+<td colspan="1">OAuth scope requested with the token.</td>
+<td colspan="1"><code>environment_authorization</code></td>
+<td colspan="1">Since 5.0.5</td>
+</tr>
+<tr>
 <td colspan="1"><code>nuxeo.hyland.cic.pullResultsMaxTries</code></td>
 <td colspan="1">Number of polling attempts against <code>GET /content/process/{id}/results</code>.</td>
 <td colspan="1"><code>60</code></td>
@@ -178,6 +189,48 @@ You can set these in your `nuxeo.conf`.
 </tbody>
 </table>
 </div>
+
+#### Several configurations
+
+The `nuxeo.hyland.cic.*` properties fill the `default` configuration of the `knowledgeEnrichment` extension point of
+`org.nuxeo.ai.contentintelligence.ContentIntelligenceService`. Other configurations can be contributed and selected with
+the `configName` option of a Content Intelligence enrichment provider:
+
+```xml
+<extension target="org.nuxeo.ai.contentintelligence.ContentIntelligenceService" point="knowledgeEnrichment">
+  <knowledgeEnrichment>
+    <name>other</name>
+    <authenticationBaseUrl>https://YOUR_CIC_AUTH_BASE_URL</authenticationBaseUrl>
+    <baseUrl>https://YOUR_CIC_ENRICHMENT_BASE_URL</baseUrl>
+    <clientId>YOUR_CLIENT_ID</clientId>
+    <clientSecret>YOUR_CLIENT_SECRET</clientSecret>
+  </knowledgeEnrichment>
+</extension>
+```
+
+#### Provider options
+
+* `actions`: comma-separated Knowledge Enrichment actions, in the configuration form (`image-description`) or the API
+  form (`imageDescription`). An unknown action fails the provider initialization.
+* `similarMetadata`: JSON array of objects with string values, sent as `kSimilarMetadata` with every action.
+* `extraJsonPayload`: JSON object; `maxWordCount`, `model`, `category` and `instructions` are applied to every action,
+  `saveResultInContentLakeRepository` to the request. Other keys are ignored with a warning.
+
+#### Upgrading to 5.0.5
+
+The add-on no longer uses `nuxeo-content-intelligence-connector-core`: it calls the Knowledge Enrichment API (v2)
+through the Hyland CIC Java SDK, whose jars are shipped in `nxserver/lib`.
+
+* The `nuxeo.hyland.cic.*` properties are unchanged.
+* The package no longer installs the connector bundle and its `HylandKE.*` automation operations: install the Hyland
+  Content Intelligence connector package if you use them. When both are installed they share the SDK jars of
+  `nxserver/lib`, so keep compatible SDK versions.
+* Contributions to the connector `knowledgeEnrichment` extension point used by this add-on must now target
+  `org.nuxeo.ai.contentintelligence.ContentIntelligenceService`.
+* `extraJsonPayload` only supports the keys listed above (other keys were previously sent as-is).
+* The raw enrichment JSON stored for each result keeps the `response` object of the API, without the connector's
+  `responseCode`, `responseMessage` and `objectKeysMapping` envelope.
+* Enrichment cache keys change once, so documents enriched before the upgrade are sent again when re-enriched.
 
 # License
 

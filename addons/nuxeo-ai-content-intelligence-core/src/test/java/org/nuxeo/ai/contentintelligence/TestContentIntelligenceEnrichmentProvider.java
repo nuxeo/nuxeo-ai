@@ -25,11 +25,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.nuxeo.ai.pipes.services.JacksonUtil.MAPPER;
 
@@ -53,6 +49,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.hyland.sdk.cic.http.client.CICSdkException;
+import org.hyland.sdk.cic.http.client.CICServiceException;
+import org.hyland.sdk.cic.http.client.mapper.MapperService;
+import org.hyland.sdk.cic.ke.object.Action;
+import org.hyland.sdk.cic.ke.object.EnrichmentResult;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
 import org.nuxeo.ai.enrichment.EnrichmentMetadata;
 import org.nuxeo.ai.metadata.AIMetadata;
@@ -62,24 +63,18 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.blob.BlobMetaImpl;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.hyland.content.intelligence.http.ServiceCallResult;
-import org.nuxeo.hyland.content.intelligence.service.enrichment.HylandKEService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Unit tests for {@link ContentIntelligenceEnrichmentProvider}. The HTTP surface is owned by the
  * upstream Content Intelligence connector; here we focus on the response-to-metadata mapping and
- * lifecycle around the {@link HylandKEService} call.
+ * lifecycle around the {@link ContentIntelligenceService} call.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TestContentIntelligenceEnrichmentProvider {
-
-    /** Raw (unwrapped) Knowledge Enrichment response, for the 3-arg ServiceCallResult constructor. */
-    public static final String SIMPLE_NER_RESPONSE = "{\"id\":\"j\",\"status\":\"SUCCESS\","
-            + "\"results\":[{\"objectKey\":\"ok1\","
-            + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":[\"Paris\"]}}]}";
 
     public static final String SUCCESS_RESPONSE = "{"
             + "\"responseCode\":200,"
@@ -214,18 +209,20 @@ public class TestContentIntelligenceEnrichmentProvider {
             + "}";
 
     @Mock
-    protected HylandKEService service;
+    protected ContentIntelligenceService service;
 
     protected ContentIntelligenceEnrichmentProvider provider;
 
     protected AtomicInteger rawBlobsSaved;
+
+    protected String lastRawJson;
 
     @Before
     public void setup() {
         rawBlobsSaved = new AtomicInteger();
         provider = new ContentIntelligenceEnrichmentProvider() {
             @Override
-            protected HylandKEService getService() {
+            protected ContentIntelligenceService getService() {
                 return service;
             }
 
@@ -237,6 +234,7 @@ public class TestContentIntelligenceEnrichmentProvider {
             @Override
             public String saveJsonAsRawBlob(String rawJson) {
                 rawBlobsSaved.incrementAndGet();
+                lastRawJson = rawJson;
                 return "test-raw-blob-key";
             }
         };
@@ -249,8 +247,8 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldMapSuccessfulResponseToLabelSuggestions() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(new ServiceCallResult(SUCCESS_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(SUCCESS_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertNotNull(metadata);
@@ -280,9 +278,8 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldEmitMetadataForDescriptionOnlyResponse() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(DESCRIPTION_ONLY_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(DESCRIPTION_ONLY_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         // Even though no taggable suggestion exists, the description listener still needs an event with a rawKey,
@@ -295,9 +292,8 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldNotEmitMetadataWhenEntryHasNothingUseful() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(NOTHING_USEFUL_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(NOTHING_USEFUL_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
@@ -306,9 +302,8 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldHandlePartialFailureStatus() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(PARTIAL_FAILURE_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(PARTIAL_FAILURE_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(1, metadata.size());
@@ -321,9 +316,8 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldHandlePartialSuccessStatus() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(PARTIAL_SUCCESS_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(PARTIAL_SUCCESS_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(1, metadata.size());
@@ -331,8 +325,8 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldReturnEmptyOnFailureStatus() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(new ServiceCallResult(FAILURE_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(FAILURE_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
@@ -345,9 +339,8 @@ public class TestContentIntelligenceEnrichmentProvider {
      */
     @Test
     public void shouldReturnEmptyOnFailureStatusWithActionErrors() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(FAILURE_RESPONSE_WITH_ACTION_ERRORS));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(FAILURE_RESPONSE_WITH_ACTION_ERRORS));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
@@ -410,9 +403,8 @@ public class TestContentIntelligenceEnrichmentProvider {
     @Test
     public void shouldReturnEmptyOn4xxResponse() throws IOException {
         // 4xx is a definitive client error: log and drop, do not retry.
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult("{}", 400, "Bad Request"));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
+                httpError(400));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
@@ -421,9 +413,8 @@ public class TestContentIntelligenceEnrichmentProvider {
     @Test
     public void shouldThrowOn5xxResponseToTriggerRetry() throws IOException {
         // 5xx is a transient server failure: must throw so the upstream Failsafe retry policy actually engages.
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult("{}", 503, "Service Unavailable"));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
+                httpError(503));
         try {
             provider.enrich(buildBlobTextFromDoc());
             fail("expected NuxeoException for 5xx response");
@@ -435,9 +426,8 @@ public class TestContentIntelligenceEnrichmentProvider {
     @Test
     public void shouldThrowOn429ResponseToTriggerRetry() throws IOException {
         // Rate limiting should also trigger a retry instead of being silently dropped.
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult("{}", 429, "Too Many Requests"));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
+                httpError(429));
         try {
             provider.enrich(buildBlobTextFromDoc());
             fail("expected NuxeoException for 429 response");
@@ -448,9 +438,52 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test(expected = NuxeoException.class)
     public void shouldRethrowIOExceptionAsNuxeoException() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenThrow(new IOException("boom"));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
+                new NuxeoException("boom", new CICSdkException("network down")));
         provider.enrich(buildBlobTextFromDoc());
+    }
+
+    /** The stored raw blob is what the description listener reads to fill dc:description. */
+    @Test
+    public void shouldStoreRawJsonReadableByDescriptionListener() {
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(SUCCESS_RESPONSE));
+
+        provider.enrich(buildBlobTextFromDoc());
+
+        assertNotNull(lastRawJson);
+        assertEquals("A small test image", new ContentIntelligenceDescriptionListener().parseDescription(lastRawJson));
+    }
+
+    @Test
+    public void shouldDropOtherClientErrors() {
+        for (int status : new int[] { 401, 403, 404, 413, 415 }) {
+            org.mockito.Mockito.reset(service);
+            when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
+                    httpError(status));
+            assertEquals("status " + status, 0, provider.enrich(buildBlobTextFromDoc()).size());
+        }
+    }
+
+    @Test
+    public void shouldRefuseConfigurationWithUnknownAction() {
+        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
+        try {
+            p.init(buildDescriptor(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                    "image-description,image-telepathy")));
+            fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage(), e.getMessage().contains("image-telepathy"));
+            assertTrue(e.getMessage(), e.getMessage().contains("ai.contentintelligence.test"));
+        }
+    }
+
+    @Test
+    public void shouldAcceptApiActionNames() {
+        ContentIntelligenceEnrichmentProvider p = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
+                        "imageDescription,named-entity-recognition-image"));
+        assertEquals(List.of(Action.IMAGE_DESCRIPTION, Action.NAMED_ENTITY_RECOGNITION_IMAGE), p.request.actions());
     }
 
     @Test
@@ -478,17 +511,7 @@ public class TestContentIntelligenceEnrichmentProvider {
     public void shouldFallBackToDefaultActionsWhenOptionMissing() {
         ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
         p.init(buildDescriptor(Map.of()));
-        assertEquals(List.of("image-description"), p.actions);
-    }
-
-    @Test
-    public void shouldReturnMutableActionsList() {
-        // splitCsv must produce a mutable list so downstream callers (or future code) cannot trip over an
-        // UnsupportedOperationException.
-        ContentIntelligenceEnrichmentProvider p = new ContentIntelligenceEnrichmentProvider();
-        p.init(buildDescriptor(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS, "a,b")));
-        p.actions.add("c");
-        assertEquals(List.of("a", "b", "c"), p.actions);
+        assertEquals(List.of(Action.IMAGE_DESCRIPTION), p.request.actions());
     }
 
     /**
@@ -498,9 +521,8 @@ public class TestContentIntelligenceEnrichmentProvider {
      */
     @Test
     public void shouldMapTextSuccessResponseToLabelSuggestions() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(TEXT_SUCCESS_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(TEXT_SUCCESS_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc("application/pdf"));
         assertNotNull(metadata);
@@ -528,55 +550,11 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     @Test
     public void shouldReturnEmptyOnProcessingStatus() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(PROCESSING_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(PROCESSING_RESPONSE));
 
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc("application/pdf"));
         assertEquals(0, metadata.size());
-    }
-
-    @Test
-    public void shouldReturnEmptyWhenResponseIsNotJson() throws IOException {
-        // Three-arg constructor short-circuits the wrapper parsing so we can feed a non-JSON body and exercise
-        // the JSON parsing guard inside processResponse.
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult("not-json-at-all", 200, "OK"));
-
-        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
-        assertEquals(0, metadata.size());
-    }
-
-    /**
-     * The connector re-serializes the response for the raw blob; when that fails the response is dropped like an
-     * unparseable one instead of surfacing as a (retried) call failure.
-     */
-    @Test
-    public void shouldReturnEmptyWhenRawJsonSerializationFails() throws IOException {
-        ServiceCallResult result = spy(new ServiceCallResult(SIMPLE_NER_RESPONSE, 200, "OK"));
-        doThrow(new NuxeoException("boom")).when(result).toJsonString();
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(result);
-
-        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
-        assertEquals(0, metadata.size());
-        assertEquals(0, rawBlobsSaved.get());
-    }
-
-    /** Lenient syntax accepted by org.json (and by the connector upstream) must still be interpreted. */
-    @Test
-    public void shouldAcceptTrailingCommaLikeOrgJson() throws IOException {
-        String raw = "{\"id\":\"j\",\"status\":\"SUCCESS\",\"results\":[{\"objectKey\":\"ok1\","
-                + "\"namedEntityImage\":{\"isSuccess\":true,\"result\":[\"Paris\",\"Rome\",]}}]}";
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(new ServiceCallResult(raw, 200, "OK"));
-
-        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
-        assertEquals(1, metadata.size());
-        assertEquals(List.of("Paris", "Rome"),
-                valuesOf(metadata.iterator().next().getLabels(), "namedEntityImage"));
-        assertEquals(1, rawBlobsSaved.get());
     }
 
     /** Suggestions and their values follow the response document order. */
@@ -614,9 +592,8 @@ public class TestContentIntelligenceEnrichmentProvider {
      */
     @Test
     public void shouldEnrichEveryDocumentMimeType() throws IOException {
-        when(service.enrich(anyString(), any(org.nuxeo.ecm.core.api.Blob.class), anyList(), anyList(),
-                nullable(String.class), nullable(String.class))).thenReturn(
-                        new ServiceCallResult(TEXT_SUCCESS_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(TEXT_SUCCESS_RESPONSE));
 
         String[] mimeTypes = { "application/pdf",
                 "application/msword",
@@ -723,17 +700,6 @@ public class TestContentIntelligenceEnrichmentProvider {
         String nerFirst = newProvider(Map.of(ContentIntelligenceEnrichmentProvider.OPTION_ACTIONS,
                 "named-entity-recognition-image,image-description")).getCacheKey(doc);
         assertEquals(descriptionFirst, nerFirst);
-    }
-
-    /** The same value must not produce the same key whether it is passed as one option or another. */
-    @Test
-    public void shouldNotConfuseOptionsInCacheKey() {
-        BlobTextFromDocument doc = buildBlobTextFromDoc();
-        String asSimilarMetadata = newProvider(
-                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_SIMILAR_METADATA, "{}")).getCacheKey(doc);
-        String asExtraJsonPayload = newProvider(
-                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_EXTRA_JSON_PAYLOAD, "{}")).getCacheKey(doc);
-        assertNotEquals(asSimilarMetadata, asExtraJsonPayload);
     }
 
     /** An unchanged configuration must keep producing the same key so that cache hits keep working across nodes. */
@@ -850,16 +816,16 @@ public class TestContentIntelligenceEnrichmentProvider {
 
     /**
      * End-to-end check: a BMP blob goes through {@link ContentIntelligenceEnrichmentProvider#enrich(BlobTextFromDocument)}
-     * and reaches {@link HylandKEService} as a JPEG payload, which is exactly what the CIC API expects.
+     * and reaches {@link ContentIntelligenceService} as a JPEG payload, which is exactly what the CIC API expects.
      */
     @Test
     public void enrichShouldSendTranscodedBlobForBmpInput() throws IOException {
-        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
-                nullable(String.class))).thenReturn(new ServiceCallResult(SUCCESS_RESPONSE));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(SUCCESS_RESPONSE));
 
         ContentIntelligenceEnrichmentProvider bmpProvider = new ContentIntelligenceEnrichmentProvider() {
             @Override
-            protected HylandKEService getService() {
+            protected ContentIntelligenceService getService() {
                 return service;
             }
 
@@ -888,8 +854,7 @@ public class TestContentIntelligenceEnrichmentProvider {
 
         org.mockito.ArgumentCaptor<Blob> sent = org.mockito.ArgumentCaptor.forClass(Blob.class);
         org.mockito.Mockito.verify(service)
-                           .enrich(anyString(), sent.capture(), anyList(), anyList(), nullable(String.class),
-                                   nullable(String.class));
+                           .enrich(anyString(), sent.capture(), any(ContentIntelligenceRequest.class));
         assertEquals("BMP must reach CIC as JPEG",
                 ContentIntelligenceEnrichmentProvider.TRANSCODE_TARGET_MIME_TYPE, sent.getValue().getMimeType());
         assertNotEquals("transcoded payload must not be the BMP source", "image/bmp", sent.getValue().getMimeType());
@@ -943,7 +908,7 @@ public class TestContentIntelligenceEnrichmentProvider {
     public void shouldSkipBlobWhenResolveReturnsNull() throws IOException {
         ContentIntelligenceEnrichmentProvider nullBlobProvider = new ContentIntelligenceEnrichmentProvider() {
             @Override
-            protected HylandKEService getService() {
+            protected ContentIntelligenceService getService() {
                 return service;
             }
 
@@ -968,13 +933,6 @@ public class TestContentIntelligenceEnrichmentProvider {
     // handleFailedCall - null result
     // ---------------------------------------------------------------------------------------------------------------
 
-    @Test(expected = NuxeoException.class)
-    public void shouldThrowOnNullServiceResult() throws IOException {
-        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
-                nullable(String.class))).thenReturn(null);
-        provider.enrich(buildBlobTextFromDoc());
-    }
-
     // ---------------------------------------------------------------------------------------------------------------
     // processResponse - results edge cases
     // ---------------------------------------------------------------------------------------------------------------
@@ -986,8 +944,8 @@ public class TestContentIntelligenceEnrichmentProvider {
                 + "\"objectKeysMapping\":[],"
                 + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\"}"
                 + "}";
-        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
-                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(json));
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
     }
@@ -999,8 +957,8 @@ public class TestContentIntelligenceEnrichmentProvider {
                 + "\"objectKeysMapping\":[],"
                 + "\"response\":{\"id\":\"j\",\"status\":\"SUCCESS\",\"results\":[]}"
                 + "}";
-        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
-                nullable(String.class))).thenReturn(new ServiceCallResult(json));
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(
+                result(json));
         Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
         assertEquals(0, metadata.size());
     }
@@ -1020,10 +978,9 @@ public class TestContentIntelligenceEnrichmentProvider {
                 + "\"noResult\":{\"isSuccess\":true},"
                 + "\"validAction\":{\"isSuccess\":true,\"result\":{\"items\":[\"val1\"]}}"
                 + "}]}}";
-        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
-                nullable(String.class))).thenReturn(new ServiceCallResult(json));
-
-        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        // keys the SDK does not model never reach the provider: exercise the JSON mapping directly
+        Collection<EnrichmentMetadata> metadata = provider.processResponse(buildBlobTextFromDoc(), "file:content",
+                response(json));
         assertEquals(1, metadata.size());
         List<LabelSuggestion> suggestions = metadata.iterator().next().getLabels();
         assertEquals(1, suggestions.size());
@@ -1039,10 +996,9 @@ public class TestContentIntelligenceEnrichmentProvider {
                 + "\"results\":[{\"objectKey\":\"ok1\","
                 + "\"deepAction\":{\"isSuccess\":true,\"result\":[[\"nested-val\"],{\"key\":\"obj-val\"}]}"
                 + "}]}}";
-        when(service.enrich(anyString(), any(Blob.class), anyList(), anyList(), nullable(String.class),
-                nullable(String.class))).thenReturn(new ServiceCallResult(json));
-
-        Collection<EnrichmentMetadata> metadata = provider.enrich(buildBlobTextFromDoc());
+        // keys the SDK does not model never reach the provider: exercise the JSON mapping directly
+        Collection<EnrichmentMetadata> metadata = provider.processResponse(buildBlobTextFromDoc(), "file:content",
+                response(json));
         assertEquals(1, metadata.size());
         List<String> values = valuesOf(metadata.iterator().next().getLabels(), "deepAction");
         assertTrue(values.contains("nested-val"));
@@ -1158,6 +1114,24 @@ public class TestContentIntelligenceEnrichmentProvider {
         ManagedBlob blob = new BlobMetaImpl("test", mimeType, "test-key", "digest", null, 1024L);
         doc.addBlob("file:content", "img", blob);
         return doc;
+    }
+
+    /** Parses a (wrapped or bare) Knowledge Enrichment response fixture with the SDK mapper, as the client does. */
+    protected static EnrichmentResult result(String json) {
+        return MapperService.read(response(json).toString(), EnrichmentResult.class);
+    }
+
+    /** The inner response object of a (wrapped or bare) fixture. */
+    protected static ObjectNode response(String json) {
+        ObjectNode node = json(json);
+        JsonNode response = node.get("response");
+        return response instanceof ObjectNode object ? object : node;
+    }
+
+    /** What {@link ContentIntelligenceService} throws when Content Intelligence answers with an HTTP error. */
+    protected static NuxeoException httpError(int status) {
+        return new NuxeoException("Content Intelligence call failed (HTTP " + status + ")",
+                new CICServiceException("HTTP response returned with status code: " + status, status));
     }
 
     protected static ObjectNode json(String value) {

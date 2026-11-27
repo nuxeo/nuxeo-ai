@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * previous {@code org.json} {@code opt*} lookups had: a missing or mistyped member yields the default instead of
  * failing.
  *
- * @since 2027.0
+ * @since 5.0.5
  */
 final class ContentIntelligenceJson {
 
@@ -46,6 +46,14 @@ final class ContentIntelligenceJson {
 
     private ContentIntelligenceJson() {
         // utility class
+    }
+
+    /**
+     * @return the parsed JSON value ({@code MissingNode} for an empty payload)
+     * @throws JsonProcessingException if the payload is not valid JSON
+     */
+    static JsonNode readTree(String json) throws JsonProcessingException {
+        return READER.readTree(json);
     }
 
     /**

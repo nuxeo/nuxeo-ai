@@ -22,7 +22,6 @@ import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optArray;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optBoolean;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optObject;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optString;
-import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.readObject;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
@@ -32,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -44,8 +42,11 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyland.sdk.cic.http.client.CICServiceException;
+import org.hyland.sdk.cic.ke.object.EnrichmentResult;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -57,18 +58,16 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.impl.blob.ByteArrayBlob;
 import org.nuxeo.ecm.core.blob.ManagedBlob;
-import org.nuxeo.hyland.content.intelligence.http.ServiceCallResult;
-import org.nuxeo.hyland.content.intelligence.service.enrichment.HylandKEService;
 import org.nuxeo.runtime.api.Framework;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Enrichment provider that delegates to {@link HylandKEService} to call the Hyland Content Intelligence
- * Knowledge Enrichment API and maps the wrapped JSON response into {@link EnrichmentMetadata}.
+ * Enrichment provider that delegates to {@link ContentIntelligenceService} to call the Hyland Content Intelligence
+ * Knowledge Enrichment API and maps its result into {@link EnrichmentMetadata}.
  */
 public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentProvider implements EnrichmentCachable {
 
@@ -136,7 +135,7 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
 
     protected String configName;
 
-    protected List<String> actions;
+    protected ContentIntelligenceRequest request;
 
     protected String similarMetadata;
 
@@ -146,23 +145,17 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
         configName = descriptor.options.getOrDefault(OPTION_CONFIG_NAME, DEFAULT_CONFIG_NAME);
-        actions = splitCsv(descriptor.options.getOrDefault(OPTION_ACTIONS, DEFAULT_ACTIONS));
-        if (actions.isEmpty()) {
-            throw new IllegalArgumentException(
-                    String.format("%s must declare at least one Knowledge Enrichment action", descriptor.name));
-        }
         similarMetadata = StringUtils.trimToNull(descriptor.options.get(OPTION_SIMILAR_METADATA));
         extraJsonPayload = StringUtils.trimToNull(descriptor.options.get(OPTION_EXTRA_JSON_PAYLOAD));
-    }
-
-    protected List<String> splitCsv(String value) {
-        if (StringUtils.isBlank(value)) {
-            return new ArrayList<>();
+        try {
+            request = ContentIntelligenceRequest.of(descriptor.options.getOrDefault(OPTION_ACTIONS, DEFAULT_ACTIONS),
+                    similarMetadata, extraJsonPayload);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    String.format("Invalid Knowledge Enrichment configuration of %s: %s", descriptor.name,
+                            e.getMessage()),
+                    e);
         }
-        return Arrays.stream(value.split(","))
-                     .map(String::trim)
-                     .filter(StringUtils::isNotBlank)
-                     .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -251,12 +244,11 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
         return filename + "." + extension;
     }
 
-    /** Resolves the {@link HylandKEService}. Overridable for testing. */
-    protected HylandKEService getService() {
-        HylandKEService service = Framework.getService(HylandKEService.class);
+    /** Resolves the {@link ContentIntelligenceService}. Overridable for testing. */
+    protected ContentIntelligenceService getService() {
+        ContentIntelligenceService service = Framework.getService(ContentIntelligenceService.class);
         if (service == null) {
-            throw new NuxeoException(
-                    "HylandKEService is not available; ensure nuxeo-content-intelligence-connector-core is deployed");
+            throw new NuxeoException("ContentIntelligenceService is not available");
         }
         return service;
     }
@@ -266,7 +258,7 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
         if (blobTextFromDoc.getBlobs().isEmpty()) {
             return emptyList();
         }
-        HylandKEService service = getService();
+        ContentIntelligenceService service = getService();
 
         List<EnrichmentMetadata> enriched = new ArrayList<>();
         for (Map.Entry<String, ManagedBlob> entry : blobTextFromDoc.getBlobs().entrySet()) {
@@ -279,45 +271,34 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
 
             Blob payload = transcodeIfNeeded(blob);
 
-            ServiceCallResult result;
+            EnrichmentResult result;
             try {
-                result = service.enrich(configName, payload, actions, Collections.emptyList(), similarMetadata,
-                        extraJsonPayload);
-            } catch (IOException e) {
-                throw new NuxeoException(
-                        "Knowledge Enrichment call failed for " + blobTextFromDoc.getId() + "/" + xPath, e);
-            }
-
-            if (result == null || result.callFailed()) {
-                handleFailedCall(blobTextFromDoc, xPath, result);
+                result = service.enrich(configName, payload, request);
+            } catch (NuxeoException e) {
+                handleFailedCall(blobTextFromDoc, xPath, e);
                 continue;
             }
 
-            enriched.addAll(processResponse(blobTextFromDoc, xPath, result));
+            ObjectNode response = ContentIntelligenceResultSerializer.toJson(result);
+            enriched.addAll(processResponse(blobTextFromDoc, xPath, response));
         }
         return enriched;
     }
 
     /**
-     * Handles an unsuccessful HTTP response from Hyland CI. 5xx and 429 responses are rethrown so the upstream
-     * stream-processor retry policy can take over; 4xx responses (definitive client errors) are logged and dropped.
+     * Handles a failed Hyland CI call. Network errors (no HTTP status), 5xx and 429 responses are rethrown so the
+     * upstream stream-processor retry policy can take over; other 4xx responses (definitive client errors) are logged
+     * and dropped.
      */
-    protected void handleFailedCall(BlobTextFromDocument blobTextFromDoc, String xPath, ServiceCallResult result) {
-        int code = result == null ? -1 : result.getResponseCode();
-        String msg = result == null ? "null result" : result.getResponseMessage();
-        String body = result == null ? "" : StringUtils.defaultString(result.getResponse());
-
+    protected void handleFailedCall(BlobTextFromDocument blobTextFromDoc, String xPath, NuxeoException e) {
+        CICServiceException serviceException = ExceptionUtils.throwableOfType(e, CICServiceException.class);
+        int code = serviceException == null ? -1 : serviceException.statusCode();
         if (isRetryable(code)) {
-            log.debug("Retryable Knowledge Enrichment failure response body for {}/{}: {}", blobTextFromDoc.getId(),
-                    xPath, body);
-            throw new NuxeoException(String.format(
-                    "Knowledge Enrichment call failed (status=%d, message=%s) for %s/%s", code, msg,
-                    blobTextFromDoc.getId(), xPath));
+            throw new NuxeoException(String.format("Knowledge Enrichment call failed (status=%d) for %s/%s: %s", code,
+                    blobTextFromDoc.getId(), xPath, e.getMessage()), e);
         }
-        log.warn("Knowledge Enrichment call unsuccessful (status={}, message={}) for {}/{}", code, msg,
-                blobTextFromDoc.getId(), xPath);
-        log.debug("Unsuccessful Knowledge Enrichment response body for {}/{}: {}", blobTextFromDoc.getId(), xPath,
-                body);
+        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {}", code, blobTextFromDoc.getId(),
+                xPath, e.getMessage());
     }
 
     /** Network-level (-1) and 5xx / 429 responses are considered retryable. */
@@ -326,33 +307,17 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     }
 
     /**
-     * Parses the wrapped Knowledge Enrichment response and turns each {@code results[]} entry into an
-     * {@link EnrichmentMetadata} bundle. An entry that carries only a successful description block (no taggable
-     * suggestions) still yields an {@link EnrichmentMetadata} with empty labels so that
-     * {@link ContentIntelligenceDescriptionListener} has an event to consume and can write {@code dc:description}.
+     * Turns each {@code results[]} entry of the Knowledge Enrichment response (as written by
+     * {@link ContentIntelligenceResultSerializer}) into an {@link EnrichmentMetadata} bundle. An entry that carries
+     * only a successful description block (no taggable suggestions) still yields an {@link EnrichmentMetadata} with
+     * empty labels so that {@link ContentIntelligenceDescriptionListener} has an event to consume and can write
+     * {@code dc:description}. The raw blob stores the response under a {@code response} key.
      */
     protected Collection<EnrichmentMetadata> processResponse(BlobTextFromDocument blobTextFromDoc, String xPath,
-            ServiceCallResult result) {
-        ObjectNode response;
-        try {
-            response = readObject(result.getResponse());
-        } catch (JsonProcessingException e) {
-            log.warn("Knowledge Enrichment response is not a JSON object: {}", e.getOriginalMessage());
-            return emptyList();
-        }
-        if (response == null) {
-            log.warn("Knowledge Enrichment response is not a JSON object");
-            return emptyList();
-        }
-        String rawJson;
-        try {
-            rawJson = result.toJsonString();
-        } catch (RuntimeException e) {
-            // the connector re-serializes the response (with org.json in 2025.x): a payload it cannot handle
-            // (e.g. duplicate keys) must be dropped, not retried as a call failure
-            log.warn("Knowledge Enrichment response cannot be serialized: {}", e.getMessage());
-            return emptyList();
-        }
+            ObjectNode response) {
+        ObjectNode wrapper = JsonNodeFactory.instance.objectNode();
+        wrapper.set(JSON_KEY_RESPONSE, response);
+        String rawJson = wrapper.toString();
 
         String status = optString(response, JSON_KEY_STATUS, "");
         if (!status.isEmpty() && !STATUS_SUCCESS.equalsIgnoreCase(status)
@@ -544,7 +509,7 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
             return null;
         }
         String config = String.join("\n", "configName=" + configName,
-                "actions=" + String.join(",", actions.stream().sorted().toList()),
+                "actions=" + String.join(",", request.actionNames()),
                 "similarMetadata=" + StringUtils.defaultString(similarMetadata),
                 "extraJsonPayload=" + StringUtils.defaultString(extraJsonPayload));
         return key + "_" + sha256Hex(config);
