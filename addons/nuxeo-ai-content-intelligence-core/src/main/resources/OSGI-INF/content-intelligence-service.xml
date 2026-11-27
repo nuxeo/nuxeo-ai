@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ai.contentintelligence.ContentIntelligenceService">
+
+  <documentation>
+    Calls Hyland Content Intelligence Knowledge Enrichment through the Hyland CIC Java SDK. Each knowledgeEnrichment
+    contribution is a configuration usable through the configName option of the Content Intelligence enrichment
+    providers; the "default" one is read from the nuxeo.hyland.cic.* configuration properties.
+  </documentation>
+
+  <implementation class="org.nuxeo.ai.contentintelligence.ContentIntelligenceComponent" />
+
+  <service>
+    <provide interface="org.nuxeo.ai.contentintelligence.ContentIntelligenceService" />
+  </service>
+
+  <extension-point name="knowledgeEnrichment">
+    <object class="org.nuxeo.ai.contentintelligence.ContentIntelligenceDescriptor" />
+  </extension-point>
+
+  <extension target="org.nuxeo.ai.contentintelligence.ContentIntelligenceService" point="knowledgeEnrichment">
+    <knowledgeEnrichment>
+      <name>default</name>
+      <authenticationBaseUrl>${nuxeo.hyland.cic.auth.baseUrl:=}</authenticationBaseUrl>
+      <baseUrl>${nuxeo.hyland.cic.contextEnrichment.baseUrl:=}</baseUrl>
+      <tokenGrantType>${nuxeo.hyland.cic.enrichment.auth.grantType:=client_credentials}</tokenGrantType>
+      <tokenScope>${nuxeo.hyland.cic.enrichment.auth.scope:=environment_authorization}</tokenScope>
+      <clientId>${nuxeo.hyland.cic.enrichment.clientId:=}</clientId>
+      <clientSecret>${nuxeo.hyland.cic.enrichment.clientSecret:=}</clientSecret>
+    </knowledgeEnrichment>
+  </extension>
+
+</component>
