@@ -88,7 +88,8 @@ public class ThresholdComponent extends DefaultComponent implements ThresholdSer
 
         setDefaultThresholds();
 
-        List<Descriptor> descriptors = getDescriptors(THRESHOLD_CONFIGURATION_XP);
+        // getDescriptors returns an unmodifiable list since LTS 2027
+        List<Descriptor> descriptors = new ArrayList<>(getDescriptors(THRESHOLD_CONFIGURATION_XP));
         AIConfigurationService aiConfigurationService = Framework.getService(AIConfigurationService.class);
         List<ThresholdConfiguratorDescriptor> kvsDescriptors;
         try {

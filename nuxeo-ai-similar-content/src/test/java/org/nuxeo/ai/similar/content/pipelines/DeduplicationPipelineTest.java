@@ -54,6 +54,7 @@ import org.nuxeo.ecm.core.bulk.CoreBulkFeature;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.lib.stream.log.LogManager;
+import org.nuxeo.lib.stream.log.Name;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.stream.StreamService;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -165,7 +166,7 @@ public class DeduplicationPipelineTest {
 
     private void awaitPipeline(LogManager manager, String computation, Duration duration) throws InterruptedException {
         long deadline = System.currentTimeMillis() + duration.toMillis();
-        while (manager.getLag(PIPELINE_NAME, computation).lag() > 0) {
+        while (manager.getLag(Name.ofUrn(PIPELINE_NAME), Name.ofUrn(computation)).lag() > 0) {
             if (System.currentTimeMillis() > deadline) {
                 break;
             }

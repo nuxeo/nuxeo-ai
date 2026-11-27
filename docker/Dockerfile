@@ -1,5 +1,5 @@
 # Base image
-ARG PLATFORM_VERSION=2025
+ARG PLATFORM_VERSION=2027
 FROM docker-private.packages.nuxeo.com/nuxeo/nuxeo:${PLATFORM_VERSION}
 
 # Build arguments
@@ -25,20 +25,17 @@ USER root
 
 # Combined system dependencies and secure private repo installation into a single RUN to reduce image layers
 # --- Install system dependencies and secure private repo ---
+# Ghostscript (AGPL, NXP-34098) and LibreOffice (shipped by the 2027 base image) are deliberately not installed.
+# Keeps dnf until the base image drops it (NXP-34092), then switch to microdnf.
 RUN --mount=type=secret,id=nuxeo-private,target=/tmp/nuxeo-private.repo \
     dnf -y install gettext && \
     envsubst </tmp/nuxeo-private.repo >/etc/yum.repos.d/nuxeo-private.repo && \
     dnf -y install --skip-broken \
         awscli \
-        ghostscript \
         libwpd-tools \
         perl-Archive-Zip \
         perl-Image-ExifTool \
         poppler-utils \
-        libreoffice-calc \
-        libreoffice-headless \
-        libreoffice-impress \
-        libreoffice-writer \
         curl \
         unzip \
         zip \

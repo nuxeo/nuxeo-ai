@@ -18,6 +18,11 @@ package org.nuxeo.ai.contentintelligence;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.codec.digest.DigestUtils.sha256Hex;
 import static org.nuxeo.ai.contentintelligence.ContentIntelligenceConstants.DESCRIPTION_ACTION_KEYS;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optArray;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optBoolean;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optObject;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.optString;
+import static org.nuxeo.ai.contentintelligence.ContentIntelligenceJson.readObject;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.getBlobFromProvider;
 import static org.nuxeo.ai.enrichment.EnrichmentUtils.makeKeyUsingBlobDigests;
 
@@ -41,9 +46,6 @@ import javax.imageio.ImageIO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
 import org.nuxeo.ai.enrichment.EnrichmentCachable;
 import org.nuxeo.ai.enrichment.EnrichmentDescriptor;
@@ -58,6 +60,11 @@ import org.nuxeo.ecm.core.blob.ManagedBlob;
 import org.nuxeo.hyland.content.intelligence.http.ServiceCallResult;
 import org.nuxeo.hyland.content.intelligence.service.enrichment.HylandKEService;
 import org.nuxeo.runtime.api.Framework;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Enrichment provider that delegates to {@link HylandKEService} to call the Hyland Content Intelligence
@@ -326,19 +333,28 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
      */
     protected Collection<EnrichmentMetadata> processResponse(BlobTextFromDocument blobTextFromDoc, String xPath,
             ServiceCallResult result) {
-        JSONObject response;
+        ObjectNode response;
+        try {
+            response = readObject(result.getResponse());
+        } catch (JsonProcessingException e) {
+            log.warn("Knowledge Enrichment response is not a JSON object: {}", e.getOriginalMessage());
+            return emptyList();
+        }
+        if (response == null) {
+            log.warn("Knowledge Enrichment response is not a JSON object");
+            return emptyList();
+        }
         String rawJson;
         try {
-            response = result.getResponseAsJSONObject();
             rawJson = result.toJsonString();
-        } catch (JSONException | NuxeoException e) {
-            // Hyland CI's helper wraps non-object payloads in NuxeoException, malformed JSON surfaces as
-            // JSONException; both mean we cannot safely interpret the response.
-            log.warn("Knowledge Enrichment response is not a JSON object: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            // the connector re-serializes the response (with org.json in 2025.x): a payload it cannot handle
+            // (e.g. duplicate keys) must be dropped, not retried as a call failure
+            log.warn("Knowledge Enrichment response cannot be serialized: {}", e.getMessage());
             return emptyList();
         }
 
-        String status = response.optString(JSON_KEY_STATUS, "");
+        String status = optString(response, JSON_KEY_STATUS, "");
         if (!status.isEmpty() && !STATUS_SUCCESS.equalsIgnoreCase(status)
                 && !STATUS_PARTIAL_SUCCESS.equalsIgnoreCase(status)
                 && !STATUS_PARTIAL_FAILURE.equalsIgnoreCase(status)) {
@@ -346,16 +362,15 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
             return emptyList();
         }
 
-        JSONArray results = response.optJSONArray(JSON_KEY_RESULTS);
-        if (results == null || results.length() == 0) {
+        ArrayNode results = optArray(response, JSON_KEY_RESULTS);
+        if (results == null || results.isEmpty()) {
             return emptyList();
         }
 
         String rawKey = null;
         List<EnrichmentMetadata> metadata = new ArrayList<>();
-        for (int i = 0; i < results.length(); i++) {
-            JSONObject entry = results.optJSONObject(i);
-            if (entry == null) {
+        for (JsonNode item : results) {
+            if (!(item instanceof ObjectNode entry)) {
                 continue;
             }
             List<LabelSuggestion> suggestions = toLabelSuggestions(entry);
@@ -386,8 +401,8 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
      * different (raise the budget) from terminal {@code FAILURE} (typically a transient CIC server-side issue).
      */
     protected void logNonTerminalStatus(BlobTextFromDocument blobTextFromDoc, String xPath, String status,
-            JSONObject response, String rawJson) {
-        String jobId = response.optString(JSON_KEY_ID, "?");
+            ObjectNode response, String rawJson) {
+        String jobId = optString(response, JSON_KEY_ID, "?");
         String errorSummary = summarizeActionErrors(response);
         String docId = blobTextFromDoc.getId();
         if (STATUS_PROCESSING.equalsIgnoreCase(status)) {
@@ -410,32 +425,32 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
      * string covering only the actions that actually failed ({@code isSuccess=false} or carry an {@code error} block).
      * Returns an empty string when the response carries no per-action errors (e.g. a {@code PROCESSING} payload).
      */
-    protected String summarizeActionErrors(JSONObject response) {
-        JSONArray results = response.optJSONArray(JSON_KEY_RESULTS);
-        if (results == null || results.length() == 0) {
+    protected String summarizeActionErrors(ObjectNode response) {
+        ArrayNode results = optArray(response, JSON_KEY_RESULTS);
+        if (results == null || results.isEmpty()) {
             return "";
         }
         List<String> errors = new ArrayList<>();
         outer:
-        for (int i = 0; i < results.length(); i++) {
-            JSONObject entry = results.optJSONObject(i);
-            if (entry == null) {
+        for (JsonNode item : results) {
+            if (!(item instanceof ObjectNode entry)) {
                 continue;
             }
-            for (String key : entry.keySet()) {
+            for (Map.Entry<String, JsonNode> field : entry.properties()) {
+                String key = field.getKey();
                 if (JSON_KEY_OBJECT_KEY.equals(key)) {
                     continue;
                 }
-                JSONObject action = entry.optJSONObject(key);
+                ObjectNode action = optObject(entry, key);
                 if (action == null) {
                     continue;
                 }
-                if (action.optBoolean(JSON_KEY_IS_SUCCESS, true)) {
+                if (optBoolean(action, JSON_KEY_IS_SUCCESS, true)) {
                     continue;
                 }
-                JSONObject err = action.optJSONObject(JSON_KEY_ERROR);
-                String errorType = err == null ? "?" : err.optString(JSON_KEY_ERROR_TYPE, "?");
-                String message = err == null ? "" : err.optString(JSON_KEY_ERROR_MESSAGE, "");
+                ObjectNode err = optObject(action, JSON_KEY_ERROR);
+                String errorType = err == null ? "?" : optString(err, JSON_KEY_ERROR_TYPE, "?");
+                String message = err == null ? "" : optString(err, JSON_KEY_ERROR_MESSAGE, "");
                 String formatted = message.isEmpty() ? String.format("%s[%s]", key, errorType)
                         : String.format("%s[%s: %s]", key, errorType, message);
                 errors.add(formatted);
@@ -452,12 +467,12 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
      * @return {@code true} when the entry carries at least one successful description action, signalling that the
      *         description listener has a value to extract from the raw blob.
      */
-    protected boolean hasDescription(JSONObject entry) {
+    protected boolean hasDescription(ObjectNode entry) {
         for (String actionKey : DESCRIPTION_ACTION_KEYS) {
-            JSONObject action = entry.optJSONObject(actionKey);
-            if (action != null && action.optBoolean(JSON_KEY_IS_SUCCESS, false)) {
-                Object value = action.opt(JSON_KEY_RESULT);
-                if (value instanceof String s && StringUtils.isNotBlank(s)) {
+            ObjectNode action = optObject(entry, actionKey);
+            if (action != null && optBoolean(action, JSON_KEY_IS_SUCCESS, false)) {
+                JsonNode value = action.get(JSON_KEY_RESULT);
+                if (value != null && value.isTextual() && StringUtils.isNotBlank(value.textValue())) {
                     return true;
                 }
             }
@@ -471,14 +486,15 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
      * property} is the Hyland action key and whose values are the plain extracted strings (no {@code action/} prefix).
      * Action keys listed in {@link ContentIntelligenceConstants#DESCRIPTION_ACTION_KEYS} are deliberately skipped.
      */
-    protected List<LabelSuggestion> toLabelSuggestions(JSONObject entry) {
+    protected List<LabelSuggestion> toLabelSuggestions(ObjectNode entry) {
         Map<String, List<AIMetadata.Label>> labelsByAction = new LinkedHashMap<>();
-        for (String key : entry.keySet()) {
+        for (Map.Entry<String, JsonNode> field : entry.properties()) {
+            String key = field.getKey();
             if (JSON_KEY_OBJECT_KEY.equals(key) || DESCRIPTION_ACTION_KEYS.contains(key)) {
                 continue;
             }
-            JSONObject action = entry.optJSONObject(key);
-            if (action == null || !action.optBoolean(JSON_KEY_IS_SUCCESS, false) || !action.has(JSON_KEY_RESULT)) {
+            ObjectNode action = optObject(entry, key);
+            if (action == null || !optBoolean(action, JSON_KEY_IS_SUCCESS, false) || !action.has(JSON_KEY_RESULT)) {
                 continue;
             }
             List<AIMetadata.Label> labels = labelsByAction.computeIfAbsent(key, k -> new ArrayList<>());
@@ -495,28 +511,23 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
 
     /**
      * Recursively flattens a Hyland CI {@code result} value into clean-name labels. Strings become a single label,
-     * {@link JSONArray} entries are visited one by one (any non-string member is ignored to avoid picking up
-     * numeric vectors), and {@link JSONObject} entries are visited value-by-value.
+     * array entries are visited one by one (any non-string member is ignored to avoid picking up numeric vectors),
+     * and object entries are visited value-by-value.
      */
-    protected void collectFromResult(List<AIMetadata.Label> labels, Object raw) {
-        if (raw instanceof String value) {
+    protected void collectFromResult(List<AIMetadata.Label> labels, JsonNode raw) {
+        if (raw == null) {
+            return;
+        }
+        if (raw.isTextual()) {
+            String value = raw.textValue();
             if (StringUtils.isNotBlank(value)) {
                 labels.add(new AIMetadata.Label(value.trim(), 1.0F));
             }
             return;
         }
-        if (raw instanceof JSONArray array) {
-            for (int i = 0; i < array.length(); i++) {
-                Object item = array.get(i);
-                if (item instanceof String || item instanceof JSONArray || item instanceof JSONObject) {
-                    collectFromResult(labels, item);
-                }
-            }
-            return;
-        }
-        if (raw instanceof JSONObject object) {
-            for (String childKey : object.keySet()) {
-                collectFromResult(labels, object.get(childKey));
+        if (raw.isArray() || raw.isObject()) {
+            for (JsonNode item : raw) {
+                collectFromResult(labels, item);
             }
         }
     }

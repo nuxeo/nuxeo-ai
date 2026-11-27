@@ -39,6 +39,9 @@ nuxeo.hyland.cic.enrichment.clientSecret=YOUR_CLIENT_SECRET
 
 #### Quick start
 
+> On Nuxeo LTS 2027 this package is not published yet: it requires the LTS 2027 version of the Content Intelligence
+> connector (NXCON-475).
+
 1. Install the nuxeo-ai-content-intelligence package. `./bin/nuxeoctl mp-install nuxeo-ai-content-intelligence`
 
 2. Add the following parameters to `nuxeo.conf`.

@@ -135,7 +135,7 @@ public class BulkEnrichmentTest {
             throw new IllegalArgumentException("Invalid name: '" + name + "'.");
         }
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
 
         drainPipeline(manager, Duration.ofSeconds(120));
 
@@ -168,7 +168,7 @@ public class BulkEnrichmentTest {
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
         waitForPipeline(manager, Duration.ofSeconds(60));
         waitForEnrichedTitle(nxql, "you", Duration.ofSeconds(60));
         txFeature.nextTransaction();
@@ -252,7 +252,7 @@ public class BulkEnrichmentTest {
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();
         submitAndAssert(command);
 
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
         waitForPipeline(manager, Duration.ofSeconds(60));
         waitForEnrichedTitle(nxql, "you", Duration.ofSeconds(60));
         txFeature.nextTransaction();
@@ -306,7 +306,7 @@ public class BulkEnrichmentTest {
         String nxql = String.format("SELECT * from Document where ecm:primaryType = 'File' AND ecm:parentId='%s' ",
                 testRoot);
         String nxql_lang = nxql + "AND dc:language IS NOT NULL";
-        LogManager manager = Framework.getService(StreamService.class).getLogManager("bulk");
+        LogManager manager = Framework.getService(StreamService.class).getLogManager();
 
         BulkCommand command = new BulkCommand.Builder(BulkEnrichmentAction.ACTION_NAME, nxql_lang,
                 session.getPrincipal().getName()).repository(session.getRepositoryName()).build();

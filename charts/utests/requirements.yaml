@@ -11,3 +11,7 @@ dependencies:
   name: nuxeo
   repository: https://chartmuseum.platform.dev.nuxeo.com
   version: ~1.2.1
+- alias: opensearch
+  name: opensearch
+  repository: https://opensearch-project.github.io/helm-charts/
+  version: 3.7.0

@@ -3,12 +3,12 @@
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>2025.29</version>
+    <version>2027.0-SNAPSHOT</version>
   </parent>
 
   <groupId>org.nuxeo.ai</groupId>
   <artifactId>ai-core-parent</artifactId>
-  <version>5.0.5-SNAPSHOT</version>
+  <version>6.0.0-SNAPSHOT</version>
   <name>Ai core parent</name>
   <description>Nuxeo AI functionality</description>
   <packaging>pom</packaging>
@@ -24,7 +24,6 @@
     <nuxeo.ai.client.version>1.4.0</nuxeo.ai.client.version>
     <nuxeo.ai.jwt.version>3.0.0</nuxeo.ai.jwt.version>
     <google.cloud.bom.version>26.94.0</google.cloud.bom.version>
-    <grpc-netty.version>1.85.1</grpc-netty.version>
     <!-- JaCoCo Configuration -->
     <jacoco.version>0.8.16</jacoco.version>
     <jacoco.aggregateReportDirectory>jacoco-aggregate</jacoco.aggregateReportDirectory>
@@ -181,78 +180,37 @@
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>insight-rest-client</artifactId>
         <version>${nuxeo.ai.client.version}</version>
+        <exclusions>
+          <!-- banned by the 2027 enforcer; the platform provides jakarta.activation-api and angus-activation -->
+          <exclusion>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>jakarta.activation</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-jwt-authenticator-core</artifactId>
         <version>${nuxeo.ai.jwt.version}</version>
+        <exclusions>
+          <!-- SLF4J 1.x binding: LTS 2027 ships log4j-slf4j2-impl only -->
+          <exclusion>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.ai</groupId>
         <artifactId>nuxeo-jwt-authenticator-jaxrs</artifactId>
         <version>${nuxeo.ai.jwt.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-auth</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-core</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-netty-shaded</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-stub</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-grpclb</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-alts</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-api</artifactId>
-        <version>${grpc-netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-context</artifactId>
-        <version>${grpc-netty.version}</version>
         <exclusions>
+          <!-- SLF4J 1.x binding: LTS 2027 ships log4j-slf4j2-impl only -->
           <exclusion>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-protobuf</artifactId>
-        <version>${grpc-netty.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-protobuf-lite</artifactId>
-        <version>${grpc-netty.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -282,22 +240,13 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>@{argLine}</argLine>
+          <!-- prepend the JaCoCo agent (@{argLine}) while keeping the nuxeo-parent argLine (Mockito agent, JDK module flags) -->
+          <argLine>@{argLine} ${it.memory.argLine} -Dfile.encoding=UTF-8 -XX:-OmitStackTraceInFastThrow -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar ${it.failsafe.argLine} ${it.modules.argLine}</argLine>
         </configuration>
       </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <systemPropertyVariables combine.children="append">
-              <!--suppress UnresolvedMavenProperty -->
-              <elasticsearch.httpReadOnly.baseUrl>${nuxeo.test.elasticsearch.addressList}</elasticsearch.httpReadOnly.baseUrl>
-            </systemPropertyVariables>
-          </configuration>
-        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>

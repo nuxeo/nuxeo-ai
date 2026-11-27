@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.nuxeo.ai</groupId>
     <artifactId>ai-core-parent</artifactId>
-    <version>5.0.5-SNAPSHOT</version>
+    <version>6.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>nuxeo-ai-addons</artifactId>
   <name>Nuxeo AI Addons parent POM</name>
@@ -53,6 +53,13 @@
         <groupId>org.nuxeo.content.intelligence</groupId>
         <artifactId>nuxeo-content-intelligence-connector-core</artifactId>
         <version>${nuxeo.content.intelligence.connector.version}</version>
+        <exclusions>
+          <!-- SLF4J 1.x binding: LTS 2027 ships log4j-slf4j2-impl only -->
+          <exclusion>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
     </dependencies>
   </dependencyManagement>

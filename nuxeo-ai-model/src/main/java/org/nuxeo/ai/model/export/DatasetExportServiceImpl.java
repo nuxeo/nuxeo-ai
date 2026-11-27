@@ -51,7 +51,7 @@ import org.nuxeo.ecm.core.schema.types.Field;
 import org.nuxeo.ecm.core.schema.TypeConstants;
 import org.nuxeo.ecm.platform.query.api.PageProvider;
 import org.nuxeo.ecm.platform.query.api.PageProviderService;
-import org.nuxeo.ecm.platform.query.nxql.CoreQueryDocumentPageProvider;
+import org.nuxeo.ecm.platform.query.api.PageProviderSpec;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.kv.*;
 import org.nuxeo.runtime.model.DefaultComponent;
@@ -306,11 +306,14 @@ public class DatasetExportServiceImpl extends DefaultComponent implements Datase
     public DocumentModel latestDatasetExportForModel(CoreSession session, @Nonnull String modelId) {
         PageProviderService pps = Framework.getService(PageProviderService.class);
         Map<String, Serializable> props = new HashMap<>();
-        props.put(CoreQueryDocumentPageProvider.CORE_SESSION_PROPERTY, (Serializable) session);
+        props.put(PageProviderSpec.CORE_SESSION_PROPERTY, (Serializable) session);
         final String DATASET_EXPORT_DESC_PP = "dataset_export_desc";
-        @SuppressWarnings("unchecked")
-        PageProvider<DocumentModel> pp = (PageProvider<DocumentModel>) pps.getPageProvider(DATASET_EXPORT_DESC_PP, null,
-                1L, 0L, props, modelId);
+        PageProvider<DocumentModel> pp = pps.getPageProvider(PageProviderSpec.builder(DATASET_EXPORT_DESC_PP)
+                                                                             .pageSize(1L)
+                                                                             .currentPage(0L)
+                                                                             .properties(props)
+                                                                             .parameters(modelId)
+                                                                             .build());
         List<DocumentModel> currentPage = pp.getCurrentPage();
         if (currentPage.isEmpty()) {
             return null;

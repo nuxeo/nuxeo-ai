@@ -325,7 +325,7 @@ public class AWSHelper {
 
     public static String getS3BucketName() {
         ConfigurationService cs = Framework.getService(ConfigurationService.class);
-        String bucket = cs != null ? cs.getProperty(CONFIG_S3_BUCKET) : null;
+        String bucket = cs != null ? cs.getString(CONFIG_S3_BUCKET, null) : null;
         if (StringUtils.isBlank(bucket)) {
             bucket = "default-bucket"; // fallback
         }
