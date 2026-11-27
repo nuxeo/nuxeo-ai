@@ -202,6 +202,8 @@ the `configName` option of a Content Intelligence enrichment provider:
     <name>other</name>
     <authenticationBaseUrl>https://YOUR_CIC_AUTH_BASE_URL</authenticationBaseUrl>
     <baseUrl>https://YOUR_CIC_ENRICHMENT_BASE_URL</baseUrl>
+    <tokenGrantType>client_credentials</tokenGrantType>
+    <tokenScope>environment_authorization</tokenScope>
     <clientId>YOUR_CLIENT_ID</clientId>
     <clientSecret>YOUR_CLIENT_SECRET</clientSecret>
   </knowledgeEnrichment>
@@ -211,10 +213,13 @@ the `configName` option of a Content Intelligence enrichment provider:
 #### Provider options
 
 * `actions`: comma-separated Knowledge Enrichment actions, in the configuration form (`image-description`) or the API
-  form (`imageDescription`). An unknown action fails the provider initialization.
+  form (`imageDescription`).
 * `similarMetadata`: JSON array of objects with string values, sent as `kSimilarMetadata` with every action.
 * `extraJsonPayload`: JSON object; `maxWordCount`, `model`, `category` and `instructions` are applied to every action,
   `saveResultInContentLakeRepository` to the request. Other keys are ignored with a warning.
+
+An unknown action or a malformed `similarMetadata` / `extraJsonPayload` fails the provider initialization, and with it
+the start of the Nuxeo AI component: check the server log after changing these options.
 
 #### Upgrading to 5.0.5
 
@@ -227,7 +232,10 @@ through the Hyland CIC Java SDK, whose jars are shipped in `nxserver/lib`.
   `nxserver/lib`, so keep compatible SDK versions.
 * Contributions to the connector `knowledgeEnrichment` extension point used by this add-on must now target
   `org.nuxeo.ai.contentintelligence.ContentIntelligenceService`.
-* `extraJsonPayload` only supports the keys listed above (other keys were previously sent as-is).
+* `extraJsonPayload` only supports the keys listed above (other keys were previously sent as-is), and an unknown
+  action or malformed option now fails at startup instead of on the first document.
+* The Knowledge Enrichment answer is mapped by the SDK: only the actions it models (`imageDescription`, `textSummary`,
+  named entities, classifications, metadata, embeddings) produce tags, and an answer it cannot map fails the call.
 * The raw enrichment JSON stored for each result keeps the `response` object of the API, without the connector's
   `responseCode`, `responseMessage` and `objectKeysMapping` envelope.
 * Enrichment cache keys change once, so documents enriched before the upgrade are sent again when re-enriched.

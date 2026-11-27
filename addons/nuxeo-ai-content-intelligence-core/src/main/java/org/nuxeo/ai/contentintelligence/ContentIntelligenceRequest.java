@@ -120,8 +120,13 @@ public record ContentIntelligenceRequest(List<Action> actions, ActionConfig acti
             }
         }
         if (!unknown.isEmpty()) {
-            throw new IllegalArgumentException(String.format("Unknown Knowledge Enrichment action(s) %s, expected %s",
-                    unknown, Arrays.stream(Action.values()).map(Action::value).collect(Collectors.toList())));
+            throw new IllegalArgumentException(String.format(
+                    "Unknown Knowledge Enrichment action(s) %s, expected one of %s (or their API names, e.g. %s)",
+                    unknown,
+                    Arrays.stream(Action.values())
+                          .map(a -> a.name().toLowerCase(Locale.ROOT).replace('_', '-'))
+                          .collect(Collectors.toList()),
+                    Action.IMAGE_DESCRIPTION.value()));
         }
         if (actions.isEmpty()) {
             throw new IllegalArgumentException("At least one Knowledge Enrichment action is required");

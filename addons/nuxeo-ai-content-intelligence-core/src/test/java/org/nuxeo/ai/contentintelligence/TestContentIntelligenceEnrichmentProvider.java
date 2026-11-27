@@ -465,18 +465,18 @@ public class TestContentIntelligenceEnrichmentProvider {
         }
     }
 
-    /** Unreadable answers, failed uploads or configuration errors are not transient: the blob is dropped. */
-    @Test
-    public void shouldDropNonNetworkSdkFailures() {
+    /** Failures without HTTP answer (unreadable answer, configuration error, ...) are rethrown, not dropped. */
+    @Test(expected = NuxeoException.class)
+    public void shouldRethrowFailuresWithoutHttpStatus() {
         when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
-                new NuxeoException("boom", new CICSdkException("Couldn't upload the blob, status code: 403")));
-        assertEquals(0, provider.enrich(buildBlobTextFromDoc()).size());
+                new NuxeoException("boom", new CICSdkException("Failed to parse the response")));
+        provider.enrich(buildBlobTextFromDoc());
     }
 
-    @Test
-    public void shouldDropNullServiceResult() {
+    @Test(expected = NuxeoException.class)
+    public void shouldRethrowOnNullServiceResult() {
         when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(null);
-        assertEquals(0, provider.enrich(buildBlobTextFromDoc()).size());
+        provider.enrich(buildBlobTextFromDoc());
     }
 
     @Test

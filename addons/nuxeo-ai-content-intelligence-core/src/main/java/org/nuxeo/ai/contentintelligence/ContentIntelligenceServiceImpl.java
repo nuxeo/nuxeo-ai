@@ -24,16 +24,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyland.sdk.cic.http.client.CICSdkException;
 import org.hyland.sdk.cic.http.client.CICServiceException;
 import org.hyland.sdk.cic.http.client.auth.AuthenticationHttpClient;
 import org.hyland.sdk.cic.http.client.mapper.object.CICBlob;
 import org.hyland.sdk.cic.ke.KEHttpClient;
 import org.hyland.sdk.cic.ke.KEService;
 import org.hyland.sdk.cic.ke.object.EnrichmentResult;
+import org.hyland.sdk.cic.ke.object.ObjectKey;
+import org.hyland.sdk.cic.ke.object.PresignedUrl;
+import org.hyland.sdk.cic.ke.object.ProcessRequest;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
 
@@ -52,11 +58,20 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
     /** Configuration used when no (or a blank) configuration name is given. */
     public static final String DEFAULT_CONFIG_NAME = "default";
 
+    protected static final String DEFAULT_GRANT_TYPE = "client_credentials";
+
+    protected static final String DEFAULT_SCOPE = "environment_authorization";
+
+    protected static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
+
+    /** Bounds every request, including the upload of large documents. */
+    protected static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(120);
+
+    protected static final Pattern UPLOAD_STATUS = Pattern.compile("status code: (\\d{3})");
+
     protected static final String TOKEN_PATH = "/connect/token";
 
     protected final Map<String, KEHttpClient> clients;
-
-    protected final Map<String, KEService> services;
 
     protected final int maxTries;
 
@@ -67,7 +82,6 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
         this.maxTries = Math.max(1, maxTries);
         this.pollInterval = pollInterval == null || pollInterval.isNegative() ? Duration.ZERO : pollInterval;
         Map<String, KEHttpClient> clientsByName = new HashMap<>();
-        Map<String, KEService> servicesByName = new HashMap<>();
         for (ContentIntelligenceDescriptor desc : descriptors) {
             if (!desc.hasAllValues()) {
                 log.warn("Knowledge Enrichment configuration '{}' is incomplete (name, authentication URL, base URL, "
@@ -83,10 +97,8 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
             }
             KEHttpClient client = buildClient(desc);
             clientsByName.put(desc.getName(), client);
-            servicesByName.put(desc.getName(), new KEService(client));
         }
         clients = Map.copyOf(clientsByName);
-        services = Map.copyOf(servicesByName);
     }
 
     protected static boolean isHttpUrl(String url) {
@@ -108,29 +120,62 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
         String tokenUrl = withoutTrailingSlash(desc.getAuthenticationBaseUrl()) + TOKEN_PATH;
         var auth = AuthenticationHttpClient.from(tokenUrl)
                                            .clientId(desc.getClientId())
-                                           .clientSecret(desc.getClientSecret());
-        if (StringUtils.isNotBlank(desc.getTokenGrantType())) {
-            auth.grantType(desc.getTokenGrantType());
-        }
-        if (StringUtils.isNotBlank(desc.getTokenScope())) {
-            auth.scope(desc.getTokenScope());
-        }
-        return KEHttpClient.from(withoutTrailingSlash(desc.getBaseUrl()), auth).build();
+                                           .clientSecret(desc.getClientSecret())
+                                           .grantType(StringUtils.defaultIfBlank(desc.getTokenGrantType(),
+                                                   DEFAULT_GRANT_TYPE))
+                                           .scope(StringUtils.defaultIfBlank(desc.getTokenScope(), DEFAULT_SCOPE))
+                                           .connectTimeout(CONNECT_TIMEOUT)
+                                           .requestTimeout(REQUEST_TIMEOUT);
+        return KEHttpClient.from(withoutTrailingSlash(desc.getBaseUrl()), auth)
+                           .connectTimeout(CONNECT_TIMEOUT)
+                           .requestTimeout(REQUEST_TIMEOUT)
+                           .build();
     }
 
     @Override
     public EnrichmentResult enrich(String configName, Blob blob, ContentIntelligenceRequest request) {
         String name = StringUtils.defaultIfBlank(configName, DEFAULT_CONFIG_NAME);
-        KEService service = services.get(name);
-        if (service == null) {
+        KEHttpClient client = clients.get(name);
+        if (client == null) {
             throw new NuxeoException(String.format(
                     "No complete Knowledge Enrichment configuration '%s': check the nuxeo.hyland.cic.* properties "
                             + "or the knowledgeEnrichment contributions",
                     name));
         }
-        String processingId = callCIC("enrichment request", name,
-                () -> service.sendForEnrichment(toCICBlob(blob), request::configure));
+        // the steps of KEService#sendForEnrichment, run one by one to report the status of a failed upload
+        CICBlob cicBlob = callCIC("upload", name, () -> toCICBlob(blob));
+        ProcessRequest.Builder builder = ProcessRequest.builder();
+        request.configure(builder);
+        String contentType = cicBlob.getContentType().orElse("application/octet-stream");
+        PresignedUrl presignedUrl = callCIC("upload", name, () -> client.getPresignedUrl(contentType));
+        callCIC("upload", name, () -> {
+            upload(client, presignedUrl.presignedUrl(), cicBlob);
+            return null;
+        });
+        builder.objectKeys(List.of(ObjectKey.forPath(presignedUrl.objectKey())));
+        String processingId = callCIC("enrichment request", name, () -> client.process(builder.build()));
         return pollResults(name, processingId);
+    }
+
+    /**
+     * The SDK reports a non-2xx upload answer (after its own retries) as a plain {@link CICSdkException} with the
+     * status in its message: turn it into a {@link CICServiceException} so callers can tell client from server errors.
+     */
+    protected static void upload(KEHttpClient client, String presignedUrl, CICBlob blob) {
+        try {
+            client.upload(presignedUrl, blob);
+        } catch (CICServiceException e) {
+            throw e;
+        } catch (CICSdkException e) {
+            Matcher matcher = UPLOAD_STATUS.matcher(StringUtils.defaultString(e.getMessage()));
+            if (matcher.find()) {
+                CICServiceException status = new CICServiceException(e.getMessage(),
+                        Integer.parseInt(matcher.group(1)));
+                status.initCause(e);
+                throw status;
+            }
+            throw e;
+        }
     }
 
     /**
@@ -142,7 +187,7 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
         for (int attempt = 1; attempt <= maxTries; attempt++) {
             EnrichmentResult result = callCIC("results retrieval", configName,
                     () -> client.getResultsIfReady(processingId));
-            if (result != null && !result.inProgress()) {
+            if (result != null && !result.inProgress() && !STATUS_PROCESSING.equalsIgnoreCase(result.status())) {
                 return result;
             }
             if (attempt < maxTries) {
@@ -183,6 +228,11 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
     }
 
     protected static <T> T callCIC(String operation, String configName, Supplier<T> call) {
+        // the SDK loads its JSON serializer and mappers with ServiceLoader, i.e. from the thread context class loader:
+        // make sure it sees this bundle's classes whatever the calling (stream) thread is
+        Thread thread = Thread.currentThread();
+        ClassLoader previous = thread.getContextClassLoader();
+        thread.setContextClassLoader(ContentIntelligenceServiceImpl.class.getClassLoader());
         try {
             return call.get();
         } catch (CICServiceException e) {
@@ -195,6 +245,8 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
             // never let it escape unwrapped, the enrichment retry policy would replay the whole upload
             throw new NuxeoException(String.format("Content Intelligence %s failed for configuration '%s': %s",
                     operation, configName, e.getMessage()), e);
+        } finally {
+            thread.setContextClassLoader(previous);
         }
     }
 

@@ -277,11 +277,27 @@ public class TestContentIntelligenceServiceImpl {
     }
 
     @Test
-    public void shouldWrapUploadFailureWithoutHttpStatus() {
+    public void shouldReportUploadStatus() {
         routes.put("PUT /upload/ok1", ex -> new Response(403, "denied"));
-
-        assertThrows(NuxeoException.class, () -> service.enrich("default", blob(), request()));
+        NuxeoException e = assertThrows(NuxeoException.class, () -> service.enrich("default", blob(), request()));
+        assertEquals(403, status(e));
         assertEquals(0, hits("POST /ke/content/process"));
+
+        routes.put("PUT /upload/ok1", ex -> new Response(503, "busy"));
+        e = assertThrows(NuxeoException.class, () -> service.enrich("default", blob(), request()));
+        assertEquals(503, status(e));
+        assertTrue(hits("PUT /upload/ok1") > 2);
+    }
+
+    @Test
+    public void shouldKeepPollingWhileStatusIsProcessing() {
+        AtomicInteger polls = new AtomicInteger();
+        routes.put("GET /ke/content/process/proc-1/results", ex -> polls.incrementAndGet() == 1
+                ? new Response(200, "{\"id\":\"proc-1\",\"status\":\"PROCESSING\",\"results\":[]}")
+                : new Response(200, RESULTS));
+
+        assertEquals("SUCCESS", service.enrich("default", blob(), request()).status());
+        assertEquals(2, hits("GET /ke/content/process/proc-1/results"));
     }
 
     @Test

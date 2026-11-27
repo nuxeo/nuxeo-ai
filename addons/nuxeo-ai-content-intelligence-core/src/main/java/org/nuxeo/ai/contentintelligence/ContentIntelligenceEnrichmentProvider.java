@@ -45,6 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyland.sdk.cic.http.client.CICError;
 import org.hyland.sdk.cic.http.client.CICServiceException;
 import org.hyland.sdk.cic.ke.object.EnrichmentResult;
 import org.nuxeo.ai.enrichment.AbstractEnrichmentProvider;
@@ -290,29 +291,23 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     }
 
     /**
-     * Handles a failed Hyland CI call. 5xx and 429 responses and network failures (I/O error or interruption, no HTTP
-     * status) are rethrown so the upstream stream processor accounts for them; other failures (4xx responses,
-     * unreadable responses, failed uploads, configuration errors) are logged and the blob is dropped.
+     * Handles a failed Hyland CI call. HTTP 5xx and 429 answers and failures without an HTTP answer (network error,
+     * unreadable answer, configuration error, ...) are rethrown so the upstream stream processor accounts for them;
+     * other HTTP 4xx answers (definitive client errors) are logged and the blob is dropped.
      */
     protected void handleFailedCall(BlobTextFromDocument blobTextFromDoc, String xPath, NuxeoException e) {
         CICServiceException serviceException = ExceptionUtils.throwableOfType(e, CICServiceException.class);
-        String status = serviceException == null ? "n/a" : String.valueOf(serviceException.statusCode());
-        boolean retryable = serviceException == null ? isNetworkFailure(e) : isRetryable(serviceException.statusCode());
-        if (retryable) {
-            throw new NuxeoException(String.format("Knowledge Enrichment call failed (status=%s) for %s/%s: %s", status,
+        int code = serviceException == null ? -1 : serviceException.statusCode();
+        if (isRetryable(code)) {
+            throw new NuxeoException(String.format("Knowledge Enrichment call failed (status=%d) for %s/%s: %s", code,
                     blobTextFromDoc.getId(), xPath, e.getMessage()), e);
         }
-        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {}", status, blobTextFromDoc.getId(),
-                xPath, e.getMessage());
+        String detail = serviceException.remoteCause().map(CICError::message).orElse("");
+        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {} {}", code, blobTextFromDoc.getId(),
+                xPath, e.getMessage(), detail);
     }
 
-    /** @return {@code true} if the failure comes from an I/O error or an interruption, not from the service answer */
-    protected boolean isNetworkFailure(Throwable e) {
-        return ExceptionUtils.indexOfType(e, IOException.class) >= 0
-                || ExceptionUtils.indexOfType(e, InterruptedException.class) >= 0;
-    }
-
-    /** Network-level (-1) and 5xx / 429 responses are considered retryable. */
+    /** Failures without HTTP answer (-1) and 5xx / 429 answers are considered retryable. */
     protected boolean isRetryable(int code) {
         return code < 0 || code == 429 || (code >= 500 && code < 600);
     }

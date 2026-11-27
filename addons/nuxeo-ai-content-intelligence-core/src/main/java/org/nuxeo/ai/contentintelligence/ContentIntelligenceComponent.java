@@ -42,7 +42,7 @@ public class ContentIntelligenceComponent extends DefaultComponent {
 
     public static final int DEFAULT_PULL_RESULTS_SLEEP_INTERVAL = 3000;
 
-    protected ContentIntelligenceServiceImpl service;
+    protected volatile ContentIntelligenceServiceImpl service;
 
     @Override
     public void start(ComponentContext context) {
@@ -52,14 +52,19 @@ public class ContentIntelligenceComponent extends DefaultComponent {
                 DEFAULT_PULL_RESULTS_MAX_TRIES);
         int sleepInterval = NumberUtils.toInt(Framework.getProperty(PULL_RESULTS_SLEEP_INTERVAL_PROP),
                 DEFAULT_PULL_RESULTS_SLEEP_INTERVAL);
+        ContentIntelligenceServiceImpl previous = service;
         service = new ContentIntelligenceServiceImpl(descriptors, maxTries, Duration.ofMillis(sleepInterval));
+        if (previous != null) {
+            previous.close();
+        }
     }
 
     @Override
     public void stop(ComponentContext context) throws InterruptedException {
-        if (service != null) {
-            service.close();
-            service = null;
+        ContentIntelligenceServiceImpl current = service;
+        service = null;
+        if (current != null) {
+            current.close();
         }
         super.stop(context);
     }
