@@ -143,17 +143,19 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
                     name));
         }
         // the steps of KEService#sendForEnrichment, run one by one to report the status of a failed upload
-        CICBlob cicBlob = callCIC("upload", name, () -> toCICBlob(blob));
-        ProcessRequest.Builder builder = ProcessRequest.builder();
-        request.configure(builder);
+        CICBlob cicBlob = callCIC("blob preparation", name, () -> toCICBlob(blob));
         String contentType = cicBlob.getContentType().orElse("application/octet-stream");
-        PresignedUrl presignedUrl = callCIC("upload", name, () -> client.getPresignedUrl(contentType));
+        PresignedUrl presignedUrl = callCIC("presigned URL request", name, () -> client.getPresignedUrl(contentType));
+        ProcessRequest processRequest = callCIC("enrichment request", name, () -> {
+            ProcessRequest.Builder builder = ProcessRequest.builder();
+            request.configure(builder);
+            return builder.objectKeys(List.of(ObjectKey.forPath(presignedUrl.objectKey()))).build();
+        });
         callCIC("upload", name, () -> {
             upload(client, presignedUrl.presignedUrl(), cicBlob);
             return null;
         });
-        builder.objectKeys(List.of(ObjectKey.forPath(presignedUrl.objectKey())));
-        String processingId = callCIC("enrichment request", name, () -> client.process(builder.build()));
+        String processingId = callCIC("enrichment request", name, () -> client.process(processRequest));
         return pollResults(name, processingId);
     }
 
@@ -168,9 +170,9 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
             throw e;
         } catch (CICSdkException e) {
             Matcher matcher = UPLOAD_STATUS.matcher(StringUtils.defaultString(e.getMessage()));
-            if (matcher.find()) {
-                CICServiceException status = new CICServiceException(e.getMessage(),
-                        Integer.parseInt(matcher.group(1)));
+            int code = matcher.find() ? Integer.parseInt(matcher.group(1)) : -1;
+            if (code >= 400 && code < 600) {
+                CICServiceException status = new CICServiceException(e.getMessage(), code);
                 status.initCause(e);
                 throw status;
             }

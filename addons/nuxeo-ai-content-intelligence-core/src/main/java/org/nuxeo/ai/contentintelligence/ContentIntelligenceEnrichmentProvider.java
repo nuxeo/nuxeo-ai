@@ -298,12 +298,12 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     protected void handleFailedCall(BlobTextFromDocument blobTextFromDoc, String xPath, NuxeoException e) {
         CICServiceException serviceException = ExceptionUtils.throwableOfType(e, CICServiceException.class);
         int code = serviceException == null ? -1 : serviceException.statusCode();
-        if (isRetryable(code)) {
+        if (serviceException == null || isRetryable(code)) {
             throw new NuxeoException(String.format("Knowledge Enrichment call failed (status=%d) for %s/%s: %s", code,
                     blobTextFromDoc.getId(), xPath, e.getMessage()), e);
         }
-        String detail = serviceException.remoteCause().map(CICError::message).orElse("");
-        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {} {}", code, blobTextFromDoc.getId(),
+        String detail = serviceException.remoteCause().map(CICError::message).map(m -> " (" + m + ")").orElse("");
+        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {}{}", code, blobTextFromDoc.getId(),
                 xPath, e.getMessage(), detail);
     }
 

@@ -290,6 +290,15 @@ public class TestContentIntelligenceServiceImpl {
     }
 
     @Test
+    public void shouldNotUploadWhenRequestCannotBeBuilt() {
+        routes.put("GET /ke/files/upload/presigned-url",
+                ex -> new Response(200, "{\"presignedUrl\":\"" + baseUrl + "/upload/ok1\",\"objectKey\":\"\"}"));
+
+        assertThrows(NuxeoException.class, () -> service.enrich("default", blob(), request()));
+        assertEquals(0, hits("PUT /upload/ok1"));
+    }
+
+    @Test
     public void shouldKeepPollingWhileStatusIsProcessing() {
         AtomicInteger polls = new AtomicInteger();
         routes.put("GET /ke/content/process/proc-1/results", ex -> polls.incrementAndGet() == 1
