@@ -122,6 +122,20 @@ public class TestContentIntelligenceRequest {
     }
 
     @Test
+    public void shouldAcceptNumericStringMaxWordCount() {
+        assertEquals(ActionConfig.builder().maxWordCount(50).build(),
+                ContentIntelligenceRequest.of("text-summarization", null, "{\"maxWordCount\":\" 50\"}").actionConfig());
+    }
+
+    @Test
+    public void shouldRefuseNonScalarModelOrCategory() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ContentIntelligenceRequest.of("text-summarization", null, "{\"model\":{\"id\":\"m1\"}}"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ContentIntelligenceRequest.of("text-summarization", null, "{\"category\":[\"legal\"]}"));
+    }
+
+    @Test
     public void shouldConfigureProcessRequest() {
         ContentIntelligenceRequest request = ContentIntelligenceRequest.of(
                 "image-description,named-entity-recognition-image", null, "{\"maxWordCount\":20}");

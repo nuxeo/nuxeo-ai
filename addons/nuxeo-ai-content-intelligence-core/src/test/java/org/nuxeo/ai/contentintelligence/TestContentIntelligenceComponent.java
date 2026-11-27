@@ -48,4 +48,14 @@ public class TestContentIntelligenceComponent {
         assertTrue(e.getMessage(), e.getMessage().contains("'default'"));
         assertTrue(e.getMessage(), e.getMessage().contains("nuxeo.hyland.cic"));
     }
+
+    @Test
+    @Deploy("org.nuxeo.ai.nuxeo-ai-content-intelligence-core-test:OSGI-INF/test-knowledge-enrichment-contrib.xml")
+    public void shouldUseContributedConfiguration() {
+        ContentIntelligenceRequest request = ContentIntelligenceRequest.of("image-description", null, null);
+        // the contributed configuration is complete: the call reaches its (unreachable) endpoint
+        NuxeoException e = assertThrows(NuxeoException.class,
+                () -> service.enrich("other", Blobs.createBlob("hello", "image/jpeg"), request));
+        assertTrue(e.getMessage(), e.getMessage().contains("failed for configuration 'other'"));
+    }
 }

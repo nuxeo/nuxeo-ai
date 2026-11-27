@@ -144,7 +144,7 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     @Override
     public void init(EnrichmentDescriptor descriptor) {
         super.init(descriptor);
-        configName = descriptor.options.getOrDefault(OPTION_CONFIG_NAME, DEFAULT_CONFIG_NAME);
+        configName = StringUtils.defaultIfBlank(descriptor.options.get(OPTION_CONFIG_NAME), DEFAULT_CONFIG_NAME).trim();
         similarMetadata = StringUtils.trimToNull(descriptor.options.get(OPTION_SIMILAR_METADATA));
         extraJsonPayload = StringUtils.trimToNull(descriptor.options.get(OPTION_EXTRA_JSON_PAYLOAD));
         try {
@@ -278,6 +278,10 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
                 handleFailedCall(blobTextFromDoc, xPath, e);
                 continue;
             }
+            if (result == null) {
+                handleFailedCall(blobTextFromDoc, xPath, new NuxeoException("No Knowledge Enrichment result"));
+                continue;
+            }
 
             ObjectNode response = ContentIntelligenceResultSerializer.toJson(result);
             enriched.addAll(processResponse(blobTextFromDoc, xPath, response));
@@ -286,19 +290,26 @@ public class ContentIntelligenceEnrichmentProvider extends AbstractEnrichmentPro
     }
 
     /**
-     * Handles a failed Hyland CI call. Network errors (no HTTP status), 5xx and 429 responses are rethrown so the
-     * upstream stream-processor retry policy can take over; other 4xx responses (definitive client errors) are logged
-     * and dropped.
+     * Handles a failed Hyland CI call. 5xx and 429 responses and network failures (I/O error or interruption, no HTTP
+     * status) are rethrown so the upstream stream processor accounts for them; other failures (4xx responses,
+     * unreadable responses, failed uploads, configuration errors) are logged and the blob is dropped.
      */
     protected void handleFailedCall(BlobTextFromDocument blobTextFromDoc, String xPath, NuxeoException e) {
         CICServiceException serviceException = ExceptionUtils.throwableOfType(e, CICServiceException.class);
-        int code = serviceException == null ? -1 : serviceException.statusCode();
-        if (isRetryable(code)) {
-            throw new NuxeoException(String.format("Knowledge Enrichment call failed (status=%d) for %s/%s: %s", code,
+        String status = serviceException == null ? "n/a" : String.valueOf(serviceException.statusCode());
+        boolean retryable = serviceException == null ? isNetworkFailure(e) : isRetryable(serviceException.statusCode());
+        if (retryable) {
+            throw new NuxeoException(String.format("Knowledge Enrichment call failed (status=%s) for %s/%s: %s", status,
                     blobTextFromDoc.getId(), xPath, e.getMessage()), e);
         }
-        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {}", code, blobTextFromDoc.getId(),
+        log.warn("Knowledge Enrichment call unsuccessful (status={}) for {}/{}: {}", status, blobTextFromDoc.getId(),
                 xPath, e.getMessage());
+    }
+
+    /** @return {@code true} if the failure comes from an I/O error or an interruption, not from the service answer */
+    protected boolean isNetworkFailure(Throwable e) {
+        return ExceptionUtils.indexOfType(e, IOException.class) >= 0
+                || ExceptionUtils.indexOfType(e, InterruptedException.class) >= 0;
     }
 
     /** Network-level (-1) and 5xx / 429 responses are considered retryable. */

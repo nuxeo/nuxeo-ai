@@ -163,10 +163,7 @@ public record ContentIntelligenceRequest(List<Action> actions, ActionConfig acti
     protected static boolean applyExtraPayload(ObjectNode payload, ActionConfig.Builder config) {
         JsonNode maxWordCount = payload.get(KEY_MAX_WORD_COUNT);
         if (maxWordCount != null && !maxWordCount.isNull()) {
-            if (!maxWordCount.isIntegralNumber() || !maxWordCount.canConvertToInt()) {
-                throw new IllegalArgumentException("extraJsonPayload." + KEY_MAX_WORD_COUNT + " must be an integer");
-            }
-            config.maxWordCount(maxWordCount.intValue());
+            config.maxWordCount(toInt(maxWordCount, "extraJsonPayload." + KEY_MAX_WORD_COUNT));
         }
         String model = textOrNull(payload, KEY_MODEL);
         if (model != null) {
@@ -189,9 +186,30 @@ public record ContentIntelligenceRequest(List<Action> actions, ActionConfig acti
         return ContentIntelligenceJson.optBoolean(payload, KEY_SAVE_RESULT, false);
     }
 
+    /** Accepts an integral JSON number or a string holding one. */
+    protected static int toInt(JsonNode value, String option) {
+        if (value.isIntegralNumber() && value.canConvertToInt()) {
+            return value.intValue();
+        }
+        if (value.isTextual()) {
+            try {
+                return Integer.parseInt(value.textValue().trim());
+            } catch (NumberFormatException e) {
+                // fall through
+            }
+        }
+        throw new IllegalArgumentException(option + " must be an integer");
+    }
+
     protected static String textOrNull(ObjectNode payload, String key) {
         JsonNode value = payload.get(key);
-        return value == null || value.isNull() ? null : value.asText();
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (!value.isValueNode()) {
+            throw new IllegalArgumentException("extraJsonPayload." + key + " must be a string");
+        }
+        return value.asText();
     }
 
     protected static Map<String, String> toStringMap(JsonNode node, String option) {

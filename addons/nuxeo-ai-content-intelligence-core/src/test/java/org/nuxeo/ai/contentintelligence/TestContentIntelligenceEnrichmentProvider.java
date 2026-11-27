@@ -439,7 +439,7 @@ public class TestContentIntelligenceEnrichmentProvider {
     @Test(expected = NuxeoException.class)
     public void shouldRethrowIOExceptionAsNuxeoException() throws IOException {
         when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
-                new NuxeoException("boom", new CICSdkException("network down")));
+                new NuxeoException("boom", new CICSdkException("network down", new IOException("connection reset"))));
         provider.enrich(buildBlobTextFromDoc());
     }
 
@@ -463,6 +463,64 @@ public class TestContentIntelligenceEnrichmentProvider {
                     httpError(status));
             assertEquals("status " + status, 0, provider.enrich(buildBlobTextFromDoc()).size());
         }
+    }
+
+    /** Unreadable answers, failed uploads or configuration errors are not transient: the blob is dropped. */
+    @Test
+    public void shouldDropNonNetworkSdkFailures() {
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenThrow(
+                new NuxeoException("boom", new CICSdkException("Couldn't upload the blob, status code: 403")));
+        assertEquals(0, provider.enrich(buildBlobTextFromDoc()).size());
+    }
+
+    @Test
+    public void shouldDropNullServiceResult() {
+        when(service.enrich(anyString(), any(Blob.class), any(ContentIntelligenceRequest.class))).thenReturn(null);
+        assertEquals(0, provider.enrich(buildBlobTextFromDoc()).size());
+    }
+
+    @Test
+    public void shouldUseDefaultConfigurationWhenConfigNameIsBlank() {
+        ContentIntelligenceEnrichmentProvider p = newProvider(
+                Map.of(ContentIntelligenceEnrichmentProvider.OPTION_CONFIG_NAME, "  "));
+        assertEquals(ContentIntelligenceEnrichmentProvider.DEFAULT_CONFIG_NAME, p.configName);
+    }
+
+    /**
+     * The same API answer must give the same labels and description whether its JSON is read directly (as before the
+     * SDK) or mapped by the SDK and written back by {@link ContentIntelligenceResultSerializer}.
+     */
+    @Test
+    public void shouldYieldSameLabelsThroughSdk() {
+        String json = "{\"id\":\"j\",\"status\":\"SUCCESS\",\"results\":[{\"objectKey\":\"ok1\","
+                + "\"imageDescription\":{\"isSuccess\":true,\"result\":\"  A cat  \"},"
+                + "\"imageMetadata\":{\"isSuccess\":true,\"result\":{\"title\":\"Invoice\",\"pages\":3,"
+                + "\"flags\":[true,\"scanned\"],\"gps\":{\"city\":\"Paris\",\"lat\":48.8},\"empty\":null}},"
+                + "\"pretrainedClassification\":{\"isSuccess\":true,"
+                + "\"result\":{\"classification\":\"invoice\",\"confidence\":0.93}},"
+                + "\"textClassification\":{\"isSuccess\":true,\"result\":\"contract\"},"
+                + "\"namedEntityImage\":{\"isSuccess\":true,"
+                + "\"result\":{\"persons\":[],\"locations\":[\"Paris\",\"Rome\"],\"organisations\":[\"Acme\"]}},"
+                + "\"imageEmbeddings\":{\"isSuccess\":false,\"error\":{\"errorType\":\"Timeout\",\"message\":\"m\"}}"
+                + "}]}";
+        Collection<EnrichmentMetadata> raw = provider.processResponse(buildBlobTextFromDoc(), "file:content",
+                response(json));
+        String rawDescription = new ContentIntelligenceDescriptionListener().parseDescription(lastRawJson);
+        Collection<EnrichmentMetadata> sdk = provider.processResponse(buildBlobTextFromDoc(), "file:content",
+                ContentIntelligenceResultSerializer.toJson(result(json)));
+        String sdkDescription = new ContentIntelligenceDescriptionListener().parseDescription(lastRawJson);
+
+        assertEquals(labelsByProperty(raw), labelsByProperty(sdk));
+        assertEquals("A cat", rawDescription);
+        assertEquals(rawDescription, sdkDescription);
+    }
+
+    protected static Map<String, Set<String>> labelsByProperty(Collection<EnrichmentMetadata> metadata) {
+        return metadata.stream()
+                       .flatMap(m -> m.getLabels().stream())
+                       .collect(Collectors.toMap(LabelSuggestion::getProperty,
+                               s -> s.getValues().stream().map(AIMetadata.Label::getName).collect(Collectors.toSet()),
+                               (a, b) -> a));
     }
 
     @Test

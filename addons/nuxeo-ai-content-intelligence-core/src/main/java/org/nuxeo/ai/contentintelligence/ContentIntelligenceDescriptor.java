@@ -84,8 +84,8 @@ public class ContentIntelligenceDescriptor implements Descriptor {
         return clientSecret;
     }
 
-    /** @return {@code true} when the endpoints and the client credentials are all set */
+    /** @return {@code true} when the name, the endpoints and the client credentials are all set */
     public boolean hasAllValues() {
-        return StringUtils.isNoneBlank(authenticationBaseUrl, baseUrl, clientId, clientSecret);
+        return StringUtils.isNoneBlank(name, authenticationBaseUrl, baseUrl, clientId, clientSecret);
     }
 }

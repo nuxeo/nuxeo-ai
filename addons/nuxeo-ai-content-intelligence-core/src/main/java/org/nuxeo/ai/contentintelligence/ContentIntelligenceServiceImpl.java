@@ -17,6 +17,8 @@ package org.nuxeo.ai.contentintelligence;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +28,6 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hyland.sdk.cic.http.client.CICSdkException;
 import org.hyland.sdk.cic.http.client.CICServiceException;
 import org.hyland.sdk.cic.http.client.auth.AuthenticationHttpClient;
 import org.hyland.sdk.cic.http.client.mapper.object.CICBlob;
@@ -48,6 +49,9 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
 
     protected static final String STATUS_PROCESSING = "PROCESSING";
 
+    /** Configuration used when no (or a blank) configuration name is given. */
+    public static final String DEFAULT_CONFIG_NAME = "default";
+
     protected static final String TOKEN_PATH = "/connect/token";
 
     protected final Map<String, KEHttpClient> clients;
@@ -61,14 +65,20 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
     public ContentIntelligenceServiceImpl(List<ContentIntelligenceDescriptor> descriptors, int maxTries,
             Duration pollInterval) {
         this.maxTries = Math.max(1, maxTries);
-        this.pollInterval = pollInterval;
+        this.pollInterval = pollInterval == null || pollInterval.isNegative() ? Duration.ZERO : pollInterval;
         Map<String, KEHttpClient> clientsByName = new HashMap<>();
         Map<String, KEService> servicesByName = new HashMap<>();
         for (ContentIntelligenceDescriptor desc : descriptors) {
             if (!desc.hasAllValues()) {
-                log.warn("Knowledge Enrichment configuration '{}' is incomplete (authentication URL, base URL, client "
-                        + "id and client secret are required), Content Intelligence calls using it will fail",
+                log.warn("Knowledge Enrichment configuration '{}' is incomplete (name, authentication URL, base URL, "
+                        + "client id and client secret are required), Content Intelligence calls using it will fail",
                         desc.getName());
+                continue;
+            }
+            if (!isHttpUrl(desc.getAuthenticationBaseUrl()) || !isHttpUrl(desc.getBaseUrl())) {
+                log.warn("Knowledge Enrichment configuration '{}' has an invalid URL (authentication URL: {}, base "
+                        + "URL: {}), Content Intelligence calls using it will fail", desc.getName(),
+                        desc.getAuthenticationBaseUrl(), desc.getBaseUrl());
                 continue;
             }
             KEHttpClient client = buildClient(desc);
@@ -79,8 +89,23 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
         services = Map.copyOf(servicesByName);
     }
 
+    protected static boolean isHttpUrl(String url) {
+        try {
+            URI uri = new URI(url.trim());
+            return ("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    && StringUtils.isNotBlank(uri.getHost());
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    protected static String withoutTrailingSlash(String url) {
+        String trimmed = url.trim();
+        return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+    }
+
     protected KEHttpClient buildClient(ContentIntelligenceDescriptor desc) {
-        String tokenUrl = StringUtils.removeEnd(desc.getAuthenticationBaseUrl(), "/") + TOKEN_PATH;
+        String tokenUrl = withoutTrailingSlash(desc.getAuthenticationBaseUrl()) + TOKEN_PATH;
         var auth = AuthenticationHttpClient.from(tokenUrl)
                                            .clientId(desc.getClientId())
                                            .clientSecret(desc.getClientSecret());
@@ -90,33 +115,34 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
         if (StringUtils.isNotBlank(desc.getTokenScope())) {
             auth.scope(desc.getTokenScope());
         }
-        return KEHttpClient.from(desc.getBaseUrl(), auth).build();
+        return KEHttpClient.from(withoutTrailingSlash(desc.getBaseUrl()), auth).build();
     }
 
     @Override
     public EnrichmentResult enrich(String configName, Blob blob, ContentIntelligenceRequest request) {
-        KEService service = services.get(configName);
+        String name = StringUtils.defaultIfBlank(configName, DEFAULT_CONFIG_NAME);
+        KEService service = services.get(name);
         if (service == null) {
             throw new NuxeoException(String.format(
                     "No complete Knowledge Enrichment configuration '%s': check the nuxeo.hyland.cic.* properties "
                             + "or the knowledgeEnrichment contributions",
-                    configName));
+                    name));
         }
-        String processingId = callCIC("enrichment request", configName,
+        String processingId = callCIC("enrichment request", name,
                 () -> service.sendForEnrichment(toCICBlob(blob), request::configure));
-        return pollResults(configName, processingId);
+        return pollResults(name, processingId);
     }
 
     /**
      * Polls with the client instead of {@link KEService#pollResults(String)}, which throws the same exception for an
-     * exhausted budget as for a failure.
+     * exhausted budget as for a failure. A result still flagged in progress keeps being polled.
      */
     protected EnrichmentResult pollResults(String configName, String processingId) {
         KEHttpClient client = clients.get(configName);
         for (int attempt = 1; attempt <= maxTries; attempt++) {
             EnrichmentResult result = callCIC("results retrieval", configName,
                     () -> client.getResultsIfReady(processingId));
-            if (result != null) {
+            if (result != null && !result.inProgress()) {
                 return result;
             }
             if (attempt < maxTries) {
@@ -164,7 +190,9 @@ public class ContentIntelligenceServiceImpl implements ContentIntelligenceServic
                     String.format("Content Intelligence %s failed for configuration '%s' (HTTP %d): %s", operation,
                             configName, e.statusCode(), e.getMessage()),
                     e);
-        } catch (CICSdkException | UncheckedIOException e) {
+        } catch (RuntimeException e) {
+            // CICSdkException (network, upload, parsing), UncheckedIOException from the blob, or any SDK mapping error:
+            // never let it escape unwrapped, the enrichment retry policy would replay the whole upload
             throw new NuxeoException(String.format("Content Intelligence %s failed for configuration '%s': %s",
                     operation, configName, e.getMessage()), e);
         }

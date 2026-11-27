@@ -101,18 +101,28 @@ public class TestContentIntelligenceServiceImpl {
     }
 
     protected ContentIntelligenceServiceImpl newService(int maxTries) {
-        ContentIntelligenceDescriptor desc = new ContentIntelligenceDescriptor();
-        desc.name = "default";
-        desc.authenticationBaseUrl = baseUrl + "/auth";
-        desc.baseUrl = baseUrl + "/ke";
-        desc.tokenGrantType = "client_credentials";
-        desc.tokenScope = "environment_authorization";
-        desc.clientId = "client-1";
-        desc.clientSecret = "secret-1";
+        ContentIntelligenceDescriptor desc = descriptor("default", baseUrl + "/auth", baseUrl + "/ke");
         ContentIntelligenceDescriptor incomplete = new ContentIntelligenceDescriptor();
         incomplete.name = "incomplete";
         incomplete.baseUrl = baseUrl + "/ke";
         return new ContentIntelligenceServiceImpl(List.of(desc, incomplete), maxTries, Duration.ofMillis(1));
+    }
+
+    protected static ContentIntelligenceDescriptor descriptor(String name, String authUrl, String baseUrl) {
+        ContentIntelligenceDescriptor desc = new ContentIntelligenceDescriptor();
+        desc.name = name;
+        desc.authenticationBaseUrl = authUrl;
+        desc.baseUrl = baseUrl;
+        desc.tokenGrantType = "client_credentials";
+        desc.tokenScope = "environment_authorization";
+        desc.clientId = "client-1";
+        desc.clientSecret = "secret-1";
+        return desc;
+    }
+
+    protected void replaceService(ContentIntelligenceServiceImpl newService) {
+        service.close();
+        service = newService;
     }
 
     protected void handle(HttpExchange exchange) throws IOException {
@@ -241,5 +251,59 @@ public class TestContentIntelligenceServiceImpl {
         assertTrue(unknown.getMessage(), unknown.getMessage().contains("'unknown'"));
         assertThrows(NuxeoException.class, () -> service.enrich("incomplete", blob(), request()));
         assertTrue(hits.isEmpty());
+    }
+
+    @Test
+    public void shouldKeepPollingWhileResultIsInProgress() {
+        AtomicInteger polls = new AtomicInteger();
+        routes.put("GET /ke/content/process/proc-1/results", ex -> polls.incrementAndGet() == 1
+                ? new Response(200, "{\"id\":\"proc-1\",\"status\":\"PROCESSING\",\"inProgress\":true,\"results\":[]}")
+                : new Response(200, RESULTS));
+
+        EnrichmentResult result = service.enrich("default", blob(), request());
+
+        assertEquals("SUCCESS", result.status());
+        assertEquals(2, hits("GET /ke/content/process/proc-1/results"));
+    }
+
+    @Test
+    public void shouldWrapUnmappableResult() {
+        routes.put("GET /ke/content/process/proc-1/results", ex -> new Response(200,
+                "{\"id\":\"proc-1\",\"status\":\"SUCCESS\",\"results\":[{\"objectKey\":\"ok1\","
+                        + "\"namedEntityText\":{\"isSuccess\":true,\"result\":{\"dates\":[2024]}}}]}"));
+
+        NuxeoException e = assertThrows(NuxeoException.class, () -> service.enrich("default", blob(), request()));
+        assertTrue(e.getMessage(), e.getMessage().contains("results retrieval"));
+    }
+
+    @Test
+    public void shouldWrapUploadFailureWithoutHttpStatus() {
+        routes.put("PUT /upload/ok1", ex -> new Response(403, "denied"));
+
+        assertThrows(NuxeoException.class, () -> service.enrich("default", blob(), request()));
+        assertEquals(0, hits("POST /ke/content/process"));
+    }
+
+    @Test
+    public void shouldSkipConfigurationsWithInvalidUrlOrNoName() {
+        ContentIntelligenceDescriptor noScheme = descriptor("noScheme", baseUrl + "/auth", "api.example.invalid/ke");
+        ContentIntelligenceDescriptor noName = descriptor(null, baseUrl + "/auth", baseUrl + "/ke");
+        replaceService(new ContentIntelligenceServiceImpl(
+                List.of(noScheme, noName, descriptor("default", baseUrl + "/auth", baseUrl + "/ke")), 5,
+                Duration.ofMillis(1)));
+
+        NuxeoException e = assertThrows(NuxeoException.class, () -> service.enrich("noScheme", blob(), request()));
+        assertTrue(e.getMessage(), e.getMessage().contains("No complete"));
+        assertEquals("SUCCESS", service.enrich("default", blob(), request()).status());
+    }
+
+    @Test
+    public void shouldAcceptTrailingSlashesAndBlankConfigName() {
+        replaceService(new ContentIntelligenceServiceImpl(
+                List.of(descriptor("default", baseUrl + "/auth/", baseUrl + "/ke/")), 5, Duration.ofMillis(-5)));
+
+        assertEquals("SUCCESS", service.enrich(null, blob(), request()).status());
+        assertEquals(1, hits("GET /ke/files/upload/presigned-url"));
+        assertEquals(1, hits("POST /auth/connect/token"));
     }
 }
